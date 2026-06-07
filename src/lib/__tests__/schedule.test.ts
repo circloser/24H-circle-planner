@@ -66,12 +66,12 @@ describe('splitSliceAt', () => {
     expect(result.slices[bIdx + 1].label).toBe('');
   });
 
-  it('new slice inherits parent color, has empty label/icon, textPosition inside', () => {
+  it('new slice gets a colour distinct from parent, empty label/icon, textPosition inside', () => {
     const schedule = makeFourQuarters();
     const parentColor = schedule.slices[0].color;
     const result = splitSliceAt(schedule, '03:00');
     const newSlice = result.slices[1]; // after first slice split
-    expect(newSlice.color).toBe(parentColor);
+    expect(newSlice.color.toLowerCase()).not.toBe(parentColor.toLowerCase());
     expect(newSlice.label).toBe('');
     expect(newSlice.icon).toBe('');
     expect(newSlice.textPosition).toBe('inside');

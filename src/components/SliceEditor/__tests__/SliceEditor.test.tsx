@@ -165,6 +165,30 @@ describe('SliceEditor', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('pressing Enter dispatches REPLACE_SLICE with updated label', async () => {
+    const onClose = vi.fn();
+    const { slice } = await renderEditor({ label: '수면' }, onClose);
+    void slice; // id available if needed
+
+    const input = getEditorInput();
+    fireEvent.change(input, { target: { value: '점심' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    // onClose is called — the commit path ran
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('Tab key does NOT close the editor (Tab-next removed)', async () => {
+    const onClose = vi.fn();
+    await renderEditor({ label: '수면' }, onClose);
+
+    const input = getEditorInput();
+    fireEvent.keyDown(input, { key: 'Tab' });
+
+    // Tab should NOT trigger onClose
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it('shows aria-invalid when Korean grapheme count > 12', async () => {
     await renderEditor({ label: '수면' });
     const input = getEditorInput();
@@ -216,77 +240,29 @@ describe('SliceEditor', () => {
     expect(dialog).toBeNull();
   });
 
-  // ── 분할 / 삭제 button tests ──────────────────────────────────────────────────
+  // ── 분할 / 삭제 buttons removed (T14) ─────────────────────────────────────────
 
-  it('renders the 분할 (split) button', async () => {
-    await renderEditor({ startTime: '00:00', endTime: '08:00' }); // 480 min → splittable
+  it('does NOT render the 분할 (split) button', async () => {
+    await renderEditor({ startTime: '00:00', endTime: '08:00' });
     const splitBtn = Array.from(document.body.querySelectorAll('button')).find(
       (b) => b.textContent?.trim() === '분할',
     );
-    expect(splitBtn).not.toBeUndefined();
+    expect(splitBtn).toBeUndefined();
   });
 
-  it('renders the 삭제 (delete) button', async () => {
+  it('does NOT render the 삭제 (delete) button', async () => {
     await renderEditor({ startTime: '00:00', endTime: '08:00' });
     const deleteBtn = Array.from(document.body.querySelectorAll('button')).find(
       (b) => b.textContent?.trim() === '삭제',
     );
-    expect(deleteBtn).not.toBeUndefined();
+    expect(deleteBtn).toBeUndefined();
   });
 
-  it('분할 button is disabled when slice is < 20 min', async () => {
-    // Slice is only 10 min — too narrow to split
-    await renderEditor({ startTime: '00:00', endTime: '00:10' });
-    const splitBtn = Array.from(document.body.querySelectorAll('button')).find(
-      (b) => b.textContent?.trim() === '분할',
-    ) as HTMLButtonElement | undefined;
-    expect(splitBtn).not.toBeUndefined();
-    expect(splitBtn?.disabled).toBe(true);
-  });
+  // ── Hint text ─────────────────────────────────────────────────────────────────
 
-  it('분할 button is enabled when slice is ≥ 20 min', async () => {
-    await renderEditor({ startTime: '00:00', endTime: '08:00' });
-    const splitBtn = Array.from(document.body.querySelectorAll('button')).find(
-      (b) => b.textContent?.trim() === '분할',
-    ) as HTMLButtonElement | undefined;
-    expect(splitBtn?.disabled).toBe(false);
-  });
-
-  it('삭제 button is disabled when only one slice exists', async () => {
-    // Pass extraSlices=[] so the schedule has exactly 1 slice
-    await renderEditor({ startTime: '00:00', endTime: '00:00' }, undefined, []);
-    const deleteBtn = Array.from(document.body.querySelectorAll('button')).find(
-      (b) => b.textContent?.trim() === '삭제',
-    ) as HTMLButtonElement | undefined;
-    expect(deleteBtn).not.toBeUndefined();
-    expect(deleteBtn?.disabled).toBe(true);
-  });
-
-  it('삭제 button is enabled when multiple slices exist', async () => {
-    await renderEditor({ startTime: '00:00', endTime: '08:00' });
-    const deleteBtn = Array.from(document.body.querySelectorAll('button')).find(
-      (b) => b.textContent?.trim() === '삭제',
-    ) as HTMLButtonElement | undefined;
-    expect(deleteBtn?.disabled).toBe(false);
-  });
-
-  it('clicking 분할 dispatches SPLIT and calls onClose', async () => {
-    const onClose = vi.fn();
-    await renderEditor({ startTime: '00:00', endTime: '08:00' }, onClose);
-    const splitBtn = Array.from(document.body.querySelectorAll('button')).find(
-      (b) => b.textContent?.trim() === '분할',
-    ) as HTMLButtonElement;
-    act(() => { fireEvent.click(splitBtn); });
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
-
-  it('clicking 삭제 dispatches MERGE and calls onClose', async () => {
-    const onClose = vi.fn();
-    await renderEditor({ startTime: '00:00', endTime: '08:00' }, onClose);
-    const deleteBtn = Array.from(document.body.querySelectorAll('button')).find(
-      (b) => b.textContent?.trim() === '삭제',
-    ) as HTMLButtonElement;
-    act(() => { fireEvent.click(deleteBtn); });
-    expect(onClose).toHaveBeenCalledTimes(1);
+  it('shows hint text "Enter 저장 · ESC 취소"', async () => {
+    await renderEditor({ label: '수면' });
+    const hint = document.body.querySelector('p.text-\\[10px\\]');
+    expect(hint?.textContent).toBe('Enter 저장 · ESC 취소');
   });
 });

@@ -13,10 +13,12 @@ import { PRESETS } from '@/data/presets';
 import type { Preset } from '@/types/preset';
 
 /**
- * T6: Lifestyle preset gallery.
- * Uses a nested Dialog (not AlertDialog — alert-dialog not installed) for
- * the overwrite confirmation step. The outer Dialog shows 5 preset cards;
- * clicking a card opens the inner confirmation Dialog.
+ * T6 + T15: Lifestyle preset gallery with a confirmation step.
+ *
+ * The two dialogs (gallery + confirm) are shown SEQUENTIALLY, never nested:
+ * clicking a card closes the gallery and opens the confirm dialog alone. Nested
+ * Radix dialogs fight over z-index/stacking and the confirm rendered behind the
+ * gallery (nearly invisible). Sequential dialogs render cleanly on top.
  */
 
 interface PresetGalleryProps {
@@ -30,28 +32,29 @@ export function PresetGallery({ open, onOpenChange, onConfirm }: PresetGalleryPr
 
   function handleCardClick(preset: Preset) {
     setPendingPreset(preset);
+    onOpenChange(false); // close the gallery so the confirm shows alone (no nesting)
   }
 
   function handleConfirm() {
-    if (pendingPreset) {
-      onConfirm(pendingPreset.name);
-    }
+    if (pendingPreset) onConfirm(pendingPreset.name);
     setPendingPreset(null);
   }
 
-  function handleCancelConfirm() {
+  // Cancel (취소 button, Escape, backdrop) just closes the confirm and returns
+  // to the timetable. Reopen the gallery via the 프리셋 button to pick another.
+  function closeConfirm() {
     setPendingPreset(null);
   }
 
   return (
     <>
-      {/* ── Outer gallery dialog ─────────────────────────────────────────── */}
+      {/* ── Gallery dialog ───────────────────────────────────────────────── */}
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-5xl">
           <DialogHeader>
             <DialogTitle>라이프스타일 프리셋</DialogTitle>
             <DialogDescription>
-              원하는 루틴을 선택하면 현재 시간표가 해당 프리셋으로 교체됩니다.
+              원하는 루틴을 선택하면 적용 여부를 확인한 뒤 현재 시간표에 반영됩니다.
             </DialogDescription>
           </DialogHeader>
 
@@ -64,31 +67,35 @@ export function PresetGallery({ open, onOpenChange, onConfirm }: PresetGalleryPr
               >
                 <h3 className="font-semibold mb-1">{preset.name}</h3>
                 <p className="text-sm text-muted-foreground mb-3">{preset.description}</p>
-                <CircleTimeline
-                  slices={preset.slices}
-                  interactionMode="view"
-                  size={240}
-                />
+                <CircleTimeline slices={preset.slices} interactionMode="view" size={240} />
               </button>
             ))}
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* ── Inner confirmation dialog ────────────────────────────────────── */}
-      <Dialog open={pendingPreset !== null} onOpenChange={(o) => { if (!o) setPendingPreset(null); }}>
+      {/* ── Confirmation dialog (shown alone, after the gallery closes) ──── */}
+      <Dialog open={pendingPreset !== null} onOpenChange={(o) => { if (!o) closeConfirm(); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>프리셋 로드</DialogTitle>
+            <DialogTitle>{pendingPreset?.name} 적용</DialogTitle>
             <DialogDescription>
-              기존 시간표가 덮어쓰여집니다. &apos;{pendingPreset?.name}&apos; 프리셋을 로드할까요?
+              &apos;{pendingPreset?.name}&apos; 프리셋을 현재 시간표에 적용할까요? 기존 시간표는
+              덮어쓰여집니다.
             </DialogDescription>
           </DialogHeader>
+
+          {pendingPreset && (
+            <div className="flex justify-center py-1">
+              <CircleTimeline slices={pendingPreset.slices} interactionMode="view" size={200} />
+            </div>
+          )}
+
           <DialogFooter>
-            <Button variant="outline" onClick={handleCancelConfirm}>
+            <Button variant="outline" onClick={closeConfirm}>
               취소
             </Button>
-            <Button onClick={handleConfirm}>확인</Button>
+            <Button onClick={handleConfirm}>현재 창에 적용</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

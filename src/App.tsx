@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import './index.css';
 import { ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
@@ -14,6 +14,7 @@ import { CircleTimeline } from '@/components/CircleTimeline/CircleTimeline';
 import { ThemeToggle } from '@/components/ThemeToggle/ThemeToggle';
 import { PresetGallery } from '@/components/PresetGallery/PresetGallery';
 import { SliceEditor } from '@/components/SliceEditor/SliceEditor';
+import { HubTitleEditor } from '@/components/HubTitleEditor/HubTitleEditor';
 import { SlotSheet } from '@/components/SlotSheet/SlotSheet';
 import { SaveAsDialog } from '@/components/SaveAsDialog/SaveAsDialog';
 import { ExportDialog } from '@/components/ExportPanel/ExportDialog';
@@ -22,7 +23,6 @@ import { useSliceInteraction } from '@/hooks/useSliceInteraction';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { STORAGE_KEY_SCHEDULE } from '@/lib/storage';
 import { PRESETS } from '@/data/presets';
-import { hhmmToMinutes, minutesToHhmm, sliceWidthMinutes } from '@/lib/time-utils';
 import type { Slot } from '@/types/slot';
 import type { Schedule } from '@/types/schedule';
 
@@ -55,6 +55,7 @@ function App() {
   const [saveAsOpen, setSaveAsOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [editingSliceId, setEditingSliceId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState(false);
 
   /**
    * Called when user confirms loading a slot from SlotSheet.
@@ -77,74 +78,6 @@ function App() {
     present.slices[0].label === '' &&
     present.presetSource === null;
 
-  // ── "+ 일정 추가" handler ────────────────────────────────────────────────────
-  // Finds the slice containing "now" (or the largest slice as fallback),
-  // splits it at its midpoint, then opens the editor on the new CW slice.
-  //
-  // The SPLIT reducer is synchronous. We store the target startTime in a ref,
-  // then a useEffect that watches present.slices reads the new slice id and
-  // calls setEditingSliceId. The ref (not state) avoids the effect firing
-  // on every render; it is read-and-cleared once in the effect.
-
-  const pendingEditStartTimeRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    const targetTime = pendingEditStartTimeRef.current;
-    if (!targetTime) return;
-    const newSlice = present.slices.find((s) => s.startTime === targetTime);
-    if (newSlice) {
-      pendingEditStartTimeRef.current = null;
-      setEditingSliceId(newSlice.id);
-    }
-  }, [present.slices]);
-
-  const handleAddSlice = useCallback(() => {
-    const slices = present.slices;
-    if (slices.length === 0) return;
-
-    // Find the slice covering "now"
-    const now = new Date();
-    const nowMin = now.getHours() * 60 + now.getMinutes();
-
-    let targetSlice = slices[0];
-    for (const s of slices) {
-      const startMin = hhmmToMinutes(s.startTime);
-      const endStr = s.endTime === '24:00' ? '00:00' : s.endTime;
-      const endMin = hhmmToMinutes(endStr);
-      const wraps = endMin <= startMin;
-      const contains = wraps
-        ? nowMin >= startMin || nowMin < endMin
-        : nowMin >= startMin && nowMin < endMin;
-      if (contains) { targetSlice = s; break; }
-    }
-
-    // Fallback to widest slice when the now-slice is too narrow to split
-    if (sliceWidthMinutes(targetSlice) < 20) {
-      let widest = slices[0];
-      for (const s of slices) {
-        if (sliceWidthMinutes(s) > sliceWidthMinutes(widest)) widest = s;
-      }
-      targetSlice = widest;
-    }
-
-    if (sliceWidthMinutes(targetSlice) < 20) {
-      toast.error('분할할 수 있는 일정이 없습니다 (최소 20분 필요)');
-      return;
-    }
-
-    // Compute midpoint, snapped to nearest 10 min
-    const startMin = hhmmToMinutes(targetSlice.startTime);
-    const widthMin = sliceWidthMinutes(targetSlice);
-    const midMin = (startMin + Math.floor(widthMin / 2)) % 1440;
-    const snapped = (Math.round(midMin / 10) * 10) % 1440;
-    const midHhmm = minutesToHhmm(snapped);
-
-    // Store target startTime in ref before dispatching so the effect can find
-    // the new slice on the next render after the store update.
-    pendingEditStartTimeRef.current = midHhmm;
-    dispatch({ type: 'SPLIT', hhmm: midHhmm });
-  }, [present.slices, dispatch]);
-
   // T4: interaction engine
   const { liveDragGroupRef, svgRef, handlers, isDragging } = useSliceInteraction({
     onRequestEdit: (id: string) => {
@@ -164,14 +97,6 @@ function App() {
         <div className="container mx-auto h-14 flex items-center justify-between px-4">
           <h1 className="font-semibold text-base">24H Circle Planner</h1>
           <div className="flex items-center gap-2">
-            {/* "+ 일정 추가" — splits the now-slice at its midpoint and opens the editor */}
-            <Button
-              variant="secondary"
-              onClick={handleAddSlice}
-              aria-label="일정 추가"
-            >
-              + 일정 추가
-            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost">
@@ -217,6 +142,8 @@ function App() {
             onBackgroundClick={handlers.onBackgroundClick}
             showEmptyHint={isEmptyState}
             selectedSliceId={editingSliceId}
+            title={present.name}
+            onHubClick={() => setEditingTitle(true)}
           />
         </div>
       </main>
@@ -243,6 +170,14 @@ function App() {
         sliceId={editingSliceId}
         svgRef={svgRef}
         onClose={() => setEditingSliceId(null)}
+      />
+
+      {/* T17: Hub title editor portal */}
+      <HubTitleEditor
+        open={editingTitle}
+        svgRef={svgRef}
+        currentName={present.name}
+        onClose={() => setEditingTitle(false)}
       />
 
       {/* T9: Export dialog */}

@@ -1,4 +1,5 @@
 import { injectFontFaceStyle } from './inlineFonts';
+import { inlineComputedPaint } from './inlineComputedPaint';
 
 export interface PngExportOptions {
   size: 1080 | 2160 | 3840;
@@ -22,7 +23,12 @@ export async function exportPng(
   // 1. Deep-clone the SVG
   const clone = sourceSvg.cloneNode(true) as SVGSVGElement;
 
-  // 1a. Strip any elements tagged data-export-exclude (e.g. now-indicator line)
+  // 1a. Inline computed fill/stroke (class-styled elements like the hub disc and
+  // ring backdrop would otherwise default to black in the serialized image).
+  // Must run BEFORE stripping excluded elements so source/clone stay aligned.
+  inlineComputedPaint(sourceSvg, clone);
+
+  // 1b. Strip any elements tagged data-export-exclude (e.g. now-indicator line)
   for (const el of Array.from(clone.querySelectorAll('[data-export-exclude]'))) {
     el.remove();
   }

@@ -693,11 +693,13 @@ describe('BoundaryHandles +/− affordances (Issue 3)', () => {
     const affordances = container.querySelectorAll('[data-export-exclude="true"]');
     expect(affordances.length).toBe(1);
 
-    // Check that both + and − buttons are present by aria-label
+    // − (merge) plus left/right + (split) buttons are present by aria-label
     const mergeBtn = container.querySelector('[aria-label="이 경계 일정 병합"]');
-    const splitBtn = container.querySelector('[aria-label="이 경계에서 일정 추가"]');
+    const leftPlus = container.querySelector('[aria-label="왼쪽 칸에 일정 추가"]');
+    const rightPlus = container.querySelector('[aria-label="오른쪽 칸에 일정 추가"]');
     expect(mergeBtn).not.toBeNull();
-    expect(splitBtn).not.toBeNull();
+    expect(leftPlus).not.toBeNull();
+    expect(rightPlus).not.toBeNull();
 
     // Hover leave
     fireEvent.pointerLeave(handleGroup);
@@ -727,7 +729,7 @@ describe('BoundaryHandles +/− affordances (Issue 3)', () => {
     // (store update is async; we just verify click doesn't error)
   });
 
-  it('clicking "+" (split) dispatches SPLIT action', () => {
+  it('clicking the right "+" (split) dispatches SPLIT action', () => {
     const slices = [makeSlice('00:00', '12:00'), makeSlice('12:00', '00:00')];
 
     const { container } = render(
@@ -741,13 +743,13 @@ describe('BoundaryHandles +/− affordances (Issue 3)', () => {
     const handleGroup = container.querySelector('[data-boundary-index="0"]')!;
     fireEvent.pointerEnter(handleGroup);
 
-    const splitBtn = container.querySelector('[aria-label="이 경계에서 일정 추가"]')!;
+    const splitBtn = container.querySelector('[aria-label="오른쪽 칸에 일정 추가"]')!;
     expect(splitBtn).not.toBeNull();
     // Click should not throw; dispatch to store happens inside component
     fireEvent.click(splitBtn);
   });
 
-  it('"+" is disabled when both adjacent slices are < 20 min', () => {
+  it('both "+" are disabled when both adjacent slices are < 20 min', () => {
     // Create 3 slices where the two flanking boundary-0 are each exactly 10 min.
     // Boundary 0 = end of slice[0] = '00:10'
     // ccwSlice = slices[0]: 00:00–00:10 (10 min)
@@ -764,9 +766,12 @@ describe('BoundaryHandles +/− affordances (Issue 3)', () => {
     const handleGroup = container.querySelector('[data-boundary-index="0"]')!;
     fireEvent.pointerEnter(handleGroup);
 
-    const splitBtn = container.querySelector('[aria-label="이 경계에서 일정 추가"]')!;
-    expect(splitBtn).not.toBeNull();
-    expect(splitBtn.getAttribute('aria-disabled')).toBe('true');
+    const leftPlus = container.querySelector('[aria-label="왼쪽 칸에 일정 추가"]')!;
+    const rightPlus = container.querySelector('[aria-label="오른쪽 칸에 일정 추가"]')!;
+    expect(leftPlus).not.toBeNull();
+    expect(rightPlus).not.toBeNull();
+    expect(leftPlus.getAttribute('aria-disabled')).toBe('true');
+    expect(rightPlus.getAttribute('aria-disabled')).toBe('true');
   });
 
   it('data-export-exclude="true" is set on affordance group (export exclusion)', () => {
@@ -796,7 +801,7 @@ describe('BoundaryHandles +/− affordances (Issue 3)', () => {
     const handleGroup = container.querySelector('[data-boundary-index="0"]')!;
     fireEvent.pointerEnter(handleGroup);
 
-    const splitBtn = container.querySelector('[aria-label="이 경계에서 일정 추가"]')!;
+    const splitBtn = container.querySelector('[aria-label="오른쪽 칸에 일정 추가"]')!;
     fireEvent.pointerDown(splitBtn);
 
     // The drag handler on the hit-area circle should NOT have been called

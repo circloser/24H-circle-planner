@@ -252,7 +252,7 @@ function JsonTab({
       {/* Confirmation dialog */}
       {confirmOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
-          <div className="bg-background border rounded-lg p-6 max-w-sm w-full mx-4 shadow-lg">
+          <div role="dialog" className="bg-background border rounded-lg p-6 max-w-sm w-full mx-4 shadow-lg">
             <h3 className="text-base font-semibold mb-2">시간표 가져오기</h3>
             <p className="text-sm text-muted-foreground mb-4">
               기존 시간표가 덮어쓰여집니다. 가져올까요?

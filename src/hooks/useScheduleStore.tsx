@@ -40,6 +40,7 @@ export type StoreAction =
       baseSnapshot?: Schedule;
     }
   | { type: 'REPLACE_SLICE'; id: string; patch: Partial<TimeSlice> }
+  | { type: 'SET_SCHEDULE_NAME'; name: string }
   | { type: 'LOAD_PRESET'; preset: Preset; presetName: string }
   | { type: 'UNDO' }
   | { type: 'REDO' }
@@ -153,6 +154,17 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
       return applyMutation(state, (present) =>
         replaceSlice(present, action.id, action.patch),
       );
+
+    case 'SET_SCHEDULE_NAME': {
+      const present = state.history.present;
+      const name = action.name.trim();
+      if (name === '' || name === present.name) return state; // no-op
+      return applyMutation(state, (p) => ({
+        ...p,
+        name,
+        updatedAt: new Date().toISOString(),
+      }));
+    }
 
     case 'LOAD_PRESET': {
       const { preset, presetName } = action;

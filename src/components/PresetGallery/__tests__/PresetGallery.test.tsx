@@ -60,17 +60,17 @@ describe('PresetGallery', () => {
     expect(timelines).toHaveLength(5);
   });
 
-  it('clicking a card opens the confirmation dialog', () => {
-    renderGallery({ open: true });
+  it('clicking a card opens the confirmation dialog and closes the gallery', () => {
+    const onOpenChange = vi.fn();
+    renderGallery({ open: true, onOpenChange });
     const studentCard = screen.getByText('학생').closest('button')!;
     fireEvent.click(studentCard);
-    // Confirmation dialog title appears
-    expect(screen.getByText('프리셋 로드')).toBeTruthy();
-    // Confirmation message contains the preset name — there will be multiple
-    // elements matching /학생/ so we check at least one exists
-    expect(screen.getAllByText(/학생/).length).toBeGreaterThan(0);
-    // Confirm and cancel buttons are present
-    expect(screen.getByRole('button', { name: '확인' })).toBeTruthy();
+    // Sequential (non-nested) flow: the gallery is asked to close
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    // Confirmation dialog title appears ("{name} 적용")
+    expect(screen.getByText('학생 적용')).toBeTruthy();
+    // Confirm + cancel buttons present (confirm label = "현재 창에 적용")
+    expect(screen.getByRole('button', { name: '현재 창에 적용' })).toBeTruthy();
     expect(screen.getByRole('button', { name: '취소' })).toBeTruthy();
   });
 
@@ -82,23 +82,23 @@ describe('PresetGallery', () => {
     const card = screen.getByText('대학생').closest('button')!;
     fireEvent.click(card);
 
-    // Click 확인 button
-    const confirmBtn = screen.getByRole('button', { name: '확인' });
+    // Click the "현재 창에 적용" button
+    const confirmBtn = screen.getByRole('button', { name: '현재 창에 적용' });
     fireEvent.click(confirmBtn);
 
     expect(onConfirm).toHaveBeenCalledOnce();
     expect(onConfirm).toHaveBeenCalledWith('대학생');
   });
 
-  it('cancelling closes the inner dialog without calling onConfirm', () => {
+  it('cancelling closes the confirmation without calling onConfirm', () => {
     const onConfirm = vi.fn();
     renderGallery({ open: true, onConfirm });
 
     const card = screen.getByText('자영업자').closest('button')!;
     fireEvent.click(card);
 
-    // Confirm dialog is open
-    expect(screen.getByText('프리셋 로드')).toBeTruthy();
+    // Confirm dialog is open ("{name} 적용")
+    expect(screen.getByText('자영업자 적용')).toBeTruthy();
 
     // Click 취소 button
     const cancelBtn = screen.getByRole('button', { name: '취소' });

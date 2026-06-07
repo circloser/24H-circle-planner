@@ -17,6 +17,9 @@ coverage
 # OMC orchestration state & verification artifacts (tooling, not the product)
 .omc/
 
+# Claude Code local runtime state (locks, etc.)
+.claude/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import type { TimeSlice } from '@/types/time-slice';
-import { RING, polarToCartesian, slicePath } from '@/lib/svg-geometry';
+import { RING, polarToCartesian, slicePath, truncateLabel } from '@/lib/svg-geometry';
 import { hhmmToAngle } from '@/lib/time-utils';
 import { useSliceSelector, useStoreSelector } from '@/hooks/useScheduleStore';
 import { SliceLabel } from './SliceLabel';
@@ -34,6 +34,10 @@ interface CircleTimelineProps {
   onPointerDownHandle?: (e: React.PointerEvent<SVGElement>, boundaryIndex: number) => void;
   /** Called on a background click to split at that position. */
   onBackgroundClick?: (e: React.MouseEvent<SVGElement>) => void;
+  /** Schedule title shown in the center hub (SVG text — appears in PNG/PDF export). */
+  title?: string;
+  /** Called when the center hub is clicked (interactive mode) — opens the title editor. */
+  onHubClick?: () => void;
 }
 
 // ─── Center hub live clock (HTML overlay, excluded from SVG export) ──────────
@@ -335,6 +339,8 @@ export function CircleTimeline({
   onBackgroundClick,
   showEmptyHint = false,
   selectedSliceId,
+  title,
+  onHubClick,
 }: CircleTimelineProps) {
   const { cx, cy, innerR, outerR } = RING;
 
@@ -471,6 +477,15 @@ export function CircleTimeline({
         filter="url(#hub-glass-blur)"
         stroke="hsl(var(--border) / 0.5)"
         strokeWidth={1.5}
+        style={isInteractive && onHubClick ? { cursor: 'pointer' } : undefined}
+        onClick={
+          isInteractive && onHubClick
+            ? (e) => {
+                e.stopPropagation();
+                onHubClick();
+              }
+            : undefined
+        }
       />
       {/* Hub rim accent ring */}
       <circle
@@ -480,7 +495,25 @@ export function CircleTimeline({
         fill="none"
         stroke="hsl(var(--border) / 0.3)"
         strokeWidth={2}
+        style={{ pointerEvents: 'none' }}
       />
+      {/* Schedule title — SVG text so it appears in PNG/PDF export (unlike the
+          live clock, which is an HTML overlay and is excluded from export). */}
+      {title ? (
+        <text
+          x={cx}
+          y={cy - 8}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={26}
+          fontWeight={600}
+          fill="hsl(var(--foreground) / 0.9)"
+          fontFamily="Pretendard, system-ui, sans-serif"
+          style={{ pointerEvents: 'none' }}
+        >
+          {truncateLabel(title, 6, 12)}
+        </text>
+      ) : null}
     </svg>
   );
 
@@ -490,7 +523,8 @@ export function CircleTimeline({
     <div style={wrapperStyle}>
       {svgElement}
 
-      {/* Center hub live clock — HTML overlay, NOT inside SVG, excluded from export */}
+      {/* Center hub live current time — HTML overlay (excluded from export).
+          Sits below the SVG title so exports show the title, not a stale clock. */}
       <div
         aria-hidden="true"
         style={{
@@ -500,39 +534,25 @@ export function CircleTimeline({
           width: `${hubPct * 2}%`,
           height: `${hubPct * 2}%`,
           display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
+          alignItems: 'flex-end',
           justifyContent: 'center',
+          paddingBottom: '16%',
           pointerEvents: 'none',
           userSelect: 'none',
         }}
       >
         <span
           style={{
-            fontSize: 'clamp(0.55rem, 1.4vw, 0.85rem)',
-            fontWeight: 600,
-            letterSpacing: '-0.02em',
+            fontSize: 'clamp(0.4rem, 1vw, 0.62rem)',
+            fontWeight: 500,
+            letterSpacing: '0.01em',
             lineHeight: 1,
-            color: 'hsl(var(--foreground) / 0.85)',
+            color: 'hsl(var(--text-muted) / 0.8)',
             fontFamily: 'Pretendard, system-ui, sans-serif',
             fontVariantNumeric: 'tabular-nums',
           }}
         >
           {clock.displayTime}
-        </span>
-        <span
-          style={{
-            fontSize: 'clamp(0.35rem, 0.8vw, 0.5rem)',
-            fontWeight: 400,
-            letterSpacing: '0.04em',
-            lineHeight: 1.4,
-            color: 'hsl(var(--text-muted) / 0.6)',
-            fontFamily: 'Pretendard, system-ui, sans-serif',
-            textTransform: 'uppercase',
-            marginTop: '2px',
-          }}
-        >
-          24H
         </span>
       </div>
 

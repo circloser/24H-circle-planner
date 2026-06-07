@@ -29,6 +29,26 @@ function cloneSlices(slices: TimeSlice[]): TimeSlice[] {
 }
 
 /**
+ * 12-colour palette (matches the ColorSwatch picker). Used to give a newly
+ * split slice a colour visibly different from its parent.
+ */
+const SPLIT_PALETTE = [
+  '#9ca3af', '#f87171', '#fb923c', '#fbbf24', '#a3e635', '#34d399',
+  '#2dd4bf', '#38bdf8', '#60a5fa', '#a78bfa', '#f472b6', '#e879f9',
+];
+
+/** Pick a palette colour distinctly different from `avoid`. */
+export function pickDistinctColor(avoid: string): string {
+  const lower = (avoid ?? '').toLowerCase();
+  const idx = SPLIT_PALETTE.findIndex((c) => c.toLowerCase() === lower);
+  if (idx === -1) {
+    return SPLIT_PALETTE.find((c) => c.toLowerCase() !== lower) ?? SPLIT_PALETTE[1];
+  }
+  // Offset by ~half the wheel for maximum visual contrast (always != parent).
+  return SPLIT_PALETTE[(idx + 5) % SPLIT_PALETTE.length];
+}
+
+/**
  * Find the index of the slice that contains the given time (in minutes).
  * Handles midnight-wrap slices.
  */
@@ -109,7 +129,9 @@ export function splitSliceAt(schedule: Schedule, hhmm: string): Schedule {
     id: uuid(),
     label: '',
     icon: '',
-    color: parent.color,
+    // New slice gets a colour distinct from its parent so the added division
+    // is visually obvious.
+    color: pickDistinctColor(parent.color),
     textPosition: 'inside',
     startTime: snappedHhmm,
     endTime: parent.endTime,

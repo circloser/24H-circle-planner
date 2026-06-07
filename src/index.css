@@ -100,10 +100,12 @@ body {
   outline-offset: 2px;
 }
 
-/* ─── Slice path wedge highlights (Issue T13) ──────────────────────────────── */
-/* Suppress the default rectangular browser focus outline on slice SVG paths.
+/* ─── Slice path wedge highlights (Issue T13 / T14) ────────────────────────── */
+/* Suppress the default rectangular browser focus outline on slice SVG paths
+   for ALL focus states (mouse click triggers :focus, not :focus-visible, so
+   we must suppress both to avoid a rectangle on click).
    Only scoped to .slice-path so buttons/inputs keep their focus rings. */
-.slice-path:focus-visible {
+.slice-path:focus {
   outline: none;
 }
 
@@ -136,13 +138,28 @@ body {
   }
 }
 
+/* ─── Solid popup surfaces (T16) ───────────────────────────────────────────── */
+/* The Tailwind `bg-background`/`bg-popover` tokens are not mapped to opaque
+   colours in this setup, so Shadcn dialog/sheet/dropdown surfaces render
+   see-through over the colourful chart and are hard to read. Force every popup
+   window to a solid surface colour with raw CSS (always works, no token
+   dependency). The chart's own glassmorphism (.glass-ring-backdrop /
+   .glass-hub-disc) is intentionally left translucent. */
+[role='dialog'],
+[role='alertdialog'],
+[role='menu'] {
+  background-color: hsl(var(--surface)) !important;
+}
+
 /* ─── Glassmorphism utilities ─────────────────────────────────────────────── */
 @layer utilities {
+  /* Solid card surface (no transparency/blur) so dialog content reads clearly
+     against the colourful chart behind it. The chart's own glassmorphism
+     (.glass-ring-backdrop / .glass-hub-disc, below) is intentionally kept. */
   .glass-card {
-    background: hsl(var(--surface-glass) / 0.85);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid hsl(var(--border) / 0.6);
+    background: hsl(var(--surface));
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 1px 3px hsl(220 20% 25% / 0.10);
   }
 
   /* Annulus glassmorphism backdrop for the SVG ring — applied to the SVG

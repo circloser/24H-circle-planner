@@ -23,24 +23,30 @@ function sliceMidpointHhmm(slice: TimeSlice): string {
   return minutesToHhmm(snapped);
 }
 
+// "+" buttons sit this many degrees to each side of the boundary line, along
+// the ring — so adding a slice on the left or right is spatially intuitive.
+const PLUS_ANGLE_DELTA = 8;
+
 /**
- * Affordance button offset positions (relative to the handle dot).
- * "−" merges: placed inward (toward hub, smaller radius).
- * "+" splits:  placed outward (toward rim, larger radius).
- * Both flanking the handle radially so they don't sit on the drag hit-area.
+ * Affordance button positions (relative to the handle dot at midR).
+ * "−" merges: inward (toward hub).
+ * "+" (left/right): flanking the division line tangentially. The left "+"
+ * (CCW side) splits the slice before the boundary; the right "+" (CW side)
+ * splits the slice after it.
  */
-function affordancePositions(
-  angleDeg: number,
-): { minus: { x: number; y: number }; plus: { x: number; y: number } } {
+function affordancePositions(angleDeg: number): {
+  minus: { x: number; y: number };
+  leftPlus: { x: number; y: number };
+  rightPlus: { x: number; y: number };
+  handle: { x: number; y: number };
+} {
   const { innerR, outerR, cx, cy } = RING;
   const midR = (innerR + outerR) / 2;
-  // Inward offset (toward hub): midR - 52px
-  const inwardR = midR - 52;
-  // Outward offset (toward rim): midR + 52px
-  const outwardR = midR + 52;
   return {
-    minus: polarToCartesian(cx, cy, inwardR, angleDeg),
-    plus: polarToCartesian(cx, cy, outwardR, angleDeg),
+    minus: polarToCartesian(cx, cy, midR - 52, angleDeg),
+    leftPlus: polarToCartesian(cx, cy, midR, angleDeg - PLUS_ANGLE_DELTA),
+    rightPlus: polarToCartesian(cx, cy, midR, angleDeg + PLUS_ANGLE_DELTA),
+    handle: polarToCartesian(cx, cy, midR, angleDeg),
   };
 }
 
@@ -72,7 +78,9 @@ function AffordanceBtn({ x, y, label, ariaLabel, disabled, onClick }: Affordance
       onClick={disabled ? undefined : (e) => { e.stopPropagation(); onClick(e); }}
       onPointerDown={(e) => { e.stopPropagation(); }} // never start a drag from affordance
     >
-      {/* Filled accent circle */}
+      {/* Filled accent circle — this is the click hit-target. An SVG <g> has no
+          geometry of its own, so the circle (not the <g>) must catch pointer
+          events; the onClick on the wrapping <g> then fires via bubbling. */}
       <circle
         cx={x}
         cy={y}
@@ -80,7 +88,7 @@ function AffordanceBtn({ x, y, label, ariaLabel, disabled, onClick }: Affordance
         fill="hsl(var(--accent))"
         stroke="hsl(var(--background))"
         strokeWidth={1.5}
-        style={{ pointerEvents: 'none' }}
+        style={{ pointerEvents: 'all' }}
       />
       {/* Symbol text */}
       <text
@@ -123,12 +131,14 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
   // "−" is always available when ≥2 slices (merging down to 1 is fine)
   const canMinus = len >= 2;
 
-  // "+" is available if either adjacent slice is ≥ 20 min
+  // Each "+" splits its own adjacent slice; needs that slice ≥ 20 min.
   const ccwWidth = sliceWidthMinutes(ccwSlice);
   const cwWidth = sliceWidthMinutes(cwSlice);
-  const canPlus = ccwWidth >= 20 || cwWidth >= 20;
+  const canLeftPlus = ccwWidth >= 20;
+  const canRightPlus = cwWidth >= 20;
 
-  const { minus: minusPos, plus: plusPos } = affordancePositions(angleDeg);
+  const { minus: minusPos, leftPlus: leftPlusPos, rightPlus: rightPlusPos, handle } =
+    affordancePositions(angleDeg);
 
   const handleMinus = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -136,13 +146,18 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
     dispatch({ type: 'MERGE', idCw: cwSlice.id, idCcw: ccwSlice.id });
   };
 
-  const handlePlus = (e: React.MouseEvent) => {
+  // Left "+" → add a division inside the CCW slice (before this boundary).
+  const handleLeftPlus = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!canPlus) return;
-    // Split the larger of the two adjacent slices at its midpoint
-    const targetSlice = ccwWidth >= cwWidth ? ccwSlice : cwSlice;
-    const midHhmm = sliceMidpointHhmm(targetSlice);
-    dispatch({ type: 'SPLIT', hhmm: midHhmm });
+    if (!canLeftPlus) return;
+    dispatch({ type: 'SPLIT', hhmm: sliceMidpointHhmm(ccwSlice) });
+  };
+
+  // Right "+" → add a division inside the CW slice (after this boundary).
+  const handleRightPlus = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!canRightPlus) return;
+    dispatch({ type: 'SPLIT', hhmm: sliceMidpointHhmm(cwSlice) });
   };
 
   return (
@@ -154,13 +169,29 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
     >
       {/* Hover affordances — rendered BELOW the drag hit-area in DOM order,
           but on a higher visual layer by z-order of SVG paint order.
-          Tagged data-export-exclude so the export clone strips them. */}
+          Tagged data-export-exclude so the export clone strips them.
+          The wrapping <g> above covers both handle and affordance buttons,
+          so moving from handle to button does NOT fire pointerleave — no hover gap. */}
       {hovered && (
         <g
           className="boundary-affordances"
           data-export-exclude="true"
           aria-hidden="false"
         >
+          {/* Transparent hover zone — a circle centered on the handle covering
+              the "−" (inward) and both "+" (left/right) buttons, so moving the
+              pointer from the handle to any button keeps it over this <g> and
+              the affordances don't vanish (no hover gap). Rendered first
+              (bottom) so the buttons stay clickable on top. Inert. */}
+          <circle
+            cx={handle.x}
+            cy={handle.y}
+            r={64}
+            fill="transparent"
+            style={{ pointerEvents: 'all' }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          />
           <AffordanceBtn
             x={minusPos.x}
             y={minusPos.y}
@@ -170,17 +201,25 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
             onClick={handleMinus}
           />
           <AffordanceBtn
-            x={plusPos.x}
-            y={plusPos.y}
+            x={leftPlusPos.x}
+            y={leftPlusPos.y}
             label="+"
-            ariaLabel="이 경계에서 일정 추가"
-            disabled={!canPlus}
-            onClick={handlePlus}
+            ariaLabel="왼쪽 칸에 일정 추가"
+            disabled={!canLeftPlus}
+            onClick={handleLeftPlus}
+          />
+          <AffordanceBtn
+            x={rightPlusPos.x}
+            y={rightPlusPos.y}
+            label="+"
+            ariaLabel="오른쪽 칸에 일정 추가"
+            disabled={!canRightPlus}
+            onClick={handleRightPlus}
           />
         </g>
       )}
 
-      {/* Visible outer handle ring */}
+      {/* Visible outer handle ring — only shown when hovered or keyboard-focused */}
       <circle
         cx={x}
         cy={y}
@@ -188,17 +227,17 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
         fill="hsl(var(--background))"
         stroke="hsl(var(--border))"
         strokeWidth={2}
-        style={{ pointerEvents: 'none' }}
+        style={{ pointerEvents: 'none', opacity: hovered ? 1 : 0, transition: 'opacity 0.15s' }}
       />
-      {/* Inner accent dot */}
+      {/* Inner accent dot — only shown when hovered or keyboard-focused */}
       <circle
         cx={x}
         cy={y}
         r={3}
         fill="hsl(var(--foreground) / 0.7)"
-        style={{ pointerEvents: 'none' }}
+        style={{ pointerEvents: 'none', opacity: hovered ? 1 : 0, transition: 'opacity 0.15s' }}
       />
-      {/* Transparent 16px hit-area — easy pointer capture without cluttering visuals.
+      {/* Transparent 16px hit-area — always present so boundary is grabbable/hoverable.
           This is the drag initiator; affordance buttons stop propagation so their
           clicks never reach this and never start a drag. */}
       <circle
@@ -212,6 +251,8 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
         tabIndex={0}
         style={{ cursor: 'ew-resize', touchAction: 'none' }}
         onPointerDown={(e) => onPointerDownHandle(e, index)}
+        onFocus={() => setHovered(true)}
+        onBlur={() => setHovered(false)}
       />
     </g>
   );

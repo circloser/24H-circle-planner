@@ -88,7 +88,16 @@ export function IconPickerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[80vh] flex flex-col gap-3">
+      <DialogContent
+        className="max-w-lg max-h-[80vh] flex flex-col gap-3"
+        style={{
+          position: 'fixed',
+          top: '5vh',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 100000,
+        }}
+      >
         <DialogHeader>
           <DialogTitle>아이콘 선택</DialogTitle>
         </DialogHeader>
