@@ -120,12 +120,12 @@ function HourTicks() {
         y={labelPos.y}
         textAnchor="middle"
         dominantBaseline="central"
-        fontSize={isCardinal ? 22 : 15}
-        fontWeight={isCardinal ? 700 : 400}
+        fontSize={isCardinal ? 30 : 20}
+        fontWeight={isCardinal ? 800 : 700}
         fill={
           isCardinal
-            ? 'hsl(var(--text-muted) / 0.9)'
-            : 'hsl(var(--text-muted) / 0.55)'
+            ? 'hsl(var(--foreground) / 0.95)'
+            : 'hsl(var(--foreground) / 0.7)'
         }
         fontFamily="Pretendard, system-ui, sans-serif"
       >
@@ -251,7 +251,6 @@ interface InteractiveLayerProps {
   slices: TimeSlice[];
   backdropD: string;
   dragGroupRef: React.RefObject<SVGGElement | null>;
-  onPointerDownHandle: (e: React.PointerEvent<SVGElement>, boundaryIndex: number) => void;
   onBackgroundClick: (e: React.MouseEvent<SVGElement>) => void;
   onSliceClick?: (id: string) => void;
   onSliceDoubleClick?: (id: string) => void;
@@ -262,7 +261,6 @@ function InteractiveLayer({
   slices,
   backdropD,
   dragGroupRef,
-  onPointerDownHandle,
   onBackgroundClick,
   onSliceClick,
   onSliceDoubleClick,
@@ -315,10 +313,9 @@ function InteractiveLayer({
         ))}
       </g>
 
-      {/* Boundary handles */}
-      {slices.length > 1 && (
-        <BoundaryHandles slices={slices} onPointerDownHandle={onPointerDownHandle} />
-      )}
+      {/* Boundary handles are rendered by CircleTimeline AFTER the label group
+          (above this layer) so the hover +/− buttons are never hidden behind
+          slice icons/labels. */}
     </>
   );
 }
@@ -374,17 +371,20 @@ export function CircleTimeline({
     ...(svgStyle.aspectRatio ? { aspectRatio: svgStyle.aspectRatio } : {}),
   };
 
-  // Hub is innerR=100 in a 1000×1000 viewBox. We convert to a percentage for
-  // the HTML overlay so it scales with the SVG's rendered size.
-  // Hub center = (500/1000, 500/1000) = (50%, 50%)
-  // Hub radius in % of the SVG width = (100/1000)*100 = 10%
-  // The clock overlay is a square of side 2*hubR% centered in the SVG.
-  const hubPct = (innerR / 1000) * 100; // 10%
+  // The viewBox is padded by VB_MARGIN on every side so the bold hour labels
+  // (00–23) outside the rim are never clipped. Content coords are unchanged
+  // (cx=cy=500); the padded box just adds breathing room.
+  const VB_MARGIN = 36;
+  const VB_SIZE = 1000 + VB_MARGIN * 2; // 1072
+
+  // Hub HTML-overlay sizing: (500,500) still maps to 50%/50% of the padded box.
+  // Hub radius as a fraction of the rendered width = innerR / VB_SIZE.
+  const hubPct = (innerR / VB_SIZE) * 100;
 
   const svgElement = (
     <svg
       ref={svgRef}
-      viewBox="0 0 1000 1000"
+      viewBox={`${-VB_MARGIN} ${-VB_MARGIN} ${VB_SIZE} ${VB_SIZE}`}
       preserveAspectRatio="xMidYMid meet"
       style={svgStyle}
       aria-label="24시간 원형 타임라인"
@@ -427,7 +427,6 @@ export function CircleTimeline({
           slices={slices}
           backdropD={backdropD}
           dragGroupRef={dragGroupRef}
-          onPointerDownHandle={onPointerDownHandle}
           onBackgroundClick={onBackgroundClick}
           onSliceClick={onSliceClick}
           onSliceDoubleClick={handleDoubleClick}
@@ -461,6 +460,12 @@ export function CircleTimeline({
           <SliceLabel key={slice.id} slice={slice} />
         ))}
       </g>
+
+      {/* Boundary handles ON TOP of labels — so hover +/− buttons aren't hidden
+          behind slice icons. Interactive mode only. */}
+      {isInteractive && slices.length > 1 && onPointerDownHandle ? (
+        <BoundaryHandles slices={slices} onPointerDownHandle={onPointerDownHandle} />
+      ) : null}
 
       {/* Now-indicator: solid red line at current time angle.
           Tagged data-export-exclude="true" — stripped from PNG/PDF clone. */}

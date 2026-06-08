@@ -260,9 +260,9 @@ describe('SliceEditor', () => {
 
   // ── Hint text ─────────────────────────────────────────────────────────────────
 
-  it('shows hint text "Enter 저장 · ESC 취소"', async () => {
+  it('no longer renders the Enter/ESC hint text', async () => {
     await renderEditor({ label: '수면' });
     const hint = document.body.querySelector('p.text-\\[10px\\]');
-    expect(hint?.textContent).toBe('Enter 저장 · ESC 취소');
+    expect(hint).toBeNull();
   });
 });

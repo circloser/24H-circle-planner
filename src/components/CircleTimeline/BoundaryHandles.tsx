@@ -47,6 +47,8 @@ function affordancePositions(angleDeg: number): {
     leftPlus: polarToCartesian(cx, cy, midR, angleDeg - PLUS_ANGLE_DELTA),
     rightPlus: polarToCartesian(cx, cy, midR, angleDeg + PLUS_ANGLE_DELTA),
     handle: polarToCartesian(cx, cy, midR, angleDeg),
+    // Boundary time pill sits outward from the handle, clear of the buttons.
+    time: polarToCartesian(cx, cy, midR + 50, angleDeg),
   };
 }
 
@@ -137,8 +139,16 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
   const canLeftPlus = ccwWidth >= 20;
   const canRightPlus = cwWidth >= 20;
 
-  const { minus: minusPos, leftPlus: leftPlusPos, rightPlus: rightPlusPos, handle } =
-    affordancePositions(angleDeg);
+  const {
+    minus: minusPos,
+    leftPlus: leftPlusPos,
+    rightPlus: rightPlusPos,
+    handle,
+    time: timePos,
+  } = affordancePositions(angleDeg);
+
+  // The boundary's time (= end of the CCW slice). "24:00" shows as "00:00".
+  const boundaryTime = slice.endTime === '24:00' ? '00:00' : slice.endTime;
 
   const handleMinus = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -192,6 +202,31 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
           />
+          {/* Boundary time pill — shows what time this division is at. */}
+          <g style={{ pointerEvents: 'none' }}>
+            <rect
+              x={timePos.x - 26}
+              y={timePos.y - 13}
+              width={52}
+              height={26}
+              rx={13}
+              fill="hsl(var(--foreground))"
+              opacity={0.92}
+            />
+            <text
+              x={timePos.x}
+              y={timePos.y}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={18}
+              fontWeight={700}
+              fill="hsl(var(--background))"
+              fontFamily="Pretendard, system-ui, sans-serif"
+              style={{ fontVariantNumeric: 'tabular-nums' }}
+            >
+              {boundaryTime}
+            </text>
+          </g>
           <AffordanceBtn
             x={minusPos.x}
             y={minusPos.y}

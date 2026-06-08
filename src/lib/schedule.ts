@@ -33,8 +33,8 @@ function cloneSlices(slices: TimeSlice[]): TimeSlice[] {
  * split slice a colour visibly different from its parent.
  */
 const SPLIT_PALETTE = [
-  '#9ca3af', '#f87171', '#fb923c', '#fbbf24', '#a3e635', '#34d399',
-  '#2dd4bf', '#38bdf8', '#60a5fa', '#a78bfa', '#f472b6', '#e879f9',
+  '#d1d5db', '#fca5a5', '#fdba74', '#fcd34d', '#bef264', '#6ee7b7',
+  '#5eead4', '#7dd3fc', '#93c5fd', '#c4b5fd', '#f9a8d4', '#f0abfc',
 ];
 
 /** Pick a palette colour distinctly different from `avoid`. */

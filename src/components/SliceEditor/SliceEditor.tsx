@@ -179,11 +179,6 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
       {/* Color swatches */}
       <ColorSwatch selectedColor={color} onPick={setColor} />
 
-      {/* Hint */}
-      <p className="text-[10px] text-muted-foreground">
-        Enter 저장 · ESC 취소
-      </p>
-
       {/* Icon picker dialog */}
       <IconPickerDialog
         open={pickerOpen}

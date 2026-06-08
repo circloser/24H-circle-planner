@@ -27,7 +27,8 @@ describe('CircleTimeline', () => {
     const { container } = render(<CircleTimeline slices={defaultSlices} />);
     const svg = container.querySelector('svg');
     expect(svg).not.toBeNull();
-    expect(svg?.getAttribute('viewBox')).toBe('0 0 1000 1000');
+    // viewBox is padded by VB_MARGIN=36 so the bold hour labels aren't clipped.
+    expect(svg?.getAttribute('viewBox')).toBe('-36 -36 1072 1072');
   });
 
   it('renders one path per slice in the slice-group', () => {
@@ -97,11 +98,10 @@ describe('CircleTimeline', () => {
       ['00', '06', '12', '18'].includes(el.textContent ?? '')
     );
     expect(cardinalTexts.length).toBe(4);
-    // Cardinal labels have font-size 22, minor labels have 15
-    // React renders fontSize prop as the SVG attribute "font-size" in the DOM
+    // Cardinal labels are bold and large (font-size 30); minor labels are 20.
     for (const el of cardinalTexts) {
       const fs = el.getAttribute('font-size') ?? el.getAttribute('fontSize');
-      expect(Number(fs)).toBe(22);
+      expect(Number(fs)).toBe(30);
     }
   });
 

@@ -1,20 +1,20 @@
 import { cn } from '@/lib/utils';
 
-// 12 palette chips — the 6 required (gray, amber, blue, violet, pink, emerald)
-// plus 6 more for variety
+// 12 soft pastel palette chips (Tailwind *-300 tones). Pastel fills keep the
+// chart calm; slice label text is darkened separately to stay readable.
 const PALETTE_COLORS: { name: string; hex: string }[] = [
-  { name: 'gray', hex: '#9ca3af' },       // gray-400
-  { name: 'red', hex: '#f87171' },        // red-400
-  { name: 'orange', hex: '#fb923c' },     // orange-400
-  { name: 'amber', hex: '#fbbf24' },      // amber-400 (required)
-  { name: 'lime', hex: '#a3e635' },       // lime-400
-  { name: 'emerald', hex: '#34d399' },    // emerald-400 (required)
-  { name: 'teal', hex: '#2dd4bf' },       // teal-400
-  { name: 'sky', hex: '#38bdf8' },        // sky-400
-  { name: 'blue', hex: '#60a5fa' },       // blue-400 (required)
-  { name: 'violet', hex: '#a78bfa' },     // violet-400 (required)
-  { name: 'pink', hex: '#f472b6' },       // pink-400 (required)
-  { name: 'fuchsia', hex: '#e879f9' },    // fuchsia-400
+  { name: 'gray', hex: '#d1d5db' },       // gray-300
+  { name: 'red', hex: '#fca5a5' },        // red-300
+  { name: 'orange', hex: '#fdba74' },     // orange-300
+  { name: 'amber', hex: '#fcd34d' },      // amber-300 (required)
+  { name: 'lime', hex: '#bef264' },       // lime-300
+  { name: 'emerald', hex: '#6ee7b7' },    // emerald-300 (required)
+  { name: 'teal', hex: '#5eead4' },       // teal-300
+  { name: 'sky', hex: '#7dd3fc' },        // sky-300
+  { name: 'blue', hex: '#93c5fd' },       // blue-300 (required)
+  { name: 'violet', hex: '#c4b5fd' },     // violet-300 (required)
+  { name: 'pink', hex: '#f9a8d4' },       // pink-300 (required)
+  { name: 'fuchsia', hex: '#f0abfc' },    // fuchsia-300
 ];
 
 export interface ColorSwatchProps {

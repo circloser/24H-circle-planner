@@ -123,7 +123,6 @@ function HubTitleEditorInner({
         placeholder="예: 평일 루틴"
         className="h-8 text-sm"
       />
-      <p className="text-[10px] text-muted-foreground">Enter 저장 · ESC 취소</p>
     </div>,
     document.body,
   );
