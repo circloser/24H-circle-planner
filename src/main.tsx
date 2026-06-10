@@ -4,6 +4,7 @@ import { Toaster } from 'sonner'
 import './index.css'
 import App from './App.tsx'
 import { ScheduleStoreProvider } from './hooks/useScheduleStore.tsx'
+import { PreferencesProvider } from './hooks/usePreferences.tsx'
 import { SpikeRunner } from './components/SpikeRunner.tsx'
 
 // Single-file build: inject base64 fonts at runtime so they work on file://.
@@ -18,6 +19,8 @@ if (import.meta.env.VITE_SINGLEFILE === 'true') {
     `;
     document.head.appendChild(style);
   });
+  // Also inline the selectable extra fonts for offline use.
+  void import('@/data/extra-fonts').then(({ injectExtraFonts }) => injectExtraFonts());
 }
 
 const isSpike = new URLSearchParams(window.location.search).get('spike') === '1';
@@ -26,19 +29,23 @@ const root = createRoot(document.getElementById('root')!);
 if (isSpike) {
   root.render(
     <StrictMode>
-      <ScheduleStoreProvider>
-        <SpikeRunner />
-        <Toaster />
-      </ScheduleStoreProvider>
+      <PreferencesProvider>
+        <ScheduleStoreProvider>
+          <SpikeRunner />
+          <Toaster />
+        </ScheduleStoreProvider>
+      </PreferencesProvider>
     </StrictMode>,
   );
 } else {
   root.render(
     <StrictMode>
-      <ScheduleStoreProvider>
-        <App />
-        <Toaster />
-      </ScheduleStoreProvider>
+      <PreferencesProvider>
+        <ScheduleStoreProvider>
+          <App />
+          <Toaster />
+        </ScheduleStoreProvider>
+      </PreferencesProvider>
     </StrictMode>,
   );
 }

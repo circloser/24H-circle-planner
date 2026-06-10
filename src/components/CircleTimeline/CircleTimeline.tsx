@@ -127,7 +127,7 @@ function HourTicks() {
             ? 'hsl(var(--foreground) / 0.95)'
             : 'hsl(var(--foreground) / 0.7)'
         }
-        fontFamily="Pretendard, system-ui, sans-serif"
+        fontFamily="inherit"
       >
         {label}
       </text>,
@@ -386,7 +386,11 @@ export function CircleTimeline({
       ref={svgRef}
       viewBox={`${-VB_MARGIN} ${-VB_MARGIN} ${VB_SIZE} ${VB_SIZE}`}
       preserveAspectRatio="xMidYMid meet"
-      style={svgStyle}
+      style={{
+        ...svgStyle,
+        // Chart text inherits the user-selected font; children use fontFamily="inherit".
+        fontFamily: 'var(--app-font-family, Pretendard), Pretendard, system-ui, sans-serif',
+      }}
       aria-label="24시간 원형 타임라인"
       role="img"
     >
@@ -513,7 +517,7 @@ export function CircleTimeline({
           fontSize={26}
           fontWeight={600}
           fill="hsl(var(--foreground) / 0.9)"
-          fontFamily="Pretendard, system-ui, sans-serif"
+          fontFamily="inherit"
           style={{ pointerEvents: 'none' }}
         >
           {truncateLabel(title, 6, 12)}

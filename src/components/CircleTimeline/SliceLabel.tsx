@@ -26,7 +26,10 @@ export function SliceLabel({ slice }: SliceLabelProps) {
   // needs more angular space to avoid overflowing the wedge band.
   const tooNarrow = widthMin < 40 && textPosition === 'inside';
 
-  const fontFamily = 'Pretendard, system-ui, sans-serif';
+  // Inherit the user-selected font from the SVG root; scale label text size by
+  // the font-scale preference (icons stay fixed-size emoji).
+  const fontFamily = 'inherit';
+  const labelFontSize = (px: number) => ({ fontSize: `calc(var(--app-font-scale, 1) * ${px}px)` });
   const truncated = truncateLabel(label);
 
   if (textPosition === 'inside') {
@@ -70,9 +73,9 @@ export function SliceLabel({ slice }: SliceLabelProps) {
             y={icon ? y + 14 : y}
             textAnchor="middle"
             dominantBaseline="central"
-            fontSize={22}
             fontFamily={fontFamily}
             fill="currentColor"
+            style={labelFontSize(22)}
           >
             {truncated}
           </text>
@@ -113,9 +116,9 @@ export function SliceLabel({ slice }: SliceLabelProps) {
           y={y}
           textAnchor="middle"
           dominantBaseline="central"
-          fontSize={20}
           fontFamily={fontFamily}
           fill="currentColor"
+          style={labelFontSize(20)}
         >
           {truncated}
         </text>

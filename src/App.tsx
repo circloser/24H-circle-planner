@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './index.css';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,8 @@ import { HubTitleEditor } from '@/components/HubTitleEditor/HubTitleEditor';
 import { SlotSheet } from '@/components/SlotSheet/SlotSheet';
 import { SaveAsDialog } from '@/components/SaveAsDialog/SaveAsDialog';
 import { ExportDialog } from '@/components/ExportPanel/ExportDialog';
+import { SettingsDialog } from '@/components/Settings/SettingsDialog';
+import { useTranslation } from '@/hooks/usePreferences';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useSliceInteraction } from '@/hooks/useSliceInteraction';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -56,6 +58,8 @@ function App() {
   const [exportOpen, setExportOpen] = useState(false);
   const [editingSliceId, setEditingSliceId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const { t } = useTranslation();
 
   /**
    * Called when user confirms loading a slot from SlotSheet.
@@ -100,29 +104,31 @@ function App() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost">
-                  내 시간표 <ChevronDown className="ml-1 h-4 w-4" />
+                  {t('header.mySchedules')} <ChevronDown className="ml-1 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setSlotSheetOpen(true)}>
-                  내 시간표 보기
+                  {t('header.viewSlots')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSaveAsOpen(true)}>
-                  다른 이름으로 저장…
+                  {t('header.saveAs')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button
-              variant="default"
-              onClick={() => setPresetOpen(true)}
-            >
-              프리셋
+            <Button variant="default" onClick={() => setPresetOpen(true)}>
+              {t('header.presets')}
+            </Button>
+            <Button variant="outline" onClick={() => setExportOpen(true)}>
+              {t('header.export')}
             </Button>
             <Button
-              variant="outline"
-              onClick={() => setExportOpen(true)}
+              variant="ghost"
+              size="icon"
+              aria-label={t('header.settings')}
+              onClick={() => setSettingsOpen(true)}
             >
-              내보내기
+              <SettingsIcon className="h-4 w-4" />
             </Button>
             <ThemeToggle />
           </div>
@@ -179,6 +185,9 @@ function App() {
         currentName={present.name}
         onClose={() => setEditingTitle(false)}
       />
+
+      {/* T19: Settings dialog */}
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
 
       {/* T9: Export dialog */}
       <ExportDialog

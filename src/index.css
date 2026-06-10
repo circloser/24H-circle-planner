@@ -24,8 +24,21 @@
   src: url('/fonts/pretendard-bold.woff2') format('woff2');
 }
 
+/* ─── Bundled selectable fonts (Korean-capable) ──────────────────────────── */
+/* Served from public/fonts/ in the web build. The offline single-file build
+   injects these as base64 at runtime (see src/data/extra-fonts.ts + main.tsx). */
+@font-face { font-family: 'Noto Sans KR'; font-weight: 400; font-display: swap; src: url('/fonts/noto-sans-kr-400.woff2') format('woff2'); }
+@font-face { font-family: 'Noto Sans KR'; font-weight: 700; font-display: swap; src: url('/fonts/noto-sans-kr-700.woff2') format('woff2'); }
+@font-face { font-family: 'Nanum Myeongjo'; font-weight: 400; font-display: swap; src: url('/fonts/nanum-myeongjo-400.woff2') format('woff2'); }
+@font-face { font-family: 'Nanum Myeongjo'; font-weight: 700; font-display: swap; src: url('/fonts/nanum-myeongjo-700.woff2') format('woff2'); }
+@font-face { font-family: 'Jua'; font-weight: 400; font-display: swap; src: url('/fonts/jua-400.woff2') format('woff2'); }
+
 /* ─── Color tokens (light mode defaults) ─────────────────────────────────── */
 :root {
+  /* App-wide font controls, driven by the preferences store. */
+  --app-font-family: 'Pretendard';
+  --app-font-scale: 1;
+
   /* HSL triplets — no hsl() wrapper so they can be used with opacity:
      background: hsl(var(--background) / 0.5) */
   --background:    220 20% 97%;
@@ -91,7 +104,32 @@ body {
   margin: 0;
   background: hsl(var(--background));
   color: hsl(var(--text-primary));
-  font-family: 'Pretendard', 'Pretendard Variable', system-ui, sans-serif;
+  font-family: var(--app-font-family, 'Pretendard'), 'Pretendard', 'Pretendard Variable', system-ui, sans-serif;
+}
+
+/* ─── Selectable background patterns (data-bg on <html>) ──────────────────── */
+[data-bg='dots'] body {
+  background-image: radial-gradient(hsl(var(--text-muted) / 0.18) 1.5px, transparent 1.5px);
+  background-size: 18px 18px;
+}
+[data-bg='grid'] body {
+  background-image:
+    linear-gradient(hsl(var(--text-muted) / 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--text-muted) / 0.12) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+[data-bg='diagonal'] body {
+  background-image: repeating-linear-gradient(45deg, hsl(var(--text-muted) / 0.10) 0, hsl(var(--text-muted) / 0.10) 1px, transparent 1px, transparent 12px);
+}
+[data-bg='gradient'] body {
+  background-image: linear-gradient(160deg, hsl(var(--accent) / 0.10), transparent 55%), linear-gradient(20deg, hsl(330 80% 70% / 0.10), transparent 55%);
+}
+[data-bg='paper'] body {
+  background-image:
+    radial-gradient(hsl(var(--text-muted) / 0.07) 1px, transparent 1px),
+    radial-gradient(hsl(var(--text-muted) / 0.07) 1px, transparent 1px);
+  background-size: 14px 14px;
+  background-position: 0 0, 7px 7px;
 }
 
 /* ─── Accessibility: visible focus rings ────────────────────────────────────── */

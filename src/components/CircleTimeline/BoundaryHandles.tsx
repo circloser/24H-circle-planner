@@ -101,7 +101,7 @@ function AffordanceBtn({ x, y, label, ariaLabel, disabled, onClick }: Affordance
         fontSize={16}
         fontWeight={700}
         fill="hsl(var(--primary-foreground))"
-        fontFamily="Pretendard, system-ui, sans-serif"
+        fontFamily="inherit"
         style={{ pointerEvents: 'none', userSelect: 'none' }}
       >
         {label}
@@ -221,7 +221,7 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
               fontSize={18}
               fontWeight={700}
               fill="hsl(var(--background))"
-              fontFamily="Pretendard, system-ui, sans-serif"
+              fontFamily="inherit"
               style={{ fontVariantNumeric: 'tabular-nums' }}
             >
               {boundaryTime}
