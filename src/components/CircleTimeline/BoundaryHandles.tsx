@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { TimeSlice } from '@/types/time-slice';
 import { boundaryHandlePosition, RING, polarToCartesian } from '@/lib/svg-geometry';
 import { sliceWidthMinutes, minutesToHhmm, hhmmToMinutes } from '@/lib/time-utils';
-import { useStoreDispatch } from '@/hooks/useScheduleStore';
+import { useStoreDispatch, useStoreSelector } from '@/hooks/useScheduleStore';
 
 interface BoundaryHandlesProps {
   slices: TimeSlice[];
@@ -39,6 +39,7 @@ function affordancePositions(angleDeg: number): {
   leftPlus: { x: number; y: number };
   rightPlus: { x: number; y: number };
   handle: { x: number; y: number };
+  time: { x: number; y: number };
 } {
   const { innerR, outerR, cx, cy } = RING;
   const midR = (innerR + outerR) / 2;
@@ -110,6 +111,46 @@ function AffordanceBtn({ x, y, label, ariaLabel, disabled, onClick }: Affordance
   );
 }
 
+// ─── Boundary time pill ───────────────────────────────────────────────────────
+
+/**
+ * The little rounded label showing the boundary's HH:mm. Stable data-attrs let
+ * the drag engine reposition + relabel it imperatively during a drag (no React
+ * re-render — see moveBoundaryHandleImperative in useSliceInteraction.ts).
+ * Rendered inside the hover affordance group (which carries data-export-exclude)
+ * OR standalone while this boundary is being dragged — never both at once.
+ */
+function TimePill({ pos, label }: { pos: { x: number; y: number }; label: string }) {
+  return (
+    <g className="boundary-time-pill" style={{ pointerEvents: 'none' }}>
+      <rect
+        data-time-pill-rect="1"
+        x={pos.x - 26}
+        y={pos.y - 13}
+        width={52}
+        height={26}
+        rx={13}
+        fill="hsl(var(--foreground))"
+        opacity={0.92}
+      />
+      <text
+        data-time-pill-text="1"
+        x={pos.x}
+        y={pos.y}
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontSize={18}
+        fontWeight={700}
+        fill="hsl(var(--background))"
+        fontFamily="inherit"
+        style={{ fontVariantNumeric: 'tabular-nums' }}
+      >
+        {label}
+      </text>
+    </g>
+  );
+}
+
 // ─── Single boundary handle with hover affordances ────────────────────────────
 
 interface BoundaryHandleProps {
@@ -122,6 +163,18 @@ interface BoundaryHandleProps {
 function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryHandleProps) {
   const dispatch = useStoreDispatch();
   const [hovered, setHovered] = useState(false);
+
+  // Drag state — changes only at drag start/end (not per-move), so subscribing
+  // here does not violate the C10 per-move isolation contract.
+  const isDraggingBoundary = useStoreSelector((s) => s.isDraggingBoundary);
+  const draggedIndex = useStoreSelector((s) => (s.dragRef ? s.dragRef.boundaryIndex : -1));
+  const isThisDragged = isDraggingBoundary && draggedIndex === index;
+
+  // Affordances (+/− buttons) are a hover-only idle affordance — suppressed
+  // during any drag. The handle dot + time pill stay visible while dragging so
+  // the division is legible as it moves.
+  const showAffordances = hovered && !isDraggingBoundary;
+  const dotVisible = hovered || isThisDragged;
 
   const { x, y, angleDeg } = boundaryHandlePosition(slice, 'end');
   const len = slices.length;
@@ -182,7 +235,7 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
           Tagged data-export-exclude so the export clone strips them.
           The wrapping <g> above covers both handle and affordance buttons,
           so moving from handle to button does NOT fire pointerleave — no hover gap. */}
-      {hovered && (
+      {showAffordances && (
         <g
           className="boundary-affordances"
           data-export-exclude="true"
@@ -203,30 +256,7 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
             onClick={(e) => e.stopPropagation()}
           />
           {/* Boundary time pill — shows what time this division is at. */}
-          <g style={{ pointerEvents: 'none' }}>
-            <rect
-              x={timePos.x - 26}
-              y={timePos.y - 13}
-              width={52}
-              height={26}
-              rx={13}
-              fill="hsl(var(--foreground))"
-              opacity={0.92}
-            />
-            <text
-              x={timePos.x}
-              y={timePos.y}
-              textAnchor="middle"
-              dominantBaseline="central"
-              fontSize={18}
-              fontWeight={700}
-              fill="hsl(var(--background))"
-              fontFamily="inherit"
-              style={{ fontVariantNumeric: 'tabular-nums' }}
-            >
-              {boundaryTime}
-            </text>
-          </g>
+          <TimePill pos={timePos} label={boundaryTime} />
           <AffordanceBtn
             x={minusPos.x}
             y={minusPos.y}
@@ -254,6 +284,11 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
         </g>
       )}
 
+      {/* While THIS boundary is being dragged, show the time pill standalone
+          (affordances are hidden above). The drag engine repositions + relabels
+          it imperatively each pointermove so it tracks the cursor exactly. */}
+      {isThisDragged && <TimePill pos={timePos} label={boundaryTime} />}
+
       {/* Visible outer handle ring — only shown when hovered or keyboard-focused */}
       <circle
         cx={x}
@@ -262,7 +297,7 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
         fill="hsl(var(--background))"
         stroke="hsl(var(--border))"
         strokeWidth={2}
-        style={{ pointerEvents: 'none', opacity: hovered ? 1 : 0, transition: 'opacity 0.15s' }}
+        style={{ pointerEvents: 'none', opacity: dotVisible ? 1 : 0, transition: 'opacity 0.15s' }}
       />
       {/* Inner accent dot — only shown when hovered or keyboard-focused */}
       <circle
@@ -270,7 +305,7 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
         cy={y}
         r={3}
         fill="hsl(var(--foreground) / 0.7)"
-        style={{ pointerEvents: 'none', opacity: hovered ? 1 : 0, transition: 'opacity 0.15s' }}
+        style={{ pointerEvents: 'none', opacity: dotVisible ? 1 : 0, transition: 'opacity 0.15s' }}
       />
       {/* Transparent 16px hit-area — always present so boundary is grabbable/hoverable.
           This is the drag initiator; affordance buttons stop propagation so their

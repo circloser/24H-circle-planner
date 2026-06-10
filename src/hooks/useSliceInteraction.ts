@@ -95,6 +95,25 @@ function moveBoundaryHandleImperative(
     circle.setAttribute('cx', String(x));
     circle.setAttribute('cy', String(y));
   });
+
+  // Boundary time pill — reposition + relabel to the live cursor time so it
+  // tracks the division exactly during the drag (no React re-render). Queried
+  // from the svg root with a compound selector so it resolves to null gracefully
+  // when the pill isn't mounted (e.g. unit-test mocks).
+  const pillRect = svg.querySelector<SVGRectElement>(
+    `[data-boundary-index="${boundaryIndex}"] [data-time-pill-rect]`,
+  );
+  const pillText = svg.querySelector<SVGTextElement>(
+    `[data-boundary-index="${boundaryIndex}"] [data-time-pill-text]`,
+  );
+  if (pillRect && pillText) {
+    const t = polarToCartesian(cx, cy, midR + 50, angleDeg);
+    pillRect.setAttribute('x', String(t.x - 26));
+    pillRect.setAttribute('y', String(t.y - 13));
+    pillText.setAttribute('x', String(t.x));
+    pillText.setAttribute('y', String(t.y));
+    pillText.textContent = hhmm === '24:00' ? '00:00' : hhmm;
+  }
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
