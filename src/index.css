@@ -32,6 +32,9 @@
 @font-face { font-family: 'Nanum Myeongjo'; font-weight: 400; font-display: swap; src: url('/fonts/nanum-myeongjo-400.woff2') format('woff2'); }
 @font-face { font-family: 'Nanum Myeongjo'; font-weight: 700; font-display: swap; src: url('/fonts/nanum-myeongjo-700.woff2') format('woff2'); }
 @font-face { font-family: 'Jua'; font-weight: 400; font-display: swap; src: url('/fonts/jua-400.woff2') format('woff2'); }
+@font-face { font-family: 'Gowun Dodum'; font-weight: 400; font-display: swap; src: url('/fonts/gowun-dodum-400.woff2') format('woff2'); }
+@font-face { font-family: 'Black Han Sans'; font-weight: 400; font-display: swap; src: url('/fonts/black-han-sans-400.woff2') format('woff2'); }
+@font-face { font-family: 'Gaegu'; font-weight: 400; font-display: swap; src: url('/fonts/gaegu-400.woff2') format('woff2'); }
 
 /* ─── Color tokens (light mode defaults) ─────────────────────────────────── */
 :root {
@@ -102,12 +105,23 @@
 
 body {
   margin: 0;
-  background: hsl(var(--background));
+  /* background-color (not the `background` shorthand) so pattern/image rules
+     below can layer a background-image without being reset. --app-bg-color is
+     set only in solid-color mode (see applyPrefs). */
+  background-color: var(--app-bg-color, hsl(var(--background)));
   color: hsl(var(--text-primary));
   font-family: var(--app-font-family, 'Pretendard'), 'Pretendard', 'Pretendard Variable', system-ui, sans-serif;
 }
 
-/* ─── Selectable background patterns (data-bg on <html>) ──────────────────── */
+/* ─── Selectable backgrounds (data-bg on <html>) ──────────────────────────── */
+/* Uploaded image — covers the viewport, fixed so it doesn't scroll. */
+[data-bg='image'] body {
+  background-image: var(--app-bg-image, none);
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
 [data-bg='dots'] body {
   background-image: radial-gradient(hsl(var(--text-muted) / 0.18) 1.5px, transparent 1.5px);
   background-size: 18px 18px;
@@ -130,6 +144,23 @@ body {
     radial-gradient(hsl(var(--text-muted) / 0.07) 1px, transparent 1px);
   background-size: 14px 14px;
   background-position: 0 0, 7px 7px;
+}
+[data-bg='checker'] body {
+  background-image:
+    linear-gradient(45deg, hsl(var(--text-muted) / 0.08) 25%, transparent 25%, transparent 75%, hsl(var(--text-muted) / 0.08) 75%),
+    linear-gradient(45deg, hsl(var(--text-muted) / 0.08) 25%, transparent 25%, transparent 75%, hsl(var(--text-muted) / 0.08) 75%);
+  background-size: 28px 28px;
+  background-position: 0 0, 14px 14px;
+}
+[data-bg='waves'] body {
+  background-image:
+    radial-gradient(circle at 100% 50%, transparent 20%, hsl(var(--text-muted) / 0.07) 21%, hsl(var(--text-muted) / 0.07) 34%, transparent 35%),
+    radial-gradient(circle at 0% 50%, transparent 20%, hsl(var(--text-muted) / 0.07) 21%, hsl(var(--text-muted) / 0.07) 34%, transparent 35%);
+  background-size: 50px 50px;
+}
+[data-bg='memo'] body {
+  background-image: linear-gradient(hsl(var(--text-muted) / 0.13) 1px, transparent 1px);
+  background-size: 100% 30px;
 }
 
 /* ─── Accessibility: visible focus rings ────────────────────────────────────── */

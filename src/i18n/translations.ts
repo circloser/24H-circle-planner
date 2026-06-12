@@ -39,6 +39,14 @@ export type TKey =
   | 'bg.diagonal'
   | 'bg.gradient'
   | 'bg.paper'
+  | 'bg.checker'
+  | 'bg.waves'
+  | 'bg.memo'
+  | 'settings.bgPattern'
+  | 'settings.bgColor'
+  | 'settings.bgImage'
+  | 'settings.uploadImage'
+  | 'settings.removeImage'
   | 'theme.light'
   | 'theme.dark'
   | 'theme.system'
@@ -70,6 +78,14 @@ const ko: Dict = {
   'bg.diagonal': '대각선',
   'bg.gradient': '그라데이션',
   'bg.paper': '종이',
+  'bg.checker': '체크',
+  'bg.waves': '물결',
+  'bg.memo': '메모지',
+  'settings.bgPattern': '패턴',
+  'settings.bgColor': '단색',
+  'settings.bgImage': '이미지',
+  'settings.uploadImage': '이미지 업로드',
+  'settings.removeImage': '제거',
   'theme.light': '라이트',
   'theme.dark': '다크',
   'theme.system': '시스템',
@@ -100,6 +116,14 @@ const en: Dict = {
   'bg.diagonal': 'Diagonal',
   'bg.gradient': 'Gradient',
   'bg.paper': 'Paper',
+  'bg.checker': 'Checker',
+  'bg.waves': 'Waves',
+  'bg.memo': 'Memo',
+  'settings.bgPattern': 'Pattern',
+  'settings.bgColor': 'Solid color',
+  'settings.bgImage': 'Image',
+  'settings.uploadImage': 'Upload image',
+  'settings.removeImage': 'Remove',
   'theme.light': 'Light',
   'theme.dark': 'Dark',
   'theme.system': 'System',
