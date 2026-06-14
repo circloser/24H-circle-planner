@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CircleTimeline } from '@/components/CircleTimeline/CircleTimeline';
 import { loadSlots, deleteSlot, renameSlot, SLOTS_CAPACITY } from '@/lib/slots';
+import { useTranslation } from '@/hooks/usePreferences';
 import type { Slot } from '@/types/slot';
 
 interface SlotSheetProps {
@@ -35,6 +36,7 @@ interface SlotRowProps {
 }
 
 function SlotRow({ slot, onLoad, onDelete, onRename }: SlotRowProps) {
+  const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(slot.name);
   const [confirmLoad, setConfirmLoad] = useState(false);
@@ -97,14 +99,14 @@ function SlotRow({ slot, onLoad, onDelete, onRename }: SlotRowProps) {
                 onBlur={commitRename}
                 onKeyDown={handleKeyDown}
                 className="h-7 text-sm"
-                aria-label="슬롯 이름 편집"
+                aria-label={t('slot.renameEdit')}
               />
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7"
                 onClick={commitRename}
-                aria-label="이름 저장"
+                aria-label={t('slot.renameSave')}
               >
                 <Check className="h-3 w-3" />
               </Button>
@@ -116,7 +118,7 @@ function SlotRow({ slot, onLoad, onDelete, onRename }: SlotRowProps) {
                   setDraftName(slot.name);
                   setEditing(false);
                 }}
-                aria-label="이름 편집 취소"
+                aria-label={t('slot.renameCancel')}
               >
                 <X className="h-3 w-3" />
               </Button>
@@ -132,7 +134,7 @@ function SlotRow({ slot, onLoad, onDelete, onRename }: SlotRowProps) {
                   setDraftName(slot.name);
                   setEditing(true);
                 }}
-                aria-label="이름 변경"
+                aria-label={t('slot.rename')}
               >
                 <Pencil className="h-3 w-3" />
               </Button>
@@ -149,7 +151,7 @@ function SlotRow({ slot, onLoad, onDelete, onRename }: SlotRowProps) {
             className="text-xs"
             onClick={() => setConfirmLoad(true)}
           >
-            불러오기
+            {t('slot.load')}
           </Button>
           <Button
             variant="ghost"
@@ -157,7 +159,7 @@ function SlotRow({ slot, onLoad, onDelete, onRename }: SlotRowProps) {
             className="text-xs text-destructive hover:text-destructive"
             onClick={() => setConfirmDelete(true)}
           >
-            삭제
+            {t('slot.delete')}
           </Button>
         </div>
       </div>
@@ -166,14 +168,14 @@ function SlotRow({ slot, onLoad, onDelete, onRename }: SlotRowProps) {
       <Dialog open={confirmLoad} onOpenChange={setConfirmLoad}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>시간표 불러오기</DialogTitle>
+            <DialogTitle>{t('slot.loadTitle')}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            기존 시간표가 덮어쓰여집니다. &apos;{slot.name}&apos;을(를) 불러올까요?
+            {t('slot.loadBody', { name: slot.name })}
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmLoad(false)}>
-              취소
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={() => {
@@ -181,7 +183,7 @@ function SlotRow({ slot, onLoad, onDelete, onRename }: SlotRowProps) {
                 onLoad(slot);
               }}
             >
-              불러오기
+              {t('slot.load')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -191,14 +193,14 @@ function SlotRow({ slot, onLoad, onDelete, onRename }: SlotRowProps) {
       <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>슬롯 삭제</DialogTitle>
+            <DialogTitle>{t('slot.deleteTitle')}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            &apos;{slot.name}&apos;을(를) 삭제할까요?
+            {t('slot.deleteBody', { name: slot.name })}
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmDelete(false)}>
-              취소
+              {t('common.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -207,7 +209,7 @@ function SlotRow({ slot, onLoad, onDelete, onRename }: SlotRowProps) {
                 onDelete(slot.id);
               }}
             >
-              삭제
+              {t('slot.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -225,6 +227,7 @@ interface SlotSheetBodyProps {
 }
 
 function SlotSheetBody({ onOpenChange, onLoad }: SlotSheetBodyProps) {
+  const { t } = useTranslation();
   // Initialize from localStorage at mount (lazy initializer — no useEffect needed)
   const [slots, setSlots] = useState<Record<string, Slot>>(loadSlots);
 
@@ -251,7 +254,7 @@ function SlotSheetBody({ onOpenChange, onLoad }: SlotSheetBodyProps) {
     <>
       <SheetHeader className="flex-shrink-0">
         <SheetTitle>
-          내 시간표{' '}
+          {t('header.mySchedules')}{' '}
           <span className="text-sm font-normal text-muted-foreground">
             {count}/{SLOTS_CAPACITY}
           </span>
@@ -260,7 +263,7 @@ function SlotSheetBody({ onOpenChange, onLoad }: SlotSheetBodyProps) {
 
       {atCapacity && (
         <div className="flex-shrink-0 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md px-3 py-2">
-          최대 10개 슬롯에 도달했습니다. 새 슬롯을 저장하려면 기존 슬롯을 삭제하세요.
+          {t('slot.atCapacity')}
         </div>
       )}
 
@@ -268,8 +271,9 @@ function SlotSheetBody({ onOpenChange, onLoad }: SlotSheetBodyProps) {
         {slotList.length === 0 ? (
           <div className="flex items-center justify-center h-full py-12 text-center">
             <p className="text-sm text-muted-foreground px-4">
-              저장된 시간표가 없습니다.{' '}
-              <span className="font-medium">다른 이름으로 저장</span>으로 추가해보세요.
+              {t('slot.emptyPre')}
+              <span className="font-medium">{t('slot.saveAsInline')}</span>
+              {t('slot.emptyPost')}
             </p>
           </div>
         ) : (

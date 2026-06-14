@@ -10,6 +10,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { slug, formatDateYYYYMMDD } from '@/lib/export/_internal';
+import { useTranslation } from '@/hooks/usePreferences';
 import type { Schedule } from '@/types/schedule';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -45,13 +46,14 @@ function PngTab({
   svgRef: React.RefObject<SVGSVGElement | null>;
   scheduleName: string;
 }) {
+  const { t } = useTranslation();
   const [size, setSize] = useState<PngSize>(2160);
   const [transparent, setTransparent] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleExport() {
     if (!svgRef.current) {
-      toast.error('SVG 요소를 찾을 수 없습니다');
+      toast.error(t('export.svgNotFound'));
       return;
     }
     setLoading(true);
@@ -60,9 +62,9 @@ function PngTab({
       const blob = await exportPng(svgRef.current, { size, transparent });
       const filename = `24h-${slug(scheduleName)}-${formatDateYYYYMMDD()}.png`;
       triggerDownload(blob, filename);
-      toast.success('PNG 내보내기 완료');
+      toast.success(t('export.pngDone'));
     } catch (err) {
-      toast.error(`PNG 내보내기 실패: ${err instanceof Error ? err.message : String(err)}`);
+      toast.error(`${t('export.pngFail')}: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setLoading(false);
     }
@@ -72,7 +74,7 @@ function PngTab({
     <div className="flex flex-col gap-4 pt-2">
       {/* Resolution selector */}
       <div>
-        <p className="text-sm font-medium mb-2">해상도</p>
+        <p className="text-sm font-medium mb-2">{t('export.resolution')}</p>
         <div className="flex gap-2">
           {([1080, 2160, 3840] as PngSize[]).map((s) => (
             <button
@@ -108,12 +110,12 @@ function PngTab({
             }`}
           />
         </button>
-        <span className="text-sm">투명 배경</span>
+        <span className="text-sm">{t('export.transparentBg')}</span>
       </div>
 
       <Button onClick={handleExport} disabled={loading} className="w-full">
         {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-        PNG 내보내기
+        {t('export.png')}
       </Button>
     </div>
   );
@@ -128,11 +130,12 @@ function PdfTab({
   svgRef: React.RefObject<SVGSVGElement | null>;
   scheduleName: string;
 }) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
   async function handleExport() {
     if (!svgRef.current) {
-      toast.error('SVG 요소를 찾을 수 없습니다');
+      toast.error(t('export.svgNotFound'));
       return;
     }
     setLoading(true);
@@ -141,9 +144,9 @@ function PdfTab({
       const blob = await exportPdf(svgRef.current, { scheduleName });
       const filename = `24h-${slug(scheduleName)}-${formatDateYYYYMMDD()}.pdf`;
       triggerDownload(blob, filename);
-      toast.success('PDF 내보내기 완료');
+      toast.success(t('export.pdfDone'));
     } catch (err) {
-      toast.error(`PDF 내보내기 실패: ${err instanceof Error ? err.message : String(err)}`);
+      toast.error(`${t('export.pdfFail')}: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setLoading(false);
     }
@@ -151,10 +154,10 @@ function PdfTab({
 
   return (
     <div className="flex flex-col gap-4 pt-2">
-      <p className="text-sm text-muted-foreground">A4 세로 300 DPI (210×297mm)</p>
+      <p className="text-sm text-muted-foreground">{t('export.pdfNote')}</p>
       <Button onClick={handleExport} disabled={loading} className="w-full">
         {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-        PDF 내보내기
+        {t('export.pdf')}
       </Button>
     </div>
   );
@@ -173,6 +176,7 @@ function JsonTab({
   onImport: (s: Schedule) => void;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const [exportLoading, setExportLoading] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const [pendingSchedule, setPendingSchedule] = useState<Schedule | null>(null);
@@ -186,9 +190,9 @@ function JsonTab({
       const blob = exportScheduleAsJson(schedule);
       const filename = `24h-${slug(scheduleName)}-${formatDateYYYYMMDD()}.json`;
       triggerDownload(blob, filename);
-      toast.success('JSON 내보내기 완료');
+      toast.success(t('export.jsonDone'));
     } catch (err) {
-      toast.error(`JSON 내보내기 실패: ${err instanceof Error ? err.message : String(err)}`);
+      toast.error(`${t('export.jsonFail')}: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setExportLoading(false);
     }
@@ -204,7 +208,7 @@ function JsonTab({
       setPendingSchedule(imported);
       setConfirmOpen(true);
     } catch (err) {
-      toast.error(`JSON 가져오기 실패: ${err instanceof Error ? err.message : String(err)}`);
+      toast.error(`${t('export.jsonImportFail')}: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setImportLoading(false);
       // Reset the file input so the same file can be re-imported
@@ -215,7 +219,7 @@ function JsonTab({
   function handleConfirmImport() {
     if (pendingSchedule) {
       onImport(pendingSchedule);
-      toast.success('시간표를 가져왔습니다');
+      toast.success(t('export.imported'));
       setConfirmOpen(false);
       setPendingSchedule(null);
       onOpenChange(false);
@@ -226,7 +230,7 @@ function JsonTab({
     <div className="flex flex-col gap-4 pt-2">
       <Button onClick={handleExport} disabled={exportLoading} className="w-full">
         {exportLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-        JSON 내보내기
+        {t('export.jsonExport')}
       </Button>
 
       <div>
@@ -245,7 +249,7 @@ function JsonTab({
           onClick={() => fileInputRef.current?.click()}
         >
           {importLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-          JSON 가져오기
+          {t('export.jsonImport')}
         </Button>
       </div>
 
@@ -253,9 +257,9 @@ function JsonTab({
       {confirmOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
           <div role="dialog" className="bg-background border rounded-lg p-6 max-w-sm w-full mx-4 shadow-lg">
-            <h3 className="text-base font-semibold mb-2">시간표 가져오기</h3>
+            <h3 className="text-base font-semibold mb-2">{t('export.importTitle')}</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              기존 시간표가 덮어쓰여집니다. 가져올까요?
+              {t('export.importBody')}
             </p>
             <div className="flex gap-2 justify-end">
               <Button
@@ -265,9 +269,9 @@ function JsonTab({
                   setPendingSchedule(null);
                 }}
               >
-                취소
+                {t('common.cancel')}
               </Button>
-              <Button onClick={handleConfirmImport}>가져오기</Button>
+              <Button onClick={handleConfirmImport}>{t('export.importConfirm')}</Button>
             </div>
           </div>
         </div>
@@ -286,11 +290,12 @@ export function ExportDialog({
   schedule,
   onImport,
 }: ExportDialogProps) {
+  const { t } = useTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>내보내기</DialogTitle>
+          <DialogTitle>{t('header.export')}</DialogTitle>
         </DialogHeader>
 
         <Tabs defaultValue="png">

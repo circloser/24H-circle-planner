@@ -163,6 +163,34 @@ body {
   background-size: 100% 30px;
 }
 
+/* ─── Settings option chips / swatches ──────────────────────────────────────── */
+/* Tailwind's semantic color utilities (bg-primary, border-input, bg-muted…) are
+   NOT generated in this v4 setup (no @theme mapping), so selection highlight was
+   invisible. Style it with raw CSS vars, which always resolve. Selected state is
+   driven by aria-pressed (buttons) / data-selected (swatches). */
+.opt-chip {
+  border: 1px solid hsl(var(--border));
+  background-color: transparent;
+  color: inherit;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+.opt-chip:hover {
+  background-color: hsl(var(--muted));
+}
+.opt-chip[aria-pressed='true'] {
+  background-color: hsl(var(--primary));
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+.opt-pick {
+  border: 1px solid hsl(var(--border));
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.opt-pick[data-selected='true'] {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.4);
+}
+
 /* ─── Accessibility: visible focus rings ────────────────────────────────────── */
 *:focus-visible {
   outline: 2px solid hsl(var(--accent));

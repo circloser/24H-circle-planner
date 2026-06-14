@@ -73,7 +73,7 @@ function App() {
       slices: slot.schedule.slices.map((s) => ({ ...s, id: uuid() })),
     };
     dispatch({ type: 'LOAD_SCHEDULE', schedule: clonedSchedule });
-    toast.success(`${slot.name}을(를) 불러왔습니다`);
+    toast.success(t('app.loaded', { name: slot.name }));
   }
 
   // Empty state: single unlabelled slice with no preset loaded

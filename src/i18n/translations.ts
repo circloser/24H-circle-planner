@@ -1,7 +1,10 @@
 /**
  * Lightweight i18n dictionary. Korean (ko) and English (en) are fully
- * translated for the app chrome; ja/zh/fr/es/ru cover the most visible strings
- * and fall back to English (then the key) for anything missing.
+ * translated; ja/zh/fr/es/ru cover the most visible chrome and fall back to
+ * English (then the key) for anything missing.
+ *
+ * Korean values MUST stay byte-identical to the strings the component tests
+ * assert (tests render without a PreferencesProvider, so t() resolves to ko).
  */
 
 export const LANGUAGES = [
@@ -30,6 +33,11 @@ export type TKey =
   | 'settings.fontSize'
   | 'settings.background'
   | 'settings.close'
+  | 'settings.bgPattern'
+  | 'settings.bgColor'
+  | 'settings.bgImage'
+  | 'settings.uploadImage'
+  | 'settings.removeImage'
   | 'size.small'
   | 'size.medium'
   | 'size.large'
@@ -42,16 +50,64 @@ export type TKey =
   | 'bg.checker'
   | 'bg.waves'
   | 'bg.memo'
-  | 'settings.bgPattern'
-  | 'settings.bgColor'
-  | 'settings.bgImage'
-  | 'settings.uploadImage'
-  | 'settings.removeImage'
   | 'theme.light'
   | 'theme.dark'
   | 'theme.system'
+  | 'theme.lightMode'
+  | 'theme.darkMode'
+  | 'theme.systemMode'
   | 'common.save'
-  | 'common.cancel';
+  | 'common.cancel'
+  | 'preset.galleryTitle'
+  | 'preset.galleryDesc'
+  | 'preset.applyTitle'
+  | 'preset.applyBody'
+  | 'preset.applyConfirm'
+  | 'export.resolution'
+  | 'export.transparentBg'
+  | 'export.png'
+  | 'export.pdf'
+  | 'export.pdfNote'
+  | 'export.jsonExport'
+  | 'export.jsonImport'
+  | 'export.importTitle'
+  | 'export.importBody'
+  | 'export.importConfirm'
+  | 'export.svgNotFound'
+  | 'export.pngDone'
+  | 'export.pngFail'
+  | 'export.pdfDone'
+  | 'export.pdfFail'
+  | 'export.jsonDone'
+  | 'export.jsonFail'
+  | 'export.jsonImportFail'
+  | 'export.imported'
+  | 'slot.atCapacity'
+  | 'slot.emptyPre'
+  | 'slot.saveAsInline'
+  | 'slot.emptyPost'
+  | 'slot.load'
+  | 'slot.delete'
+  | 'slot.rename'
+  | 'slot.renameEdit'
+  | 'slot.renameSave'
+  | 'slot.renameCancel'
+  | 'slot.loadTitle'
+  | 'slot.loadBody'
+  | 'slot.deleteTitle'
+  | 'slot.deleteBody'
+  | 'saveAs.title'
+  | 'saveAs.placeholder'
+  | 'saveAs.nameLabel'
+  | 'saveAs.capacity'
+  | 'saveAs.saved'
+  | 'saveAs.copySuffix'
+  | 'hub.editTitle'
+  | 'hub.titleLabel'
+  | 'hub.placeholder'
+  | 'circle.emptyHint'
+  | 'circle.ariaTimeline'
+  | 'app.loaded';
 
 type Dict = Record<TKey, string>;
 
@@ -69,6 +125,11 @@ const ko: Dict = {
   'settings.fontSize': '글자 크기',
   'settings.background': '배경',
   'settings.close': '닫기',
+  'settings.bgPattern': '패턴',
+  'settings.bgColor': '단색',
+  'settings.bgImage': '이미지',
+  'settings.uploadImage': '이미지 업로드',
+  'settings.removeImage': '제거',
   'size.small': '작게',
   'size.medium': '보통',
   'size.large': '크게',
@@ -81,16 +142,64 @@ const ko: Dict = {
   'bg.checker': '체크',
   'bg.waves': '물결',
   'bg.memo': '메모지',
-  'settings.bgPattern': '패턴',
-  'settings.bgColor': '단색',
-  'settings.bgImage': '이미지',
-  'settings.uploadImage': '이미지 업로드',
-  'settings.removeImage': '제거',
   'theme.light': '라이트',
   'theme.dark': '다크',
   'theme.system': '시스템',
+  'theme.lightMode': '라이트 모드',
+  'theme.darkMode': '다크 모드',
+  'theme.systemMode': '시스템 설정',
   'common.save': '저장',
   'common.cancel': '취소',
+  'preset.galleryTitle': '라이프스타일 프리셋',
+  'preset.galleryDesc': '원하는 루틴을 선택하면 적용 여부를 확인한 뒤 현재 시간표에 반영됩니다.',
+  'preset.applyTitle': '{name} 적용',
+  'preset.applyBody': "'{name}' 프리셋을 현재 시간표에 적용할까요? 기존 시간표는 덮어쓰여집니다.",
+  'preset.applyConfirm': '현재 창에 적용',
+  'export.resolution': '해상도',
+  'export.transparentBg': '투명 배경',
+  'export.png': 'PNG 내보내기',
+  'export.pdf': 'PDF 내보내기',
+  'export.pdfNote': 'A4 세로 300 DPI (210×297mm)',
+  'export.jsonExport': 'JSON 내보내기',
+  'export.jsonImport': 'JSON 가져오기',
+  'export.importTitle': '시간표 가져오기',
+  'export.importBody': '기존 시간표가 덮어쓰여집니다. 가져올까요?',
+  'export.importConfirm': '가져오기',
+  'export.svgNotFound': 'SVG 요소를 찾을 수 없습니다',
+  'export.pngDone': 'PNG 내보내기 완료',
+  'export.pngFail': 'PNG 내보내기 실패',
+  'export.pdfDone': 'PDF 내보내기 완료',
+  'export.pdfFail': 'PDF 내보내기 실패',
+  'export.jsonDone': 'JSON 내보내기 완료',
+  'export.jsonFail': 'JSON 내보내기 실패',
+  'export.jsonImportFail': 'JSON 가져오기 실패',
+  'export.imported': '시간표를 가져왔습니다',
+  'slot.atCapacity': '최대 10개 슬롯에 도달했습니다. 새 슬롯을 저장하려면 기존 슬롯을 삭제하세요.',
+  'slot.emptyPre': '저장된 시간표가 없습니다. ',
+  'slot.saveAsInline': '다른 이름으로 저장',
+  'slot.emptyPost': '으로 추가해보세요.',
+  'slot.load': '불러오기',
+  'slot.delete': '삭제',
+  'slot.rename': '이름 변경',
+  'slot.renameEdit': '슬롯 이름 편집',
+  'slot.renameSave': '이름 저장',
+  'slot.renameCancel': '이름 편집 취소',
+  'slot.loadTitle': '시간표 불러오기',
+  'slot.loadBody': "기존 시간표가 덮어쓰여집니다. '{name}'을(를) 불러올까요?",
+  'slot.deleteTitle': '슬롯 삭제',
+  'slot.deleteBody': "'{name}'을(를) 삭제할까요?",
+  'saveAs.title': '다른 이름으로 저장',
+  'saveAs.placeholder': '시간표 이름',
+  'saveAs.nameLabel': '슬롯 이름',
+  'saveAs.capacity': '최대 10개 슬롯입니다. 기존 슬롯을 먼저 삭제하세요.',
+  'saveAs.saved': '"{name}"이(가) 저장되었습니다',
+  'saveAs.copySuffix': '(사본)',
+  'hub.editTitle': '시간표 제목 편집',
+  'hub.titleLabel': '시간표 제목',
+  'hub.placeholder': '예: 평일 루틴',
+  'circle.emptyHint': '프리셋을 선택하거나 빈 영역을 클릭해 시작하세요',
+  'circle.ariaTimeline': '24시간 원형 타임라인',
+  'app.loaded': '{name}을(를) 불러왔습니다',
 };
 
 const en: Dict = {
@@ -107,6 +216,11 @@ const en: Dict = {
   'settings.fontSize': 'Font size',
   'settings.background': 'Background',
   'settings.close': 'Close',
+  'settings.bgPattern': 'Pattern',
+  'settings.bgColor': 'Solid color',
+  'settings.bgImage': 'Image',
+  'settings.uploadImage': 'Upload image',
+  'settings.removeImage': 'Remove',
   'size.small': 'Small',
   'size.medium': 'Medium',
   'size.large': 'Large',
@@ -119,16 +233,66 @@ const en: Dict = {
   'bg.checker': 'Checker',
   'bg.waves': 'Waves',
   'bg.memo': 'Memo',
-  'settings.bgPattern': 'Pattern',
-  'settings.bgColor': 'Solid color',
-  'settings.bgImage': 'Image',
-  'settings.uploadImage': 'Upload image',
-  'settings.removeImage': 'Remove',
   'theme.light': 'Light',
   'theme.dark': 'Dark',
   'theme.system': 'System',
+  'theme.lightMode': 'Light mode',
+  'theme.darkMode': 'Dark mode',
+  'theme.systemMode': 'System',
   'common.save': 'Save',
   'common.cancel': 'Cancel',
+  'preset.galleryTitle': 'Lifestyle presets',
+  'preset.galleryDesc':
+    "Pick a routine; you'll confirm before it's applied to your current schedule.",
+  'preset.applyTitle': 'Apply {name}',
+  'preset.applyBody':
+    'Apply the "{name}" preset to your current schedule? This overwrites your current schedule.',
+  'preset.applyConfirm': 'Apply to current',
+  'export.resolution': 'Resolution',
+  'export.transparentBg': 'Transparent background',
+  'export.png': 'Export PNG',
+  'export.pdf': 'Export PDF',
+  'export.pdfNote': 'A4 portrait 300 DPI (210×297mm)',
+  'export.jsonExport': 'Export JSON',
+  'export.jsonImport': 'Import JSON',
+  'export.importTitle': 'Import schedule',
+  'export.importBody': 'This will overwrite your current schedule. Import?',
+  'export.importConfirm': 'Import',
+  'export.svgNotFound': 'SVG element not found',
+  'export.pngDone': 'PNG exported',
+  'export.pngFail': 'PNG export failed',
+  'export.pdfDone': 'PDF exported',
+  'export.pdfFail': 'PDF export failed',
+  'export.jsonDone': 'JSON exported',
+  'export.jsonFail': 'JSON export failed',
+  'export.jsonImportFail': 'JSON import failed',
+  'export.imported': 'Schedule imported',
+  'slot.atCapacity': "You've reached 10 slots. Delete one to save a new slot.",
+  'slot.emptyPre': 'No saved schedules yet. Add one with ',
+  'slot.saveAsInline': 'Save as',
+  'slot.emptyPost': '.',
+  'slot.load': 'Load',
+  'slot.delete': 'Delete',
+  'slot.rename': 'Rename',
+  'slot.renameEdit': 'Edit slot name',
+  'slot.renameSave': 'Save name',
+  'slot.renameCancel': 'Cancel rename',
+  'slot.loadTitle': 'Load schedule',
+  'slot.loadBody': 'This overwrites your current schedule. Load "{name}"?',
+  'slot.deleteTitle': 'Delete slot',
+  'slot.deleteBody': 'Delete "{name}"?',
+  'saveAs.title': 'Save as',
+  'saveAs.placeholder': 'Schedule name',
+  'saveAs.nameLabel': 'Slot name',
+  'saveAs.capacity': 'You have 10 slots. Delete one first.',
+  'saveAs.saved': '"{name}" saved',
+  'saveAs.copySuffix': '(copy)',
+  'hub.editTitle': 'Edit schedule title',
+  'hub.titleLabel': 'Schedule title',
+  'hub.placeholder': 'e.g. Weekday routine',
+  'circle.emptyHint': 'Pick a preset or click an empty area to start',
+  'circle.ariaTimeline': '24-hour circular timeline',
+  'app.loaded': '{name} loaded',
 };
 
 // Skeleton languages — cover the most visible chrome; everything else falls
@@ -200,7 +364,16 @@ const ru: Partial<Dict> = {
 
 export const TRANSLATIONS: Record<Lang, Partial<Dict>> = { ko, en, ja, zh, fr, es, ru };
 
-/** Resolve a key for a language: lang → English → the key itself. */
-export function translate(lang: Lang, key: TKey): string {
-  return TRANSLATIONS[lang]?.[key] ?? en[key] ?? key;
+/**
+ * Resolve a key for a language: lang → English → the key itself.
+ * Optional `vars` replace `{name}`-style placeholders in the resolved string.
+ */
+export function translate(lang: Lang, key: TKey, vars?: Record<string, string>): string {
+  let s = TRANSLATIONS[lang]?.[key] ?? en[key] ?? key;
+  if (vars) {
+    for (const k of Object.keys(vars)) {
+      s = s.replace(`{${k}}`, vars[k]);
+    }
+  }
+  return s;
 }

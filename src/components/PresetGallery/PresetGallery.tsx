@@ -10,6 +10,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { CircleTimeline } from '@/components/CircleTimeline/CircleTimeline';
 import { PRESETS } from '@/data/presets';
+import { useTranslation } from '@/hooks/usePreferences';
+import { translatePresetName, translatePresetDesc } from '@/i18n/content';
 import type { Preset } from '@/types/preset';
 
 /**
@@ -28,6 +30,7 @@ interface PresetGalleryProps {
 }
 
 export function PresetGallery({ open, onOpenChange, onConfirm }: PresetGalleryProps) {
+  const { t, lang } = useTranslation();
   const [pendingPreset, setPendingPreset] = useState<Preset | null>(null);
 
   function handleCardClick(preset: Preset) {
@@ -52,10 +55,8 @@ export function PresetGallery({ open, onOpenChange, onConfirm }: PresetGalleryPr
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-5xl">
           <DialogHeader>
-            <DialogTitle>라이프스타일 프리셋</DialogTitle>
-            <DialogDescription>
-              원하는 루틴을 선택하면 적용 여부를 확인한 뒤 현재 시간표에 반영됩니다.
-            </DialogDescription>
+            <DialogTitle>{t('preset.galleryTitle')}</DialogTitle>
+            <DialogDescription>{t('preset.galleryDesc')}</DialogDescription>
           </DialogHeader>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 py-2">
@@ -65,8 +66,10 @@ export function PresetGallery({ open, onOpenChange, onConfirm }: PresetGalleryPr
                 className="glass-card p-4 rounded-2xl text-left hover:ring-2 hover:ring-primary transition"
                 onClick={() => handleCardClick(preset)}
               >
-                <h3 className="font-semibold mb-1">{preset.name}</h3>
-                <p className="text-sm text-muted-foreground mb-3">{preset.description}</p>
+                <h3 className="font-semibold mb-1">{translatePresetName(preset.name, lang)}</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  {translatePresetDesc(preset.description, lang)}
+                </p>
                 <CircleTimeline slices={preset.slices} interactionMode="view" size={240} />
               </button>
             ))}
@@ -78,10 +81,15 @@ export function PresetGallery({ open, onOpenChange, onConfirm }: PresetGalleryPr
       <Dialog open={pendingPreset !== null} onOpenChange={(o) => { if (!o) closeConfirm(); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{pendingPreset?.name} 적용</DialogTitle>
+            <DialogTitle>
+              {t('preset.applyTitle', {
+                name: translatePresetName(pendingPreset?.name ?? '', lang),
+              })}
+            </DialogTitle>
             <DialogDescription>
-              &apos;{pendingPreset?.name}&apos; 프리셋을 현재 시간표에 적용할까요? 기존 시간표는
-              덮어쓰여집니다.
+              {t('preset.applyBody', {
+                name: translatePresetName(pendingPreset?.name ?? '', lang),
+              })}
             </DialogDescription>
           </DialogHeader>
 
@@ -93,9 +101,9 @@ export function PresetGallery({ open, onOpenChange, onConfirm }: PresetGalleryPr
 
           <DialogFooter>
             <Button variant="outline" onClick={closeConfirm}>
-              취소
+              {t('common.cancel')}
             </Button>
-            <Button onClick={handleConfirm}>현재 창에 적용</Button>
+            <Button onClick={handleConfirm}>{t('preset.applyConfirm')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

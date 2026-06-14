@@ -7,13 +7,15 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useTheme, type Theme } from '@/hooks/useTheme';
+import { useTranslation } from '@/hooks/usePreferences';
+import type { TKey } from '@/i18n/translations';
 
 const THEME_CYCLE: Theme[] = ['light', 'dark', 'system'];
 
-const THEME_LABELS: Record<Theme, string> = {
-  light: '라이트 모드',
-  dark: '다크 모드',
-  system: '시스템 설정',
+const THEME_LABEL_KEY: Record<Theme, TKey> = {
+  light: 'theme.lightMode',
+  dark: 'theme.darkMode',
+  system: 'theme.systemMode',
 };
 
 function ThemeIcon({ theme }: { theme: Theme }) {
@@ -24,6 +26,8 @@ function ThemeIcon({ theme }: { theme: Theme }) {
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
+  const { t } = useTranslation();
+  const label = t(THEME_LABEL_KEY[theme]);
 
   function handleClick() {
     const currentIdx = THEME_CYCLE.indexOf(theme);
@@ -39,13 +43,13 @@ export function ThemeToggle() {
             variant="ghost"
             size="icon"
             onClick={handleClick}
-            aria-label={THEME_LABELS[theme]}
+            aria-label={label}
           >
             <ThemeIcon theme={theme} />
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>{THEME_LABELS[theme]}</p>
+          <p>{label}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

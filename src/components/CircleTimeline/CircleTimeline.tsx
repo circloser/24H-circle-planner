@@ -3,6 +3,8 @@ import type { TimeSlice } from '@/types/time-slice';
 import { RING, polarToCartesian, slicePath, truncateLabel } from '@/lib/svg-geometry';
 import { hhmmToAngle } from '@/lib/time-utils';
 import { useSliceSelector, useStoreSelector } from '@/hooks/useScheduleStore';
+import { useTranslation } from '@/hooks/usePreferences';
+import { translatePresetName } from '@/i18n/content';
 import { SliceLabel } from './SliceLabel';
 import { BoundaryHandles } from './BoundaryHandles';
 
@@ -340,6 +342,7 @@ export function CircleTimeline({
   onHubClick,
 }: CircleTimelineProps) {
   const { cx, cy, innerR, outerR } = RING;
+  const { t, lang } = useTranslation();
 
   // Fallback internal svg ref (if none passed — e.g. in view mode or tests)
   const internalSvgRef = useRef<SVGSVGElement | null>(null);
@@ -391,7 +394,7 @@ export function CircleTimeline({
         // Chart text inherits the user-selected font; children use fontFamily="inherit".
         fontFamily: 'var(--app-font-family, Pretendard), Pretendard, system-ui, sans-serif',
       }}
-      aria-label="24시간 원형 타임라인"
+      aria-label={t('circle.ariaTimeline')}
       role="img"
     >
       <defs>
@@ -520,7 +523,7 @@ export function CircleTimeline({
           fontFamily="inherit"
           style={{ pointerEvents: 'none' }}
         >
-          {truncateLabel(title, 6, 12)}
+          {truncateLabel(translatePresetName(title, lang), 6, 12)}
         </text>
       ) : null}
     </svg>
@@ -592,7 +595,7 @@ export function CircleTimeline({
               fontFamily: 'Pretendard, system-ui, sans-serif',
             }}
           >
-            프리셋을 선택하거나 빈 영역을 클릭해 시작하세요
+            {t('circle.emptyHint')}
           </p>
         </div>
       )}

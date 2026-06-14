@@ -143,9 +143,15 @@ export function usePreferences(): PreferencesContextValue {
 }
 
 /** Translation hook bound to the current language preference. */
-export function useTranslation(): { t: (key: TKey) => string; lang: Lang } {
+export function useTranslation(): {
+  t: (key: TKey, vars?: Record<string, string>) => string;
+  lang: Lang;
+} {
   const ctx = useContext(PreferencesContext);
   const lang = ctx?.prefs.language ?? 'ko';
-  const t = useCallback((key: TKey) => translate(lang, key), [lang]);
+  const t = useCallback(
+    (key: TKey, vars?: Record<string, string>) => translate(lang, key, vars),
+    [lang],
+  );
   return { t, lang };
 }

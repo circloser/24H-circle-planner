@@ -6,7 +6,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
 import {
   usePreferences,
   useTranslation,
@@ -38,13 +37,9 @@ const BG_LABEL: Record<Background, TKey> = {
   memo: 'bg.memo',
 };
 
-const chip = (active: boolean) =>
-  cn(
-    'px-3 py-1.5 rounded-md text-sm border transition-colors',
-    active
-      ? 'bg-primary text-primary-foreground border-primary'
-      : 'border-input hover:bg-muted',
-  );
+// Selection highlight is driven by aria-pressed via the `.opt-chip` CSS (raw
+// vars, since Tailwind semantic color utilities aren't generated here).
+const OPT_CHIP = 'opt-chip px-3 py-1.5 rounded-md text-sm';
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { prefs, setPreference } = usePreferences();
@@ -97,7 +92,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   type="button"
                   onClick={() => setPreference('language', l.code as Lang)}
                   aria-pressed={prefs.language === l.code}
-                  className={chip(prefs.language === l.code)}
+                  className={OPT_CHIP}
                 >
                   {l.label}
                 </button>
@@ -116,7 +111,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   onClick={() => setPreference('fontFamily', f.css)}
                   aria-pressed={prefs.fontFamily === f.css}
                   style={{ fontFamily: `${f.css}, system-ui, sans-serif` }}
-                  className={chip(prefs.fontFamily === f.css)}
+                  className={OPT_CHIP}
                 >
                   {f.label}
                 </button>
@@ -158,7 +153,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                     type="button"
                     onClick={() => selectPattern(bg)}
                     aria-pressed={prefs.bgType === 'pattern' && prefs.background === bg}
-                    className={chip(prefs.bgType === 'pattern' && prefs.background === bg)}
+                    className={OPT_CHIP}
                   >
                     {t(BG_LABEL[bg])}
                   </button>
@@ -170,12 +165,8 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             <div className="flex flex-col gap-1.5">
               <span className="text-xs text-muted-foreground">{t('settings.bgColor')}</span>
               <label
-                className={cn(
-                  'inline-flex items-center gap-2 w-fit px-2 py-1.5 rounded-md border cursor-pointer transition-colors',
-                  prefs.bgType === 'color'
-                    ? 'border-primary ring-2 ring-primary/40'
-                    : 'border-input hover:bg-muted',
-                )}
+                data-selected={prefs.bgType === 'color'}
+                className="opt-pick inline-flex items-center gap-2 w-fit px-2 py-1.5 rounded-md cursor-pointer"
               >
                 <span
                   className="h-6 w-6 rounded border border-input"
@@ -198,10 +189,8 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               <div className="flex items-center gap-2">
                 {prefs.bgImage ? (
                   <span
-                    className={cn(
-                      'h-12 w-20 rounded-md border bg-cover bg-center',
-                      prefs.bgType === 'image' ? 'border-primary ring-2 ring-primary/40' : 'border-input',
-                    )}
+                    data-selected={prefs.bgType === 'image'}
+                    className="opt-pick h-12 w-20 rounded-md bg-cover bg-center cursor-pointer"
                     style={{ backgroundImage: `url("${prefs.bgImage}")` }}
                     role="img"
                     aria-label={t('settings.bgImage')}

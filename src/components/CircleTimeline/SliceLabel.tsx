@@ -5,6 +5,8 @@ import {
   labelAnchorOutside,
   truncateLabel,
 } from '@/lib/svg-geometry';
+import { useTranslation } from '@/hooks/usePreferences';
+import { translateLabel } from '@/i18n/content';
 
 interface SliceLabelProps {
   slice: TimeSlice;
@@ -30,7 +32,8 @@ export function SliceLabel({ slice }: SliceLabelProps) {
   // the font-scale preference (icons stay fixed-size emoji).
   const fontFamily = 'inherit';
   const labelFontSize = (px: number) => ({ fontSize: `calc(var(--app-font-scale, 1) * ${px}px)` });
-  const truncated = truncateLabel(label);
+  const { lang } = useTranslation();
+  const truncated = truncateLabel(translateLabel(label, lang));
 
   if (textPosition === 'inside') {
     const { x, y } = labelAnchorInside(slice);

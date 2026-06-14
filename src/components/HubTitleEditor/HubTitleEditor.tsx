@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Input } from '@/components/ui/input';
 import { useStoreDispatch } from '@/hooks/useScheduleStore';
+import { useTranslation } from '@/hooks/usePreferences';
 import { RING } from '@/lib/svg-geometry';
 
 export interface HubTitleEditorProps {
@@ -34,6 +35,7 @@ function HubTitleEditorInner({
   onClose,
 }: Omit<HubTitleEditorProps, 'open'>) {
   const dispatch = useStoreDispatch();
+  const { t } = useTranslation();
   const [name, setName] = useState(currentName);
   const [pos, setPos] = useState({ left: '50%', top: '50%' });
   const inputRef = useRef<HTMLInputElement>(null);
@@ -102,7 +104,7 @@ function HubTitleEditorInner({
     <div
       ref={boxRef}
       role="dialog"
-      aria-label="시간표 제목 편집"
+      aria-label={t('hub.editTitle')}
       style={{
         position: 'fixed',
         left: pos.left,
@@ -114,13 +116,13 @@ function HubTitleEditorInner({
       className="rounded-xl border bg-background shadow-2xl p-3 flex flex-col gap-1"
       onPointerDown={(e) => e.stopPropagation()}
     >
-      <label className="text-[11px] text-muted-foreground">시간표 제목</label>
+      <label className="text-[11px] text-muted-foreground">{t('hub.titleLabel')}</label>
       <Input
         ref={inputRef}
         value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="예: 평일 루틴"
+        placeholder={t('hub.placeholder')}
         className="h-8 text-sm"
       />
     </div>,

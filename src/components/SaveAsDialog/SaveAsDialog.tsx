@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { loadSlots, saveSlot } from '@/lib/slots';
+import { useTranslation } from '@/hooks/usePreferences';
 import type { Schedule } from '@/types/schedule';
 import type { Slot } from '@/types/slot';
 
@@ -37,11 +38,11 @@ function cloneScheduleWithNewIds(schedule: Schedule): Schedule {
  * Compute the default slot name: use the schedule name, appending " (사본)"
  * if that name is already taken in localStorage.
  */
-function computeDefaultName(scheduleName: string): string {
+function computeDefaultName(scheduleName: string, copySuffix: string): string {
   const existing = loadSlots();
   const baseName = scheduleName || '내 시간표';
   const takenNames = new Set(Object.values(existing).map((s) => s.name));
-  return takenNames.has(baseName) ? `${baseName} (사본)` : baseName;
+  return takenNames.has(baseName) ? `${baseName} ${copySuffix}` : baseName;
 }
 
 // ─── SaveAsDialogBody ─────────────────────────────────────────────────────────
@@ -54,8 +55,11 @@ interface SaveAsDialogBodyProps {
 }
 
 function SaveAsDialogBody({ currentSchedule, onOpenChange, onSaved }: SaveAsDialogBodyProps) {
+  const { t } = useTranslation();
   // Initialize name at mount time — no useEffect needed
-  const [name, setName] = useState(() => computeDefaultName(currentSchedule.name));
+  const [name, setName] = useState(() =>
+    computeDefaultName(currentSchedule.name, t('saveAs.copySuffix')),
+  );
 
   function handleSave() {
     const trimmed = name.trim();
@@ -70,11 +74,11 @@ function SaveAsDialogBody({ currentSchedule, onOpenChange, onSaved }: SaveAsDial
 
     const result = saveSlot(slot);
     if (!result.success && result.reason === 'capacity') {
-      toast.error('최대 10개 슬롯입니다. 기존 슬롯을 먼저 삭제하세요.');
+      toast.error(t('saveAs.capacity'));
       return;
     }
 
-    toast.success(`"${trimmed}"이(가) 저장되었습니다`);
+    toast.success(t('saveAs.saved', { name: trimmed }));
     onSaved();
     onOpenChange(false);
   }
@@ -91,24 +95,24 @@ function SaveAsDialogBody({ currentSchedule, onOpenChange, onSaved }: SaveAsDial
   return (
     <>
       <DialogHeader>
-        <DialogTitle>다른 이름으로 저장</DialogTitle>
+        <DialogTitle>{t('saveAs.title')}</DialogTitle>
       </DialogHeader>
       <div className="py-2">
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="시간표 이름"
-          aria-label="슬롯 이름"
+          placeholder={t('saveAs.placeholder')}
+          aria-label={t('saveAs.nameLabel')}
           autoFocus
         />
       </div>
       <DialogFooter>
         <Button variant="outline" onClick={() => onOpenChange(false)}>
-          취소
+          {t('common.cancel')}
         </Button>
         <Button onClick={handleSave} disabled={!isValid}>
-          저장
+          {t('common.save')}
         </Button>
       </DialogFooter>
     </>
