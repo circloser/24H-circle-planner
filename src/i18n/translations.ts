@@ -70,6 +70,7 @@ export type TKey =
   | 'preset.applyTitle'
   | 'preset.applyBody'
   | 'preset.applyConfirm'
+  | 'preset.themeOriginal'
   | 'export.resolution'
   | 'export.transparentBg'
   | 'export.png'
@@ -169,6 +170,7 @@ const ko: Dict = {
   'preset.applyTitle': '{name} 적용',
   'preset.applyBody': "'{name}' 프리셋을 현재 시간표에 적용할까요? 기존 시간표는 덮어쓰여집니다.",
   'preset.applyConfirm': '현재 창에 적용',
+  'preset.themeOriginal': '원본',
   'export.resolution': '해상도',
   'export.transparentBg': '투명 배경',
   'export.png': 'PNG 내보내기',
@@ -269,6 +271,7 @@ const en: Dict = {
   'preset.applyBody':
     'Apply the "{name}" preset to your current schedule? This overwrites your current schedule.',
   'preset.applyConfirm': 'Apply to current',
+  'preset.themeOriginal': 'Original',
   'export.resolution': 'Resolution',
   'export.transparentBg': 'Transparent background',
   'export.png': 'Export PNG',

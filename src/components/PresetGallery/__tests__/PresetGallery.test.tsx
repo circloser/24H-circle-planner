@@ -87,7 +87,8 @@ describe('PresetGallery', () => {
     fireEvent.click(confirmBtn);
 
     expect(onConfirm).toHaveBeenCalledOnce();
-    expect(onConfirm).toHaveBeenCalledWith('대학생');
+    // No theme picked → original colours (null) passed alongside the name.
+    expect(onConfirm).toHaveBeenCalledWith('대학생', null);
   });
 
   it('cancelling closes the confirmation without calling onConfirm', () => {

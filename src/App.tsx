@@ -48,9 +48,22 @@ function App() {
   // F6: lazy initializer opens preset gallery on genuine first launch
   const [presetOpen, setPresetOpen] = useState<boolean>(checkIsFirstLaunch);
 
-  const handlePresetLoad = (name: string) => {
+  const handlePresetLoad = (name: string, themeColors: string[] | null) => {
     const preset = PRESETS.find((p) => p.name === name);
-    if (preset) dispatch({ type: 'LOAD_PRESET', preset, presetName: name });
+    if (preset) {
+      // Apply the chosen colour theme (if any) to the preset at load time, so
+      // content + palette are chosen together in one undoable step.
+      const themed = themeColors
+        ? {
+            ...preset,
+            slices: preset.slices.map((s, i) => ({
+              ...s,
+              color: themeColors[i % themeColors.length],
+            })),
+          }
+        : preset;
+      dispatch({ type: 'LOAD_PRESET', preset: themed, presetName: name });
+    }
     setPresetOpen(false);
   };
   const [slotSheetOpen, setSlotSheetOpen] = useState(false);
