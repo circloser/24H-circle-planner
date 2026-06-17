@@ -47,6 +47,8 @@ export function SliceLabel({ slice }: SliceLabelProps) {
       if (!icon) return null;
       return (
         <text
+          data-label-id={slice.id}
+          data-label-kind="inside-narrow"
           x={x}
           y={y}
           textAnchor="middle"
@@ -60,12 +62,20 @@ export function SliceLabel({ slice }: SliceLabelProps) {
       );
     }
 
+    // Positioned via `transform` (children at relative offsets) so the boundary
+    // drag engine can re-anchor the whole label by updating one attribute —
+    // keeping the label tracking its wedge centroid live during a drag.
     return (
-      <g style={{ pointerEvents: 'none', userSelect: 'none' }}>
+      <g
+        data-label-id={slice.id}
+        data-label-kind="inside"
+        transform={`translate(${x} ${y})`}
+        style={{ pointerEvents: 'none', userSelect: 'none' }}
+      >
         {icon ? (
           <text
-            x={x}
-            y={y - 20}
+            x={0}
+            y={-20}
             textAnchor="middle"
             dominantBaseline="central"
             fontSize={38}
@@ -76,8 +86,8 @@ export function SliceLabel({ slice }: SliceLabelProps) {
         ) : null}
         {truncated ? (
           <text
-            x={x}
-            y={icon ? y + 14 : y}
+            x={0}
+            y={icon ? 14 : 0}
             textAnchor="middle"
             dominantBaseline="central"
             fontFamily={fontFamily}
@@ -96,7 +106,11 @@ export function SliceLabel({ slice }: SliceLabelProps) {
   const [leaderStart, leaderEnd] = leader;
 
   return (
-    <g style={{ pointerEvents: 'none', userSelect: 'none' }}>
+    <g
+      data-label-id={slice.id}
+      data-label-kind="outside"
+      style={{ pointerEvents: 'none', userSelect: 'none' }}
+    >
       <line
         x1={leaderStart.x}
         y1={leaderStart.y}

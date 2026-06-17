@@ -1,7 +1,7 @@
 import { useRef, useCallback, useEffect } from 'react';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { angleToHhmm, hhmmToAngle, sliceWidthMinutes } from '@/lib/time-utils';
-import { slicePath, RING, polarToCartesian } from '@/lib/svg-geometry';
+import { slicePath, RING, polarToCartesian, labelAnchorInside } from '@/lib/svg-geometry';
 import type { TimeSlice } from '@/types/time-slice';
 import type { Schedule } from '@/types/schedule';
 import type { DragRef } from '@/types/drag';
@@ -116,6 +116,27 @@ function moveBoundaryHandleImperative(
   }
 }
 
+/**
+ * Re-anchor a slice's label to the centroid of the given (modified) slice
+ * geometry, so the label tracks its wedge live during a boundary drag without a
+ * React re-render. 'inside' labels are positioned via transform (one attribute);
+ * 'inside-narrow' icon-only labels via x/y; 'outside' labels are left alone.
+ * Queried from the svg root so it resolves to null gracefully under test mocks.
+ */
+function moveSliceLabelImperative(svg: SVGSVGElement, slice: TimeSlice): void {
+  if (sliceWidthMinutes(slice) <= 0) return;
+  const el = svg.querySelector<SVGGraphicsElement>(`[data-label-id="${slice.id}"]`);
+  if (!el) return;
+  const { x, y } = labelAnchorInside(slice);
+  const kind = el.getAttribute('data-label-kind');
+  if (kind === 'inside') {
+    el.setAttribute('transform', `translate(${x} ${y})`);
+  } else if (kind === 'inside-narrow') {
+    el.setAttribute('x', String(x));
+    el.setAttribute('y', String(y));
+  }
+}
+
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useSliceInteraction(opts: {
@@ -185,8 +206,14 @@ export function useSliceInteraction(opts: {
         const svgEl = svgRef.current;
         if (svgEl) {
           const ccwSlice = dragRef.snapshot.slices[dragRef.boundaryIndex];
+          const cwSlice =
+            dragRef.snapshot.slices[(dragRef.boundaryIndex + 1) % dragRef.snapshot.slices.length];
           const originalHhmm = ccwSlice.endTime === '24:00' ? '00:00' : ccwSlice.endTime;
           moveBoundaryHandleImperative(svgEl, dragRef.boundaryIndex, originalHhmm);
+          // Cancel leaves `present` unchanged, so React won't re-render the
+          // labels — restore the two we moved back to their snapshot anchors.
+          moveSliceLabelImperative(svgEl, ccwSlice);
+          moveSliceLabelImperative(svgEl, cwSlice);
         }
       }
       dispatch({ type: 'SET_DRAG_REF', value: null });
@@ -283,6 +310,17 @@ export function useSliceInteraction(opts: {
       const svgEl = svgRef.current;
       if (svgEl) {
         moveBoundaryHandleImperative(svgEl, dragRef.boundaryIndex, hhmm);
+
+        // Re-anchor the two adjacent slice labels so they track their wedge
+        // centroid live (proportionally), mirroring the path update above. Only
+        // when both halves stay valid — matching recomputeAdjacentPaths, which
+        // keeps the original paths (and thus labels) when a half would collapse.
+        const ccwModified: TimeSlice = { ...ccwSlice, endTime: hhmm };
+        const cwModified: TimeSlice = { ...cwSlice, startTime: hhmm };
+        if (sliceWidthMinutes(ccwModified) > 0 && sliceWidthMinutes(cwModified) > 0) {
+          moveSliceLabelImperative(svgEl, ccwModified);
+          moveSliceLabelImperative(svgEl, cwModified);
+        }
       }
     };
 
