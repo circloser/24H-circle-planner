@@ -8,7 +8,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ICON_DICTIONARY, CATEGORIES } from '@/data/icon-dictionary';
-import { searchIcons } from '@/lib/fuse-dict';
+import { searchIcons, dedupeByEmoji } from '@/lib/fuse-dict';
 import { cn } from '@/lib/utils';
 import type { IconEntry } from '@/data/icon-dictionary';
 
@@ -17,22 +17,6 @@ export interface IconPickerDialogProps {
   onOpenChange: (open: boolean) => void;
   selectedIcon: string;
   onPick: (emoji: string, lucideId?: string) => void;
-}
-
-/**
- * The dictionary intentionally has several keyword entries per emoji (for search
- * coverage), so the visual grid would otherwise show the same icon 2–3 times.
- * Collapse to one button per emoji, keeping the first (highest-ranked) entry.
- */
-function dedupeByEmoji(entries: IconEntry[]): IconEntry[] {
-  const seen = new Set<string>();
-  const out: IconEntry[] = [];
-  for (const e of entries) {
-    if (seen.has(e.emoji)) continue;
-    seen.add(e.emoji);
-    out.push(e);
-  }
-  return out;
 }
 
 function IconGrid({

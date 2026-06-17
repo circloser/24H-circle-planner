@@ -15,14 +15,32 @@ const fuse = new Fuse(ICON_DICTIONARY, {
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 /**
- * Returns top-N icon suggestions for a query.
- * Returns empty array if query length < 2 or all matches are above threshold.
+ * Collapse to one entry per emoji, preserving order (keeps the first/highest-
+ * ranked occurrence). The dictionary intentionally has several keyword entries
+ * per emoji for search coverage, which would otherwise surface the same icon
+ * multiple times in the suggestion chips / picker grid.
+ */
+export function dedupeByEmoji(entries: IconEntry[]): IconEntry[] {
+  const seen = new Set<string>();
+  const out: IconEntry[] = [];
+  for (const e of entries) {
+    if (seen.has(e.emoji)) continue;
+    seen.add(e.emoji);
+    out.push(e);
+  }
+  return out;
+}
+
+/**
+ * Returns top-N icon suggestions for a query, deduplicated by emoji so the same
+ * icon never appears twice. Returns empty array if query length < 2 or all
+ * matches are above threshold.
  */
 export function suggestIcons(query: string, n = 3): IconEntry[] {
   if (!query || query.length < 2) return [];
-  const results = fuse.search(query, { limit: n });
-  // fuse threshold is already applied — just map to entries
-  return results.map((r) => r.item);
+  // Fetch extra candidates so dedup-by-emoji can still fill n distinct icons.
+  const results = fuse.search(query, { limit: Math.max(n * 6, 18) });
+  return dedupeByEmoji(results.map((r) => r.item)).slice(0, n);
 }
 
 /**
