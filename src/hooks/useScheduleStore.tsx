@@ -31,7 +31,7 @@ export interface StoreState {
 
 export type StoreAction =
   | { type: 'LOAD_SCHEDULE'; schedule: Schedule }
-  | { type: 'SPLIT'; hhmm: string }
+  | { type: 'SPLIT'; hhmm: string; newSlotSide?: 'before' | 'after' }
   | { type: 'MERGE'; idCw: string; idCcw: string }
   | {
       type: 'RESIZE_BOUNDARY';
@@ -135,7 +135,9 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
       };
 
     case 'SPLIT':
-      return applyMutation(state, (present) => splitSliceAt(present, action.hhmm));
+      return applyMutation(state, (present) =>
+        splitSliceAt(present, action.hhmm, action.newSlotSide),
+      );
 
     case 'MERGE':
       return applyMutation(state, (present) =>

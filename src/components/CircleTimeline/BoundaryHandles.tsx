@@ -209,18 +209,23 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
     dispatch({ type: 'MERGE', idCw: cwSlice.id, idCcw: ccwSlice.id });
   };
 
-  // Left "+" → add a division inside the CCW slice (before this boundary).
+  // Left "+" → new empty cell on the CCW side, adjacent to this boundary. The
+  // CCW slice keeps its content in its earlier half ('after' = later half is the
+  // new empty slot, which sits next to the boundary), pushing content away.
   const handleLeftPlus = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!canLeftPlus) return;
-    dispatch({ type: 'SPLIT', hhmm: sliceMidpointHhmm(ccwSlice) });
+    dispatch({ type: 'SPLIT', hhmm: sliceMidpointHhmm(ccwSlice), newSlotSide: 'after' });
   };
 
-  // Right "+" → add a division inside the CW slice (after this boundary).
+  // Right "+" → new empty cell on the CW side, adjacent to this boundary. The CW
+  // slice keeps its content in its later half ('before' = earlier half is the
+  // new empty slot, which sits next to the boundary), pushing content away — the
+  // mirror image of the left "+".
   const handleRightPlus = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!canRightPlus) return;
-    dispatch({ type: 'SPLIT', hhmm: sliceMidpointHhmm(cwSlice) });
+    dispatch({ type: 'SPLIT', hhmm: sliceMidpointHhmm(cwSlice), newSlotSide: 'before' });
   };
 
   return (

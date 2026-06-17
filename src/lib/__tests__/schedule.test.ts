@@ -66,6 +66,24 @@ describe('splitSliceAt', () => {
     expect(result.slices[bIdx + 1].label).toBe('');
   });
 
+  it("newSlotSide='after' (default) makes the later half the new empty slot", () => {
+    const result = splitSliceAt(makeFourQuarters(), '09:00', 'after');
+    const earlier = result.slices.find((s) => s.startTime === '06:00' && s.endTime === '09:00')!;
+    const later = result.slices.find((s) => s.startTime === '09:00' && s.endTime === '12:00')!;
+    expect(earlier.label).toBe('B'); // parent content stays in the earlier half
+    expect(later.label).toBe(''); // new empty slot in the later half
+  });
+
+  it("newSlotSide='before' makes the earlier half the new empty slot (content keeps later half)", () => {
+    const result = splitSliceAt(makeFourQuarters(), '09:00', 'before');
+    expect(result.slices).toHaveLength(5);
+    expect(isContiguous24h(result.slices)).toBe(true);
+    const earlier = result.slices.find((s) => s.startTime === '06:00' && s.endTime === '09:00')!;
+    const later = result.slices.find((s) => s.startTime === '09:00' && s.endTime === '12:00')!;
+    expect(earlier.label).toBe(''); // new empty slot, adjacent to the 06:00 boundary
+    expect(later.label).toBe('B'); // parent content moved to the later half
+  });
+
   it('new slice gets a colour distinct from parent, empty label/icon, textPosition inside', () => {
     const schedule = makeFourQuarters();
     const parentColor = schedule.slices[0].color;

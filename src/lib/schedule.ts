@@ -76,10 +76,21 @@ function findSliceIndexAt(slices: TimeSlice[], targetMin: number): number {
 
 /**
  * Split the slice containing `hhmm` into two slices at that boundary.
- * New slice (CW / later half) inherits label="", icon="", color from parent, textPosition='inside'.
+ *
+ * `newSlotSide` decides which half becomes the fresh empty slot (label/icon
+ * cleared, distinct colour); the other half keeps the parent's content and id:
+ * - 'after'  (default): the later/CW half is the new empty slot.
+ * - 'before':           the earlier/CCW half is the new empty slot.
+ *
+ * This lets the "+" affordance always sprout the empty cell adjacent to the
+ * division line and push the existing content away, symmetrically on both sides.
  * Throws if the snapped split would create a <10-min slice on either side.
  */
-export function splitSliceAt(schedule: Schedule, hhmm: string): Schedule {
+export function splitSliceAt(
+  schedule: Schedule,
+  hhmm: string,
+  newSlotSide: 'before' | 'after' = 'after',
+): Schedule {
   const action = 'splitSliceAt';
   const targetMin = hhmmToMinutes(hhmm);
   const snappedMin = snapMinutes(targetMin);
@@ -120,22 +131,29 @@ export function splitSliceAt(schedule: Schedule, hhmm: string): Schedule {
   if (leftWidth < 10) throw new ContiguityError(action, `Split would create a <10-min left slice (width=${leftWidth})`);
   if (rightWidth < 10) throw new ContiguityError(action, `Split would create a <10-min right slice (width=${rightWidth})`);
 
-  // Modify parent to end at split point; create new slice from split to parent's old end
-  const firstSlice: TimeSlice = {
-    ...parent,
-    endTime: snappedHhmm,
-  };
-  const secondSlice: TimeSlice = {
+  // A fresh empty slot, coloured distinctly from its parent so the new division
+  // is visually obvious.
+  const emptySlot = (startTime: string, endTime: string): TimeSlice => ({
     id: uuid(),
     label: '',
     icon: '',
-    // New slice gets a colour distinct from its parent so the added division
-    // is visually obvious.
     color: pickDistinctColor(parent.color),
     textPosition: 'inside',
-    startTime: snappedHhmm,
-    endTime: parent.endTime,
-  };
+    startTime,
+    endTime,
+  });
+
+  // Place the new empty slot on the requested side; the other half keeps the
+  // parent's content (and id).
+  let firstSlice: TimeSlice;
+  let secondSlice: TimeSlice;
+  if (newSlotSide === 'before') {
+    firstSlice = emptySlot(parent.startTime, snappedHhmm);
+    secondSlice = { ...parent, startTime: snappedHhmm };
+  } else {
+    firstSlice = { ...parent, endTime: snappedHhmm };
+    secondSlice = emptySlot(snappedHhmm, parent.endTime);
+  }
 
   const newSlices = [...slices.slice(0, idx), firstSlice, secondSlice, ...slices.slice(idx + 1)];
 
