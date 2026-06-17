@@ -111,6 +111,20 @@ body {
   background-color: var(--app-bg-color, hsl(var(--background)));
   color: hsl(var(--text-primary));
   font-family: var(--app-font-family, 'Pretendard'), 'Pretendard', 'Pretendard Variable', system-ui, sans-serif;
+  /* Smoother glyph edges — without this the fallback/system font renders
+     coarse on the colourful chart, looking unpolished. */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* SVG chart text: prioritise crisp, well-shaped glyphs over render speed.
+   The chart is drawn at a 1072px viewBox and scaled down, so geometric
+   precision keeps the labels smooth at the displayed size. */
+svg text {
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ─── Selectable backgrounds (data-bg on <html>) ──────────────────────────── */
