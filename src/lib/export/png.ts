@@ -36,6 +36,19 @@ export async function exportPng(
   // 2. Inject @font-face with base64 WOFF2 (R16 requirement)
   injectFontFaceStyle(clone);
 
+  // 2a. Resolve the live font preferences onto the clone root. The standalone
+  // SVG is rasterized via <img> ("secure static mode"), which has no access to
+  // the document's CSS custom properties — so the chart's
+  // `font-family: var(--app-font-family, …)` and `font-size: calc(var(--app-font-scale,1)*…)`
+  // would otherwise fall back to Pretendard at 100%. Defining the vars on the
+  // clone root lets them resolve inside the isolated SVG (the @font-face above
+  // supplies the actual glyphs).
+  const rootStyle = getComputedStyle(document.documentElement);
+  const famVar = rootStyle.getPropertyValue('--app-font-family').trim();
+  const scaleVar = rootStyle.getPropertyValue('--app-font-scale').trim();
+  clone.style.setProperty('--app-font-family', famVar || 'Pretendard');
+  clone.style.setProperty('--app-font-scale', scaleVar || '1');
+
   // 3. Set explicit width/height for rasterization at target resolution
   clone.setAttribute('width', String(size));
   clone.setAttribute('height', String(size));

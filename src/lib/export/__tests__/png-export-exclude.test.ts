@@ -13,6 +13,14 @@ vi.mock('@/data/fonts', () => ({
   pretendardBold: 'data:font/woff2;base64,BOLDBASE64==',
   pretendardRegularTtfUrl: '/assets/pretendard-regular.otf',
   pretendardBoldTtfUrl: '/assets/pretendard-bold.otf',
+  notoSansKr400: 'data:font/woff2;base64,NOTO400==',
+  notoSansKr700: 'data:font/woff2;base64,NOTO700==',
+  nanumMyeongjo400: 'data:font/woff2;base64,NANUM400==',
+  nanumMyeongjo700: 'data:font/woff2;base64,NANUM700==',
+  jua400: 'data:font/woff2;base64,JUA400==',
+  gowunDodum400: 'data:font/woff2;base64,GOWUN400==',
+  blackHanSans400: 'data:font/woff2;base64,BLACKHAN400==',
+  gaegu400: 'data:font/woff2;base64,GAEGU400==',
 }));
 
 // ─── jsdom canvas stub (minimal — just enough to not throw) ──────────────────
