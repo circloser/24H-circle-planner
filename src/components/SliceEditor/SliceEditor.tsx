@@ -30,6 +30,12 @@ function isOverLimit(text: string): boolean {
   return text.length > 24;
 }
 
+// ─── Text styling ─────────────────────────────────────────────────────────────
+
+// Matches LABEL_TEXT_DEFAULT in SliceLabel — the readable default on pastels.
+const TEXT_DEFAULT = '#1f2937';
+const TEXT_COLORS = ['#1f2937', '#ffffff', '#ef4444', '#f59e0b', '#16a34a', '#2563eb', '#7c3aed'];
+
 // ─── Public interface ─────────────────────────────────────────────────────────
 
 export interface SliceEditorProps {
@@ -54,6 +60,9 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
   const [label, setLabel] = useState(slice.label);
   const [icon, setIcon] = useState(slice.icon ?? '');
   const [color, setColor] = useState(slice.color ?? '#9ca3af');
+  const [textColor, setTextColor] = useState(slice.textColor ?? '');
+  const [bold, setBold] = useState(slice.bold ?? false);
+  const [italic, setItalic] = useState(slice.italic ?? false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pos, setPos] = useState({ left: '50%', top: '50%' });
   const inputRef = useRef<HTMLInputElement>(null);
@@ -83,10 +92,10 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
     dispatch({
       type: 'REPLACE_SLICE',
       id: sliceId,
-      patch: { label: truncated, icon, color },
+      patch: { label: truncated, icon, color, textColor: textColor || undefined, bold, italic },
     });
     onClose();
-  }, [dispatch, sliceId, label, icon, color, onClose]);
+  }, [dispatch, sliceId, label, icon, color, textColor, bold, italic, onClose]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -175,6 +184,42 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
         }}
         onOpenPicker={() => setPickerOpen(true)}
       />
+
+      {/* Text style: bold / italic / colour */}
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          aria-label="굵게"
+          aria-pressed={bold}
+          onClick={() => setBold((v) => !v)}
+          className="opt-chip h-8 w-8 rounded-md text-sm font-bold flex items-center justify-center"
+        >
+          B
+        </button>
+        <button
+          type="button"
+          aria-label="기울임"
+          aria-pressed={italic}
+          onClick={() => setItalic((v) => !v)}
+          className="opt-chip h-8 w-8 rounded-md text-sm italic flex items-center justify-center"
+        >
+          I
+        </button>
+        <span className="w-px h-5 mx-0.5" style={{ backgroundColor: 'hsl(var(--border))' }} />
+        <div className="flex items-center gap-1">
+          {TEXT_COLORS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              aria-label={`글자색 ${c}`}
+              data-selected={(textColor || TEXT_DEFAULT) === c}
+              onClick={() => setTextColor(c)}
+              className="opt-pick h-5 w-5 rounded-full"
+              style={{ backgroundColor: c }}
+            />
+          ))}
+        </div>
+      </div>
 
       {/* Color swatches */}
       <ColorSwatch selectedColor={color} onPick={setColor} />

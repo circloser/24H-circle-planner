@@ -6,4 +6,7 @@ export interface TimeSlice {
   color: string; // hex
   icon: string; // emoji char or lucide-id string
   textPosition: 'inside' | 'outside';
+  textColor?: string; // hex label-text colour; defaults to a fixed dark tone
+  bold?: boolean; // label text weight
+  italic?: boolean; // label text style
 }

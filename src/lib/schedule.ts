@@ -422,7 +422,9 @@ export function applyPalette(schedule: Schedule, colors: string[]): Schedule {
 export function replaceSlice(
   schedule: Schedule,
   id: string,
-  patch: Partial<Pick<TimeSlice, 'label' | 'color' | 'icon' | 'textPosition'>>,
+  patch: Partial<
+    Pick<TimeSlice, 'label' | 'color' | 'icon' | 'textPosition' | 'textColor' | 'bold' | 'italic'>
+  >,
 ): Schedule {
   const action = 'replaceSlice';
   const slices = schedule.slices.map((s) => (s.id === id ? { ...s, ...patch } : s));

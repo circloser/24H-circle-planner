@@ -12,6 +12,11 @@ interface SliceLabelProps {
   slice: TimeSlice;
 }
 
+// Slice labels sit on light pastel wedges, so the default text colour is a fixed
+// dark tone (NOT the theme foreground, which flips to white in dark mode and
+// becomes unreadable on the light wedges). Per-slice textColor overrides this.
+const LABEL_TEXT_DEFAULT = '#1f2937';
+
 /**
  * Renders the label (icon + text) for one slice.
  * - Uses pure SVG <text> elements only — no <foreignObject>.
@@ -38,6 +43,11 @@ export function SliceLabel({ slice }: SliceLabelProps) {
   const labelFontSize = (px: number) => ({ fontSize: `calc(var(--app-font-scale, 1) * ${px}px)` });
   const { lang } = useTranslation();
   const truncated = truncateLabel(translateLabel(label, lang));
+
+  // Per-slice text styling (#3) over a readable default (#2).
+  const textFill = slice.textColor || LABEL_TEXT_DEFAULT;
+  const fontWeight = slice.bold ? 700 : 400;
+  const fontStyle = slice.italic ? 'italic' : 'normal';
 
   if (textPosition === 'inside') {
     const { x, y } = labelAnchorInside(slice);
@@ -91,7 +101,9 @@ export function SliceLabel({ slice }: SliceLabelProps) {
             textAnchor="middle"
             dominantBaseline="central"
             fontFamily={fontFamily}
-            fill="currentColor"
+            fontWeight={fontWeight}
+            fontStyle={fontStyle}
+            fill={textFill}
             style={labelFontSize(22)}
           >
             {truncated}
@@ -138,7 +150,9 @@ export function SliceLabel({ slice }: SliceLabelProps) {
           textAnchor="middle"
           dominantBaseline="central"
           fontFamily={fontFamily}
-          fill="currentColor"
+          fontWeight={fontWeight}
+          fontStyle={fontStyle}
+          fill={textFill}
           style={labelFontSize(20)}
         >
           {truncated}
