@@ -97,7 +97,16 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b" style={{ borderColor: 'hsl(var(--border) / 0.6)' }}>
+      <header
+        className="sticky top-0 z-30 border-b"
+        style={{
+          backgroundColor: 'hsl(var(--surface) / 0.85)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          borderColor: 'hsl(var(--border) / 0.7)',
+          boxShadow: '0 1px 3px hsl(220 30% 15% / 0.08), 0 1px 2px hsl(220 30% 15% / 0.04)',
+        }}
+      >
         <div className="container mx-auto h-14 flex items-center justify-between px-4">
           <h1 className="font-semibold text-base">24H Circle Planner</h1>
           <div className="flex items-center gap-2">
@@ -137,6 +146,9 @@ function App() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSettingsSection('icons')}>
                   {t('settings.icons')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSettingsSection('clock')}>
+                  {t('settings.clock')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSettingsSection('background')}>
                   {t('settings.background')}

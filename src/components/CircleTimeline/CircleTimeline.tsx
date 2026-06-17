@@ -3,7 +3,7 @@ import type { TimeSlice } from '@/types/time-slice';
 import { RING, polarToCartesian, slicePath, truncateLabel } from '@/lib/svg-geometry';
 import { hhmmToAngle } from '@/lib/time-utils';
 import { useSliceSelector, useStoreSelector } from '@/hooks/useScheduleStore';
-import { useTranslation } from '@/hooks/usePreferences';
+import { useTranslation, useShowClock, useShowNowLine } from '@/hooks/usePreferences';
 import { translatePresetName } from '@/i18n/content';
 import { SliceLabel } from './SliceLabel';
 import { BoundaryHandles } from './BoundaryHandles';
@@ -343,6 +343,8 @@ export function CircleTimeline({
 }: CircleTimelineProps) {
   const { cx, cy, innerR, outerR } = RING;
   const { t, lang } = useTranslation();
+  const showClock = useShowClock();
+  const showNowLine = useShowNowLine();
 
   // Fallback internal svg ref (if none passed — e.g. in view mode or tests)
   const internalSvgRef = useRef<SVGSVGElement | null>(null);
@@ -474,9 +476,9 @@ export function CircleTimeline({
         <BoundaryHandles slices={slices} onPointerDownHandle={onPointerDownHandle} />
       ) : null}
 
-      {/* Now-indicator: solid red line at current time angle.
+      {/* Now-indicator: solid red line at current time angle. Toggleable.
           Tagged data-export-exclude="true" — stripped from PNG/PDF clone. */}
-      <NowIndicator hhmm={clock.hhmm} />
+      {showNowLine ? <NowIndicator hhmm={clock.hhmm} /> : null}
 
       {/* Center hub glass disc — in SVG so it composites with slices correctly.
           The live clock text is NOT here; it's in the HTML overlay below so
@@ -536,9 +538,12 @@ export function CircleTimeline({
       {svgElement}
 
       {/* Center hub live current time — HTML overlay (excluded from export).
-          Sits below the SVG title so exports show the title, not a stale clock. */}
+          Sits below the SVG title so exports show the title, not a stale clock.
+          Toggleable via the clock setting. */}
+      {showClock && (
       <div
         aria-hidden="true"
+        data-clock="true"
         style={{
           position: 'absolute',
           left: `${50 - hubPct}%`,
@@ -567,6 +572,7 @@ export function CircleTimeline({
           {clock.displayTime}
         </span>
       </div>
+      )}
 
       {/* Empty state hint — only when requested.
           Positioned in the lower wedge band (below the center hub clock at 40–60%)

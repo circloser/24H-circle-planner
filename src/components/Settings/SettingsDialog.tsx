@@ -23,7 +23,7 @@ import { LANGUAGES, type Lang } from '@/i18n/translations';
 import type { TKey } from '@/i18n/translations';
 
 /** Each settings category is its own focused dialog, opened from the gear menu. */
-export type SettingsSection = 'language' | 'font' | 'icons' | 'background' | 'theme';
+export type SettingsSection = 'language' | 'font' | 'icons' | 'clock' | 'background' | 'theme';
 
 export interface SettingsDialogProps {
   section: SettingsSection | null;
@@ -34,6 +34,7 @@ const SECTION_TITLE: Record<SettingsSection, TKey> = {
   language: 'settings.language',
   font: 'settings.font',
   icons: 'settings.icons',
+  clock: 'settings.clock',
   background: 'settings.background',
   theme: 'settings.colorTheme',
 };
@@ -173,6 +174,54 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
               >
                 {t('settings.iconsHide')}
               </button>
+            </div>
+          )}
+
+          {/* Clock: digital clock + current-time line */}
+          {section === 'clock' && (
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <span className="text-xs text-muted-foreground">{t('settings.clockDigital')}</span>
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setPreference('showClock', true)}
+                    aria-pressed={prefs.showClock}
+                    className={OPT_CHIP}
+                  >
+                    {t('settings.iconsShow')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreference('showClock', false)}
+                    aria-pressed={!prefs.showClock}
+                    className={OPT_CHIP}
+                  >
+                    {t('settings.iconsHide')}
+                  </button>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <span className="text-xs text-muted-foreground">{t('settings.clockNowLine')}</span>
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setPreference('showNowLine', true)}
+                    aria-pressed={prefs.showNowLine}
+                    className={OPT_CHIP}
+                  >
+                    {t('settings.iconsShow')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreference('showNowLine', false)}
+                    aria-pressed={!prefs.showNowLine}
+                    className={OPT_CHIP}
+                  >
+                    {t('settings.iconsHide')}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 

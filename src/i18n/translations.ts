@@ -42,6 +42,9 @@ export type TKey =
   | 'settings.iconsShow'
   | 'settings.iconsHide'
   | 'settings.colorTheme'
+  | 'settings.clock'
+  | 'settings.clockDigital'
+  | 'settings.clockNowLine'
   | 'size.small'
   | 'size.medium'
   | 'size.large'
@@ -138,6 +141,9 @@ const ko: Dict = {
   'settings.iconsShow': '표시',
   'settings.iconsHide': '숨김',
   'settings.colorTheme': '색상 테마',
+  'settings.clock': '시계',
+  'settings.clockDigital': '디지털 시계',
+  'settings.clockNowLine': '현재 시간선',
   'size.small': '작게',
   'size.medium': '보통',
   'size.large': '크게',
@@ -233,6 +239,9 @@ const en: Dict = {
   'settings.iconsShow': 'Show',
   'settings.iconsHide': 'Hide',
   'settings.colorTheme': 'Color theme',
+  'settings.clock': 'Clock',
+  'settings.clockDigital': 'Digital clock',
+  'settings.clockNowLine': 'Current-time line',
   'size.small': 'Small',
   'size.medium': 'Medium',
   'size.large': 'Large',
