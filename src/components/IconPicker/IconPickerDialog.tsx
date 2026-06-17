@@ -19,6 +19,22 @@ export interface IconPickerDialogProps {
   onPick: (emoji: string, lucideId?: string) => void;
 }
 
+/**
+ * The dictionary intentionally has several keyword entries per emoji (for search
+ * coverage), so the visual grid would otherwise show the same icon 2–3 times.
+ * Collapse to one button per emoji, keeping the first (highest-ranked) entry.
+ */
+function dedupeByEmoji(entries: IconEntry[]): IconEntry[] {
+  const seen = new Set<string>();
+  const out: IconEntry[] = [];
+  for (const e of entries) {
+    if (seen.has(e.emoji)) continue;
+    seen.add(e.emoji);
+    out.push(e);
+  }
+  return out;
+}
+
 function IconGrid({
   icons,
   selectedIcon,
@@ -73,11 +89,11 @@ export function IconPickerDialog({
 
   const searchResults = useMemo(() => {
     if (searchQuery.trim().length < 1) return null;
-    return searchIcons(searchQuery.trim(), 50);
+    return dedupeByEmoji(searchIcons(searchQuery.trim(), 50));
   }, [searchQuery]);
 
   const categoryIcons = useMemo(
-    () => ICON_DICTIONARY.filter((e) => e.category === activeTab),
+    () => dedupeByEmoji(ICON_DICTIONARY.filter((e) => e.category === activeTab)),
     [activeTab],
   );
 

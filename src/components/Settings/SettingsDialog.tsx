@@ -139,6 +139,29 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             </div>
           </section>
 
+          {/* Icons on/off */}
+          <section className="flex flex-col gap-2">
+            <h3 className="text-sm font-semibold">{t('settings.icons')}</h3>
+            <div className="flex gap-1.5">
+              <button
+                type="button"
+                onClick={() => setPreference('showIcons', true)}
+                aria-pressed={prefs.showIcons}
+                className={OPT_CHIP}
+              >
+                {t('settings.iconsShow')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreference('showIcons', false)}
+                aria-pressed={!prefs.showIcons}
+                className={OPT_CHIP}
+              >
+                {t('settings.iconsHide')}
+              </button>
+            </div>
+          </section>
+
           {/* Background */}
           <section className="flex flex-col gap-3">
             <h3 className="text-sm font-semibold">{t('settings.background')}</h3>

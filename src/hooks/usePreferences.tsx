@@ -36,6 +36,7 @@ export interface Preferences {
   bgType: BgType;
   bgColor: string; // hex, used when bgType === 'color'
   bgImage: string | null; // data URL, used when bgType === 'image'
+  showIcons: boolean; // global toggle for slice icons in the chart
 }
 
 const DEFAULT_PREFS: Preferences = {
@@ -43,6 +44,7 @@ const DEFAULT_PREFS: Preferences = {
   fontFamily: 'Pretendard',
   fontScale: 1,
   background: 'none',
+  showIcons: true,
   bgType: 'pattern',
   bgColor: '#f4f5f7',
   bgImage: null,
@@ -140,6 +142,15 @@ export function usePreferences(): PreferencesContextValue {
   const ctx = useContext(PreferencesContext);
   if (!ctx) throw new Error('usePreferences must be used within PreferencesProvider');
   return ctx;
+}
+
+/**
+ * Null-safe read of the global "show icons" preference (defaults to true when
+ * rendered outside a PreferencesProvider, e.g. preset previews / tests).
+ */
+export function useShowIcons(): boolean {
+  const ctx = useContext(PreferencesContext);
+  return ctx?.prefs.showIcons ?? true;
 }
 
 /** Translation hook bound to the current language preference. */

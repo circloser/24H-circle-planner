@@ -9,12 +9,34 @@ export interface IconChipsProps {
   onOpenPicker: () => void;
 }
 
+/** "No icon" option — lets the user clear the icon and keep the slice text-only. */
+function NoneChip({ selected, onClick }: { selected: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title="아이콘 없음"
+      aria-label="아이콘 없음"
+      aria-pressed={selected}
+      className={cn(
+        'h-9 px-2 rounded-lg text-xs flex items-center justify-center transition-all shrink-0',
+        'hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        selected ? 'ring-2 ring-ring bg-muted text-foreground' : 'text-muted-foreground',
+      )}
+    >
+      없음
+    </button>
+  );
+}
+
 export function IconChips({ query, selectedIcon, onPick, onOpenPicker }: IconChipsProps) {
   const suggestions = useMemo(() => suggestIcons(query, 3), [query]);
+  const noneSelected = selectedIcon === '';
 
   if (query.length < 2) {
     return (
       <div className="flex items-center gap-2">
+        <NoneChip selected={noneSelected} onClick={() => onPick('')} />
         <span className="text-xs text-muted-foreground flex-1">
           라벨을 입력하면 추천 아이콘이 표시됩니다
         </span>
@@ -31,6 +53,7 @@ export function IconChips({ query, selectedIcon, onPick, onOpenPicker }: IconChi
 
   return (
     <div className="flex items-center gap-1.5">
+      <NoneChip selected={noneSelected} onClick={() => onPick('')} />
       {suggestions.map((entry) => {
         const isSelected = selectedIcon === entry.emoji;
         return (

@@ -5,7 +5,7 @@ import {
   labelAnchorOutside,
   truncateLabel,
 } from '@/lib/svg-geometry';
-import { useTranslation } from '@/hooks/usePreferences';
+import { useTranslation, useShowIcons } from '@/hooks/usePreferences';
 import { translateLabel } from '@/i18n/content';
 
 interface SliceLabelProps {
@@ -21,7 +21,11 @@ interface SliceLabelProps {
  *   (too narrow); falls back to icon-only.
  */
 export function SliceLabel({ slice }: SliceLabelProps) {
-  const { textPosition, label, icon } = slice;
+  const { textPosition, label, icon: rawIcon } = slice;
+  // Global "show icons" toggle — when off, every icon below renders as empty so
+  // the chart shows text-only labels (and narrow icon-only slices show nothing).
+  const showIcons = useShowIcons();
+  const icon = showIcons ? rawIcon : '';
   const widthMin = sliceWidthMinutes(slice);
   // tooNarrow threshold: < 40 min means we only show the icon (no text label).
   // Increased from 30 to 40 because the larger font (22px text + 38px icon)

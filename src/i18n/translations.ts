@@ -38,6 +38,9 @@ export type TKey =
   | 'settings.bgImage'
   | 'settings.uploadImage'
   | 'settings.removeImage'
+  | 'settings.icons'
+  | 'settings.iconsShow'
+  | 'settings.iconsHide'
   | 'size.small'
   | 'size.medium'
   | 'size.large'
@@ -130,6 +133,9 @@ const ko: Dict = {
   'settings.bgImage': '이미지',
   'settings.uploadImage': '이미지 업로드',
   'settings.removeImage': '제거',
+  'settings.icons': '아이콘',
+  'settings.iconsShow': '표시',
+  'settings.iconsHide': '숨김',
   'size.small': '작게',
   'size.medium': '보통',
   'size.large': '크게',
@@ -221,6 +227,9 @@ const en: Dict = {
   'settings.bgImage': 'Image',
   'settings.uploadImage': 'Upload image',
   'settings.removeImage': 'Remove',
+  'settings.icons': 'Icons',
+  'settings.iconsShow': 'Show',
+  'settings.iconsHide': 'Hide',
   'size.small': 'Small',
   'size.medium': 'Medium',
   'size.large': 'Large',
