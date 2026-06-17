@@ -14,6 +14,7 @@ import {
   mergeSlices,
   resizeBoundary,
   replaceSlice,
+  applyPalette,
   ContiguityError,
 } from '@/lib/schedule';
 import { loadSchedule, saveScheduleDebounced } from '@/lib/storage';
@@ -33,6 +34,7 @@ export type StoreAction =
   | { type: 'LOAD_SCHEDULE'; schedule: Schedule }
   | { type: 'SPLIT'; hhmm: string; newSlotSide?: 'before' | 'after' }
   | { type: 'MERGE'; idCw: string; idCcw: string }
+  | { type: 'APPLY_PALETTE'; colors: string[] }
   | {
       type: 'RESIZE_BOUNDARY';
       boundaryIndex: number;
@@ -138,6 +140,9 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
       return applyMutation(state, (present) =>
         splitSliceAt(present, action.hhmm, action.newSlotSide),
       );
+
+    case 'APPLY_PALETTE':
+      return applyMutation(state, (present) => applyPalette(present, action.colors));
 
     case 'MERGE':
       return applyMutation(state, (present) =>

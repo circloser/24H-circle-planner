@@ -41,6 +41,7 @@ export type TKey =
   | 'settings.icons'
   | 'settings.iconsShow'
   | 'settings.iconsHide'
+  | 'settings.colorTheme'
   | 'size.small'
   | 'size.medium'
   | 'size.large'
@@ -136,6 +137,7 @@ const ko: Dict = {
   'settings.icons': '아이콘',
   'settings.iconsShow': '표시',
   'settings.iconsHide': '숨김',
+  'settings.colorTheme': '색상 테마',
   'size.small': '작게',
   'size.medium': '보통',
   'size.large': '크게',
@@ -230,6 +232,7 @@ const en: Dict = {
   'settings.icons': 'Icons',
   'settings.iconsShow': 'Show',
   'settings.iconsHide': 'Hide',
+  'settings.colorTheme': 'Color theme',
   'size.small': 'Small',
   'size.medium': 'Medium',
   'size.large': 'Large',

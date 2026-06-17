@@ -397,6 +397,25 @@ export function resizeBoundary(
 }
 
 /**
+ * Recolour every slice from a palette, cycling through it
+ * (slice[i] → colors[i % colors.length]). Times/labels/icons are untouched.
+ */
+export function applyPalette(schedule: Schedule, colors: string[]): Schedule {
+  const action = 'applyPalette';
+  if (colors.length === 0) return schedule;
+  const slices = schedule.slices.map((s, i) => ({ ...s, color: colors[i % colors.length] }));
+
+  const out: Schedule = {
+    ...schedule,
+    slices,
+    updatedAt: now(),
+  };
+
+  if (!isContiguous24h(out.slices)) throw new ContiguityError(action, 'isContiguous24h failed');
+  return out;
+}
+
+/**
  * Shallow-patch a slice's label/color/icon/textPosition.
  * Does not touch start/end times.
  */

@@ -17,6 +17,8 @@ import {
   type Background,
 } from '@/hooks/usePreferences';
 import { fileToBackgroundDataUrl } from '@/lib/image-bg';
+import { useStoreDispatch } from '@/hooks/useScheduleStore';
+import { COLOR_THEMES } from '@/data/color-themes';
 import { LANGUAGES, type Lang } from '@/i18n/translations';
 import type { TKey } from '@/i18n/translations';
 
@@ -43,7 +45,8 @@ const OPT_CHIP = 'opt-chip px-3 py-1.5 rounded-md text-sm';
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { prefs, setPreference } = usePreferences();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const dispatch = useStoreDispatch();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectPattern = (bg: Background) => {
@@ -244,6 +247,32 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   className="sr-only"
                 />
               </div>
+            </div>
+          </section>
+
+          {/* Color theme — recolours all slices (undoable schedule change) */}
+          <section className="flex flex-col gap-2">
+            <h3 className="text-sm font-semibold">{t('settings.colorTheme')}</h3>
+            <div className="flex flex-col gap-1.5">
+              {COLOR_THEMES.map((theme) => (
+                <button
+                  key={theme.id}
+                  type="button"
+                  onClick={() => dispatch({ type: 'APPLY_PALETTE', colors: theme.colors })}
+                  className="opt-pick flex items-center gap-2 px-2 py-1.5 rounded-md text-left hover:bg-muted transition-colors"
+                >
+                  <span className="flex gap-0.5 shrink-0">
+                    {theme.colors.slice(0, 8).map((c, i) => (
+                      <span
+                        key={i}
+                        className="h-4 w-4 rounded-sm"
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </span>
+                  <span className="text-sm">{lang === 'ko' ? theme.ko : theme.en}</span>
+                </button>
+              ))}
             </div>
           </section>
         </div>

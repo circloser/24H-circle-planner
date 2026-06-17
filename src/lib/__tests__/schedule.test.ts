@@ -4,6 +4,7 @@ import {
   mergeSlices,
   resizeBoundary,
   replaceSlice,
+  applyPalette,
   ContiguityError,
 } from '../schedule';
 import { isContiguous24h, sliceWidthMinutes } from '../time-utils';
@@ -50,6 +51,33 @@ function makeFourQuarters(): Schedule {
     makeSlice('18:00', '00:00', { label: 'D' }),
   ]);
 }
+
+// ─── applyPalette ────────────────────────────────────────────────────────────
+
+describe('applyPalette', () => {
+  it('recolours every slice, cycling through the palette', () => {
+    const result = applyPalette(makeFourQuarters(), ['#111111', '#222222']);
+    expect(result.slices.map((s) => s.color)).toEqual([
+      '#111111', '#222222', '#111111', '#222222',
+    ]);
+    expect(isContiguous24h(result.slices)).toBe(true);
+  });
+
+  it('preserves times/labels and stays contiguous', () => {
+    const before = makeFourQuarters();
+    const result = applyPalette(before, ['#abcdef']);
+    result.slices.forEach((s, i) => {
+      expect(s.startTime).toBe(before.slices[i].startTime);
+      expect(s.label).toBe(before.slices[i].label);
+      expect(s.color).toBe('#abcdef');
+    });
+  });
+
+  it('returns the schedule unchanged for an empty palette', () => {
+    const before = makeFourQuarters();
+    expect(applyPalette(before, []).slices).toEqual(before.slices);
+  });
+});
 
 // ─── splitSliceAt ────────────────────────────────────────────────────────────
 
