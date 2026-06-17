@@ -36,15 +36,21 @@ const FACES: Face[] = [
 ];
 
 /**
- * Injects @font-face declarations (base64 WOFF2) for all bundled fonts into the
- * given SVG clone's <defs> as a <style> element, so the exported image is
- * self-contained regardless of which font the user selected (R16).
+ * Injects @font-face declarations (base64 WOFF2) into the given SVG clone's
+ * <defs> as a <style> element, so the exported image is self-contained (R16).
+ *
+ * Pass `families` to embed only those families (plus omit the rest) — the export
+ * does this to keep the payload small (just the selected font + Pretendard
+ * fallback), because embedding all ~6.5MB of fonts makes an SVG-as-image
+ * rasterize before the fonts finish loading, dropping the text. With no argument
+ * every bundled face is embedded.
  *
  * The style element is inserted as the first child of <defs> so it takes
  * precedence over any subsequent style rules.
  */
-export function injectFontFaceStyle(svgClone: SVGSVGElement): void {
-  const css = FACES.filter((f) => Boolean(f.src))
+export function injectFontFaceStyle(svgClone: SVGSVGElement, families?: string[]): void {
+  const wanted = families ? new Set(families) : null;
+  const css = FACES.filter((f) => Boolean(f.src) && (!wanted || wanted.has(f.family)))
     .map(
       (f) => `@font-face {
   font-family: '${f.family}';

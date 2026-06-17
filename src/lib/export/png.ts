@@ -33,21 +33,22 @@ export async function exportPng(
     el.remove();
   }
 
-  // 2. Inject @font-face with base64 WOFF2 (R16 requirement)
-  injectFontFaceStyle(clone);
-
-  // 2a. Resolve the live font preferences onto the clone root. The standalone
-  // SVG is rasterized via <img> ("secure static mode"), which has no access to
-  // the document's CSS custom properties — so the chart's
-  // `font-family: var(--app-font-family, …)` and `font-size: calc(var(--app-font-scale,1)*…)`
-  // would otherwise fall back to Pretendard at 100%. Defining the vars on the
-  // clone root lets them resolve inside the isolated SVG (the @font-face above
-  // supplies the actual glyphs).
+  // 2. Resolve the live font preferences. The standalone SVG is rasterized via
+  // <img> ("secure static mode"), which has no access to the document's CSS
+  // custom properties — so the chart's `font-family: var(--app-font-family, …)`
+  // and `font-size: calc(var(--app-font-scale,1)*…)` would otherwise fall back
+  // to Pretendard at 100%. Define the vars on the clone root so they resolve.
   const rootStyle = getComputedStyle(document.documentElement);
   const famVar = rootStyle.getPropertyValue('--app-font-family').trim();
   const scaleVar = rootStyle.getPropertyValue('--app-font-scale').trim();
+  const selectedFamily = (famVar || 'Pretendard').replace(/['"]/g, '').trim();
   clone.style.setProperty('--app-font-family', famVar || 'Pretendard');
   clone.style.setProperty('--app-font-scale', scaleVar || '1');
+
+  // 2a. Embed ONLY the selected font (+ Pretendard fallback) as base64 @font-face
+  // (R16). Embedding every bundled font (~6.5MB) makes the SVG-as-image rasterize
+  // before the fonts load and the text comes out blank — so keep the payload small.
+  injectFontFaceStyle(clone, [selectedFamily, 'Pretendard']);
 
   // 3. Set explicit width/height for rasterization at target resolution
   clone.setAttribute('width', String(size));
