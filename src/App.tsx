@@ -18,7 +18,7 @@ import { HubTitleEditor } from '@/components/HubTitleEditor/HubTitleEditor';
 import { SlotSheet } from '@/components/SlotSheet/SlotSheet';
 import { SaveAsDialog } from '@/components/SaveAsDialog/SaveAsDialog';
 import { ExportDialog } from '@/components/ExportPanel/ExportDialog';
-import { SettingsDialog } from '@/components/Settings/SettingsDialog';
+import { SettingsDialog, type SettingsSection } from '@/components/Settings/SettingsDialog';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useSliceInteraction } from '@/hooks/useSliceInteraction';
@@ -58,7 +58,7 @@ function App() {
   const [exportOpen, setExportOpen] = useState(false);
   const [editingSliceId, setEditingSliceId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsSection, setSettingsSection] = useState<SettingsSection | null>(null);
   const { t } = useTranslation();
 
   /**
@@ -122,14 +122,30 @@ function App() {
             <Button variant="outline" onClick={() => setExportOpen(true)}>
               {t('header.export')}
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t('header.settings')}
-              onClick={() => setSettingsOpen(true)}
-            >
-              <SettingsIcon className="h-4 w-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label={t('header.settings')}>
+                  <SettingsIcon className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setSettingsSection('language')}>
+                  {t('settings.language')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSettingsSection('font')}>
+                  {t('settings.font')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSettingsSection('icons')}>
+                  {t('settings.icons')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSettingsSection('background')}>
+                  {t('settings.background')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSettingsSection('theme')}>
+                  {t('settings.colorTheme')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <ThemeToggle />
           </div>
         </div>
@@ -187,7 +203,7 @@ function App() {
       />
 
       {/* T19: Settings dialog */}
-      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <SettingsDialog section={settingsSection} onClose={() => setSettingsSection(null)} />
 
       {/* T9: Export dialog */}
       <ExportDialog

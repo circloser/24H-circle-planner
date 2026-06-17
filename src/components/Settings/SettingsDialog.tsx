@@ -22,10 +22,21 @@ import { COLOR_THEMES } from '@/data/color-themes';
 import { LANGUAGES, type Lang } from '@/i18n/translations';
 import type { TKey } from '@/i18n/translations';
 
+/** Each settings category is its own focused dialog, opened from the gear menu. */
+export type SettingsSection = 'language' | 'font' | 'icons' | 'background' | 'theme';
+
 export interface SettingsDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  section: SettingsSection | null;
+  onClose: () => void;
 }
+
+const SECTION_TITLE: Record<SettingsSection, TKey> = {
+  language: 'settings.language',
+  font: 'settings.font',
+  icons: 'settings.icons',
+  background: 'settings.background',
+  theme: 'settings.colorTheme',
+};
 
 const BG_LABEL: Record<Background, TKey> = {
   none: 'bg.none',
@@ -43,7 +54,7 @@ const BG_LABEL: Record<Background, TKey> = {
 // vars, since Tailwind semantic color utilities aren't generated here).
 const OPT_CHIP = 'opt-chip px-3 py-1.5 rounded-md text-sm';
 
-export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
+export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
   const { prefs, setPreference } = usePreferences();
   const { t, lang } = useTranslation();
   const dispatch = useStoreDispatch();
@@ -78,16 +89,15 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={section !== null} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t('settings.title')}</DialogTitle>
+          <DialogTitle>{section ? t(SECTION_TITLE[section]) : ''}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-5 py-1">
           {/* Language */}
-          <section className="flex flex-col gap-2">
-            <h3 className="text-sm font-semibold">{t('settings.language')}</h3>
+          {section === 'language' && (
             <div className="flex flex-wrap gap-1.5">
               {LANGUAGES.map((l) => (
                 <button
@@ -101,50 +111,51 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 </button>
               ))}
             </div>
-          </section>
+          )}
 
-          {/* Font family */}
-          <section className="flex flex-col gap-2">
-            <h3 className="text-sm font-semibold">{t('settings.fontFamily')}</h3>
-            <div className="flex flex-wrap gap-1.5">
-              {FONT_FAMILIES.map((f) => (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => setPreference('fontFamily', f.css)}
-                  aria-pressed={prefs.fontFamily === f.css}
-                  style={{ fontFamily: `${f.css}, system-ui, sans-serif` }}
-                  className={OPT_CHIP}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {/* Font size — continuous slider */}
-          <section className="flex flex-col gap-2">
-            <h3 className="text-sm font-semibold">{t('settings.fontSize')}</h3>
-            <div className="flex items-center gap-3">
-              <input
-                type="range"
-                min={FONT_SCALE_MIN}
-                max={FONT_SCALE_MAX}
-                step={FONT_SCALE_STEP}
-                value={prefs.fontScale}
-                onChange={(e) => setPreference('fontScale', Number(e.target.value))}
-                aria-label={t('settings.fontSize')}
-                className="flex-1 accent-[hsl(var(--primary))] cursor-pointer"
-              />
-              <span className="w-12 text-right text-xs tabular-nums text-muted-foreground">
-                {Math.round(prefs.fontScale * 100)}%
-              </span>
-            </div>
-          </section>
+          {/* Font: family + size */}
+          {section === 'font' && (
+            <>
+              <section className="flex flex-col gap-2">
+                <h3 className="text-sm font-semibold">{t('settings.fontFamily')}</h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {FONT_FAMILIES.map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setPreference('fontFamily', f.css)}
+                      aria-pressed={prefs.fontFamily === f.css}
+                      style={{ fontFamily: `${f.css}, system-ui, sans-serif` }}
+                      className={OPT_CHIP}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </section>
+              <section className="flex flex-col gap-2">
+                <h3 className="text-sm font-semibold">{t('settings.fontSize')}</h3>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min={FONT_SCALE_MIN}
+                    max={FONT_SCALE_MAX}
+                    step={FONT_SCALE_STEP}
+                    value={prefs.fontScale}
+                    onChange={(e) => setPreference('fontScale', Number(e.target.value))}
+                    aria-label={t('settings.fontSize')}
+                    className="flex-1 accent-[hsl(var(--primary))] cursor-pointer"
+                  />
+                  <span className="w-12 text-right text-xs tabular-nums text-muted-foreground">
+                    {Math.round(prefs.fontScale * 100)}%
+                  </span>
+                </div>
+              </section>
+            </>
+          )}
 
           {/* Icons on/off */}
-          <section className="flex flex-col gap-2">
-            <h3 className="text-sm font-semibold">{t('settings.icons')}</h3>
+          {section === 'icons' && (
             <div className="flex gap-1.5">
               <button
                 type="button"
@@ -163,96 +174,95 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 {t('settings.iconsHide')}
               </button>
             </div>
-          </section>
+          )}
 
           {/* Background */}
-          <section className="flex flex-col gap-3">
-            <h3 className="text-sm font-semibold">{t('settings.background')}</h3>
-
-            {/* Patterns */}
-            <div className="flex flex-col gap-1.5">
-              <span className="text-xs text-muted-foreground">{t('settings.bgPattern')}</span>
-              <div className="flex flex-wrap gap-1.5">
-                {BACKGROUNDS.map((bg) => (
-                  <button
-                    key={bg}
-                    type="button"
-                    onClick={() => selectPattern(bg)}
-                    aria-pressed={prefs.bgType === 'pattern' && prefs.background === bg}
-                    className={OPT_CHIP}
-                  >
-                    {t(BG_LABEL[bg])}
-                  </button>
-                ))}
+          {section === 'background' && (
+            <div className="flex flex-col gap-3">
+              {/* Patterns */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs text-muted-foreground">{t('settings.bgPattern')}</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {BACKGROUNDS.map((bg) => (
+                    <button
+                      key={bg}
+                      type="button"
+                      onClick={() => selectPattern(bg)}
+                      aria-pressed={prefs.bgType === 'pattern' && prefs.background === bg}
+                      className={OPT_CHIP}
+                    >
+                      {t(BG_LABEL[bg])}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Solid color */}
-            <div className="flex flex-col gap-1.5">
-              <span className="text-xs text-muted-foreground">{t('settings.bgColor')}</span>
-              <label
-                data-selected={prefs.bgType === 'color'}
-                className="opt-pick inline-flex items-center gap-2 w-fit px-2 py-1.5 rounded-md cursor-pointer"
-              >
-                <span
-                  className="h-6 w-6 rounded border border-input"
-                  style={{ backgroundColor: prefs.bgColor }}
-                />
-                <span className="text-sm tabular-nums">{prefs.bgColor}</span>
-                <input
-                  type="color"
-                  value={prefs.bgColor}
-                  onChange={(e) => selectColor(e.target.value)}
-                  aria-label={t('settings.bgColor')}
-                  className="sr-only"
-                />
-              </label>
-            </div>
-
-            {/* Image upload */}
-            <div className="flex flex-col gap-1.5">
-              <span className="text-xs text-muted-foreground">{t('settings.bgImage')}</span>
-              <div className="flex items-center gap-2">
-                {prefs.bgImage ? (
-                  <span
-                    data-selected={prefs.bgType === 'image'}
-                    className="opt-pick h-12 w-20 rounded-md bg-cover bg-center cursor-pointer"
-                    style={{ backgroundImage: `url("${prefs.bgImage}")` }}
-                    role="img"
-                    aria-label={t('settings.bgImage')}
-                    onClick={() => setPreference('bgType', 'image')}
-                  />
-                ) : null}
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="px-3 py-1.5 rounded-md text-sm border border-input hover:bg-muted transition-colors"
+              {/* Solid color */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs text-muted-foreground">{t('settings.bgColor')}</span>
+                <label
+                  data-selected={prefs.bgType === 'color'}
+                  className="opt-pick inline-flex items-center gap-2 w-fit px-2 py-1.5 rounded-md cursor-pointer"
                 >
-                  {t('settings.uploadImage')}
-                </button>
-                {prefs.bgImage ? (
+                  <span
+                    className="h-6 w-6 rounded border border-input"
+                    style={{ backgroundColor: prefs.bgColor }}
+                  />
+                  <span className="text-sm tabular-nums">{prefs.bgColor}</span>
+                  <input
+                    type="color"
+                    value={prefs.bgColor}
+                    onChange={(e) => selectColor(e.target.value)}
+                    aria-label={t('settings.bgColor')}
+                    className="sr-only"
+                  />
+                </label>
+              </div>
+
+              {/* Image upload */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs text-muted-foreground">{t('settings.bgImage')}</span>
+                <div className="flex items-center gap-2">
+                  {prefs.bgImage ? (
+                    <span
+                      data-selected={prefs.bgType === 'image'}
+                      className="opt-pick h-12 w-20 rounded-md bg-cover bg-center cursor-pointer"
+                      style={{ backgroundImage: `url("${prefs.bgImage}")` }}
+                      role="img"
+                      aria-label={t('settings.bgImage')}
+                      onClick={() => setPreference('bgType', 'image')}
+                    />
+                  ) : null}
                   <button
                     type="button"
-                    onClick={removeImage}
+                    onClick={() => fileInputRef.current?.click()}
                     className="px-3 py-1.5 rounded-md text-sm border border-input hover:bg-muted transition-colors"
                   >
-                    {t('settings.removeImage')}
+                    {t('settings.uploadImage')}
                   </button>
-                ) : null}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={onImagePick}
-                  className="sr-only"
-                />
+                  {prefs.bgImage ? (
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="px-3 py-1.5 rounded-md text-sm border border-input hover:bg-muted transition-colors"
+                    >
+                      {t('settings.removeImage')}
+                    </button>
+                  ) : null}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={onImagePick}
+                    className="sr-only"
+                  />
+                </div>
               </div>
             </div>
-          </section>
+          )}
 
           {/* Color theme — recolours all slices (undoable schedule change) */}
-          <section className="flex flex-col gap-2">
-            <h3 className="text-sm font-semibold">{t('settings.colorTheme')}</h3>
+          {section === 'theme' && (
             <div className="flex flex-col gap-1.5">
               {COLOR_THEMES.map((theme) => (
                 <button
@@ -274,7 +284,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 </button>
               ))}
             </div>
-          </section>
+          )}
         </div>
       </DialogContent>
     </Dialog>
