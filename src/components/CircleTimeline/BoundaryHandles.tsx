@@ -177,6 +177,9 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
   const dotVisible = hovered || isThisDragged;
 
   const { x, y, angleDeg } = boundaryHandlePosition(slice, 'end');
+  // Endpoints of the division line (hub edge → rim) for the wide hover/grab strip.
+  const innerPt = polarToCartesian(RING.cx, RING.cy, RING.innerR + 2, angleDeg);
+  const outerPt = polarToCartesian(RING.cx, RING.cy, RING.outerR - 2, angleDeg);
   const len = slices.length;
 
   // CCW slice = slices[index], CW slice = slices[(index + 1) % len]
@@ -235,6 +238,22 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={() => setHovered(false)}
     >
+      {/* Wide transparent strip along the WHOLE division line (hub edge → rim) —
+          so the affordances appear when the pointer is anywhere NEAR the
+          boundary, not only on the small center dot. Pressing it also grabs the
+          boundary for dragging. Rendered first (bottom) so the affordance
+          buttons + dot stay on top. (Transparent → invisible in exports.) */}
+      <line
+        x1={innerPt.x}
+        y1={innerPt.y}
+        x2={outerPt.x}
+        y2={outerPt.y}
+        stroke="transparent"
+        strokeWidth={20}
+        style={{ pointerEvents: 'stroke', cursor: 'ew-resize', touchAction: 'none' }}
+        onPointerDown={(e) => onPointerDownHandle(e, index)}
+      />
+
       {/* Hover affordances — rendered BELOW the drag hit-area in DOM order,
           but on a higher visual layer by z-order of SVG paint order.
           Tagged data-export-exclude so the export clone strips them.
