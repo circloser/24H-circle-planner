@@ -1,6 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { v4 as uuid } from 'uuid';
+import { randomQuote } from '@/data/quotes';
+
+const MEMO_SIZE = 200;
 
 export interface Memo {
   id: string;
@@ -59,19 +62,19 @@ export function MemoProvider({ children }: { children: React.ReactNode }) {
   }, [memos]);
 
   const addMemo = useCallback(() => {
-    setMemos((prev) => {
-      // Cascade new notes so they don't stack exactly on top of each other.
-      const step = prev.length % 8;
-      const memo: Memo = {
-        id: uuid(),
-        text: '',
-        x: 28 + step * 18,
-        y: 96 + step * 18,
-        color: DEFAULT_COLOR,
-        fontFamily: 'Pretendard',
-      };
-      return [...prev, memo];
-    });
+    // Drop the note at a random spot in the viewport (kept fully on-screen,
+    // below the header) seeded with a random famous quote.
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+    const memo: Memo = {
+      id: uuid(),
+      text: randomQuote(),
+      x: Math.round(16 + Math.random() * Math.max(0, vw - MEMO_SIZE - 32)),
+      y: Math.round(76 + Math.random() * Math.max(0, vh - MEMO_SIZE - 96)),
+      color: DEFAULT_COLOR,
+      fontFamily: 'Pretendard',
+    };
+    setMemos((prev) => [...prev, memo]);
   }, []);
 
   const updateMemo = useCallback((id: string, patch: Partial<Memo>) => {

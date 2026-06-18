@@ -1,18 +1,20 @@
 import { type PointerEvent as ReactPointerEvent } from 'react';
-import { GripHorizontal, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useMemos, MEMO_COLORS, type Memo } from '@/hooks/useMemos';
 import { FONT_FAMILIES, useTranslation } from '@/hooks/usePreferences';
 
 const SIZE = 200; // fixed (size not adjustable, by request)
-const FOLD = 24; // folded-corner size (px)
+const FOLD = 26; // folded-corner size (px)
 
-/** Darken a hex colour by `amt` (0..1) for the folded-corner shading. */
-function darken(hex: string, amt: number): string {
+/** Shift a hex colour toward white (amt > 0) or black (amt < 0), amt in 0..1. */
+function shade(hex: string, amt: number): string {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex);
   if (!m) return hex;
   const n = parseInt(m[1], 16);
-  const c = (v: number) => Math.max(0, Math.round(v * (1 - amt)));
-  const h = (v: number) => c(v).toString(16).padStart(2, '0');
+  const target = amt >= 0 ? 255 : 0;
+  const k = Math.abs(amt);
+  const ch = (v: number) => Math.round(v + (target - v) * k);
+  const h = (v: number) => ch(v).toString(16).padStart(2, '0');
   return `#${h((n >> 16) & 255)}${h((n >> 8) & 255)}${h(n & 255)}`;
 }
 
@@ -20,8 +22,11 @@ export function MemoNote({ memo }: { memo: Memo }) {
   const { updateMemo, removeMemo } = useMemos();
   const { t } = useTranslation();
 
-  // Drag the note by its grip bar (pointer capture so it tracks reliably).
-  function onGripPointerDown(e: ReactPointerEvent<HTMLDivElement>) {
+  // Drag the note from anywhere on the paper EXCEPT the editable text / delete
+  // button (so editing and deleting still work). Pointer capture tracks reliably.
+  function onPaperPointerDown(e: ReactPointerEvent<HTMLDivElement>) {
+    const target = e.target as Element;
+    if (target.closest('.memo-text') || target.closest('.memo-del')) return;
     e.preventDefault();
     const el = e.currentTarget;
     el.setPointerCapture(e.pointerId);
@@ -44,8 +49,7 @@ export function MemoNote({ memo }: { memo: Memo }) {
     el.addEventListener('pointerup', onUp);
   }
 
-  // The paper's bottom-right corner is cut diagonally; the fold flap fills that
-  // cut (a darker→lighter gradient = the curled-up corner).
+  // Bottom-right corner is cut diagonally; the fold flap fills the cut.
   const cornerCut = `polygon(0 0, 100% 0, 100% calc(100% - ${FOLD}px), calc(100% - ${FOLD}px) 100%, 0 100%)`;
 
   return (
@@ -53,7 +57,7 @@ export function MemoNote({ memo }: { memo: Memo }) {
       className="memo-note group"
       style={{ position: 'fixed', left: memo.x, top: memo.y, width: SIZE, height: SIZE, zIndex: 20 }}
     >
-      {/* Hover toolbar — colours + font + delete, above the note (not clipped). */}
+      {/* Hover toolbar — colour + font, above the note (not clipped). */}
       <div className="memo-toolbar">
         <div className="flex items-center gap-1">
           {MEMO_COLORS.map((c) => (
@@ -74,7 +78,7 @@ export function MemoNote({ memo }: { memo: Memo }) {
         <select
           value={memo.fontFamily}
           onChange={(e) => updateMemo(memo.id, { fontFamily: e.target.value })}
-          className="h-6 rounded border border-black/15 bg-white/80 text-[11px] px-1 max-w-[88px]"
+          className="h-6 rounded border border-black/15 bg-white/80 text-[11px] px-1 max-w-[96px]"
           aria-label={t('settings.fontFamily')}
         >
           {FONT_FAMILIES.map((f) => (
@@ -83,30 +87,29 @@ export function MemoNote({ memo }: { memo: Memo }) {
             </option>
           ))}
         </select>
-        <button
-          type="button"
-          aria-label={t('memo.delete')}
-          onClick={() => removeMemo(memo.id)}
-          className="h-6 w-6 grid place-items-center rounded hover:bg-black/10"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
       </div>
 
-      {/* The paper itself — clipped corner + shadow (filter, so the cut is kept). */}
+      {/* The paper — clipped corner + soft shadow (filter keeps the cut shape). */}
       <div
         className="memo-paper"
+        onPointerDown={onPaperPointerDown}
         style={{
           backgroundColor: memo.color,
           fontFamily: `${memo.fontFamily}, system-ui, sans-serif`,
           clipPath: cornerCut,
         }}
       >
-        <div className="memo-grip" onPointerDown={onGripPointerDown} style={{ touchAction: 'none' }}>
-          <GripHorizontal className="h-3.5 w-3.5 text-black/35" />
-        </div>
+        {/* Hover delete — top-right corner. */}
+        <button
+          type="button"
+          className="memo-del"
+          aria-label={t('memo.delete')}
+          onClick={() => removeMemo(memo.id)}
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
 
-        {/* Centered, editable text (contentEditable so it can centre vertically). */}
+        {/* Centered, editable text. */}
         <div
           className="memo-text"
           contentEditable
@@ -115,7 +118,6 @@ export function MemoNote({ memo }: { memo: Memo }) {
           aria-label={t('memo.placeholder')}
           data-placeholder={t('memo.placeholder')}
           ref={(el) => {
-            // Sync from store only when not actively editing, to avoid caret jumps.
             if (el && document.activeElement !== el && el.innerText !== memo.text) {
               el.innerText = memo.text;
             }
@@ -124,13 +126,13 @@ export function MemoNote({ memo }: { memo: Memo }) {
         />
       </div>
 
-      {/* Folded corner (page curl) filling the cut. */}
+      {/* Folded corner (page curl): light lifted edge → shadowed crease. */}
       <div
         className="memo-fold"
         style={{
           width: FOLD,
           height: FOLD,
-          backgroundImage: `linear-gradient(135deg, ${darken(memo.color, 0.22)} 0%, ${darken(memo.color, 0.05)} 100%)`,
+          backgroundImage: `linear-gradient(135deg, ${shade(memo.color, 0.12)} 0%, ${shade(memo.color, -0.2)} 40%, ${shade(memo.color, -0.04)} 100%)`,
         }}
       />
     </div>
