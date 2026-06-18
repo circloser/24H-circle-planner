@@ -1,4 +1,4 @@
-import { Sun, Moon, Monitor } from 'lucide-react';
+import { Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -10,18 +10,16 @@ import { useTheme, type Theme } from '@/hooks/useTheme';
 import { useTranslation } from '@/hooks/usePreferences';
 import type { TKey } from '@/i18n/translations';
 
-const THEME_CYCLE: Theme[] = ['light', 'dark', 'system'];
+// Light/dark only — toggles between the two (no OS-following 'system').
+const THEME_CYCLE: Theme[] = ['light', 'dark'];
 
 const THEME_LABEL_KEY: Record<Theme, TKey> = {
   light: 'theme.lightMode',
   dark: 'theme.darkMode',
-  system: 'theme.systemMode',
 };
 
 function ThemeIcon({ theme }: { theme: Theme }) {
-  if (theme === 'dark') return <Moon className="h-4 w-4" />;
-  if (theme === 'system') return <Monitor className="h-4 w-4" />;
-  return <Sun className="h-4 w-4" />;
+  return theme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />;
 }
 
 export function ThemeToggle() {

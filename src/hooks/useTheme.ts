@@ -1,59 +1,35 @@
 import { useState, useEffect, useCallback } from 'react';
 import { STORAGE_KEY_THEME } from '@/lib/storage';
 
-export type Theme = 'light' | 'dark' | 'system';
+export type Theme = 'light' | 'dark';
 
 function readStoredTheme(): Theme {
   try {
     const stored = localStorage.getItem(STORAGE_KEY_THEME);
-    if (stored === 'light' || stored === 'dark' || stored === 'system') {
-      return stored;
-    }
+    if (stored === 'light' || stored === 'dark') return stored;
   } catch {
     // localStorage unavailable (SSR / private browsing edge case)
   }
-  return 'system';
+  return 'light';
 }
 
-function getSystemPrefers(): 'light' | 'dark' {
-  if (typeof window === 'undefined') return 'light';
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+function applyTheme(theme: Theme): void {
+  document.documentElement.setAttribute('data-theme', theme);
 }
 
-function resolveEffective(theme: Theme): 'light' | 'dark' {
-  if (theme === 'system') return getSystemPrefers();
-  return theme;
-}
-
-function applyTheme(effectiveTheme: 'light' | 'dark'): void {
-  document.documentElement.setAttribute('data-theme', effectiveTheme);
-}
-
+/**
+ * Explicit light/dark theme only — the app does not follow the OS preference
+ * (by design). `effectiveTheme` mirrors `theme` and is kept for callers.
+ */
 export function useTheme(): {
   theme: Theme;
-  effectiveTheme: 'light' | 'dark';
+  effectiveTheme: Theme;
   setTheme: (t: Theme) => void;
 } {
   const [theme, setThemeState] = useState<Theme>(readStoredTheme);
-  const effectiveTheme = resolveEffective(theme);
 
-  // Apply theme to DOM on every change
   useEffect(() => {
-    applyTheme(effectiveTheme);
-  }, [effectiveTheme]);
-
-  // When theme === 'system', track OS preference changes
-  useEffect(() => {
-    if (theme !== 'system') return;
-
-    const mql = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = (e: MediaQueryListEvent) => {
-      applyTheme(e.matches ? 'dark' : 'light');
-    };
-    mql.addEventListener('change', handler);
-    return () => {
-      mql.removeEventListener('change', handler);
-    };
+    applyTheme(theme);
   }, [theme]);
 
   const setTheme = useCallback((t: Theme) => {
@@ -65,5 +41,5 @@ export function useTheme(): {
     setThemeState(t);
   }, []);
 
-  return { theme, effectiveTheme, setTheme };
+  return { theme, effectiveTheme: theme, setTheme };
 }
