@@ -115,7 +115,10 @@ export type TKey =
   | 'hub.placeholder'
   | 'circle.emptyHint'
   | 'circle.ariaTimeline'
-  | 'app.loaded';
+  | 'app.loaded'
+  | 'memo.add'
+  | 'memo.delete'
+  | 'memo.placeholder';
 
 type Dict = Record<TKey, string>;
 
@@ -216,6 +219,9 @@ const ko: Dict = {
   'circle.emptyHint': '프리셋을 선택하거나 빈 영역을 클릭해 시작하세요',
   'circle.ariaTimeline': '24시간 원형 타임라인',
   'app.loaded': '{name}을(를) 불러왔습니다',
+  'memo.add': '메모 추가',
+  'memo.delete': '메모 삭제',
+  'memo.placeholder': '메모를 입력하세요',
 };
 
 const en: Dict = {
@@ -317,6 +323,9 @@ const en: Dict = {
   'circle.emptyHint': 'Pick a preset or click an empty area to start',
   'circle.ariaTimeline': '24-hour circular timeline',
   'app.loaded': '{name} loaded',
+  'memo.add': 'Add memo',
+  'memo.delete': 'Delete memo',
+  'memo.placeholder': 'Type a memo…',
 };
 
 // Skeleton languages — cover the most visible chrome; everything else falls

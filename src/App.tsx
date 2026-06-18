@@ -19,6 +19,7 @@ import { SlotSheet } from '@/components/SlotSheet/SlotSheet';
 import { SaveAsDialog } from '@/components/SaveAsDialog/SaveAsDialog';
 import { ExportDialog } from '@/components/ExportPanel/ExportDialog';
 import { SettingsDialog, type SettingsSection } from '@/components/Settings/SettingsDialog';
+import { MemoLayer } from '@/components/Memo/MemoLayer';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useSliceInteraction } from '@/hooks/useSliceInteraction';
@@ -239,6 +240,9 @@ function App() {
         schedule={present}
         onImport={(s: Schedule) => dispatch({ type: 'LOAD_SCHEDULE', schedule: s })}
       />
+
+      {/* Post-it memo layer (floating add button + notes) */}
+      <MemoLayer />
     </div>
   );
 }
