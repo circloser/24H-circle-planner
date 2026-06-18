@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import type { TimeSlice } from '@/types/time-slice';
-import { RING, polarToCartesian, slicePath, truncateLabel } from '@/lib/svg-geometry';
+import { RING, polarToCartesian, slicePath, wrapText } from '@/lib/svg-geometry';
 import { hhmmToAngle } from '@/lib/time-utils';
 import { useSliceSelector, useStoreSelector } from '@/hooks/useScheduleStore';
 import { useTranslation, useShowClock, useShowNowLine } from '@/hooks/usePreferences';
@@ -346,6 +346,11 @@ export function CircleTimeline({
   const showClock = useShowClock();
   const showNowLine = useShowNowLine();
 
+  // Center hub title — wrapped to fill the circular space (up to 2 lines)
+  // instead of hard-truncating to a few characters.
+  const titleLines = title ? wrapText(translatePresetName(title, lang), 14, 2) : [];
+  const titleFontSize = titleLines.length > 1 ? 21 : 26;
+
   // Fallback internal svg ref (if none passed — e.g. in view mode or tests)
   const internalSvgRef = useRef<SVGSVGElement | null>(null);
   const svgRef = svgRefProp ?? internalSvgRef;
@@ -513,19 +518,27 @@ export function CircleTimeline({
       />
       {/* Schedule title — SVG text so it appears in PNG/PDF export (unlike the
           live clock, which is an HTML overlay and is excluded from export). */}
-      {title ? (
+      {titleLines.length > 0 ? (
         <text
           x={cx}
           y={cy - 8}
           textAnchor="middle"
           dominantBaseline="central"
-          fontSize={26}
+          fontSize={titleFontSize}
           fontWeight={600}
           fill="hsl(var(--foreground) / 0.9)"
           fontFamily="inherit"
           style={{ pointerEvents: 'none' }}
         >
-          {truncateLabel(translatePresetName(title, lang), 6, 12)}
+          {titleLines.map((ln, i) => (
+            <tspan
+              key={i}
+              x={cx}
+              dy={i === 0 ? `${(-(titleLines.length - 1) / 2) * 1.12}em` : '1.12em'}
+            >
+              {ln}
+            </tspan>
+          ))}
         </text>
       ) : null}
     </svg>

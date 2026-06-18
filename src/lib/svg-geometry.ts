@@ -203,3 +203,58 @@ export function truncateLabel(
 
   return label;
 }
+
+// ─── Multi-line wrapping (hub title) ──────────────────────────────────────────
+
+/** Visual width in "units": CJK/full-width glyphs count as 2, others as 1. */
+function visualWidth(s: string): number {
+  let w = 0;
+  for (const ch of s) {
+    w += /[ᄀ-ᅟ⺀-꓏가-힣豈-﫿︰-﹏＀-｠￠-￦]/.test(ch)
+      ? 2
+      : 1;
+  }
+  return w;
+}
+
+/**
+ * Wrap `text` into at most `maxLines` lines of ≤ `maxUnits` visual width each,
+ * breaking at spaces when possible (and inside over-long words otherwise). If
+ * the content still overflows, the last line ends with an ellipsis. Used by the
+ * center hub title to fill the circular space instead of hard-truncating.
+ */
+export function wrapText(text: string, maxUnits: number, maxLines: number): string[] {
+  const trimmed = (text ?? '').replace(/\s+/g, ' ').trim();
+  if (!trimmed) return [];
+  if (visualWidth(trimmed) <= maxUnits) return [trimmed];
+
+  const all: string[] = [];
+  let line = '';
+  let lastSpace = -1; // index in `line` of the last break opportunity
+  for (const ch of [...trimmed]) {
+    if (visualWidth(line + ch) <= maxUnits) {
+      line += ch;
+      if (ch === ' ') lastSpace = line.length - 1;
+    } else if (lastSpace > 0) {
+      all.push(line.slice(0, lastSpace).trim());
+      line = (line.slice(lastSpace + 1) + ch).trimStart();
+      lastSpace = -1;
+    } else {
+      all.push(line.trim());
+      line = ch;
+      lastSpace = -1;
+    }
+  }
+  if (line.trim()) all.push(line.trim());
+
+  if (all.length <= maxLines) return all;
+
+  // Overflow: keep maxLines lines, ellipsize the last.
+  const kept = all.slice(0, maxLines);
+  let last = kept[maxLines - 1];
+  while (last.length > 0 && visualWidth(last + '…') > maxUnits) {
+    last = last.slice(0, -1);
+  }
+  kept[maxLines - 1] = last.trimEnd() + '…';
+  return kept;
+}
