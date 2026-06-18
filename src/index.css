@@ -206,12 +206,18 @@ svg text {
 }
 
 /* ─── Post-it memos ──────────────────────────────────────────────────────────── */
-.memo-note {
-  border-radius: 4px 4px 4px 0;
-  box-shadow: 0 6px 16px hsl(220 30% 15% / 0.18), 0 1px 2px hsl(220 30% 15% / 0.12);
+/* .memo-note is a transparent container; .memo-paper carries the paper look so
+   its clipped (folded) corner can keep a drop-shadow and the toolbar stays
+   outside the clip. */
+.memo-paper {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
+  border-radius: 4px 4px 4px 0;
   color: #1f2937; /* dark text reads on every post-it colour */
+  /* filter (not box-shadow) so the shadow follows the clipped corner shape */
+  filter: drop-shadow(0 5px 9px rgba(20, 25, 40, 0.2)) drop-shadow(0 1px 2px rgba(20, 25, 40, 0.12));
 }
 .memo-grip {
   height: 20px;
@@ -219,34 +225,41 @@ svg text {
   align-items: center;
   justify-content: center;
   cursor: grab;
+  flex-shrink: 0;
 }
 .memo-grip:active {
   cursor: grabbing;
 }
 .memo-text {
   flex: 1;
-  width: 100%;
-  resize: none;
-  border: none;
+  /* flex column centring keeps the whole (multi-line) text block centred both
+     axes — unlike grid, which spread typed lines into separate rows. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4px 14px 18px;
   outline: none;
-  background: transparent;
-  padding: 2px 12px 16px;
+  overflow: auto;
   font: inherit;
   font-size: 14px;
-  line-height: 1.45;
+  line-height: 1.4;
   color: inherit;
+  cursor: text;
+  word-break: break-word;
 }
-.memo-text::placeholder {
+.memo-text:empty::before {
+  content: attr(data-placeholder);
   color: rgba(0, 0, 0, 0.32);
 }
 .memo-fold {
   position: absolute;
   right: 0;
   bottom: 0;
-  width: 22px;
-  height: 22px;
   clip-path: polygon(100% 0, 0 100%, 100% 100%);
-  filter: drop-shadow(-1px -1px 1.5px rgba(0, 0, 0, 0.18));
+  /* the curl lifts off the page toward the top-left */
+  filter: drop-shadow(-1px -1px 1.2px rgba(0, 0, 0, 0.28));
 }
 .memo-toolbar {
   position: absolute;
