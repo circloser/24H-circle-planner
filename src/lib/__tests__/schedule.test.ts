@@ -5,6 +5,7 @@ import {
   resizeBoundary,
   replaceSlice,
   applyPalette,
+  pickSimilarColor,
   ContiguityError,
 } from '../schedule';
 import { isContiguous24h, sliceWidthMinutes } from '../time-utils';
@@ -51,6 +52,31 @@ function makeFourQuarters(): Schedule {
     makeSlice('18:00', '00:00', { label: 'D' }),
   ]);
 }
+
+// ─── pickSimilarColor ────────────────────────────────────────────────────────
+
+describe('pickSimilarColor', () => {
+  it('returns a valid hex that differs from the input (a sibling shade)', () => {
+    for (const c of ['#93c5fd', '#fca5a5', '#d1d5db', '#6ee7b7']) {
+      const out = pickSimilarColor(c);
+      expect(out).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(out.toLowerCase()).not.toBe(c.toLowerCase());
+    }
+  });
+
+  it('keeps the same hue family (close in RGB, unlike a contrasting colour)', () => {
+    const out = pickSimilarColor('#93c5fd'); // pastel blue
+    const n = parseInt(out.slice(1), 16);
+    const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    // Blue should remain the dominant channel for a same-hue sibling.
+    expect(b).toBeGreaterThan(r);
+    expect(b).toBeGreaterThan(g - 1);
+  });
+
+  it('falls back gracefully for an unparseable colour', () => {
+    expect(pickSimilarColor('not-a-color')).toMatch(/^#[0-9a-f]{6}$/i);
+  });
+});
 
 // ─── applyPalette ────────────────────────────────────────────────────────────
 
@@ -112,11 +138,12 @@ describe('splitSliceAt', () => {
     expect(later.label).toBe('B'); // parent content moved to the later half
   });
 
-  it('new slice gets a colour distinct from parent, empty label/icon, textPosition inside', () => {
+  it('new slice gets a sibling colour (different from parent), empty label/icon, textPosition inside', () => {
     const schedule = makeFourQuarters();
     const parentColor = schedule.slices[0].color;
     const result = splitSliceAt(schedule, '03:00');
     const newSlice = result.slices[1]; // after first slice split
+    // A sibling shade of the parent — harmonious, but still distinguishable.
     expect(newSlice.color.toLowerCase()).not.toBe(parentColor.toLowerCase());
     expect(newSlice.label).toBe('');
     expect(newSlice.icon).toBe('');

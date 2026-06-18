@@ -48,6 +48,73 @@ export function pickDistinctColor(avoid: string): string {
   return SPLIT_PALETTE[(idx + 5) % SPLIT_PALETTE.length];
 }
 
+// ─── Colour helpers (hex ↔ HSL) for sibling shades ─────────────────────────────
+
+function hexToRgb(hex: string): [number, number, number] | null {
+  const m = /^#?([0-9a-f]{6})$/i.exec((hex ?? '').trim());
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  const h = (v: number) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0');
+  return `#${h(r)}${h(g)}${h(b)}`;
+}
+
+function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  let h = 0;
+  let s = 0;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h /= 6;
+  }
+  return [h, s, l];
+}
+
+function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+  if (s === 0) {
+    const v = l * 255;
+    return [v, v, v];
+  }
+  const hue2rgb = (p: number, q: number, t: number) => {
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  };
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  return [hue2rgb(p, q, h + 1 / 3) * 255, hue2rgb(p, q, h) * 255, hue2rgb(p, q, h - 1 / 3) * 255];
+}
+
+/**
+ * Pick a colour that is a *sibling* of `base` — the same hue/saturation, just a
+ * step lighter or darker — so a newly added cell blends with its neighbour
+ * instead of contrasting. Still distinguishable (≈12% lightness shift), and
+ * always different from `base`. Falls back to a distinct palette colour if the
+ * input isn't a parseable hex.
+ */
+export function pickSimilarColor(base: string): string {
+  const rgb = hexToRgb(base);
+  if (!rgb) return pickDistinctColor(base);
+  const [h, s, l] = rgbToHsl(rgb[0], rgb[1], rgb[2]);
+  // Darken light pastels, lighten dark ones, so the shift is always visible.
+  const nl = l > 0.5 ? Math.max(0.12, l - 0.13) : Math.min(0.92, l + 0.15);
+  const [r, g, b] = hslToRgb(h, s, nl);
+  return rgbToHex(r, g, b);
+}
+
 /**
  * Find the index of the slice that contains the given time (in minutes).
  * Handles midnight-wrap slices.
@@ -131,13 +198,13 @@ export function splitSliceAt(
   if (leftWidth < 10) throw new ContiguityError(action, `Split would create a <10-min left slice (width=${leftWidth})`);
   if (rightWidth < 10) throw new ContiguityError(action, `Split would create a <10-min right slice (width=${rightWidth})`);
 
-  // A fresh empty slot, coloured distinctly from its parent so the new division
-  // is visually obvious.
+  // A fresh empty slot, coloured as a sibling shade of its parent so the new
+  // division blends in (same hue, slightly lighter/darker) rather than clashing.
   const emptySlot = (startTime: string, endTime: string): TimeSlice => ({
     id: uuid(),
     label: '',
     icon: '',
-    color: pickDistinctColor(parent.color),
+    color: pickSimilarColor(parent.color),
     textPosition: 'inside',
     startTime,
     endTime,
