@@ -118,7 +118,9 @@ export type TKey =
   | 'app.loaded'
   | 'memo.add'
   | 'memo.delete'
-  | 'memo.placeholder';
+  | 'memo.placeholder'
+  | 'memo.show'
+  | 'memo.hide';
 
 type Dict = Record<TKey, string>;
 
@@ -222,6 +224,8 @@ const ko: Dict = {
   'memo.add': '메모 추가',
   'memo.delete': '메모 삭제',
   'memo.placeholder': '메모를 입력하세요',
+  'memo.show': '메모 보이기',
+  'memo.hide': '메모 숨기기',
 };
 
 const en: Dict = {
@@ -326,6 +330,8 @@ const en: Dict = {
   'memo.add': 'Add memo',
   'memo.delete': 'Delete memo',
   'memo.placeholder': 'Type a memo…',
+  'memo.show': 'Show memos',
+  'memo.hide': 'Hide memos',
 };
 
 // Skeleton languages — cover the most visible chrome; everything else falls

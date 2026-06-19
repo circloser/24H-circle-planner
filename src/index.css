@@ -255,6 +255,25 @@ svg text {
 .memo-note:focus-within .memo-del {
   opacity: 1;
 }
+.memo-grip {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  cursor: grab;
+  transition: opacity 0.12s;
+  z-index: 2;
+}
+.memo-grip:active {
+  cursor: grabbing;
+}
+.memo-note:hover .memo-grip,
+.memo-note:focus-within .memo-grip {
+  opacity: 1;
+}
 .memo-text {
   flex: 1;
   /* flex column centring keeps the whole (multi-line) text block centred both

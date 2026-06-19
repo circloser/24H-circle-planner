@@ -1,5 +1,5 @@
 import { type PointerEvent as ReactPointerEvent } from 'react';
-import { X } from 'lucide-react';
+import { X, GripHorizontal } from 'lucide-react';
 import { useMemos, MEMO_COLORS, type Memo } from '@/hooks/useMemos';
 import { FONT_FAMILIES, useTranslation } from '@/hooks/usePreferences';
 
@@ -99,6 +99,12 @@ export function MemoNote({ memo }: { memo: Memo }) {
           clipPath: cornerCut,
         }}
       >
+        {/* Hover grip — top centre; shows the note is draggable (the paper-level
+            handler does the actual dragging). */}
+        <div className="memo-grip" aria-hidden="true">
+          <GripHorizontal className="h-3.5 w-3.5 text-black/40" />
+        </div>
+
         {/* Hover delete — top-right corner. */}
         <button
           type="button"
