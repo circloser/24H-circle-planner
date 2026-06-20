@@ -29,7 +29,7 @@ page.on('requestfailed', (req) => {
 });
 
 await page.goto(FILE, { waitUntil: 'domcontentloaded', timeout: 30000 });
-await page.waitForSelector('svg', { timeout: 15000 });
+await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
 
 // Load the 직장인 preset (gallery auto-opens on first launch).
 let card = page.locator('button.glass-card:has(h3:has-text("직장인"))').first();

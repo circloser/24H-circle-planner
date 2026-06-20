@@ -329,6 +329,25 @@ svg text {
   pointer-events: auto;
 }
 
+/* Touch devices have no hover: keep the delete (×) and move (grip) controls
+   permanently visible so notes can be removed/repositioned without first
+   focusing them. The toolbar still appears on focus (when editing). Dragging a
+   note via its body/grip must not scroll the page, so disable touch panning
+   there — but the editable text keeps native touch behaviour for caret/scroll. */
+@media (hover: none) {
+  .memo-del,
+  .memo-grip {
+    opacity: 1;
+  }
+  .memo-paper,
+  .memo-grip {
+    touch-action: none;
+  }
+  .memo-text {
+    touch-action: auto;
+  }
+}
+
 /* ─── Accessibility: visible focus rings ────────────────────────────────────── */
 *:focus-visible {
   outline: 2px solid hsl(var(--accent));

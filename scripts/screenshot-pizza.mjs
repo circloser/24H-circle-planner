@@ -32,7 +32,7 @@ async function run() {
   });
 
   await page.goto(FILE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
-  await page.waitForSelector('svg', { timeout: 15000 });
+  await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
 
   // The preset gallery auto-opens on first launch. If not open, click the 프리셋 button.
   let card = page.locator('button.glass-card:has(h3)').first();

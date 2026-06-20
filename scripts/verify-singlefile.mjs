@@ -73,7 +73,7 @@ async function run() {
 
     // 1. Wait for SVG ring to render
     try {
-      await page.waitForSelector('svg', { timeout: 15000 });
+      await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
       console.log('  [PASS] SVG ring rendered');
     } catch {
       failures.push('SVG ring did not render within 15s');

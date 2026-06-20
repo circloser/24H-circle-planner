@@ -33,7 +33,7 @@ const labelAngle = (page, needle) => page.evaluate((n) => {
 
 async function loadPresetAndHoverBoundary(page, boundaryHhmm) {
   await page.goto(FILE, { waitUntil: 'domcontentloaded', timeout: 30000 });
-  await page.waitForSelector('svg', { timeout: 15000 });
+  await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
   // First-launch gallery is already open; pick 직장인 directly.
   let card = page.locator('button.glass-card:has(h3:has-text("직장인"))').first();
   if (!(await card.isVisible({ timeout: 3000 }).catch(() => false))) {

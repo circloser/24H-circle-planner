@@ -33,7 +33,7 @@ async function run() {
   });
 
   await page.goto(FILE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
-  await page.waitForSelector('svg', { timeout: 15000 });
+  await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
 
   // Load 직장인 preset
   let card = page.locator('button.glass-card:has(h3)').first();

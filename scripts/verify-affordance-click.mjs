@@ -18,7 +18,7 @@ page.on('console', (m) => { if (m.type() === 'error' && !m.text().includes('favi
 page.on('pageerror', (e) => { if (!e.message.includes('favicon')) errors.push('PAGE ERROR: ' + e.message); });
 
 await page.goto(FILE, { waitUntil: 'domcontentloaded', timeout: 30000 });
-await page.waitForSelector('svg', { timeout: 15000 });
+await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
 
 // Load 직장인 preset (gallery auto-opens on first launch).
 let card = page.locator('button.glass-card:has(h3:has-text("직장인"))').first();
@@ -28,7 +28,7 @@ if (!(await card.isVisible({ timeout: 3000 }).catch(() => false))) {
   card = page.locator('button.glass-card:has(h3:has-text("직장인"))').first();
 }
 await card.click().catch(() => {});
-const confirm = page.locator('button:has-text("확인")').first();
+const confirm = page.locator('button:has-text("현재 창에 적용")').first();
 if (await confirm.isVisible({ timeout: 3000 }).catch(() => false)) await confirm.click();
 await page.waitForTimeout(1000);
 
@@ -39,7 +39,7 @@ const hitArea = page.locator('[data-boundary-index="0"] circle[r="16"]').first()
 await hitArea.hover();
 await page.waitForTimeout(200);
 
-const plusBtn = page.locator('[aria-label="이 경계에서 일정 추가"]').first();
+const plusBtn = page.locator('[aria-label="오른쪽 칸에 일정 추가"]').first();
 const plusVisibleAfterHover = await plusBtn.isVisible({ timeout: 1000 }).catch(() => false);
 
 // Screenshot with the affordance shown.

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { TimeSlice } from '@/types/time-slice';
 import { boundaryHandlePosition, RING, polarToCartesian } from '@/lib/svg-geometry';
 import { sliceWidthMinutes, minutesToHhmm, hhmmToMinutes } from '@/lib/time-utils';
 import { useStoreDispatch, useStoreSelector } from '@/hooks/useScheduleStore';
+import { useCoarsePointer } from '@/hooks/useCoarsePointer';
 
 interface BoundaryHandlesProps {
   slices: TimeSlice[];
@@ -61,11 +62,12 @@ interface AffordanceBtnProps {
   label: string;
   ariaLabel: string;
   disabled?: boolean;
+  /** Hit-target radius — enlarged on touch devices. */
+  r?: number;
   onClick: (e: React.MouseEvent) => void;
 }
 
-function AffordanceBtn({ x, y, label, ariaLabel, disabled, onClick }: AffordanceBtnProps) {
-  const r = 13; // tap target radius
+function AffordanceBtn({ x, y, label, ariaLabel, disabled, r = 13, onClick }: AffordanceBtnProps) {
   const opacity = disabled ? 0.35 : 1;
 
   return (
@@ -163,6 +165,11 @@ interface BoundaryHandleProps {
 function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryHandleProps) {
   const dispatch = useStoreDispatch();
   const [hovered, setHovered] = useState(false);
+  // On touch there is no hover, so a tap on the boundary "activates" it, keeping
+  // the affordances on screen until the user taps elsewhere.
+  const [tapActive, setTapActive] = useState(false);
+  const coarse = useCoarsePointer();
+  const gRef = useRef<SVGGElement | null>(null);
 
   // Drag state — changes only at drag start/end (not per-move), so subscribing
   // here does not violate the C10 per-move isolation contract.
@@ -170,11 +177,32 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
   const draggedIndex = useStoreSelector((s) => (s.dragRef ? s.dragRef.boundaryIndex : -1));
   const isThisDragged = isDraggingBoundary && draggedIndex === index;
 
-  // Affordances (+/− buttons) are a hover-only idle affordance — suppressed
-  // during any drag. The handle dot + time pill stay visible while dragging so
-  // the division is legible as it moves.
-  const showAffordances = hovered && !isDraggingBoundary;
-  const dotVisible = hovered || isThisDragged;
+  // Mouse: hover reveals. Touch: a tap reveals (and stays) — see tapActive below.
+  const revealed = hovered || (coarse && tapActive);
+
+  // Affordances (+/− buttons) are an idle affordance — suppressed during any
+  // drag. The handle dot + time pill stay visible while dragging so the division
+  // is legible as it moves. On touch the dots stay visible so every boundary is
+  // a discoverable, draggable target without needing hover.
+  const showAffordances = revealed && !isDraggingBoundary;
+  const dotVisible = revealed || isThisDragged || coarse;
+
+  // Touch: while this boundary is tap-activated, a tap anywhere outside its group
+  // dismisses the affordances. Deferred a tick so the activating tap itself does
+  // not immediately clear it.
+  useEffect(() => {
+    if (!coarse || !tapActive) return;
+    const onDocDown = (e: PointerEvent) => {
+      const g = gRef.current;
+      if (g && e.target instanceof Node && g.contains(e.target)) return;
+      setTapActive(false);
+    };
+    const id = window.setTimeout(() => document.addEventListener('pointerdown', onDocDown, true), 0);
+    return () => {
+      window.clearTimeout(id);
+      document.removeEventListener('pointerdown', onDocDown, true);
+    };
+  }, [coarse, tapActive]);
 
   const { x, y, angleDeg } = boundaryHandlePosition(slice, 'end');
   // Endpoints of the division line (hub edge → rim) for the wide hover/grab strip.
@@ -231,8 +259,14 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
     dispatch({ type: 'SPLIT', hhmm: sliceMidpointHhmm(cwSlice), newSlotSide: 'before' });
   };
 
+  // Touch: a tap (not a drag) on the boundary toggles its affordances on/off.
+  const handleTap = () => {
+    if (coarse) setTapActive((v) => !v);
+  };
+
   return (
     <g
+      ref={gRef}
       data-boundary-index={index}
       style={{ cursor: 'ew-resize', touchAction: 'none' }}
       onPointerEnter={() => setHovered(true)}
@@ -249,9 +283,10 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
         x2={outerPt.x}
         y2={outerPt.y}
         stroke="transparent"
-        strokeWidth={20}
+        strokeWidth={coarse ? 36 : 20}
         style={{ pointerEvents: 'stroke', cursor: 'ew-resize', touchAction: 'none' }}
         onPointerDown={(e) => onPointerDownHandle(e, index)}
+        onClick={handleTap}
       />
 
       {/* Hover affordances — rendered BELOW the drag hit-area in DOM order,
@@ -287,6 +322,7 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
             label="−"
             ariaLabel="이 경계 일정 병합"
             disabled={!canMinus}
+            r={coarse ? 18 : 13}
             onClick={handleMinus}
           />
           <AffordanceBtn
@@ -295,6 +331,7 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
             label="+"
             ariaLabel="왼쪽 칸에 일정 추가"
             disabled={!canLeftPlus}
+            r={coarse ? 18 : 13}
             onClick={handleLeftPlus}
           />
           <AffordanceBtn
@@ -303,6 +340,7 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
             label="+"
             ariaLabel="오른쪽 칸에 일정 추가"
             disabled={!canRightPlus}
+            r={coarse ? 18 : 13}
             onClick={handleRightPlus}
           />
         </g>
@@ -337,7 +375,7 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
       <circle
         cx={x}
         cy={y}
-        r={16}
+        r={coarse ? 24 : 16}
         fill="transparent"
         stroke="none"
         role="slider"
@@ -345,6 +383,7 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
         tabIndex={0}
         style={{ cursor: 'ew-resize', touchAction: 'none' }}
         onPointerDown={(e) => onPointerDownHandle(e, index)}
+        onClick={handleTap}
         onFocus={() => setHovered(true)}
         onBlur={() => setHovered(false)}
       />

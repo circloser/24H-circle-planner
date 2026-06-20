@@ -29,7 +29,7 @@ page.on('console', (m) => { if (m.type() === 'error' && !m.text().includes('favi
 page.on('pageerror', (e) => { if (!e.message.includes('favicon')) errors.push('PAGE ERROR: ' + e.message); });
 
 await page.goto(FILE, { waitUntil: 'domcontentloaded', timeout: 30000 });
-await page.waitForSelector('svg', { timeout: 15000 });
+await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
 fs.mkdirSync(DIR, { recursive: true });
 
 // Load a preset, then open settings.

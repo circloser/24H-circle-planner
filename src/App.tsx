@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './index.css';
-import { ChevronDown, Settings as SettingsIcon } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { Button } from '@/components/ui/button';
@@ -121,13 +121,17 @@ function App() {
           boxShadow: '0 1px 3px hsl(220 30% 15% / 0.08), 0 1px 2px hsl(220 30% 15% / 0.04)',
         }}
       >
-        <div className="container mx-auto h-14 flex items-center justify-between px-4">
-          <h1 className="font-semibold text-base">24H Circle Planner</h1>
-          <div className="flex items-center gap-2">
+        <div className="container mx-auto h-14 flex items-center justify-between gap-1.5 px-3 sm:gap-2 sm:px-4">
+          <h1 className="min-w-0 shrink truncate font-semibold text-sm sm:text-base">
+            24H Circle Planner
+          </h1>
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost">
-                  {t('header.mySchedules')} <ChevronDown className="ml-1 h-4 w-4" />
+                <Button variant="ghost" size="sm" className="px-2 sm:px-3" aria-label={t('header.mySchedules')}>
+                  <FolderOpen className="h-4 w-4 sm:hidden" />
+                  <span className="hidden sm:inline">{t('header.mySchedules')}</span>
+                  <ChevronDown className="ml-1 hidden h-4 w-4 sm:inline" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -139,11 +143,25 @@ function App() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button variant="default" onClick={() => setPresetOpen(true)}>
-              {t('header.presets')}
+            <Button
+              variant="default"
+              size="sm"
+              className="px-2 sm:px-3"
+              onClick={() => setPresetOpen(true)}
+              aria-label={t('header.presets')}
+            >
+              <Sparkles className="h-4 w-4 sm:hidden" />
+              <span className="hidden sm:inline">{t('header.presets')}</span>
             </Button>
-            <Button variant="outline" onClick={() => setExportOpen(true)}>
-              {t('header.export')}
+            <Button
+              variant="outline"
+              size="sm"
+              className="px-2 sm:px-3"
+              onClick={() => setExportOpen(true)}
+              aria-label={t('header.export')}
+            >
+              <Download className="h-4 w-4 sm:hidden" />
+              <span className="hidden sm:inline">{t('header.export')}</span>
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

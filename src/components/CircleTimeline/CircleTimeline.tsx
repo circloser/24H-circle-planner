@@ -4,6 +4,7 @@ import { RING, polarToCartesian, slicePath, wrapText } from '@/lib/svg-geometry'
 import { hhmmToAngle } from '@/lib/time-utils';
 import { useSliceSelector, useStoreSelector } from '@/hooks/useScheduleStore';
 import { useTranslation, useShowClock, useShowNowLine } from '@/hooks/usePreferences';
+import { useCoarsePointer } from '@/hooks/useCoarsePointer';
 import { translatePresetName } from '@/i18n/content';
 import { SliceLabel } from './SliceLabel';
 import { BoundaryHandles } from './BoundaryHandles';
@@ -345,6 +346,10 @@ export function CircleTimeline({
   const { t, lang } = useTranslation();
   const showClock = useShowClock();
   const showNowLine = useShowNowLine();
+  // On touch, double-click/double-tap to edit is awkward, so a single tap opens
+  // the editor instead. (Boundary handles sit on top, so taps near a division
+  // still hit the boundary first — see BoundaryHandles.)
+  const coarse = useCoarsePointer();
 
   // Center hub title — wrapped to fill the circular space (up to 2 lines)
   // instead of hard-truncating to a few characters.
@@ -442,7 +447,7 @@ export function CircleTimeline({
           backdropD={backdropD}
           dragGroupRef={dragGroupRef}
           onBackgroundClick={onBackgroundClick}
-          onSliceClick={onSliceClick}
+          onSliceClick={coarse ? handleDoubleClick : onSliceClick}
           onSliceDoubleClick={handleDoubleClick}
           selectedSliceId={selectedSliceId}
         />

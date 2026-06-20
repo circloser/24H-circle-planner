@@ -66,7 +66,7 @@ async function run() {
     });
 
     await page.goto(FILE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForSelector('svg', { timeout: 15000 });
+    await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
     await loadPreset(page);
 
     // Single click a slice (mouse click — was showing rectangular outline before fix)
@@ -111,7 +111,7 @@ async function run() {
     });
 
     await page.goto(FILE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForSelector('svg', { timeout: 15000 });
+    await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
     await loadPreset(page);
 
     const handleGroup = page.locator('svg [data-boundary-index="0"]').first();
@@ -152,7 +152,7 @@ async function run() {
     });
 
     await page.goto(FILE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForSelector('svg', { timeout: 15000 });
+    await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
     await loadPreset(page);
 
     // Double-click to open editor
