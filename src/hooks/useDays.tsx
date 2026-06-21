@@ -72,7 +72,7 @@ interface DaysContextValue {
   activeId: string | null;
   activeIndex: number; // 0-based; -1 when none
   switchTo: (dayId: string) => void;
-  addDay: () => void;
+  addDay: (mode?: 'empty' | 'duplicate') => void;
   deleteDay: (dayId: string) => void;
   /** Internal: write the live schedule back into the active day. */
   syncActive: (present: Schedule) => void;
@@ -106,13 +106,30 @@ export function DaysProvider({ children }: { children: React.ReactNode }) {
     [days, activeId, dispatch],
   );
 
-  const addDay = useCallback(() => {
-    const fresh = createInitialSchedule();
-    const day: DayDoc = { id: uuid(), schedule: fresh };
-    setDays((prev) => [...prev, day]);
-    setActiveId(day.id);
-    dispatch({ type: 'LOAD_SCHEDULE', schedule: fresh });
-  }, [dispatch]);
+  const addDay = useCallback(
+    (mode: 'empty' | 'duplicate' = 'empty') => {
+      let schedule: Schedule;
+      if (mode === 'duplicate') {
+        const base = (activeId ? days.find((d) => d.id === activeId)?.schedule : undefined) ??
+          createInitialSchedule();
+        // Deep-clone with fresh ids so the copy is independent of the source.
+        schedule = {
+          ...base,
+          id: uuid(),
+          updatedAt: new Date().toISOString(),
+          presetSource: null,
+          slices: base.slices.map((s) => ({ ...s, id: uuid() })),
+        };
+      } else {
+        schedule = createInitialSchedule();
+      }
+      const day: DayDoc = { id: uuid(), schedule };
+      setDays((prev) => [...prev, day]);
+      setActiveId(day.id);
+      dispatch({ type: 'LOAD_SCHEDULE', schedule });
+    },
+    [activeId, days, dispatch],
+  );
 
   const deleteDay = useCallback(
     (dayId: string) => {

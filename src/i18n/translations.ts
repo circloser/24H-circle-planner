@@ -103,6 +103,10 @@ export type TKey =
   | 'day.delete'
   | 'day.indicator'
   | 'day.thumb'
+  | 'day.addTitle'
+  | 'day.addBody'
+  | 'day.addDuplicate'
+  | 'day.addEmpty'
   | 'slot.atCapacity'
   | 'slot.emptyPre'
   | 'slot.saveAsInline'
@@ -221,6 +225,10 @@ const ko: Dict = {
   'day.delete': '이 날짜 삭제',
   'day.indicator': '{n}일 중 {m}일',
   'day.thumb': '{m}일째',
+  'day.addTitle': '날짜 추가',
+  'day.addBody': '새 날짜를 어떻게 시작할까요?',
+  'day.addDuplicate': '현재 시간표 복제',
+  'day.addEmpty': '빈 시간표',
   'slot.atCapacity': '최대 10개 슬롯에 도달했습니다. 새 슬롯을 저장하려면 기존 슬롯을 삭제하세요.',
   'slot.emptyPre': '저장된 시간표가 없습니다. ',
   'slot.saveAsInline': '다른 이름으로 저장',
@@ -340,6 +348,10 @@ const en: Dict = {
   'day.delete': 'Delete this day',
   'day.indicator': 'Day {m} of {n}',
   'day.thumb': 'Day {m}',
+  'day.addTitle': 'Add day',
+  'day.addBody': 'How should the new day start?',
+  'day.addDuplicate': 'Duplicate current',
+  'day.addEmpty': 'Empty schedule',
   'slot.atCapacity': "You've reached 10 slots. Delete one to save a new slot.",
   'slot.emptyPre': 'No saved schedules yet. Add one with ',
   'slot.saveAsInline': 'Save as',
