@@ -3,6 +3,7 @@ import type { TimeSlice } from '@/types/time-slice';
 
 export const STORAGE_KEY_SCHEDULE = '24h-circle-planner.schedule';
 export const STORAGE_KEY_THEME = '24h-circle-planner.theme';
+export const STORAGE_KEY_DAYS = '24h-circle-planner.days';
 
 /** Validate that a value looks like a valid TimeSlice. */
 function isValidSlice(s: unknown): s is TimeSlice {

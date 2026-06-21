@@ -6,6 +6,8 @@ import App from './App.tsx'
 import { ScheduleStoreProvider } from './hooks/useScheduleStore.tsx'
 import { PreferencesProvider } from './hooks/usePreferences.tsx'
 import { MemoProvider } from './hooks/useMemos.tsx'
+import { UserPresetsProvider } from './hooks/useUserPresets.tsx'
+import { DaysProvider } from './hooks/useDays.tsx'
 import { SpikeRunner } from './components/SpikeRunner.tsx'
 
 // Single-file build: inject base64 fonts at runtime so they work on file://.
@@ -43,9 +45,13 @@ if (isSpike) {
     <StrictMode>
       <PreferencesProvider>
         <ScheduleStoreProvider>
-          <MemoProvider>
-            <App />
-          </MemoProvider>
+          <DaysProvider>
+            <UserPresetsProvider>
+              <MemoProvider>
+                <App />
+              </MemoProvider>
+            </UserPresetsProvider>
+          </DaysProvider>
           <Toaster />
         </ScheduleStoreProvider>
       </PreferencesProvider>

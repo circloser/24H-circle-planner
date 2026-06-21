@@ -17,9 +17,11 @@ import { SliceEditor } from '@/components/SliceEditor/SliceEditor';
 import { HubTitleEditor } from '@/components/HubTitleEditor/HubTitleEditor';
 import { SlotSheet } from '@/components/SlotSheet/SlotSheet';
 import { SaveAsDialog } from '@/components/SaveAsDialog/SaveAsDialog';
+import { SavePresetDialog } from '@/components/SavePresetDialog/SavePresetDialog';
 import { ExportDialog } from '@/components/ExportPanel/ExportDialog';
 import { SettingsDialog, type SettingsSection } from '@/components/Settings/SettingsDialog';
 import { MemoLayer } from '@/components/Memo/MemoLayer';
+import { DayBar } from '@/components/Days/DayBar';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useSliceInteraction } from '@/hooks/useSliceInteraction';
@@ -28,6 +30,7 @@ import { STORAGE_KEY_SCHEDULE } from '@/lib/storage';
 import { PRESETS } from '@/data/presets';
 import type { Slot } from '@/types/slot';
 import type { Schedule } from '@/types/schedule';
+import type { Preset } from '@/types/preset';
 
 /**
  * F6: Returns true if this is a genuine first launch —
@@ -49,26 +52,35 @@ function App() {
   // F6: lazy initializer opens preset gallery on genuine first launch
   const [presetOpen, setPresetOpen] = useState<boolean>(checkIsFirstLaunch);
 
+  // Apply the chosen colour theme (if any) to a preset and load it, so content +
+  // palette are chosen together in one undoable step. Shared by built-in presets
+  // (looked up by name) and user presets (passed as objects).
+  const loadPresetObject = (preset: Preset, themeColors: string[] | null, presetName: string) => {
+    const themed = themeColors
+      ? {
+          ...preset,
+          slices: preset.slices.map((s, i) => ({
+            ...s,
+            color: themeColors[i % themeColors.length],
+          })),
+        }
+      : preset;
+    dispatch({ type: 'LOAD_PRESET', preset: themed, presetName });
+    setPresetOpen(false);
+  };
+
   const handlePresetLoad = (name: string, themeColors: string[] | null) => {
     const preset = PRESETS.find((p) => p.name === name);
-    if (preset) {
-      // Apply the chosen colour theme (if any) to the preset at load time, so
-      // content + palette are chosen together in one undoable step.
-      const themed = themeColors
-        ? {
-            ...preset,
-            slices: preset.slices.map((s, i) => ({
-              ...s,
-              color: themeColors[i % themeColors.length],
-            })),
-          }
-        : preset;
-      dispatch({ type: 'LOAD_PRESET', preset: themed, presetName: name });
-    }
+    if (preset) loadPresetObject(preset, themeColors, name);
     setPresetOpen(false);
+  };
+
+  const handleUserPresetLoad = (preset: Preset, themeColors: string[] | null) => {
+    loadPresetObject(preset, themeColors, preset.name);
   };
   const [slotSheetOpen, setSlotSheetOpen] = useState(false);
   const [saveAsOpen, setSaveAsOpen] = useState(false);
+  const [savePresetOpen, setSavePresetOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [editingSliceId, setEditingSliceId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -140,6 +152,9 @@ function App() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSaveAsOpen(true)}>
                   {t('header.saveAs')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSavePresetOpen(true)}>
+                  {t('header.savePreset')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -214,7 +229,12 @@ function App() {
         </div>
       </main>
 
-      <PresetGallery open={presetOpen} onOpenChange={setPresetOpen} onConfirm={handlePresetLoad} />
+      <PresetGallery
+        open={presetOpen}
+        onOpenChange={setPresetOpen}
+        onConfirm={handlePresetLoad}
+        onLoadUserPreset={handleUserPresetLoad}
+      />
 
       {/* T7: Slot sheet */}
       <SlotSheet
@@ -229,6 +249,13 @@ function App() {
         onOpenChange={setSaveAsOpen}
         currentSchedule={present}
         onSaved={() => setSaveAsOpen(false)}
+      />
+
+      {/* Save current schedule as a reusable preset */}
+      <SavePresetDialog
+        open={savePresetOpen}
+        onOpenChange={setSavePresetOpen}
+        currentSchedule={present}
       />
 
       {/* T5: Slice editor portal */}
@@ -258,6 +285,9 @@ function App() {
         schedule={present}
         onImport={(s: Schedule) => dispatch({ type: 'LOAD_SCHEDULE', schedule: s })}
       />
+
+      {/* Multi-day switcher (top thumbnails + bottom day indicator) */}
+      <DayBar />
 
       {/* Post-it memo layer (floating add button + notes) */}
       <MemoLayer />

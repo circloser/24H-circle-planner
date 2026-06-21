@@ -94,21 +94,26 @@ function PngTab({
         </div>
       </div>
 
-      {/* Transparent background toggle */}
+      {/* Transparent background toggle. Inline hsl(var(--…)) colours because this
+          Tailwind v4 setup has no @theme, so bg-primary/bg-input/bg-background
+          utilities generate no CSS — the switch would otherwise be invisible. */}
       <div className="flex items-center gap-3">
         <button
           type="button"
           role="switch"
           aria-checked={transparent}
           onClick={() => setTransparent((v) => !v)}
-          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none ${
-            transparent ? 'bg-primary' : 'bg-input'
-          }`}
+          className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+          style={{
+            backgroundColor: transparent ? 'hsl(var(--primary))' : 'hsl(var(--text-muted) / 0.3)',
+            borderColor: transparent ? 'hsl(var(--primary))' : 'hsl(var(--text-muted) / 0.45)',
+          }}
         >
           <span
-            className={`pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform ${
-              transparent ? 'translate-x-4' : 'translate-x-0'
+            className={`pointer-events-none block h-5 w-5 rounded-full shadow-md transition-transform ${
+              transparent ? 'translate-x-5' : 'translate-x-0.5'
             }`}
+            style={{ backgroundColor: '#ffffff', border: '1px solid hsl(var(--text-muted) / 0.3)' }}
           />
         </button>
         <span className="text-sm">{t('export.transparentBg')}</span>

@@ -92,6 +92,17 @@ export type TKey =
   | 'export.imported'
   | 'export.preview'
   | 'export.adLabel'
+  | 'header.savePreset'
+  | 'preset.myPresets'
+  | 'preset.saveTitle'
+  | 'preset.saveName'
+  | 'preset.savePlaceholder'
+  | 'preset.saved'
+  | 'preset.deletePreset'
+  | 'day.add'
+  | 'day.delete'
+  | 'day.indicator'
+  | 'day.thumb'
   | 'slot.atCapacity'
   | 'slot.emptyPre'
   | 'slot.saveAsInline'
@@ -199,6 +210,17 @@ const ko: Dict = {
   'export.imported': '시간표를 가져왔습니다',
   'export.preview': '미리보기',
   'export.adLabel': '광고',
+  'header.savePreset': '프리셋으로 저장',
+  'preset.myPresets': '내 프리셋',
+  'preset.saveTitle': '프리셋으로 저장',
+  'preset.saveName': '프리셋 이름',
+  'preset.savePlaceholder': '예: 나의 평일 루틴',
+  'preset.saved': '"{name}" 프리셋으로 저장했습니다',
+  'preset.deletePreset': '프리셋 삭제',
+  'day.add': '날짜 추가',
+  'day.delete': '이 날짜 삭제',
+  'day.indicator': '{n}일 중 {m}일',
+  'day.thumb': '{m}일째',
   'slot.atCapacity': '최대 10개 슬롯에 도달했습니다. 새 슬롯을 저장하려면 기존 슬롯을 삭제하세요.',
   'slot.emptyPre': '저장된 시간표가 없습니다. ',
   'slot.saveAsInline': '다른 이름으로 저장',
@@ -307,6 +329,17 @@ const en: Dict = {
   'export.imported': 'Schedule imported',
   'export.preview': 'Preview',
   'export.adLabel': 'Advertisement',
+  'header.savePreset': 'Save as preset',
+  'preset.myPresets': 'My presets',
+  'preset.saveTitle': 'Save as preset',
+  'preset.saveName': 'Preset name',
+  'preset.savePlaceholder': 'e.g. My weekday routine',
+  'preset.saved': 'Saved preset "{name}"',
+  'preset.deletePreset': 'Delete preset',
+  'day.add': 'Add day',
+  'day.delete': 'Delete this day',
+  'day.indicator': 'Day {m} of {n}',
+  'day.thumb': 'Day {m}',
   'slot.atCapacity': "You've reached 10 slots. Delete one to save a new slot.",
   'slot.emptyPre': 'No saved schedules yet. Add one with ',
   'slot.saveAsInline': 'Save as',

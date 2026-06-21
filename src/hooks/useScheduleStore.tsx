@@ -17,7 +17,7 @@ import {
   applyPalette,
   ContiguityError,
 } from '@/lib/schedule';
-import { loadSchedule, saveScheduleDebounced } from '@/lib/storage';
+import { loadSchedule, saveScheduleDebounced, STORAGE_KEY_DAYS } from '@/lib/storage';
 import { createInitialSchedule } from '@/lib/initial-schedule';
 
 // ─── State ───────────────────────────────────────────────────────────────────
@@ -254,6 +254,10 @@ export function ScheduleStoreProvider({
 
   // On mount: restore from localStorage
   useEffect(() => {
+    // When the multi-day layer is present it owns loading the active day (from a
+    // more current store), so skip the single-schedule restore to avoid
+    // clobbering it with a possibly-staler cache.
+    if (localStorage.getItem(STORAGE_KEY_DAYS) !== null) return;
     const raw = localStorage.getItem('24h-circle-planner.schedule');
     const loaded = loadSchedule();
     if (loaded !== null) {
