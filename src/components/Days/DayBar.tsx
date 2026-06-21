@@ -65,25 +65,29 @@ export function DayBar() {
                 >
                   <DayThumb schedule={d.schedule} size={THUMB} />
                 </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteDay(d.id);
-                  }}
-                  aria-label={t('day.delete')}
-                  title={t('day.delete')}
-                  className={`absolute -right-1 -top-1 z-10 grid h-[18px] w-[18px] place-items-center rounded-full transition-opacity ${
-                    coarse ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
-                  }`}
-                  style={{
-                    backgroundColor: 'hsl(var(--surface))',
-                    color: 'hsl(var(--foreground))',
-                    border: '1px solid hsl(var(--border))',
-                  }}
-                >
-                  <X className="h-3 w-3" />
-                </button>
+                {/* Delete is hidden when only one day remains — the last
+                    schedule can't be removed. */}
+                {days.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteDay(d.id);
+                    }}
+                    aria-label={t('day.delete')}
+                    title={t('day.delete')}
+                    className={`absolute -right-1 -top-1 z-10 grid h-[18px] w-[18px] place-items-center rounded-full transition-opacity ${
+                      coarse ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
+                    }`}
+                    style={{
+                      backgroundColor: 'hsl(var(--surface))',
+                      color: 'hsl(var(--foreground))',
+                      border: '1px solid hsl(var(--border))',
+                    }}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
               </div>
             );
           })}

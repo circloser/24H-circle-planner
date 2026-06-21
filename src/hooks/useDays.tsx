@@ -116,19 +116,16 @@ export function DaysProvider({ children }: { children: React.ReactNode }) {
 
   const deleteDay = useCallback(
     (dayId: string) => {
+      // Always keep at least one day — the last schedule can't be deleted.
+      if (days.length <= 1) return;
       const idx = days.findIndex((d) => d.id === dayId);
       if (idx === -1) return;
       const next = days.filter((d) => d.id !== dayId);
       setDays(next);
       if (dayId === activeId) {
-        if (next.length === 0) {
-          setActiveId(null);
-          dispatch({ type: 'LOAD_SCHEDULE', schedule: createInitialSchedule() });
-        } else {
-          const neighbor = next[Math.min(idx, next.length - 1)];
-          setActiveId(neighbor.id);
-          dispatch({ type: 'LOAD_SCHEDULE', schedule: neighbor.schedule });
-        }
+        const neighbor = next[Math.min(idx, next.length - 1)];
+        setActiveId(neighbor.id);
+        dispatch({ type: 'LOAD_SCHEDULE', schedule: neighbor.schedule });
       }
     },
     [days, activeId, dispatch],

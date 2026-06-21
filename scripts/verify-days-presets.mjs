@@ -60,6 +60,18 @@ await page.getByRole('button', { name: 'Presets' }).first().click();
 await page.waitForTimeout(400);
 const myPresetsShown = await page.getByText('My presets', { exact: false }).first().isVisible().catch(() => false);
 const savedCard = await page.getByRole('heading', { name: 'Trip Day Template' }).first().isVisible().catch(() => false);
+// #2b: the gallery dialog must fit the viewport (not clipped) and be scrollable.
+const galleryBox = await page.evaluate(() => {
+  // Dialog content is position:fixed (offsetParent === null), so select the
+  // open one by Radix's data-state instead.
+  const els = [...document.querySelectorAll('[role="dialog"][data-state="open"]')];
+  const el = els[els.length - 1];
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  const cs = getComputedStyle(el);
+  return { top: r.top, bottom: r.bottom, ih: window.innerHeight, overflowY: cs.overflowY, scrollH: el.scrollHeight, clientH: el.clientHeight };
+});
+const galleryOk = !!galleryBox && galleryBox.top >= -1 && galleryBox.bottom <= galleryBox.ih + 1 && galleryBox.overflowY === 'auto';
 const delBtn = page.getByRole('button', { name: 'Delete preset' }).first();
 const hadDelete = await delBtn.isVisible().catch(() => false);
 await page.screenshot({ path: path.join(DIR, 'gallery-mypresets.png') });
@@ -91,6 +103,8 @@ const delCount = await delDay.count();
 await delDay.last().click({ force: true });
 await page.waitForTimeout(300);
 const afterDelThumbs = await thumbCount();
+// #1: with a single day left, no delete affordance should exist.
+const delAtOne = await page.locator('button[aria-label="Delete this day"]').count();
 
 // Persistence across reload.
 const storedDays = await page.evaluate(() => {
@@ -108,9 +122,10 @@ await browser.close();
 
 console.log('#1 toggle:', JSON.stringify({ offBg, onBg, toggleOk }));
 console.log('#2 preset:', JSON.stringify({ myPresetsShown, savedCard, hadDelete, afterDelete, presetOk }));
+console.log('#2b gallery box:', JSON.stringify(galleryBox), 'galleryOk:', galleryOk);
 console.log('#3 days:', JSON.stringify({
   initialThumbs, indicator0, afterAddThumbs, indicator1, indicator2, day1Slices,
-  delCount, afterDelThumbs, storedDays, thumbsAfterReload,
+  delCount, afterDelThumbs, delAtOne, storedDays, thumbsAfterReload,
 }));
 console.log('console errors:', errors.length);
 errors.forEach((e) => console.log('  ', e));
@@ -122,10 +137,11 @@ const daysOk =
   /Day 1 of 2/.test(indicator2 || '') &&
   day1Slices > 1 &&
   afterDelThumbs === 1 &&
+  delAtOne === 0 &&
   storedDays === 1 &&
   thumbsAfterReload === 1;
 
-console.log(`toggleOk:${toggleOk} presetOk:${presetOk} daysOk:${daysOk}`);
-const ok = toggleOk && presetOk && daysOk && errors.length === 0;
+console.log(`toggleOk:${toggleOk} presetOk:${presetOk} galleryOk:${galleryOk} daysOk:${daysOk}`);
+const ok = toggleOk && presetOk && galleryOk && daysOk && errors.length === 0;
 console.log(ok ? 'PASS' : 'FAIL');
 process.exit(ok ? 0 : 1);
