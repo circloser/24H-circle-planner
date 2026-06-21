@@ -42,6 +42,9 @@ export type TKey =
   | 'settings.iconsShow'
   | 'settings.iconsHide'
   | 'settings.colorTheme'
+  | 'settings.reset'
+  | 'settings.resetBody'
+  | 'settings.resetConfirm'
   | 'settings.clock'
   | 'settings.clockDigital'
   | 'settings.clockNowLine'
@@ -186,6 +189,9 @@ const ko: Dict = {
   'settings.iconsShow': '표시',
   'settings.iconsHide': '숨김',
   'settings.colorTheme': '색상 테마',
+  'settings.reset': '전체 초기화',
+  'settings.resetBody': '모든 데이터(시간표·날짜·메모·설정·프리셋·백업)가 삭제되고 처음 상태로 돌아갑니다. 초기화하시겠습니까?',
+  'settings.resetConfirm': '초기화',
   'settings.clock': '시계',
   'settings.clockDigital': '디지털 시계',
   'settings.clockNowLine': '현재 시간선',
@@ -329,6 +335,9 @@ const en: Dict = {
   'settings.iconsShow': 'Show',
   'settings.iconsHide': 'Hide',
   'settings.colorTheme': 'Color theme',
+  'settings.reset': 'Reset all',
+  'settings.resetBody': 'All data (schedules, days, memos, settings, presets, backups) will be deleted and the app returns to its initial state. Reset?',
+  'settings.resetConfirm': 'Reset',
   'settings.clock': 'Clock',
   'settings.clockDigital': 'Digital clock',
   'settings.clockNowLine': 'Current-time line',

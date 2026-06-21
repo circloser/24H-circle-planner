@@ -70,3 +70,18 @@ export async function importAllData(file: File): Promise<number> {
   }
   return written;
 }
+
+/**
+ * Wipe every app key (schedule, days, memos, slots, preferences, user presets,
+ * theme) so the app returns to a fresh first-launch state. The caller reloads
+ * the page afterwards. Returns the number of keys removed.
+ */
+export function resetAllData(): number {
+  const keys: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith(APP_STORAGE_PREFIX)) keys.push(key);
+  }
+  keys.forEach((k) => localStorage.removeItem(k));
+  return keys.length;
+}

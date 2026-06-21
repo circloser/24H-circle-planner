@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { exportAllData, importAllData, APP_STORAGE_PREFIX } from './backup';
+import { exportAllData, importAllData, resetAllData, APP_STORAGE_PREFIX } from './backup';
 
 function fileFromBlob(blob: Blob, name = 'backup.json'): File {
   return new File([blob], name, { type: 'application/json' });
@@ -50,5 +50,22 @@ describe('backup export/import', () => {
 
   it('rejects a non-backup file', async () => {
     await expect(importAllData(fileFromBlob(new Blob(['{"foo":1}'])))).rejects.toThrow();
+  });
+});
+
+describe('resetAllData', () => {
+  beforeEach(() => localStorage.clear());
+
+  it('removes every app key but leaves unrelated keys', () => {
+    localStorage.setItem(`${APP_STORAGE_PREFIX}schedule`, '{"a":1}');
+    localStorage.setItem(`${APP_STORAGE_PREFIX}memos`, '{"b":2}');
+    localStorage.setItem('other-app.token', 'keep-me');
+
+    const removed = resetAllData();
+
+    expect(removed).toBe(2);
+    expect(localStorage.getItem(`${APP_STORAGE_PREFIX}schedule`)).toBeNull();
+    expect(localStorage.getItem(`${APP_STORAGE_PREFIX}memos`)).toBeNull();
+    expect(localStorage.getItem('other-app.token')).toBe('keep-me');
   });
 });

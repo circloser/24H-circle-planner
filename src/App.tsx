@@ -10,6 +10,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { resetAllData } from '@/lib/backup';
 import { CircleTimeline } from '@/components/CircleTimeline/CircleTimeline';
 import { ThemeToggle } from '@/components/ThemeToggle/ThemeToggle';
 import { PresetGallery } from '@/components/PresetGallery/PresetGallery';
@@ -83,6 +92,7 @@ function App() {
   const [slotSheetOpen, setSlotSheetOpen] = useState(false);
   const [saveAsOpen, setSaveAsOpen] = useState(false);
   const [savePresetOpen, setSavePresetOpen] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [editingSliceId, setEditingSliceId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -214,6 +224,12 @@ function App() {
                 <DropdownMenuItem onClick={() => setSettingsSection('theme')}>
                   {t('settings.colorTheme')}
                 </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setResetOpen(true)}
+                  style={{ color: 'hsl(var(--destructive))' }}
+                >
+                  {t('settings.reset')}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <ThemeToggle />
@@ -269,6 +285,32 @@ function App() {
         onOpenChange={setSavePresetOpen}
         currentSchedule={present}
       />
+
+      {/* Full reset — wipes all app data, then reloads to a fresh state. */}
+      <Dialog open={resetOpen} onOpenChange={setResetOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t('settings.reset')}</DialogTitle>
+            <DialogDescription>{t('settings.resetBody')}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResetOpen(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              style={{ backgroundColor: 'hsl(var(--destructive))', color: 'hsl(var(--destructive-foreground))' }}
+              onClick={() => {
+                resetAllData();
+                setResetOpen(false);
+                // Reload so every provider re-initialises to first-launch defaults.
+                setTimeout(() => window.location.reload(), 100);
+              }}
+            >
+              {t('settings.resetConfirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* T5: Slice editor portal */}
       <SliceEditor
