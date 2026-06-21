@@ -156,7 +156,9 @@ function findSliceIndexAt(slices: TimeSlice[], targetMin: number): number {
 export function splitSliceAt(
   schedule: Schedule,
   hhmm: string,
-  newSlotSide: 'before' | 'after' = 'after',
+  // 'smaller' empties whichever half is smaller (the larger half keeps the
+  // original name + colour) — used by the scissors cut.
+  newSlotSide: 'before' | 'after' | 'smaller' = 'after',
 ): Schedule {
   const action = 'splitSliceAt';
   const targetMin = hhmmToMinutes(hhmm);
@@ -210,11 +212,20 @@ export function splitSliceAt(
     endTime,
   });
 
-  // Place the new empty slot on the requested side; the other half keeps the
+  // Resolve 'smaller' to the actual side: empty out the smaller half so the
+  // LARGER half keeps the original name + colour. Ties keep the earlier half.
+  const effectiveSide =
+    newSlotSide === 'smaller'
+      ? leftWidth >= rightWidth
+        ? 'after' // left (earlier) is larger → keep it, empty the right
+        : 'before' // right (later) is larger → keep it, empty the left
+      : newSlotSide;
+
+  // Place the new empty slot on the resolved side; the other half keeps the
   // parent's content (and id).
   let firstSlice: TimeSlice;
   let secondSlice: TimeSlice;
-  if (newSlotSide === 'before') {
+  if (effectiveSide === 'before') {
     firstSlice = emptySlot(parent.startTime, snappedHhmm);
     secondSlice = { ...parent, startTime: snappedHhmm };
   } else {

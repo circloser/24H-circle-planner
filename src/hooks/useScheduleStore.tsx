@@ -32,7 +32,7 @@ export interface StoreState {
 
 export type StoreAction =
   | { type: 'LOAD_SCHEDULE'; schedule: Schedule }
-  | { type: 'SPLIT'; hhmm: string; newSlotSide?: 'before' | 'after' }
+  | { type: 'SPLIT'; hhmm: string; newSlotSide?: 'before' | 'after' | 'smaller' }
   | { type: 'MERGE'; idCw: string; idCcw: string }
   | { type: 'APPLY_PALETTE'; colors: string[] }
   | {

@@ -431,7 +431,8 @@ export function useSliceInteraction(opts: {
         splitTimerRef.current = null;
         const { x, y } = clientToSvgPoint(svg, clientX, clientY);
         const hhmm = angleToHhmm(svgPointToAngleDeg(x, y));
-        dispatch({ type: 'SPLIT', hhmm });
+        // Empty the smaller half so the larger keeps the original name + colour.
+        dispatch({ type: 'SPLIT', hhmm, newSlotSide: 'smaller' });
       }, 220);
     },
     [dispatch],
@@ -446,7 +447,7 @@ export function useSliceInteraction(opts: {
       if (!svg) return;
       const { x, y } = clientToSvgPoint(svg, e.clientX, e.clientY);
       const hhmm = angleToHhmm(svgPointToAngleDeg(x, y));
-      dispatch({ type: 'SPLIT', hhmm });
+      dispatch({ type: 'SPLIT', hhmm, newSlotSide: 'smaller' });
     },
     [dispatch],
   );

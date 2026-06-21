@@ -138,6 +138,33 @@ describe('splitSliceAt', () => {
     expect(later.label).toBe('B'); // parent content moved to the later half
   });
 
+  it("newSlotSide='smaller' empties the SMALLER half; the larger keeps the name", () => {
+    // Split B (06:00–12:00) at 10:00 → earlier 4h, later 2h. Larger = earlier.
+    const result = splitSliceAt(makeFourQuarters(), '10:00', 'smaller');
+    const earlier = result.slices.find((s) => s.startTime === '06:00' && s.endTime === '10:00')!;
+    const later = result.slices.find((s) => s.startTime === '10:00' && s.endTime === '12:00')!;
+    expect(earlier.label).toBe('B'); // larger half keeps the original name
+    expect(later.label).toBe(''); // smaller half becomes empty
+  });
+
+  it("newSlotSide='smaller' empties the earlier half when the later half is larger", () => {
+    // Split B (06:00–12:00) at 08:00 → earlier 2h, later 4h. Larger = later.
+    const result = splitSliceAt(makeFourQuarters(), '08:00', 'smaller');
+    const earlier = result.slices.find((s) => s.startTime === '06:00' && s.endTime === '08:00')!;
+    const later = result.slices.find((s) => s.startTime === '08:00' && s.endTime === '12:00')!;
+    expect(earlier.label).toBe(''); // smaller half becomes empty
+    expect(later.label).toBe('B'); // larger half keeps the original name
+  });
+
+  it("newSlotSide='smaller' colours the empty half a sibling shade of the parent (theme-respecting)", () => {
+    const schedule = makeFourQuarters();
+    const parentColor = schedule.slices[1].color; // B
+    const result = splitSliceAt(schedule, '10:00', 'smaller');
+    const empty = result.slices.find((s) => s.startTime === '10:00' && s.endTime === '12:00')!;
+    expect(empty.label).toBe('');
+    expect(empty.color.toLowerCase()).not.toBe(parentColor.toLowerCase());
+  });
+
   it('new slice gets a sibling colour (different from parent), empty label/icon, textPosition inside', () => {
     const schedule = makeFourQuarters();
     const parentColor = schedule.slices[0].color;
