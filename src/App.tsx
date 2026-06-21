@@ -144,7 +144,7 @@ function App() {
         <div className="container mx-auto h-14 flex items-center justify-between gap-1.5 px-3 sm:gap-2 sm:px-4">
           <div className="flex min-w-0 items-center gap-2">
             <h1 className="min-w-0 shrink truncate font-semibold text-sm sm:text-base">
-              24H Circle Planner
+              24Houring
             </h1>
             <SaveIndicator />
           </div>
@@ -232,6 +232,7 @@ function App() {
             onPointerDownHandle={handlers.onPointerDownHandle}
             onSliceDoubleClick={handlers.onSliceDoubleClick}
             onBackgroundClick={handlers.onBackgroundClick}
+            onSliceSplit={handlers.onSliceSplit}
             showEmptyHint={isEmptyState}
             selectedSliceId={editingSliceId}
             title={present.name}

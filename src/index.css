@@ -394,6 +394,17 @@ svg text {
   filter: drop-shadow(0 0 6px hsl(var(--accent) / 0.45));
 }
 
+/* Cut mode (desktop): hovering a slice body shows a scissors cursor and a click
+   splits it. White halo behind black so it stays visible on any slice colour;
+   falls back to crosshair where data-URI cursors aren't supported. The label
+   ("naming part") sets pointer-events:auto to opt out of this. */
+.slice-cut {
+  cursor:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke-linecap='round' stroke-linejoin='round'><g stroke='white' stroke-width='3.5'><circle cx='6' cy='6' r='3'/><circle cx='6' cy='18' r='3'/><path d='M8.12 8.12 12 12'/><path d='M20 4 8.12 15.88'/><path d='M14.8 14.8 20 20'/></g><g stroke='black' stroke-width='1.6'><circle cx='6' cy='6' r='3'/><circle cx='6' cy='18' r='3'/><path d='M8.12 8.12 12 12'/><path d='M20 4 8.12 15.88'/><path d='M14.8 14.8 20 20'/></g></svg>")
+      12 12,
+    crosshair;
+}
+
 /* ─── Accessibility: reduced motion ────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

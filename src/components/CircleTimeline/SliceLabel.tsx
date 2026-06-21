@@ -7,6 +7,7 @@ import {
 } from '@/lib/svg-geometry';
 import { idealTextColor, DARK_TEXT } from '@/lib/contrast';
 import { useTranslation, useShowIcons } from '@/hooks/usePreferences';
+import { useCoarsePointer } from '@/hooks/useCoarsePointer';
 import { translateLabel } from '@/i18n/content';
 
 interface SliceLabelProps {
@@ -33,6 +34,15 @@ export function SliceLabel({ slice }: SliceLabelProps) {
   // the chart shows text-only labels (and narrow icon-only slices show nothing).
   const showIcons = useShowIcons();
   const icon = showIcons ? rawIcon : '';
+  // On desktop the label captures the pointer so the slice's scissors/cut cursor
+  // and click-to-split are excluded over the "naming part". On touch it stays
+  // click-through so tapping the name still opens the editor.
+  const coarse = useCoarsePointer();
+  const labelStyle: React.CSSProperties = {
+    pointerEvents: coarse ? 'none' : 'auto',
+    userSelect: 'none',
+    cursor: coarse ? undefined : 'default',
+  };
   const widthMin = sliceWidthMinutes(slice);
   // tooNarrow threshold: < 40 min means we only show the icon (no text label).
   // Increased from 30 to 40 because the larger font (22px text + 38px icon)
@@ -69,7 +79,7 @@ export function SliceLabel({ slice }: SliceLabelProps) {
           dominantBaseline="central"
           fontSize={32}
           fontFamily={fontFamily}
-          style={{ pointerEvents: 'none', userSelect: 'none' }}
+          style={labelStyle}
         >
           {icon}
         </text>
@@ -84,7 +94,7 @@ export function SliceLabel({ slice }: SliceLabelProps) {
         data-label-id={slice.id}
         data-label-kind="inside"
         transform={`translate(${x} ${y})`}
-        style={{ pointerEvents: 'none', userSelect: 'none' }}
+        style={labelStyle}
       >
         {icon ? (
           <text
@@ -125,7 +135,7 @@ export function SliceLabel({ slice }: SliceLabelProps) {
     <g
       data-label-id={slice.id}
       data-label-kind="outside"
-      style={{ pointerEvents: 'none', userSelect: 'none' }}
+      style={labelStyle}
     >
       <line
         x1={leaderStart.x}

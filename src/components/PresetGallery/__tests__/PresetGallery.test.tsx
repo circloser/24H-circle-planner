@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { PresetGallery } from '../PresetGallery';
+import { COLOR_THEMES } from '@/data/color-themes';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -87,8 +88,8 @@ describe('PresetGallery', () => {
     fireEvent.click(confirmBtn);
 
     expect(onConfirm).toHaveBeenCalledOnce();
-    // No theme picked → original colours (null) passed alongside the name.
-    expect(onConfirm).toHaveBeenCalledWith('대학생', null);
+    // The "original" option was removed; the first colour theme is the default.
+    expect(onConfirm).toHaveBeenCalledWith('대학생', COLOR_THEMES[0].colors);
   });
 
   it('cancelling closes the confirmation without calling onConfirm', () => {

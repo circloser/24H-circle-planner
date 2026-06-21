@@ -42,13 +42,11 @@ export function PresetGallery({ open, onOpenChange, onConfirm, onLoadUserPreset 
   // Whether the pending card is a user preset (loaded by object) vs a built-in
   // (loaded by name via onConfirm).
   const [pendingIsUser, setPendingIsUser] = useState(false);
-  // Pick the content (preset) AND the colour theme before starting. null = the
-  // preset's own original colours.
-  const [themeId, setThemeId] = useState<string | null>(null);
+  // Pick the content (preset) AND the colour theme before starting. Defaults to
+  // the first theme (the "original" option was removed).
+  const [themeId, setThemeId] = useState<string>(COLOR_THEMES[0].id);
 
-  const themeColors = themeId
-    ? (COLOR_THEMES.find((c) => c.id === themeId)?.colors ?? null)
-    : null;
+  const themeColors = COLOR_THEMES.find((c) => c.id === themeId)?.colors ?? null;
   const recolor = (slices: TimeSlice[]): TimeSlice[] =>
     themeColors
       ? slices.map((s, i) => ({ ...s, color: themeColors[i % themeColors.length] }))
@@ -90,14 +88,6 @@ export function PresetGallery({ open, onOpenChange, onConfirm, onLoadUserPreset 
               chooses both content and palette before starting. */}
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-xs text-muted-foreground mr-1">{t('settings.colorTheme')}</span>
-            <button
-              type="button"
-              aria-pressed={themeId === null}
-              onClick={() => setThemeId(null)}
-              className="opt-chip px-2.5 py-1 rounded-md text-xs"
-            >
-              {t('preset.themeOriginal')}
-            </button>
             {COLOR_THEMES.map((theme) => (
               <button
                 key={theme.id}

@@ -16,6 +16,9 @@ export interface UseSliceInteractionResult {
     onSliceDoubleClick: (sliceId: string) => void;
     /** Call on SVG background click to split a slice at the clicked position. */
     onBackgroundClick: (e: React.MouseEvent<SVGElement>) => void;
+    /** Click a slice body (cut mode) to split it at the cursor; debounced so a
+     *  double-click edits instead of splitting twice. */
+    onSliceSplit: (e: React.MouseEvent<SVGElement>) => void;
   };
   isDragging: boolean;
 }
@@ -402,11 +405,37 @@ export function useSliceInteraction(opts: {
     [attach],
   );
 
-  // ── onSliceDoubleClick ────────────────────────────────────────────────────
+  // ── onSliceDoubleClick / onSliceSplit ─────────────────────────────────────
+
+  // Pending single-click split, so a double-click can cancel it and edit instead.
+  const splitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const onSliceDoubleClick = useCallback((sliceId: string) => {
+    if (splitTimerRef.current) {
+      clearTimeout(splitTimerRef.current);
+      splitTimerRef.current = null;
+    }
     optsRef.current.onRequestEdit(sliceId);
   }, []);
+
+  const onSliceSplit = useCallback(
+    (e: React.MouseEvent<SVGElement>) => {
+      if (isDraggingRef.current) return;
+      const svg = svgRef.current;
+      if (!svg) return;
+      const { clientX, clientY } = e;
+      if (splitTimerRef.current) clearTimeout(splitTimerRef.current);
+      // Wait out the double-click window: if a dblclick lands it edits and
+      // cancels this; otherwise we split at the clicked time.
+      splitTimerRef.current = setTimeout(() => {
+        splitTimerRef.current = null;
+        const { x, y } = clientToSvgPoint(svg, clientX, clientY);
+        const hhmm = angleToHhmm(svgPointToAngleDeg(x, y));
+        dispatch({ type: 'SPLIT', hhmm });
+      }, 220);
+    },
+    [dispatch],
+  );
 
   // ── onBackgroundClick ─────────────────────────────────────────────────────
 
@@ -425,7 +454,7 @@ export function useSliceInteraction(opts: {
   return {
     liveDragGroupRef,
     svgRef,
-    handlers: { onPointerDownHandle, onSliceDoubleClick, onBackgroundClick },
+    handlers: { onPointerDownHandle, onSliceDoubleClick, onBackgroundClick, onSliceSplit },
     isDragging: isDraggingBoundary,
   };
 }

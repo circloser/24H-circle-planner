@@ -120,6 +120,14 @@ export type TKey =
   | 'export.restoreConfirm'
   | 'export.restored'
   | 'export.restoreFail'
+  | 'day.deleteTitle'
+  | 'day.deleteBody'
+  | 'day.deleteConfirm'
+  | 'day.max'
+  | 'memo.clearAll'
+  | 'memo.clearTitle'
+  | 'memo.clearBody'
+  | 'memo.clearConfirm'
   | 'slot.atCapacity'
   | 'slot.emptyPre'
   | 'slot.saveAsInline'
@@ -255,6 +263,14 @@ const ko: Dict = {
   'export.restoreConfirm': '복원',
   'export.restored': '복원했습니다. 새로고침합니다…',
   'export.restoreFail': '복원 실패',
+  'day.deleteTitle': '날짜 삭제',
+  'day.deleteBody': '이 날짜의 시간표가 삭제됩니다. 삭제할까요?',
+  'day.deleteConfirm': '삭제',
+  'day.max': '최대 20일까지 추가할 수 있어요',
+  'memo.clearAll': '메모 모두 삭제',
+  'memo.clearTitle': '메모 모두 삭제',
+  'memo.clearBody': '모든 메모가 삭제됩니다. 삭제할까요?',
+  'memo.clearConfirm': '모두 삭제',
   'slot.atCapacity': '최대 10개 슬롯에 도달했습니다. 새 슬롯을 저장하려면 기존 슬롯을 삭제하세요.',
   'slot.emptyPre': '저장된 시간표가 없습니다. ',
   'slot.saveAsInline': '다른 이름으로 저장',
@@ -391,6 +407,14 @@ const en: Dict = {
   'export.restoreConfirm': 'Restore',
   'export.restored': 'Restored. Reloading…',
   'export.restoreFail': 'Restore failed',
+  'day.deleteTitle': 'Delete day',
+  'day.deleteBody': "This day's schedule will be deleted. Delete it?",
+  'day.deleteConfirm': 'Delete',
+  'day.max': 'You can add up to 20 days',
+  'memo.clearAll': 'Delete all memos',
+  'memo.clearTitle': 'Delete all memos',
+  'memo.clearBody': 'All memos will be deleted. Delete them?',
+  'memo.clearConfirm': 'Delete all',
   'slot.atCapacity': "You've reached 10 slots. Delete one to save a new slot.",
   'slot.emptyPre': 'No saved schedules yet. Add one with ',
   'slot.saveAsInline': 'Save as',

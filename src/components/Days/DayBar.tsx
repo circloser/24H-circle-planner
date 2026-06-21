@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { Plus, X, Copy, FileText } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { slicePath } from '@/lib/svg-geometry';
-import { useDays } from '@/hooks/useDays';
+import { useDays, MAX_DAYS } from '@/hooks/useDays';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useCoarsePointer } from '@/hooks/useCoarsePointer';
 import type { Schedule } from '@/types/schedule';
@@ -43,8 +45,23 @@ export function DayBar() {
   const { t } = useTranslation();
   const coarse = useCoarsePointer();
   const [addOpen, setAddOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
   const multi = days.length >= 2;
+  const atMax = days.length >= MAX_DAYS;
+
+  function openAdd() {
+    if (atMax) {
+      toast(t('day.max'));
+      return;
+    }
+    setAddOpen(true);
+  }
+
+  function confirmDelete() {
+    if (pendingDelete) deleteDay(pendingDelete);
+    setPendingDelete(null);
+  }
 
   const pillStyle = {
     backgroundColor: 'hsl(var(--surface) / 0.92)',
@@ -88,7 +105,7 @@ export function DayBar() {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      deleteDay(d.id);
+                      setPendingDelete(d.id);
                     }}
                     aria-label={t('day.delete')}
                     title={t('day.delete')}
@@ -110,17 +127,18 @@ export function DayBar() {
           {/* Add button — always present; faded when it's the lone control. */}
           <button
             type="button"
-            onClick={() => setAddOpen(true)}
+            onClick={openAdd}
+            disabled={atMax}
             aria-label={t('day.add')}
-            title={t('day.add')}
-            className="grid place-items-center rounded-full shrink-0 transition-transform hover:scale-105"
+            title={atMax ? t('day.max') : t('day.add')}
+            className="grid place-items-center rounded-full shrink-0 transition-transform hover:scale-105 disabled:cursor-not-allowed"
             style={{
               width: THUMB,
               height: THUMB,
               backgroundColor: 'hsl(var(--muted) / 0.6)',
               color: 'hsl(var(--foreground))',
               border: '1px dashed hsl(var(--border))',
-              opacity: multi ? 1 : 0.5,
+              opacity: atMax ? 0.3 : multi ? 1 : 0.5,
             }}
           >
             <Plus className="h-5 w-5" />
@@ -171,6 +189,27 @@ export function DayBar() {
               {t('day.addEmpty')}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete-day confirmation */}
+      <Dialog open={pendingDelete !== null} onOpenChange={(o) => { if (!o) setPendingDelete(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t('day.deleteTitle')}</DialogTitle>
+            <DialogDescription>{t('day.deleteBody')}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPendingDelete(null)}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              onClick={confirmDelete}
+              style={{ backgroundColor: 'hsl(var(--destructive))', color: 'hsl(var(--destructive-foreground))' }}
+            >
+              {t('day.deleteConfirm')}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

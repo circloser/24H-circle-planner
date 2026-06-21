@@ -25,6 +25,9 @@ import { useStoreDispatch, useStoreSelector } from '@/hooks/useScheduleStore';
  * guard).
  */
 
+/** Maximum number of days (trip/week length cap). */
+export const MAX_DAYS = 20;
+
 interface DayDoc {
   id: string; // stable day id (NOT the schedule id)
   schedule: Schedule;
@@ -108,6 +111,7 @@ export function DaysProvider({ children }: { children: React.ReactNode }) {
 
   const addDay = useCallback(
     (mode: 'empty' | 'duplicate' = 'empty') => {
+      if (days.length >= MAX_DAYS) return; // capped — see DayBar for the UI guard
       let schedule: Schedule;
       if (mode === 'duplicate') {
         const base = (activeId ? days.find((d) => d.id === activeId)?.schedule : undefined) ??

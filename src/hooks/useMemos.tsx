@@ -94,6 +94,7 @@ interface MemoContextValue {
   addMemo: () => void;
   updateMemo: (id: string, patch: Partial<Memo>) => void;
   removeMemo: (id: string) => void;
+  clearMemos: () => void;
   toggleVisible: () => void;
 }
 
@@ -134,12 +135,16 @@ export function MemoProvider({ children }: { children: React.ReactNode }) {
     setState((prev) => ({ ...prev, memos: prev.memos.filter((m) => m.id !== id) }));
   }, []);
 
+  const clearMemos = useCallback(() => {
+    setState((prev) => ({ ...prev, memos: [] }));
+  }, []);
+
   const toggleVisible = useCallback(() => {
     setState((prev) => ({ ...prev, visible: !prev.visible }));
   }, []);
 
   return (
-    <MemoContext.Provider value={{ memos, visible, addMemo, updateMemo, removeMemo, toggleVisible }}>
+    <MemoContext.Provider value={{ memos, visible, addMemo, updateMemo, removeMemo, clearMemos, toggleVisible }}>
       {children}
     </MemoContext.Provider>
   );

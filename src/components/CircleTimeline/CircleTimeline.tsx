@@ -37,6 +37,8 @@ interface CircleTimelineProps {
   onPointerDownHandle?: (e: React.PointerEvent<SVGElement>, boundaryIndex: number) => void;
   /** Called on a background click to split at that position. */
   onBackgroundClick?: (e: React.MouseEvent<SVGElement>) => void;
+  /** Called on a slice-body click (desktop cut mode) to split at the cursor. */
+  onSliceSplit?: (e: React.MouseEvent<SVGElement>) => void;
   /** Schedule title shown in the center hub (SVG text — appears in PNG/PDF export). */
   title?: string;
   /** Called when the center hub is clicked (interactive mode) — opens the title editor. */
@@ -214,11 +216,22 @@ interface SlicePathProps {
   slice: TimeSlice;
   isInteractive: boolean;
   isSelected?: boolean;
+  /** Cut mode (desktop): scissors cursor + click splits at the cursor position. */
+  cutMode?: boolean;
   onSliceClick?: (id: string) => void;
   onSliceDoubleClick?: (id: string) => void;
+  onSliceSplit?: (e: React.MouseEvent<SVGElement>) => void;
 }
 
-function SlicePath({ slice, isInteractive, isSelected, onSliceClick, onSliceDoubleClick }: SlicePathProps) {
+function SlicePath({
+  slice,
+  isInteractive,
+  isSelected,
+  cutMode,
+  onSliceClick,
+  onSliceDoubleClick,
+  onSliceSplit,
+}: SlicePathProps) {
   // During drag, returns snapshot value for affected slices (snapshot-to-snapshot = no-op diff).
   const liveSlice = useSliceSelector(slice.id);
   const d = liveSlice ? slicePath(liveSlice) : slicePath(slice);
@@ -226,9 +239,19 @@ function SlicePath({ slice, isInteractive, isSelected, onSliceClick, onSliceDoub
   const className = [
     isInteractive ? 'slice-path' : undefined,
     isSelected ? 'slice-path--selected' : undefined,
+    isInteractive && cutMode ? 'slice-cut' : undefined,
   ]
     .filter(Boolean)
     .join(' ') || undefined;
+
+  // Cut mode: a single click splits at the cursor. Otherwise fall back to the
+  // tap-to-edit path (onSliceClick) used on touch.
+  const handleClick =
+    isInteractive && cutMode && onSliceSplit
+      ? onSliceSplit
+      : isInteractive && onSliceClick
+        ? () => onSliceClick(slice.id)
+        : undefined;
 
   return (
     <path
@@ -241,8 +264,9 @@ function SlicePath({ slice, isInteractive, isSelected, onSliceClick, onSliceDoub
       role={isInteractive ? 'button' : undefined}
       aria-label={isInteractive ? (slice.label ? `${slice.label} 슬라이스` : '슬라이스') : undefined}
       tabIndex={isInteractive ? 0 : undefined}
-      style={{ cursor: isInteractive ? 'pointer' : 'default' }}
-      onClick={isInteractive && onSliceClick ? () => onSliceClick(slice.id) : undefined}
+      // The scissors cursor comes from the .slice-cut class; don't override it.
+      style={{ cursor: isInteractive && !cutMode ? 'pointer' : undefined }}
+      onClick={handleClick}
       onDoubleClick={
         isInteractive && onSliceDoubleClick ? () => onSliceDoubleClick(slice.id) : undefined
       }
@@ -260,6 +284,8 @@ interface InteractiveLayerProps {
   onBackgroundClick: (e: React.MouseEvent<SVGElement>) => void;
   onSliceClick?: (id: string) => void;
   onSliceDoubleClick?: (id: string) => void;
+  onSliceSplit?: (e: React.MouseEvent<SVGElement>) => void;
+  cutMode?: boolean;
   selectedSliceId?: string | null;
 }
 
@@ -270,6 +296,8 @@ function InteractiveLayer({
   onBackgroundClick,
   onSliceClick,
   onSliceDoubleClick,
+  onSliceSplit,
+  cutMode,
   selectedSliceId,
 }: InteractiveLayerProps) {
   const isDraggingBoundary = useStoreSelector((s) => s.isDraggingBoundary);
@@ -299,8 +327,10 @@ function InteractiveLayer({
             slice={slice}
             isInteractive
             isSelected={selectedSliceId === slice.id}
+            cutMode={cutMode}
             onSliceClick={onSliceClick}
             onSliceDoubleClick={onSliceDoubleClick}
+            onSliceSplit={onSliceSplit}
           />
         ))}
       </g>
@@ -313,8 +343,10 @@ function InteractiveLayer({
             slice={slice}
             isInteractive
             isSelected={selectedSliceId === slice.id}
+            cutMode={cutMode}
             onSliceClick={onSliceClick}
             onSliceDoubleClick={onSliceDoubleClick}
+            onSliceSplit={onSliceSplit}
           />
         ))}
       </g>
@@ -340,6 +372,7 @@ export function CircleTimeline({
   onRequestEdit,
   onPointerDownHandle,
   onBackgroundClick,
+  onSliceSplit,
   showEmptyHint = false,
   selectedSliceId,
   title,
@@ -452,6 +485,8 @@ export function CircleTimeline({
           onBackgroundClick={onBackgroundClick}
           onSliceClick={coarse ? handleDoubleClick : onSliceClick}
           onSliceDoubleClick={handleDoubleClick}
+          onSliceSplit={onSliceSplit}
+          cutMode={!coarse}
           selectedSliceId={selectedSliceId}
         />
       ) : (
