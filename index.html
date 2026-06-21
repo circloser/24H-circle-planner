@@ -5,6 +5,25 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>24h</title>
+
+    <!-- Google tag (gtag.js) — loaded only on the deployed http(s) site, so
+         local dev and the offline single-file build (file://) don't pollute
+         Analytics. On production this behaves like the standard GA snippet. -->
+    <script>
+      (function () {
+        var host = location.hostname;
+        if (location.protocol.indexOf('http') !== 0) return; // skip file://
+        if (host === 'localhost' || host === '127.0.0.1' || host === '') return; // skip local dev
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = function () { dataLayer.push(arguments); };
+        gtag('js', new Date());
+        gtag('config', 'G-2YQFP0PTLZ');
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-2YQFP0PTLZ';
+        document.head.appendChild(s);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
