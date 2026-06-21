@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { v4 as uuid } from 'uuid';
 import { randomQuote } from '@/data/quotes';
+import { useTranslation } from '@/hooks/usePreferences';
 
 const MEMO_SIZE = 200;
 
@@ -101,6 +102,7 @@ const MemoContext = createContext<MemoContextValue | null>(null);
 export function MemoProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<MemoState>(loadState);
   const { memos, visible } = state;
+  const { lang } = useTranslation();
 
   useEffect(() => {
     saveState(state);
@@ -110,7 +112,8 @@ export function MemoProvider({ children }: { children: React.ReactNode }) {
     const { x, y } = pickSpawn(MEMO_SIZE);
     const memo: Memo = {
       id: uuid(),
-      text: randomQuote(),
+      // Seed the note with a quote in the current UI language.
+      text: randomQuote(lang),
       x,
       y,
       color: DEFAULT_COLOR,
@@ -118,7 +121,7 @@ export function MemoProvider({ children }: { children: React.ReactNode }) {
     };
     // Adding a note implies the layer should be visible.
     setState((prev) => ({ memos: [...prev.memos, memo], visible: true }));
-  }, []);
+  }, [lang]);
 
   const updateMemo = useCallback((id: string, patch: Partial<Memo>) => {
     setState((prev) => ({
