@@ -44,7 +44,8 @@ export function SliceLabel({ slice, onEdit }: SliceLabelProps) {
   const labelStyle: React.CSSProperties = {
     pointerEvents: coarse ? 'none' : 'auto',
     userSelect: 'none',
-    cursor: coarse ? undefined : onEdit ? 'pointer' : 'default',
+    // Text/I-beam cursor over the centre so it reads as "click to edit content".
+    cursor: coarse ? undefined : onEdit ? 'text' : 'default',
   };
   const onLabelClick =
     !coarse && onEdit
@@ -75,27 +76,10 @@ export function SliceLabel({ slice, onEdit }: SliceLabelProps) {
 
   if (textPosition === 'inside') {
     const { x, y } = labelAnchorInside(slice);
-
-    if (tooNarrow) {
-      // Icon only — no text. Threshold is slice < 30 min; use larger icon size.
-      if (!icon) return null;
-      return (
-        <text
-          data-label-id={slice.id}
-          data-label-kind="inside-narrow"
-          x={x}
-          y={y}
-          textAnchor="middle"
-          dominantBaseline="central"
-          fontSize={32}
-          fontFamily={fontFamily}
-          style={labelStyle}
-          onClick={onLabelClick}
-        >
-          {icon}
-        </text>
-      );
-    }
+    // Centre edit zone: a single click here opens the editor (text cursor),
+    // even when the slice is empty. The slice body OUTSIDE it keeps the scissors
+    // cut cursor. Smaller on narrow wedges so it doesn't bleed into neighbours.
+    const hitR = tooNarrow ? 22 : 38;
 
     // Positioned via `transform` (children at relative offsets) so the boundary
     // drag engine can re-anchor the whole label by updating one attribute —
@@ -107,20 +91,22 @@ export function SliceLabel({ slice, onEdit }: SliceLabelProps) {
         transform={`translate(${x} ${y})`}
         style={labelStyle}
         onClick={onLabelClick}
+        onDoubleClick={onLabelClick}
       >
+        <circle cx={0} cy={0} r={hitR} fill="transparent" />
         {icon ? (
           <text
             x={0}
-            y={-20}
+            y={tooNarrow ? 0 : -20}
             textAnchor="middle"
             dominantBaseline="central"
-            fontSize={38}
+            fontSize={tooNarrow ? 32 : 38}
             fontFamily={fontFamily}
           >
             {icon}
           </text>
         ) : null}
-        {truncated ? (
+        {!tooNarrow && truncated ? (
           <text
             x={0}
             y={icon ? 14 : 0}
