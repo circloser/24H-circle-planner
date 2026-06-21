@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { v4 as uuid } from 'uuid';
 import type { Schedule } from '@/types/schedule';
+import type { TimeSlice } from '@/types/time-slice';
 import { loadSchedule, STORAGE_KEY_DAYS } from '@/lib/storage';
 import { createInitialSchedule } from '@/lib/initial-schedule';
 import { useStoreDispatch, useStoreSelector } from '@/hooks/useScheduleStore';
@@ -76,6 +77,7 @@ interface DaysContextValue {
   activeIndex: number; // 0-based; -1 when none
   switchTo: (dayId: string) => void;
   addDay: (mode?: 'empty' | 'duplicate') => void;
+  addDayFromSlices: (slices: TimeSlice[], name: string) => void;
   deleteDay: (dayId: string) => void;
   /** Internal: write the live schedule back into the active day. */
   syncActive: (present: Schedule) => void;
@@ -135,6 +137,26 @@ export function DaysProvider({ children }: { children: React.ReactNode }) {
     [activeId, days, dispatch],
   );
 
+  // Add a new day seeded from a preset's slices (deep-cloned with fresh ids).
+  const addDayFromSlices = useCallback(
+    (slices: TimeSlice[], name: string) => {
+      if (days.length >= MAX_DAYS) return;
+      const schedule: Schedule = {
+        id: uuid(),
+        version: 1,
+        name,
+        presetSource: null,
+        updatedAt: new Date().toISOString(),
+        slices: slices.map((s) => ({ ...s, id: uuid() })),
+      };
+      const day: DayDoc = { id: uuid(), schedule };
+      setDays((prev) => [...prev, day]);
+      setActiveId(day.id);
+      dispatch({ type: 'LOAD_SCHEDULE', schedule });
+    },
+    [days, dispatch],
+  );
+
   const deleteDay = useCallback(
     (dayId: string) => {
       // Always keep at least one day — the last schedule can't be deleted.
@@ -175,6 +197,7 @@ export function DaysProvider({ children }: { children: React.ReactNode }) {
     activeIndex,
     switchTo,
     addDay,
+    addDayFromSlices,
     deleteDay,
     syncActive,
   };
@@ -226,6 +249,7 @@ export function useDays(): DaysContextValue {
       activeIndex: -1,
       switchTo: () => {},
       addDay: () => {},
+      addDayFromSlices: () => {},
       deleteDay: () => {},
       syncActive: () => {},
     };

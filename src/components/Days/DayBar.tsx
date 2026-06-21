@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, X, Copy, FileText } from 'lucide-react';
+import { Plus, X, Copy, FileText, LayoutGrid } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -10,11 +10,15 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { PresetGallery } from '@/components/PresetGallery/PresetGallery';
 import { slicePath } from '@/lib/svg-geometry';
 import { useDays, MAX_DAYS } from '@/hooks/useDays';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useCoarsePointer } from '@/hooks/useCoarsePointer';
+import { PRESETS } from '@/data/presets';
 import type { Schedule } from '@/types/schedule';
+import type { Preset } from '@/types/preset';
+import type { TimeSlice } from '@/types/time-slice';
 
 const THUMB = 46;
 
@@ -41,11 +45,25 @@ function DayThumb({ schedule, size }: { schedule: Schedule; size: number }) {
  * The + asks whether to duplicate the current schedule or start empty.
  */
 export function DayBar() {
-  const { days, activeId, activeIndex, switchTo, addDay, deleteDay } = useDays();
+  const { days, activeId, activeIndex, switchTo, addDay, addDayFromSlices, deleteDay } = useDays();
   const { t } = useTranslation();
   const coarse = useCoarsePointer();
   const [addOpen, setAddOpen] = useState(false);
+  const [presetOpen, setPresetOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+
+  const recolor = (slices: TimeSlice[], themeColors: string[] | null): TimeSlice[] =>
+    themeColors ? slices.map((s, i) => ({ ...s, color: themeColors[i % themeColors.length] })) : slices;
+
+  // Add a NEW day from a built-in preset (looked up by name).
+  function addDayFromPreset(presetName: string, themeColors: string[] | null) {
+    const preset = PRESETS.find((p) => p.name === presetName);
+    if (preset) addDayFromSlices(recolor(preset.slices, themeColors), presetName);
+  }
+  // Add a NEW day from a user-saved preset (carries its own slices).
+  function addDayFromUserPreset(preset: Preset, themeColors: string[] | null) {
+    addDayFromSlices(recolor(preset.slices, themeColors), preset.name);
+  }
 
   const multi = days.length >= 2;
   const atMax = days.length >= MAX_DAYS;
@@ -188,9 +206,27 @@ export function DayBar() {
               <FileText className="h-4 w-4" />
               {t('day.addEmpty')}
             </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-2"
+              style={{ backgroundColor: 'hsl(var(--surface))', color: 'hsl(var(--foreground))', border: '1px solid hsl(var(--border))' }}
+              onClick={() => { setAddOpen(false); setPresetOpen(true); }}
+            >
+              <LayoutGrid className="h-4 w-4" />
+              {t('day.addPreset')}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Add a new day from a preset (append mode — no overwrite confirm). */}
+      <PresetGallery
+        open={presetOpen}
+        onOpenChange={setPresetOpen}
+        mode="append"
+        onConfirm={addDayFromPreset}
+        onLoadUserPreset={addDayFromUserPreset}
+      />
 
       {/* Delete-day confirmation */}
       <Dialog open={pendingDelete !== null} onOpenChange={(o) => { if (!o) setPendingDelete(null); }}>

@@ -33,9 +33,15 @@ interface PresetGalleryProps {
   onConfirm: (presetName: string, themeColors: string[] | null) => void;
   /** Load a user-saved preset (carries its own slices — not in PRESETS). */
   onLoadUserPreset?: (preset: Preset, themeColors: string[] | null) => void;
+  /**
+   * 'replace' (default): picking a card shows an "overwrite current?" confirm.
+   * 'append': there's nothing to overwrite (e.g. adding a new day) — picking a
+   * card commits immediately, no confirm step.
+   */
+  mode?: 'replace' | 'append';
 }
 
-export function PresetGallery({ open, onOpenChange, onConfirm, onLoadUserPreset }: PresetGalleryProps) {
+export function PresetGallery({ open, onOpenChange, onConfirm, onLoadUserPreset, mode = 'replace' }: PresetGalleryProps) {
   const { t, lang } = useTranslation();
   const { presets: userPresets, removePreset } = useUserPresets();
   const [pendingPreset, setPendingPreset] = useState<Preset | null>(null);
@@ -53,6 +59,13 @@ export function PresetGallery({ open, onOpenChange, onConfirm, onLoadUserPreset 
       : slices;
 
   function handleCardClick(preset: Preset, isUser = false) {
+    if (mode === 'append') {
+      // Nothing to overwrite — commit straight away.
+      if (isUser && onLoadUserPreset) onLoadUserPreset(preset, themeColors);
+      else onConfirm(preset.name, themeColors);
+      onOpenChange(false);
+      return;
+    }
     setPendingPreset(preset);
     setPendingIsUser(isUser);
     onOpenChange(false); // close the gallery so the confirm shows alone (no nesting)

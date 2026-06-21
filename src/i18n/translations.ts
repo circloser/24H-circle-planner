@@ -107,6 +107,7 @@ export type TKey =
   | 'day.addBody'
   | 'day.addDuplicate'
   | 'day.addEmpty'
+  | 'day.addPreset'
   | 'app.saved'
   | 'app.saving'
   | 'export.backup'
@@ -250,6 +251,7 @@ const ko: Dict = {
   'day.addBody': '새 날짜를 어떻게 시작할까요?',
   'day.addDuplicate': '현재 시간표 복제',
   'day.addEmpty': '빈 시간표',
+  'day.addPreset': '프리셋에서 선택',
   'app.saved': '저장됨',
   'app.saving': '저장 중…',
   'export.backup': '백업',
@@ -394,6 +396,7 @@ const en: Dict = {
   'day.addBody': 'How should the new day start?',
   'day.addDuplicate': 'Duplicate current',
   'day.addEmpty': 'Empty schedule',
+  'day.addPreset': 'Choose a preset',
   'app.saved': 'Saved',
   'app.saving': 'Saving…',
   'export.backup': 'Backup',
