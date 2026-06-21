@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Download, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { slug, formatDateYYYYMMDD } from '@/lib/export/_internal';
 import { buildExportPreviewDataUrl } from '@/lib/export/previewSvg';
+import { exportAllData, importAllData } from '@/lib/backup';
 import { useTranslation } from '@/hooks/usePreferences';
 import type { Schedule } from '@/types/schedule';
 
@@ -357,6 +358,119 @@ function AdSlot() {
   );
 }
 
+// ─── Backup Tab (full-data safety net) ────────────────────────────────────────
+
+/**
+ * Whole-app backup: export every localStorage key to one file, and restore it
+ * (overwriting current data, then reloading). The client-only answer to "what if
+ * I lose my data?" — back up and carry it to another device/browser.
+ */
+function BackupTab({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
+  const { t } = useTranslation();
+  const [exportLoading, setExportLoading] = useState(false);
+  const [restoreLoading, setRestoreLoading] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  function handleExport() {
+    setExportLoading(true);
+    try {
+      triggerDownload(exportAllData(), `24h-backup-${formatDateYYYYMMDD()}.json`);
+      toast.success(t('export.backupDone'));
+    } catch (err) {
+      toast.error(`${t('export.backupFail')}: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setExportLoading(false);
+    }
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPendingFile(file);
+      setConfirmOpen(true);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  async function handleConfirmRestore() {
+    if (!pendingFile) return;
+    setRestoreLoading(true);
+    try {
+      await importAllData(pendingFile);
+      toast.success(t('export.restored'));
+      setConfirmOpen(false);
+      onOpenChange(false);
+      // Reload so every provider re-reads the restored storage.
+      setTimeout(() => window.location.reload(), 700);
+    } catch (err) {
+      toast.error(`${t('export.restoreFail')}: ${err instanceof Error ? err.message : String(err)}`);
+      setRestoreLoading(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4 pt-2">
+      <p className="text-sm text-muted-foreground">{t('export.backupNote')}</p>
+
+      <Button
+        onClick={handleExport}
+        disabled={exportLoading}
+        className="w-full gap-2"
+        style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+      >
+        {exportLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+        {t('export.backupExport')}
+      </Button>
+
+      <div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+        <Button
+          variant="outline"
+          className="w-full gap-2"
+          disabled={restoreLoading}
+          onClick={() => fileInputRef.current?.click()}
+          style={{ backgroundColor: 'hsl(var(--surface))', color: 'hsl(var(--foreground))', border: '1px solid hsl(var(--border))' }}
+        >
+          {restoreLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+          {t('export.backupRestore')}
+        </Button>
+      </div>
+
+      {confirmOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
+          <div role="dialog" className="bg-background border rounded-lg p-6 max-w-sm w-full mx-4 shadow-lg">
+            <h3 className="text-base font-semibold mb-2">{t('export.restoreTitle')}</h3>
+            <p className="text-sm text-muted-foreground mb-4">{t('export.restoreBody')}</p>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => { setConfirmOpen(false); setPendingFile(null); }}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button
+                onClick={handleConfirmRestore}
+                disabled={restoreLoading}
+                style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+              >
+                {t('export.restoreConfirm')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── ExportDialog ─────────────────────────────────────────────────────────────
 
 export function ExportDialog({
@@ -383,6 +497,7 @@ export function ExportDialog({
             <TabsTrigger value="png" className="flex-1">PNG</TabsTrigger>
             <TabsTrigger value="pdf" className="flex-1">PDF</TabsTrigger>
             <TabsTrigger value="json" className="flex-1">JSON</TabsTrigger>
+            <TabsTrigger value="backup" className="flex-1">{t('export.backup')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="png">
@@ -400,6 +515,10 @@ export function ExportDialog({
               onImport={onImport}
               onOpenChange={onOpenChange}
             />
+          </TabsContent>
+
+          <TabsContent value="backup">
+            <BackupTab onOpenChange={onOpenChange} />
           </TabsContent>
         </Tabs>
       </DialogContent>

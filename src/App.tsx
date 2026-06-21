@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './index.css';
 import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download } from 'lucide-react';
 import { toast } from 'sonner';
@@ -22,6 +22,8 @@ import { ExportDialog } from '@/components/ExportPanel/ExportDialog';
 import { SettingsDialog, type SettingsSection } from '@/components/Settings/SettingsDialog';
 import { MemoLayer } from '@/components/Memo/MemoLayer';
 import { DayBar } from '@/components/Days/DayBar';
+import { SaveIndicator } from '@/components/SaveIndicator/SaveIndicator';
+import { requestPersistentStorage } from '@/lib/persistent-storage';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useSliceInteraction } from '@/hooks/useSliceInteraction';
@@ -121,6 +123,12 @@ function App() {
   // T4: keyboard shortcuts (undo/redo + drag-cancel)
   useKeyboardShortcuts({ liveDragGroupRef });
 
+  // Ask the browser to keep our localStorage from being auto-evicted, so a
+  // user's schedule/memos/backups survive storage-pressure cleanups. Best-effort.
+  useEffect(() => {
+    void requestPersistentStorage();
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col">
       <header
@@ -134,9 +142,12 @@ function App() {
         }}
       >
         <div className="container mx-auto h-14 flex items-center justify-between gap-1.5 px-3 sm:gap-2 sm:px-4">
-          <h1 className="min-w-0 shrink truncate font-semibold text-sm sm:text-base">
-            24H Circle Planner
-          </h1>
+          <div className="flex min-w-0 items-center gap-2">
+            <h1 className="min-w-0 shrink truncate font-semibold text-sm sm:text-base">
+              24H Circle Planner
+            </h1>
+            <SaveIndicator />
+          </div>
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

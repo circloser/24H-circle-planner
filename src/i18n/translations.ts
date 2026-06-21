@@ -107,6 +107,19 @@ export type TKey =
   | 'day.addBody'
   | 'day.addDuplicate'
   | 'day.addEmpty'
+  | 'app.saved'
+  | 'app.saving'
+  | 'export.backup'
+  | 'export.backupNote'
+  | 'export.backupExport'
+  | 'export.backupRestore'
+  | 'export.backupDone'
+  | 'export.backupFail'
+  | 'export.restoreTitle'
+  | 'export.restoreBody'
+  | 'export.restoreConfirm'
+  | 'export.restored'
+  | 'export.restoreFail'
   | 'slot.atCapacity'
   | 'slot.emptyPre'
   | 'slot.saveAsInline'
@@ -229,6 +242,19 @@ const ko: Dict = {
   'day.addBody': '새 날짜를 어떻게 시작할까요?',
   'day.addDuplicate': '현재 시간표 복제',
   'day.addEmpty': '빈 시간표',
+  'app.saved': '저장됨',
+  'app.saving': '저장 중…',
+  'export.backup': '백업',
+  'export.backupNote': '데이터는 이 브라우저에만 저장됩니다. 백업 파일로 저장해 두면 다른 기기로 옮기거나 복구할 수 있어요.',
+  'export.backupExport': '전체 백업 내보내기',
+  'export.backupRestore': '백업에서 복원',
+  'export.backupDone': '백업을 내보냈습니다',
+  'export.backupFail': '백업 내보내기 실패',
+  'export.restoreTitle': '백업에서 복원',
+  'export.restoreBody': '현재 기기의 모든 데이터가 백업 내용으로 덮어쓰여집니다. 복원할까요?',
+  'export.restoreConfirm': '복원',
+  'export.restored': '복원했습니다. 새로고침합니다…',
+  'export.restoreFail': '복원 실패',
   'slot.atCapacity': '최대 10개 슬롯에 도달했습니다. 새 슬롯을 저장하려면 기존 슬롯을 삭제하세요.',
   'slot.emptyPre': '저장된 시간표가 없습니다. ',
   'slot.saveAsInline': '다른 이름으로 저장',
@@ -352,6 +378,19 @@ const en: Dict = {
   'day.addBody': 'How should the new day start?',
   'day.addDuplicate': 'Duplicate current',
   'day.addEmpty': 'Empty schedule',
+  'app.saved': 'Saved',
+  'app.saving': 'Saving…',
+  'export.backup': 'Backup',
+  'export.backupNote': 'Your data lives only in this browser. Save a backup file to move it to another device or recover it later.',
+  'export.backupExport': 'Export full backup',
+  'export.backupRestore': 'Restore from backup',
+  'export.backupDone': 'Backup exported',
+  'export.backupFail': 'Backup export failed',
+  'export.restoreTitle': 'Restore from backup',
+  'export.restoreBody': 'This overwrites ALL data on this device with the backup. Restore?',
+  'export.restoreConfirm': 'Restore',
+  'export.restored': 'Restored. Reloading…',
+  'export.restoreFail': 'Restore failed',
   'slot.atCapacity': "You've reached 10 slots. Delete one to save a new slot.",
   'slot.emptyPre': 'No saved schedules yet. Add one with ',
   'slot.saveAsInline': 'Save as',
