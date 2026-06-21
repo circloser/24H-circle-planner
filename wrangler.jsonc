@@ -2,7 +2,7 @@
   // Static-site Worker: serves the Vite build output (./dist) as assets.
   // No server code (no "main") — assets-only Workers are supported by Wrangler.
   // Deployed by Cloudflare Workers Builds via `npx wrangler deploy`.
-  "name": "24h-circle-planner",
+  "name": "24houring",
   "compatibility_date": "2025-06-01",
   "assets": {
     "directory": "./dist",
