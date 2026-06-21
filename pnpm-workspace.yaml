@@ -1,14 +1,12 @@
-allowBuilds:
-  core-js: set this to true or false
-# Single-package project (no workspace packages). pnpm 10+ reads dependency
-# build-script approvals here. core-js's only "build script" is a funding
-# message (irrelevant to output); native binaries (esbuild, Tailwind oxide)
-# resolve via their optional platform packages.
+# Single-package repo. pnpm 10.x requires a non-empty `packages:` field whenever
+# this file exists, so declare just the root ('.'), which matches the lockfile's
+# single importer. The rest are dependency build-script approvals + skipping the
+# pre-run deps check (which otherwise hard-fails on core-js's funding-message
+# build script).
+packages:
+  - '.'
 onlyBuiltDependencies:
   - '@tailwindcss/oxide'
   - core-js
   - esbuild
-# Don't run an install/deps check before `pnpm run <script>` — on CI the deps
-# are freshly installed, and the check otherwise hard-fails on the ignored
-# core-js build (ERR_PNPM_IGNORED_BUILDS), blocking `pnpm run build`.
 verifyDepsBeforeRun: false
