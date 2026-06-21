@@ -1,13 +1,32 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import type { TimeSlice } from '@/types/time-slice';
 import { RING, polarToCartesian, slicePath, wrapText } from '@/lib/svg-geometry';
-import { hhmmToAngle } from '@/lib/time-utils';
+import { hhmmToAngle, angleToHhmm } from '@/lib/time-utils';
 import { useSliceSelector, useStoreSelector } from '@/hooks/useScheduleStore';
 import { useTranslation, useShowClock, useShowNowLine } from '@/hooks/usePreferences';
 import { useCoarsePointer } from '@/hooks/useCoarsePointer';
 import { translatePresetName } from '@/i18n/content';
 import { SliceLabel } from './SliceLabel';
 import { BoundaryHandles } from './BoundaryHandles';
+
+// Convert a client (screen) point into the SVG's user-space coordinates, then to
+// the polar angle from the ring centre. Mirrors useSliceInteraction so the cut
+// preview snaps to the exact same time the click would split at.
+function clientToSvgPoint(svg: SVGSVGElement, clientX: number, clientY: number): { x: number; y: number } {
+  if (typeof svg.getScreenCTM !== 'function' || typeof svg.createSVGPoint !== 'function') {
+    return { x: clientX, y: clientY };
+  }
+  const ctm = svg.getScreenCTM();
+  if (!ctm) return { x: clientX, y: clientY };
+  const pt = svg.createSVGPoint();
+  pt.x = clientX;
+  pt.y = clientY;
+  return pt.matrixTransform(ctm.inverse());
+}
+
+function svgPointToAngleDeg(x: number, y: number): number {
+  return (Math.atan2(y - RING.cy, x - RING.cx) * 180) / Math.PI;
+}
 
 interface CircleTimelineProps {
   slices: TimeSlice[];
@@ -221,6 +240,8 @@ interface SlicePathProps {
   onSliceClick?: (id: string) => void;
   onSliceDoubleClick?: (id: string) => void;
   onSliceSplit?: (e: React.MouseEvent<SVGElement>) => void;
+  onSliceHover?: (e: React.PointerEvent<SVGElement>) => void;
+  onSliceLeave?: () => void;
 }
 
 function SlicePath({
@@ -231,6 +252,8 @@ function SlicePath({
   onSliceClick,
   onSliceDoubleClick,
   onSliceSplit,
+  onSliceHover,
+  onSliceLeave,
 }: SlicePathProps) {
   // During drag, returns snapshot value for affected slices (snapshot-to-snapshot = no-op diff).
   const liveSlice = useSliceSelector(slice.id);
@@ -270,6 +293,8 @@ function SlicePath({
       onDoubleClick={
         isInteractive && onSliceDoubleClick ? () => onSliceDoubleClick(slice.id) : undefined
       }
+      onPointerMove={isInteractive && cutMode ? onSliceHover : undefined}
+      onPointerLeave={isInteractive && cutMode ? onSliceLeave : undefined}
     />
   );
 }
@@ -285,6 +310,8 @@ interface InteractiveLayerProps {
   onSliceClick?: (id: string) => void;
   onSliceDoubleClick?: (id: string) => void;
   onSliceSplit?: (e: React.MouseEvent<SVGElement>) => void;
+  onSliceHover?: (e: React.PointerEvent<SVGElement>) => void;
+  onSliceLeave?: () => void;
   cutMode?: boolean;
   selectedSliceId?: string | null;
 }
@@ -297,6 +324,8 @@ function InteractiveLayer({
   onSliceClick,
   onSliceDoubleClick,
   onSliceSplit,
+  onSliceHover,
+  onSliceLeave,
   cutMode,
   selectedSliceId,
 }: InteractiveLayerProps) {
@@ -331,6 +360,8 @@ function InteractiveLayer({
             onSliceClick={onSliceClick}
             onSliceDoubleClick={onSliceDoubleClick}
             onSliceSplit={onSliceSplit}
+            onSliceHover={onSliceHover}
+            onSliceLeave={onSliceLeave}
           />
         ))}
       </g>
@@ -347,6 +378,8 @@ function InteractiveLayer({
             onSliceClick={onSliceClick}
             onSliceDoubleClick={onSliceDoubleClick}
             onSliceSplit={onSliceSplit}
+            onSliceHover={onSliceHover}
+            onSliceLeave={onSliceLeave}
           />
         ))}
       </g>
@@ -395,6 +428,30 @@ export function CircleTimeline({
   // Fallback internal svg ref (if none passed — e.g. in view mode or tests)
   const internalSvgRef = useRef<SVGSVGElement | null>(null);
   const svgRef = svgRefProp ?? internalSvgRef;
+
+  // Cut preview: a faint dashed line showing where a scissors-click would split.
+  // Updated imperatively on hover (no React re-render per mousemove).
+  const cutPreviewRef = useRef<SVGLineElement>(null);
+  const showCutPreview = useCallback(
+    (e: React.PointerEvent<SVGElement>) => {
+      const svg = svgRef.current;
+      const line = cutPreviewRef.current;
+      if (!svg || !line) return;
+      const { x, y } = clientToSvgPoint(svg, e.clientX, e.clientY);
+      const ang = hhmmToAngle(angleToHhmm(svgPointToAngleDeg(x, y)));
+      const inner = polarToCartesian(RING.cx, RING.cy, RING.innerR, ang);
+      const outer = polarToCartesian(RING.cx, RING.cy, RING.outerR, ang);
+      line.setAttribute('x1', String(inner.x));
+      line.setAttribute('y1', String(inner.y));
+      line.setAttribute('x2', String(outer.x));
+      line.setAttribute('y2', String(outer.y));
+      line.style.opacity = '1';
+    },
+    [svgRef],
+  );
+  const hideCutPreview = useCallback(() => {
+    if (cutPreviewRef.current) cutPreviewRef.current.style.opacity = '0';
+  }, []);
 
   const isInteractive = mode === 'interactive' || interactionMode === 'interactive';
 
@@ -486,6 +543,8 @@ export function CircleTimeline({
           onSliceClick={coarse ? handleDoubleClick : onSliceClick}
           onSliceDoubleClick={handleDoubleClick}
           onSliceSplit={onSliceSplit}
+          onSliceHover={!coarse ? showCutPreview : undefined}
+          onSliceLeave={!coarse ? hideCutPreview : undefined}
           cutMode={!coarse}
           selectedSliceId={selectedSliceId}
         />
@@ -512,9 +571,28 @@ export function CircleTimeline({
         </g>
       )}
 
+      {/* Cut preview line — shows where a scissors-click would split. Driven
+          imperatively by showCutPreview/hideCutPreview; excluded from export. */}
+      {interactionMode === 'interactive' && !coarse ? (
+        <line
+          ref={cutPreviewRef}
+          className="cut-preview"
+          data-export-exclude="true"
+          x1={cx}
+          y1={cy}
+          x2={cx}
+          y2={cy}
+          style={{ opacity: 0, pointerEvents: 'none' }}
+        />
+      ) : null}
+
       <g className="label-group">
         {slices.map((slice) => (
-          <SliceLabel key={slice.id} slice={slice} />
+          <SliceLabel
+            key={slice.id}
+            slice={slice}
+            onEdit={isInteractive ? handleDoubleClick : undefined}
+          />
         ))}
       </g>
 

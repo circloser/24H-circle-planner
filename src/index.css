@@ -405,6 +405,16 @@ svg text {
     crosshair;
 }
 
+/* Translucent dashed line previewing where a scissors-click will split. Its
+   opacity is toggled imperatively (0 ↔ 1) on slice hover. */
+.cut-preview {
+  stroke: hsl(var(--accent) / 0.65);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 7 6;
+  transition: opacity 0.08s ease;
+}
+
 /* ─── Accessibility: reduced motion ────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
