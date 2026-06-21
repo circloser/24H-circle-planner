@@ -248,7 +248,8 @@ export function splitSliceAt(
 /**
  * Merge two adjacent slices into one.
  * `idCw` is the clockwise (later) slice; `idCcw` is the counter-clockwise (earlier) slice.
- * Survivor keeps the CCW slice's label/icon/color/textPosition.
+ * The merged slice keeps the content (name/icon/colour/styling) of whichever side
+ * is WIDER; ties keep the earlier (CCW) side. It always spans CCW.start → CW.end.
  */
 export function mergeSlices(schedule: Schedule, idCw: string, idCcw: string): Schedule {
   const action = 'mergeSlices';
@@ -269,12 +270,10 @@ export function mergeSlices(schedule: Schedule, idCw: string, idCcw: string): Sc
     throw new ContiguityError(action, `Slices are not adjacent: ${idCcw}.endTime=${ccwSlice.endTime} !== ${idCw}.startTime=${cwSlice.startTime}`);
   }
 
+  // Keep the wider side's content (name/icon/colour/styling + id); ties → CCW.
+  const survivor = sliceWidthMinutes(cwSlice) > sliceWidthMinutes(ccwSlice) ? cwSlice : ccwSlice;
   const merged: TimeSlice = {
-    id: ccwSlice.id,
-    label: ccwSlice.label,
-    icon: ccwSlice.icon,
-    color: ccwSlice.color,
-    textPosition: ccwSlice.textPosition,
+    ...survivor,
     startTime: ccwSlice.startTime,
     endTime: cwSlice.endTime,
   };

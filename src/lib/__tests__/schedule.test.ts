@@ -246,6 +246,27 @@ describe('mergeSlices', () => {
     const result = mergeSlices(schedule, b.id, a.id);
     expect(isContiguous24h(result.slices)).toBe(true);
   });
+
+  it('keeps the WIDER side content/colour when the CW (later) slice is wider', () => {
+    const a = makeSlice('00:00', '04:00', { label: 'A', color: '#aaaaaa' }); // 4h
+    const b = makeSlice('04:00', '12:00', { label: 'B', color: '#bbbbbb' }); // 8h (wider)
+    const c = makeSlice('12:00', '00:00', { label: 'C' });
+    const result = mergeSlices(makeSchedule([a, b, c]), b.id, a.id);
+    const merged = result.slices.find((s) => s.startTime === '00:00' && s.endTime === '12:00')!;
+    expect(merged.label).toBe('B'); // wider (later) side wins
+    expect(merged.color).toBe('#bbbbbb');
+    expect(merged.id).toBe(b.id);
+  });
+
+  it('keeps the WIDER side content/colour when the CCW (earlier) slice is wider', () => {
+    const a = makeSlice('00:00', '08:00', { label: 'A', color: '#aaaaaa' }); // 8h (wider)
+    const b = makeSlice('08:00', '12:00', { label: 'B', color: '#bbbbbb' }); // 4h
+    const c = makeSlice('12:00', '00:00', { label: 'C' });
+    const result = mergeSlices(makeSchedule([a, b, c]), b.id, a.id);
+    const merged = result.slices.find((s) => s.startTime === '00:00' && s.endTime === '12:00')!;
+    expect(merged.label).toBe('A'); // wider (earlier) side wins
+    expect(merged.color).toBe('#aaaaaa');
+  });
 });
 
 // ─── resizeBoundary ──────────────────────────────────────────────────────────
