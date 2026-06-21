@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -10,6 +10,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { slug, formatDateYYYYMMDD } from '@/lib/export/_internal';
+import { buildExportPreviewDataUrl } from '@/lib/export/previewSvg';
 import { useTranslation } from '@/hooks/usePreferences';
 import type { Schedule } from '@/types/schedule';
 
@@ -280,6 +281,77 @@ function JsonTab({
   );
 }
 
+// ─── Live preview (matches the exported artifact) ─────────────────────────────
+
+/**
+ * Renders a preview of exactly what will be exported — the chart with the live
+ * clock and now-line stripped (via the shared export clone pipeline). Rebuilt
+ * whenever the dialog opens or the schedule changes.
+ */
+function ExportPreview({
+  open,
+  svgRef,
+  schedule,
+}: {
+  open: boolean;
+  svgRef: React.RefObject<SVGSVGElement | null>;
+  schedule: Schedule;
+}) {
+  const { t } = useTranslation();
+  const [url, setUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open || !svgRef.current) {
+      setUrl(null);
+      return;
+    }
+    try {
+      setUrl(buildExportPreviewDataUrl(svgRef.current));
+    } catch {
+      setUrl(null);
+    }
+    // Rebuild on open and whenever the schedule content changes.
+  }, [open, svgRef, schedule]);
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <p className="text-xs font-medium text-muted-foreground">{t('export.preview')}</p>
+      <div
+        className="mx-auto grid aspect-square w-full max-w-[260px] place-items-center overflow-hidden rounded-lg border bg-muted/30"
+        data-export-exclude="true"
+      >
+        {url ? (
+          <img src={url} alt={t('export.preview')} className="h-full w-full object-contain" />
+        ) : (
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Ad slot (reserved space for a future ad unit) ────────────────────────────
+
+/**
+ * Reserved space for an advertisement shown alongside the export preview. Today
+ * it is a labelled placeholder; a real ad unit (e.g. an AdSense <ins> block) can
+ * be mounted inside this container without touching the surrounding layout.
+ */
+function AdSlot() {
+  const { t } = useTranslation();
+  return (
+    <div
+      data-ad-slot="export"
+      aria-label={t('export.adLabel')}
+      className="flex h-[90px] w-full items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 text-center"
+    >
+      <span className="text-[11px] uppercase tracking-wide text-muted-foreground/70">
+        {t('export.adLabel')}
+      </span>
+    </div>
+  );
+}
+
 // ─── ExportDialog ─────────────────────────────────────────────────────────────
 
 export function ExportDialog({
@@ -297,6 +369,9 @@ export function ExportDialog({
         <DialogHeader>
           <DialogTitle>{t('header.export')}</DialogTitle>
         </DialogHeader>
+
+        <ExportPreview open={open} svgRef={svgRef} schedule={schedule} />
+        <AdSlot />
 
         <Tabs defaultValue="png">
           <TabsList className="w-full">

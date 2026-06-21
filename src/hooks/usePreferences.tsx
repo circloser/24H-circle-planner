@@ -56,6 +56,22 @@ const DEFAULT_PREFS: Preferences = {
 
 const STORAGE_KEY = '24h-circle-planner.prefs';
 
+/**
+ * First-launch language: detect the browser's preferred language and default to
+ * Korean only when it actually is Korean; everything else starts in English.
+ * Used only when no preference has been saved yet — the user's explicit choice
+ * (persisted) always wins on later visits.
+ */
+function detectInitialLanguage(): Lang {
+  try {
+    const nav = typeof navigator !== 'undefined' ? navigator : undefined;
+    const tag = (nav?.language || nav?.languages?.[0] || '').toLowerCase();
+    return tag.startsWith('ko') ? 'ko' : 'en';
+  } catch {
+    return 'en';
+  }
+}
+
 // ─── Persistence ──────────────────────────────────────────────────────────────
 
 interface PrefsEnvelope {
@@ -66,12 +82,13 @@ interface PrefsEnvelope {
 function loadPrefs(): Preferences {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_PREFS;
+    // No saved prefs → genuine first launch: pick the language from the browser.
+    if (!raw) return { ...DEFAULT_PREFS, language: detectInitialLanguage() };
     const parsed = JSON.parse(raw) as PrefsEnvelope;
     if (parsed && parsed.version === 1 && parsed.prefs) {
       return { ...DEFAULT_PREFS, ...parsed.prefs };
     }
-    return DEFAULT_PREFS;
+    return { ...DEFAULT_PREFS, language: detectInitialLanguage() };
   } catch {
     return DEFAULT_PREFS;
   }

@@ -55,12 +55,15 @@ interface LiveClockResult {
 
 function useLiveClock(): LiveClockResult {
   const getRaw = (): LiveClockResult => {
+    // `new Date()` and getHours/getMinutes resolve in the browser's local time
+    // zone (the visitor's region), so the hour hand / now-line track local time
+    // automatically — no manual offset needed for a web deployment.
     const now = new Date();
     const hh = String(now.getHours()).padStart(2, '0');
     const mm = String(now.getMinutes()).padStart(2, '0');
     const hhmm = `${hh}:${mm}`;
-    // Display via locale for proper AM/PM-free 24h format
-    const displayTime = now.toLocaleTimeString('ko-KR', {
+    // Display in the visitor's locale, 24h format (no hard-coded ko-KR).
+    const displayTime = now.toLocaleTimeString(undefined, {
       hour: '2-digit',
       minute: '2-digit',
       hour12: false,

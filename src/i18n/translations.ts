@@ -90,6 +90,8 @@ export type TKey =
   | 'export.jsonFail'
   | 'export.jsonImportFail'
   | 'export.imported'
+  | 'export.preview'
+  | 'export.adLabel'
   | 'slot.atCapacity'
   | 'slot.emptyPre'
   | 'slot.saveAsInline'
@@ -195,6 +197,8 @@ const ko: Dict = {
   'export.jsonFail': 'JSON 내보내기 실패',
   'export.jsonImportFail': 'JSON 가져오기 실패',
   'export.imported': '시간표를 가져왔습니다',
+  'export.preview': '미리보기',
+  'export.adLabel': '광고',
   'slot.atCapacity': '최대 10개 슬롯에 도달했습니다. 새 슬롯을 저장하려면 기존 슬롯을 삭제하세요.',
   'slot.emptyPre': '저장된 시간표가 없습니다. ',
   'slot.saveAsInline': '다른 이름으로 저장',
@@ -301,6 +305,8 @@ const en: Dict = {
   'export.jsonFail': 'JSON export failed',
   'export.jsonImportFail': 'JSON import failed',
   'export.imported': 'Schedule imported',
+  'export.preview': 'Preview',
+  'export.adLabel': 'Advertisement',
   'slot.atCapacity': "You've reached 10 slots. Delete one to save a new slot.",
   'slot.emptyPre': 'No saved schedules yet. Add one with ',
   'slot.saveAsInline': 'Save as',
