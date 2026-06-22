@@ -1,8 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- 흰색 원형 배경 (다크 모드 가시성 확보) -->
+  <circle cx="16" cy="16" r="16" fill="#FFFFFF"/>
+
   <!-- 외부 24H 링 -->
   <circle cx="16" cy="16" r="14.5" stroke="#333333" stroke-width="1" fill="none"/>
 
-  <!-- 내부 링 (투명하게 유지) -->
+  <!-- 내부 링 -->
   <circle cx="16" cy="16" r="13" fill="none"/>
 
   <!-- 핵심 눈금 (단순화된 점: 00, 06, 12, 18) -->
@@ -15,7 +18,6 @@
   <text x="16" y="21" text-anchor="middle" font-family="'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="10" font-weight="bold" fill="#333333">24</text>
 
   <!-- 붉은 시계 바늘 (진행 중, 'ing' 강조) -->
-  <!-- 00시를 지나친 01시 방향으로 뻗어나감 (원점에서 뻗어나가는 형태) -->
   <line x1="16" y1="16" x2="19.6" y2="2.5" stroke="#FF4D4D" stroke-width="1.5" stroke-linecap="round"/>
   <!-- 바늘 끝을 강조하는 붉은 점 -->
   <circle cx="19.6" cy="2.5" r="1.5" fill="#FF4D4D"/>
