@@ -2,4 +2,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://24houringp.singlena.workers.dev/sitemap.xml
+Sitemap: https://24houring.com/sitemap.xml

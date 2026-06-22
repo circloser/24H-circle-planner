@@ -35,7 +35,7 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><style>
       <div class="brand">24Hour<span class="ing">ing</span></div>
       <div class="ko">하루를 한눈에, 24시간 원형 시간표</div>
       <div class="en">Plan, edit &amp; share your day on a 24-hour clock</div>
-      <div class="url">24houringp.singlena.workers.dev</div>
+      <div class="url">24houring.com</div>
     </div>
   </div>
 </body></html>`;

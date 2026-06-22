@@ -12,7 +12,7 @@ import path from 'node:path';
 
 const DIST = path.resolve('dist');
 const FILE = 'file:///C:/vibecoding/24h/dist/index.html';
-const SITE = 'https://24houringp.singlena.workers.dev';
+const SITE = 'https://24houring.com';
 
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage();
