@@ -50,7 +50,7 @@
     />
     <meta name="twitter:image" content="https://24houring.com/og-image.png" />
 
-    <!-- ─── Structured data (schema.org WebApplication) ──────────────────────── -->
+    <!-- ─── Structured data (schema.org) — WebApplication + FAQ + HowTo ──────── -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -58,12 +58,73 @@
         "name": "24Houring",
         "alternateName": "24시간 원형 시간표 플래너",
         "url": "https://24houring.com/",
-        "description": "하루 24시간을 원형 시계처럼 시각화하는 무료 시간표 플래너. A free circular 24-hour day planner.",
+        "description": "하루 24시간을 원형 시계처럼 시각화하는 무료 시간표 플래너. 회원가입·설치 없이 브라우저에서 바로 쓰고, 데이터는 기기에만 저장되어 오프라인에서도 동작합니다. A free, no-signup circular 24-hour day planner that works offline.",
         "applicationCategory": "ProductivityApplication",
-        "operatingSystem": "Any",
-        "browserRequirements": "Requires a modern web browser",
+        "operatingSystem": "Any (web browser)",
+        "browserRequirements": "Requires a modern web browser. No installation or sign-up.",
+        "isAccessibleForFree": true,
         "inLanguage": ["ko", "en", "ja", "zh", "fr", "es", "ru"],
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+        "datePublished": "2026-05-01",
+        "dateModified": "2026-06-22",
+        "screenshot": "https://24houring.com/og-image.png",
+        "featureList": [
+          "24-hour circular timetable",
+          "12-hour day / night clock views (06–18, 18–06)",
+          "Drag to edit time blocks; split and merge with one click",
+          "Lifestyle presets and multi-day schedules",
+          "Export to PNG, PDF and JSON; full backup and restore",
+          "Share the timetable as an image (Instagram, KakaoTalk, …)",
+          "7 languages; works offline; installable to the home screen"
+        ],
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "creator": { "@type": "Organization", "name": "24Houring", "url": "https://24houring.com/" }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "24Houring이 무엇인가요?",
+            "acceptedAnswer": { "@type": "Answer", "text": "24Houring은 하루 24시간을 원형 시계처럼 한눈에 보여주는 무료 웹 시간표 플래너입니다. 회원가입이나 설치 없이 브라우저에서 바로 사용하며, 데이터는 기기에만 저장되어 오프라인에서도 동작합니다." }
+          },
+          {
+            "@type": "Question",
+            "name": "24Houring은 무료인가요?",
+            "acceptedAnswer": { "@type": "Answer", "text": "네. 24Houring은 완전 무료이며 회원가입이 필요 없습니다." }
+          },
+          {
+            "@type": "Question",
+            "name": "12시간(시계) 보기로 바꿀 수 있나요?",
+            "acceptedAnswer": { "@type": "Answer", "text": "네. 상단 토글로 24시간 → 낮(06–18) → 밤(18–06) 12시간 보기를 전환할 수 있고, 모든 보기는 같은 하루 일정과 연동됩니다." }
+          },
+          {
+            "@type": "Question",
+            "name": "만든 시간표를 저장하거나 공유할 수 있나요?",
+            "acceptedAnswer": { "@type": "Answer", "text": "네. PNG·PDF·JSON으로 내보내거나, 공유 버튼으로 시간표 이미지를 인스타그램 등에 바로 공유할 수 있습니다. 전체 백업·복원도 지원합니다." }
+          },
+          {
+            "@type": "Question",
+            "name": "어떤 언어를 지원하나요?",
+            "acceptedAnswer": { "@type": "Answer", "text": "한국어, 영어, 일본어, 중국어, 프랑스어, 스페인어, 러시아어 등 7개 언어를 지원합니다." }
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "24Houring으로 하루 시간표 만들기",
+        "description": "원형 24시간 시간표에 하루 일정을 만드는 방법.",
+        "totalTime": "PT3M",
+        "step": [
+          { "@type": "HowToStep", "position": 1, "name": "시작하기", "text": "프리셋(학생·직장인 등)을 고르거나 빈 하루에서 시작합니다." },
+          { "@type": "HowToStep", "position": 2, "name": "일정 편집", "text": "원을 클릭해 시간대를 나누고, 항목 이름·색·아이콘을 지정한 뒤 경계를 드래그해 시간을 조절합니다." },
+          { "@type": "HowToStep", "position": 3, "name": "저장·공유", "text": "PNG·PDF·JSON으로 내보내거나 공유 버튼으로 이미지를 공유합니다." }
+        ]
       }
     </script>
 
@@ -92,7 +153,51 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <!--
+      The app is a client-rendered SPA. The static content inside #root below is
+      the initial HTML so non-JavaScript crawlers (incl. AI search/answer bots
+      such as OAI-SearchBot, ClaudeBot and PerplexityBot) can read what 24Houring
+      is. React (createRoot) replaces this with the live app on load, so users
+      only see it briefly while the bundle loads. The copy is accurate — no
+      hidden/cloaked content.
+    -->
+    <div id="root">
+      <main style="max-width:760px;margin:0 auto;padding:40px 20px;font-family:'Pretendard',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;color:#1f2430;line-height:1.65">
+        <h1 style="font-size:30px;font-weight:800;letter-spacing:-0.5px;margin:0 0 8px">24Houring — 하루를 한눈에, 24시간 원형 시간표 플래너</h1>
+        <p style="font-size:17px;color:#3a4150;margin:0 0 20px">
+          24Houring은 하루 24시간을 원형 시계처럼 시각화하는 <strong>무료</strong> 웹 시간표 플래너입니다.
+          회원가입이나 설치 없이 브라우저에서 바로 사용하고, 데이터는 기기에만 저장되어 <strong>오프라인</strong>에서도 동작합니다.
+          A free, no-signup circular 24-hour day planner that works offline.
+        </p>
+
+        <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">주요 기능</h2>
+        <ul style="padding-left:20px;margin:0 0 8px">
+          <li>24시간 원형 시간표와 12시간 시계 보기(낮 06–18 · 밤 18–06) 전환 — 모든 보기가 같은 하루와 연동</li>
+          <li>드래그로 시간 조절, 클릭 한 번으로 시간대 분할·병합</li>
+          <li>생활 패턴 프리셋과 여러 날짜(멀티데이) 시간표</li>
+          <li>PNG·PDF·JSON 내보내기, 전체 백업·복원</li>
+          <li>시간표를 이미지로 공유(인스타그램·카카오톡 등)</li>
+          <li>7개 언어 지원, 오프라인 동작, 홈 화면에 설치 가능</li>
+        </ul>
+
+        <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">사용 방법</h2>
+        <ol style="padding-left:20px;margin:0 0 8px">
+          <li>프리셋을 고르거나 빈 하루에서 시작합니다.</li>
+          <li>원을 클릭해 시간대를 나누고 이름·색·아이콘을 지정한 뒤, 경계를 드래그해 시간을 조절합니다.</li>
+          <li>PNG·PDF·JSON으로 내보내거나 공유 버튼으로 이미지를 공유합니다.</li>
+        </ol>
+
+        <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">자주 묻는 질문</h2>
+        <h3 style="font-size:16px;font-weight:700;margin:14px 0 2px">24Houring은 무료인가요?</h3>
+        <p style="margin:0 0 8px">네. 완전 무료이며 회원가입이 필요 없습니다.</p>
+        <h3 style="font-size:16px;font-weight:700;margin:14px 0 2px">12시간(시계) 보기로 바꿀 수 있나요?</h3>
+        <p style="margin:0 0 8px">네. 상단 토글로 24시간 → 낮(06–18) → 밤(18–06)을 전환할 수 있고, 모든 보기는 같은 하루 일정과 연동됩니다.</p>
+        <h3 style="font-size:16px;font-weight:700;margin:14px 0 2px">만든 시간표를 저장·공유할 수 있나요?</h3>
+        <p style="margin:0 0 8px">네. PNG·PDF·JSON으로 내보내거나, 공유 버튼으로 시간표 이미지를 인스타그램 등에 바로 공유할 수 있습니다.</p>
+
+        <p style="margin:24px 0 0;font-size:15px;color:#7e8aa0">앱을 불러오는 중입니다… · Loading the interactive planner at <strong>24houring.com</strong></p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

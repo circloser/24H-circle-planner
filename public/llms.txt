@@ -1,0 +1,39 @@
+# 24Houring
+
+> 24Houring (https://24houring.com) is a free, no-signup web app that visualizes a
+> day as a 24-hour circular timetable (a clock-style pie chart). Users plan, edit,
+> save and share their daily schedule. It runs fully client-side — data is stored
+> only on the user's device, it works offline, and it supports 7 languages. There
+> is no account, no paywall, and no installation required.
+
+## What it is
+
+- A circular **24-hour day planner / timetable** that shows the whole day at a glance.
+- Also offers **12-hour clock views**: Day (06:00–18:00) and Night (18:00–06:00). All views edit the same underlying day, so a change in one view appears in the others.
+- Edit by dragging time-block boundaries; split a block with one click (scissors) and merge by removing a divider.
+
+## Key features
+
+- Lifestyle **presets** (student, office worker, etc.) and **multi-day** schedules.
+- **Export** to PNG, PDF and JSON; full **backup and restore**.
+- **Share** the timetable as an image to Instagram, KakaoTalk and other apps (Web Share API).
+- **Add to home screen** (installable PWA); **offline** capable; **7 languages** (Korean, English, Japanese, Chinese, French, Spanish, Russian).
+- Free and private: no sign-up, data kept on-device.
+
+## How to use
+
+1. Pick a preset or start from an empty day.
+2. Click the ring to split time blocks; name them and set a color/icon; drag boundaries to adjust times.
+3. Export (PNG/PDF/JSON) or share the timetable as an image.
+
+## FAQ
+
+- **Is it free?** Yes — completely free, no sign-up.
+- **Can I switch to a 12-hour clock view?** Yes — toggle 24h → Day (06–18) → Night (18–06); all views stay linked.
+- **Can I save or share my timetable?** Yes — export to PNG/PDF/JSON or share the image directly.
+- **What languages are supported?** Korean, English, Japanese, Chinese, French, Spanish, Russian.
+
+## Links
+
+- App: https://24houring.com/
+- Sitemap: https://24houring.com/sitemap.xml

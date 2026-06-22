@@ -1,5 +1,50 @@
-# 24Houring — allow all crawlers (Googlebot, Yeti/Naver, Bingbot, …)
+# 24Houring — open to all crawlers, incl. AI search/answer engines.
+# We WELCOME AI engines so they can read and cite 24houring.com.
+# Note: training bots and search/answer bots are separate user-agents —
+# blocking one does not block the others. We allow both here.
+
 User-agent: *
 Allow: /
 
+# OpenAI (ChatGPT) — GPTBot=training, OAI-SearchBot=ChatGPT Search, ChatGPT-User=on-demand
+User-agent: GPTBot
+Allow: /
+User-agent: OAI-SearchBot
+Allow: /
+User-agent: ChatGPT-User
+Allow: /
+
+# Anthropic (Claude) — ClaudeBot=training, Claude-SearchBot=search, Claude-User=on-demand
+User-agent: ClaudeBot
+Allow: /
+User-agent: Claude-SearchBot
+Allow: /
+User-agent: Claude-User
+Allow: /
+User-agent: anthropic-ai
+Allow: /
+
+# Google AI (Gemini, AI Overviews/AI Mode data use)
+User-agent: Google-Extended
+Allow: /
+
+# Perplexity
+User-agent: PerplexityBot
+Allow: /
+User-agent: Perplexity-User
+Allow: /
+
+# Microsoft Copilot / Bing, Apple Intelligence, others
+User-agent: Bingbot
+Allow: /
+User-agent: Applebot
+Allow: /
+User-agent: Applebot-Extended
+Allow: /
+User-agent: Amazonbot
+Allow: /
+User-agent: CCBot
+Allow: /
+
+# Curated LLM-friendly site summary: https://24houring.com/llms.txt
 Sitemap: https://24houring.com/sitemap.xml
