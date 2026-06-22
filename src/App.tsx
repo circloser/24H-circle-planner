@@ -152,15 +152,18 @@ function App() {
           boxShadow: '0 1px 3px hsl(220 30% 15% / 0.08), 0 1px 2px hsl(220 30% 15% / 0.04)',
         }}
       >
-        <div className="container mx-auto h-14 flex items-center justify-between gap-1.5 px-3 sm:gap-2 sm:px-4">
+        <div className="container mx-auto grid h-14 grid-cols-[1fr_auto_1fr] items-center gap-1.5 px-3 sm:gap-2 sm:px-4">
           <div className="flex min-w-0 items-center gap-2">
             <h1 className="min-w-0 shrink truncate font-semibold text-sm sm:text-base">
               24Houring
             </h1>
             <SaveIndicator />
+          </div>
+          {/* Centred view toggle — independent, page-centred between the side groups */}
+          <div className="flex items-center justify-center">
             <ChartViewToggle />
           </div>
-          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <div className="flex min-w-0 shrink items-center justify-end gap-1 sm:gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="px-2 sm:px-3" aria-label={t('header.mySchedules')}>
