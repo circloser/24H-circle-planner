@@ -19,7 +19,7 @@ function shade(hex: string, amt: number): string {
 }
 
 export function MemoNote({ memo }: { memo: Memo }) {
-  const { updateMemo, removeMemo } = useMemos();
+  const { updateMemo, archiveMemo } = useMemos();
   const { t } = useTranslation();
 
   // Drag the note from anywhere on the paper EXCEPT the editable text / delete
@@ -110,7 +110,7 @@ export function MemoNote({ memo }: { memo: Memo }) {
           type="button"
           className="memo-del"
           aria-label={t('memo.delete')}
-          onClick={() => removeMemo(memo.id)}
+          onClick={() => archiveMemo(memo.id)}
         >
           <X className="h-3.5 w-3.5" />
         </button>

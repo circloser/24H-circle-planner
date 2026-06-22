@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, Timer, AlarmClock, Check } from 'lucide-react';
+import { Clock, Timer, AlarmClock, Calendar, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useClockTools, type ToolKind } from './useClockTools';
@@ -7,6 +7,7 @@ import { playBeep } from './clock-utils';
 import { ClockWidget } from './ClockWidget';
 import { TimerWidget } from './TimerWidget';
 import { AlarmWidget } from './AlarmWidget';
+import { CalendarWidget } from './CalendarWidget';
 
 /**
  * Bottom-left floating cluster mirroring the bottom-right memo FAB. One clock
@@ -14,7 +15,7 @@ import { AlarmWidget } from './AlarmWidget';
  * a countdown timer, and an alarm. State + positions persist to localStorage.
  */
 export function ClockToolsLayer() {
-  const { state, toggle, setClock, setTimer, setAlarm } = useClockTools();
+  const { state, toggle, setClock, setTimer, setAlarm, setCalendar } = useClockTools();
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -71,6 +72,13 @@ export function ClockToolsLayer() {
           onRing={ringAlarm}
         />
       )}
+      {state.calendar.on && (
+        <CalendarWidget
+          calendar={state.calendar}
+          onMove={(pos) => setCalendar({ pos })}
+          onClose={() => toggle('calendar')}
+        />
+      )}
 
       {/* Click-away backdrop for the popup menu. */}
       {menuOpen && (
@@ -81,6 +89,7 @@ export function ClockToolsLayer() {
       {menuOpen && (
         <div className="fixed bottom-[76px] left-5 z-30 flex flex-col items-start gap-2">
           {menuRow('clock', <Clock className="h-4 w-4" />, t('clock.clock'))}
+          {menuRow('calendar', <Calendar className="h-4 w-4" />, t('clock.calendar'))}
           {menuRow('timer', <Timer className="h-4 w-4" />, t('clock.timer'))}
           {menuRow('alarm', <AlarmClock className="h-4 w-4" />, t('clock.alarm'))}
         </div>

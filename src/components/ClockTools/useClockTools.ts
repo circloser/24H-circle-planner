@@ -2,11 +2,15 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Pos } from './clock-utils';
 
 export type ClockMode = 'analog' | 'digital';
-export type ToolKind = 'clock' | 'timer' | 'alarm';
+export type ToolKind = 'clock' | 'timer' | 'alarm' | 'calendar';
 
 export interface ClockState {
   on: boolean;
   mode: ClockMode;
+  pos: Pos;
+}
+export interface CalendarState {
+  on: boolean;
   pos: Pos;
 }
 export interface TimerState {
@@ -27,6 +31,7 @@ export interface ClockToolsState {
   clock: ClockState;
   timer: TimerState;
   alarm: AlarmState;
+  calendar: CalendarState;
 }
 
 const STORAGE_KEY = '24h-circle-planner.clocktools';
@@ -37,7 +42,8 @@ const clampY = (y: number) => Math.max(76, y);
 function defaultState(): ClockToolsState {
   const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
   return {
-    clock: { on: false, mode: 'analog', pos: { x: 20, y: clampY(vh - 580) } },
+    clock: { on: false, mode: 'analog', pos: { x: 20, y: clampY(vh - 600) } },
+    calendar: { on: false, pos: { x: 206, y: clampY(vh - 600) } },
     timer: { on: false, pos: { x: 20, y: clampY(vh - 360) }, setSec: 300, remainingSec: 300, running: false, endAt: null },
     alarm: { on: false, pos: { x: 20, y: clampY(vh - 200) }, time: '07:00', enabled: false },
   };
@@ -53,6 +59,7 @@ function loadState(): ClockToolsState {
         const s = parsed.state;
         const merged: ClockToolsState = {
           clock: { ...def.clock, ...s.clock, pos: { ...def.clock.pos, ...s.clock?.pos } },
+          calendar: { ...def.calendar, ...s.calendar, pos: { ...def.calendar.pos, ...s.calendar?.pos } },
           timer: { ...def.timer, ...s.timer, pos: { ...def.timer.pos, ...s.timer?.pos } },
           alarm: { ...def.alarm, ...s.alarm, pos: { ...def.alarm.pos, ...s.alarm?.pos } },
         };
@@ -83,6 +90,7 @@ export interface ClockToolsApi {
   setClock: (patch: Partial<ClockState>) => void;
   setTimer: (patch: Partial<TimerState>) => void;
   setAlarm: (patch: Partial<AlarmState>) => void;
+  setCalendar: (patch: Partial<CalendarState>) => void;
 }
 
 /** Self-contained store for the floating clock tools (no provider needed). */
@@ -106,6 +114,9 @@ export function useClockTools(): ClockToolsApi {
   const setAlarm = useCallback((patch: Partial<AlarmState>) => {
     setState((s) => ({ ...s, alarm: { ...s.alarm, ...patch } }));
   }, []);
+  const setCalendar = useCallback((patch: Partial<CalendarState>) => {
+    setState((s) => ({ ...s, calendar: { ...s.calendar, ...patch } }));
+  }, []);
 
-  return { state, toggle, setClock, setTimer, setAlarm };
+  return { state, toggle, setClock, setTimer, setAlarm, setCalendar };
 }

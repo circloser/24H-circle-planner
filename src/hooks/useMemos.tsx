@@ -13,6 +13,8 @@ export interface Memo {
   y: number;
   color: string; // post-it background
   fontFamily: string; // css family value
+  createdAt: number; // epoch ms — drives newest-first ordering in the list
+  onScreen: boolean; // shown on the canvas; archived (false) memos stay in the list
 }
 
 /** Post-it colours. Default is the classic yellow. */
@@ -38,7 +40,14 @@ function loadState(): MemoState {
     if (raw) {
       const parsed = JSON.parse(raw) as MemoEnvelope;
       if (parsed && parsed.version === 1 && Array.isArray(parsed.memos)) {
-        return { memos: parsed.memos, visible: parsed.visible !== false };
+        // Migrate older memos that predate createdAt/onScreen (keep array order
+        // as creation order; default to shown on screen).
+        const memos = (parsed.memos as Array<Partial<Memo> & Memo>).map((m, i) => ({
+          ...m,
+          createdAt: typeof m.createdAt === 'number' ? m.createdAt : i,
+          onScreen: m.onScreen !== false,
+        }));
+        return { memos, visible: parsed.visible !== false };
       }
     }
   } catch {
@@ -93,7 +102,12 @@ interface MemoContextValue {
   visible: boolean;
   addMemo: () => void;
   updateMemo: (id: string, patch: Partial<Memo>) => void;
-  removeMemo: (id: string) => void;
+  /** Hide from the canvas but keep in the list (the note's X button). */
+  archiveMemo: (id: string) => void;
+  /** Bring an archived memo back onto the canvas. */
+  restoreMemo: (id: string) => void;
+  /** Permanently remove a memo (from the list too). */
+  deleteMemo: (id: string) => void;
   clearMemos: () => void;
   toggleVisible: () => void;
 }
@@ -119,6 +133,8 @@ export function MemoProvider({ children }: { children: React.ReactNode }) {
       y,
       color: DEFAULT_COLOR,
       fontFamily: 'Pretendard',
+      createdAt: Date.now(),
+      onScreen: true,
     };
     // Adding a note implies the layer should be visible.
     setState((prev) => ({ memos: [...prev.memos, memo], visible: true }));
@@ -131,7 +147,21 @@ export function MemoProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
-  const removeMemo = useCallback((id: string) => {
+  const archiveMemo = useCallback((id: string) => {
+    setState((prev) => ({
+      ...prev,
+      memos: prev.memos.map((m) => (m.id === id ? { ...m, onScreen: false } : m)),
+    }));
+  }, []);
+
+  const restoreMemo = useCallback((id: string) => {
+    setState((prev) => ({
+      visible: true,
+      memos: prev.memos.map((m) => (m.id === id ? { ...m, onScreen: true } : m)),
+    }));
+  }, []);
+
+  const deleteMemo = useCallback((id: string) => {
     setState((prev) => ({ ...prev, memos: prev.memos.filter((m) => m.id !== id) }));
   }, []);
 
@@ -144,7 +174,9 @@ export function MemoProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <MemoContext.Provider value={{ memos, visible, addMemo, updateMemo, removeMemo, clearMemos, toggleVisible }}>
+    <MemoContext.Provider
+      value={{ memos, visible, addMemo, updateMemo, archiveMemo, restoreMemo, deleteMemo, clearMemos, toggleVisible }}
+    >
       {children}
     </MemoContext.Provider>
   );

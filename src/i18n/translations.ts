@@ -194,7 +194,18 @@ export type TKey =
   | 'clock.alarmOn'
   | 'clock.alarmOff'
   | 'clock.timerDone'
-  | 'clock.alarmRing';
+  | 'clock.alarmRing'
+  | 'clock.calendar'
+  | 'clock.today'
+  | 'memo.list'
+  | 'memo.listTitle'
+  | 'memo.listDesc'
+  | 'memo.listEmpty'
+  | 'memo.restore'
+  | 'memo.hideFromScreen'
+  | 'memo.deleteForever'
+  | 'rim.placeholder'
+  | 'rim.delete';
 
 type Dict = Record<TKey, string>;
 
@@ -374,6 +385,17 @@ const ko: Dict = {
   'clock.alarmOff': '꺼짐',
   'clock.timerDone': '⏰ 타이머 종료!',
   'clock.alarmRing': '⏰ 알람!',
+  'clock.calendar': '캘린더',
+  'clock.today': '오늘',
+  'memo.list': '메모 목록',
+  'memo.listTitle': '메모 목록',
+  'memo.listDesc': '화면에서 지운 메모도 여기에 남아 있어요. 눈 아이콘으로 화면 표시를 켜고 끄고, 휴지통으로 완전히 삭제합니다.',
+  'memo.listEmpty': '아직 메모가 없습니다.',
+  'memo.restore': '화면에 표시',
+  'memo.hideFromScreen': '화면에서 숨김',
+  'memo.deleteForever': '완전 삭제',
+  'rim.placeholder': '메모…',
+  'rim.delete': '메모 삭제',
 };
 
 const en: Dict = {
@@ -554,6 +576,17 @@ const en: Dict = {
   'clock.alarmOff': 'Off',
   'clock.timerDone': '⏰ Timer finished!',
   'clock.alarmRing': '⏰ Alarm!',
+  'clock.calendar': 'Calendar',
+  'clock.today': 'Today',
+  'memo.list': 'Memo list',
+  'memo.listTitle': 'Memo list',
+  'memo.listDesc': 'Memos removed from the screen stay here. Toggle the eye to show/hide on screen, or the trash to delete for good.',
+  'memo.listEmpty': 'No memos yet.',
+  'memo.restore': 'Show on screen',
+  'memo.hideFromScreen': 'Hide from screen',
+  'memo.deleteForever': 'Delete forever',
+  'rim.placeholder': 'Memo…',
+  'rim.delete': 'Delete memo',
 };
 
 // Skeleton languages — cover the most visible chrome; everything else falls

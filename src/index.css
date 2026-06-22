@@ -307,6 +307,11 @@ svg text {
   content: attr(data-placeholder);
   color: rgba(0, 0, 0, 0.32);
 }
+.rim-memo-text:empty::before {
+  content: attr(data-placeholder);
+  color: hsl(var(--text-muted));
+  opacity: 0.7;
+}
 .memo-fold {
   position: absolute;
   right: 0;

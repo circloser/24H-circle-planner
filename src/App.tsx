@@ -32,6 +32,7 @@ import { ExportDialog } from '@/components/ExportPanel/ExportDialog';
 import { SettingsDialog, type SettingsSection } from '@/components/Settings/SettingsDialog';
 import { MemoLayer } from '@/components/Memo/MemoLayer';
 import { ClockToolsLayer } from '@/components/ClockTools/ClockToolsLayer';
+import { RimMemoLayer } from '@/components/RimMemo/RimMemoLayer';
 import { DayBar } from '@/components/Days/DayBar';
 import { SaveIndicator } from '@/components/SaveIndicator/SaveIndicator';
 import { ChartViewToggle } from '@/components/ChartViewToggle/ChartViewToggle';
@@ -291,7 +292,7 @@ function App() {
       </header>
 
       <main className="flex-1 container mx-auto py-8 flex items-center justify-center px-4">
-        <div className="max-w-[720px] w-full mx-auto aspect-square">
+        <div className="relative max-w-[720px] w-full mx-auto aspect-square">
           <CircleTimeline
             slices={present.slices}
             mode="interactive"
@@ -307,6 +308,8 @@ function App() {
             title={present.name}
             onHubClick={() => setEditingTitle(true)}
           />
+          {/* Rim annotation memos (hover near the edge → leader line + note). */}
+          <RimMemoLayer />
         </div>
       </main>
 

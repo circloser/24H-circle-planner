@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StickyNote, Plus, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { StickyNote, Plus, Eye, EyeOff, Trash2, List } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { useMemos } from '@/hooks/useMemos';
 import { useTranslation } from '@/hooks/usePreferences';
 import { MemoNote } from './MemoNote';
+import { MemoListDialog } from './MemoListDialog';
 
 /**
  * Renders every post-it memo (when visible) plus a single floating memo button
@@ -22,6 +23,7 @@ export function MemoLayer() {
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [clearOpen, setClearOpen] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
 
   const item =
     'flex items-center gap-2 rounded-full px-3 py-2 text-sm shadow-md transition-transform hover:scale-105';
@@ -33,7 +35,7 @@ export function MemoLayer() {
 
   return (
     <>
-      {visible && memos.map((m) => <MemoNote key={m.id} memo={m} />)}
+      {visible && memos.filter((m) => m.onScreen).map((m) => <MemoNote key={m.id} memo={m} />)}
 
       {/* Click-away backdrop for the popup menu. */}
       {menuOpen && (
@@ -51,6 +53,15 @@ export function MemoLayer() {
           >
             <Plus className="h-4 w-4" />
             {t('memo.add')}
+          </button>
+          <button
+            type="button"
+            className={item}
+            style={itemStyle}
+            onClick={() => { setMenuOpen(false); setListOpen(true); }}
+          >
+            <List className="h-4 w-4" />
+            {t('memo.list')}
           </button>
           <button
             type="button"
@@ -107,6 +118,9 @@ export function MemoLayer() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Full memo archive (newest first; on/off-screen + permanent delete). */}
+      <MemoListDialog open={listOpen} onOpenChange={setListOpen} />
     </>
   );
 }
