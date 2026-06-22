@@ -1,5 +1,6 @@
 import type { TimeSlice } from '@/types/time-slice';
-import { hhmmToAngle, sliceWidthMinutes } from '@/lib/time-utils';
+import { hhmmToMinutes, sliceWidthMinutes } from '@/lib/time-utils';
+import { angleForMin, FULL_SPEC, type ViewSpec } from '@/lib/chart-view';
 
 // ─── Ring geometry constants ──────────────────────────────────────────────────
 // T11 Redesign (donut → pizza): innerR reduced from 350 to 100.
@@ -53,13 +54,13 @@ export function polarToCartesian(
  * Angles follow the time-utils convention:
  *   00:00 → -90° (top), clockwise positive.
  */
-export function slicePath(slice: TimeSlice, geom: RingGeom = RING): string {
+export function slicePath(slice: TimeSlice, geom: RingGeom = RING, spec: ViewSpec = FULL_SPEC): string {
   const { innerR, outerR, cx, cy } = geom;
 
-  const startAngle = hhmmToAngle(slice.startTime);
+  const startAngle = angleForMin(hhmmToMinutes(slice.startTime), spec);
   const widthMin = sliceWidthMinutes(slice);
-  // widthMin in minutes → degrees (1440 min = 360°)
-  const spanDeg = (widthMin / 1440) * 360;
+  // widthMin in minutes → degrees (the window spans 360°)
+  const spanDeg = (widthMin / spec.spanMin) * 360;
   const endAngle = startAngle + spanDeg;
 
   const largeArc = spanDeg > 180 ? 1 : 0;
@@ -90,13 +91,14 @@ export function boundaryHandlePosition(
   slice: TimeSlice,
   side: 'start' | 'end',
   geom: RingGeom = RING,
+  spec: ViewSpec = FULL_SPEC,
 ): { x: number; y: number; angleDeg: number } {
   const { innerR, outerR, cx, cy } = geom;
   const midR = (innerR + outerR) / 2;
 
-  const startAngle = hhmmToAngle(slice.startTime);
+  const startAngle = angleForMin(hhmmToMinutes(slice.startTime), spec);
   const widthMin = sliceWidthMinutes(slice);
-  const spanDeg = (widthMin / 1440) * 360;
+  const spanDeg = (widthMin / spec.spanMin) * 360;
 
   const angleDeg = side === 'start' ? startAngle : startAngle + spanDeg;
   const { x, y } = polarToCartesian(cx, cy, midR, angleDeg);
@@ -114,13 +116,14 @@ export function boundaryHandlePosition(
 export function labelAnchorInside(
   slice: TimeSlice,
   geom: RingGeom = RING,
+  spec: ViewSpec = FULL_SPEC,
 ): { x: number; y: number; angleDeg: number; rotation: number } {
   const { innerR, outerR, cx, cy } = geom;
   const midR = innerR + (outerR - innerR) * 0.55;
 
-  const startAngle = hhmmToAngle(slice.startTime);
+  const startAngle = angleForMin(hhmmToMinutes(slice.startTime), spec);
   const widthMin = sliceWidthMinutes(slice);
-  const spanDeg = (widthMin / 1440) * 360;
+  const spanDeg = (widthMin / spec.spanMin) * 360;
   const midAngle = startAngle + spanDeg / 2;
 
   const { x, y } = polarToCartesian(cx, cy, midR, midAngle);
@@ -134,6 +137,7 @@ export function labelAnchorInside(
 export function labelAnchorOutside(
   slice: TimeSlice,
   geom: RingGeom = RING,
+  spec: ViewSpec = FULL_SPEC,
 ): {
   x: number;
   y: number;
@@ -141,9 +145,9 @@ export function labelAnchorOutside(
 } {
   const { outerR, cx, cy } = geom;
 
-  const startAngle = hhmmToAngle(slice.startTime);
+  const startAngle = angleForMin(hhmmToMinutes(slice.startTime), spec);
   const widthMin = sliceWidthMinutes(slice);
-  const spanDeg = (widthMin / 1440) * 360;
+  const spanDeg = (widthMin / spec.spanMin) * 360;
   const midAngle = startAngle + spanDeg / 2;
 
   const leaderStart = polarToCartesian(cx, cy, outerR + 5, midAngle);

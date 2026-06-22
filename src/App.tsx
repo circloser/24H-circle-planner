@@ -32,6 +32,7 @@ import { SettingsDialog, type SettingsSection } from '@/components/Settings/Sett
 import { MemoLayer } from '@/components/Memo/MemoLayer';
 import { DayBar } from '@/components/Days/DayBar';
 import { SaveIndicator } from '@/components/SaveIndicator/SaveIndicator';
+import { ChartViewToggle } from '@/components/ChartViewToggle/ChartViewToggle';
 import { requestPersistentStorage } from '@/lib/persistent-storage';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
@@ -157,6 +158,7 @@ function App() {
               24Houring
             </h1>
             <SaveIndicator />
+            <ChartViewToggle />
           </div>
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             <DropdownMenu>

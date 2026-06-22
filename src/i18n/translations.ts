@@ -162,7 +162,11 @@ export type TKey =
   | 'memo.delete'
   | 'memo.placeholder'
   | 'memo.show'
-  | 'memo.hide';
+  | 'memo.hide'
+  | 'view.full'
+  | 'view.day'
+  | 'view.night'
+  | 'view.cycle';
 
 type Dict = Record<TKey, string>;
 
@@ -310,6 +314,10 @@ const ko: Dict = {
   'memo.placeholder': '메모를 입력하세요',
   'memo.show': '메모 보이기',
   'memo.hide': '메모 숨기기',
+  'view.full': '24시간',
+  'view.day': '낮 6–18',
+  'view.night': '밤 18–6',
+  'view.cycle': '시간표 보기 전환 (24시간 → 낮 → 밤)',
 };
 
 const en: Dict = {
@@ -458,6 +466,10 @@ const en: Dict = {
   'memo.placeholder': 'Type a memo…',
   'memo.show': 'Show memos',
   'memo.hide': 'Hide memos',
+  'view.full': '24h',
+  'view.day': 'Day 6–18',
+  'view.night': 'Night 18–6',
+  'view.cycle': 'Switch view (24h → Day → Night)',
 };
 
 // Skeleton languages — cover the most visible chrome; everything else falls

@@ -1,9 +1,18 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import type { TimeSlice } from '@/types/time-slice';
 import { RING, polarToCartesian, slicePath, wrapText } from '@/lib/svg-geometry';
-import { hhmmToAngle, angleToHhmm } from '@/lib/time-utils';
+import { hhmmToMinutes, minutesToHhmm, snapMinutes, sliceWidthMinutes } from '@/lib/time-utils';
+import {
+  viewSpec,
+  angleForMin,
+  minForAngle,
+  isInWindow,
+  visibleSegments,
+  FULL_SPEC,
+  type ViewSpec,
+} from '@/lib/chart-view';
 import { useSliceSelector, useStoreSelector } from '@/hooks/useScheduleStore';
-import { useTranslation, useShowClock, useShowNowLine } from '@/hooks/usePreferences';
+import { useTranslation, useShowClock, useShowNowLine, useChartView } from '@/hooks/usePreferences';
 import { useCoarsePointer } from '@/hooks/useCoarsePointer';
 import { translatePresetName } from '@/i18n/content';
 import { SliceLabel } from './SliceLabel';
@@ -107,60 +116,90 @@ function useLiveClock(): LiveClockResult {
 // Cardinal hours (00/06/12/18) get emphasis; all others are minor.
 const CARDINAL_HOURS = new Set([0, 6, 12, 18]);
 
-function HourTicks() {
-  const ticks: React.ReactElement[] = [];
-  const { cx, cy, outerR } = RING;
-
-  for (let h = 0; h < 24; h++) {
-    const angleDeg = -90 + h * 15;
-    const isCardinal = CARDINAL_HOURS.has(h);
-
-    // Tick line: longer + bolder for cardinal hours
-    const tickStart = polarToCartesian(cx, cy, outerR, angleDeg);
-    const tickEnd = polarToCartesian(cx, cy, outerR + (isCardinal ? 14 : 8), angleDeg);
-
+/** Push one hour tick (line + label). `tickAngle === null` draws the label only
+ *  (used at the 12h seam where the start & end hours share a single tick). */
+function pushHourTick(
+  ticks: React.ReactElement[],
+  cx: number,
+  cy: number,
+  outerR: number,
+  tickAngle: number | null,
+  labelAngle: number,
+  label: string,
+  isCardinal: boolean,
+  key: string,
+) {
+  if (tickAngle !== null) {
+    const tickStart = polarToCartesian(cx, cy, outerR, tickAngle);
+    const tickEnd = polarToCartesian(cx, cy, outerR + (isCardinal ? 14 : 8), tickAngle);
     ticks.push(
       <line
-        key={`tick-${h}`}
+        key={`tick-${key}`}
         x1={tickStart.x}
         y1={tickStart.y}
         x2={tickEnd.x}
         y2={tickEnd.y}
-        stroke={
-          isCardinal
-            ? 'hsl(var(--text-muted) / 0.85)'
-            : 'hsl(var(--text-muted) / 0.45)'
-        }
+        stroke={isCardinal ? 'hsl(var(--text-muted) / 0.85)' : 'hsl(var(--text-muted) / 0.45)'}
         strokeWidth={isCardinal ? 2.5 : 1}
       />,
     );
+  }
+  const labelRadius = outerR + (isCardinal ? 32 : 26);
+  const labelPos = polarToCartesian(cx, cy, labelRadius, labelAngle);
+  ticks.push(
+    <text
+      key={`label-${key}`}
+      x={labelPos.x}
+      y={labelPos.y}
+      textAnchor="middle"
+      dominantBaseline="central"
+      fontSize={isCardinal ? 30 : 20}
+      fontWeight={isCardinal ? 800 : 700}
+      fill={isCardinal ? 'hsl(var(--foreground) / 0.95)' : 'hsl(var(--foreground) / 0.7)'}
+      fontFamily="inherit"
+    >
+      {label}
+    </text>,
+  );
+}
 
-    // Hour label: all 24, cardinal = larger + bolder, minor = smaller + lighter
-    const labelRadius = outerR + (isCardinal ? 32 : 26);
-    const labelPos = polarToCartesian(cx, cy, labelRadius, angleDeg);
-    const label = String(h).padStart(2, '0');
+function HourTicks({ spec = FULL_SPEC }: { spec?: ViewSpec }) {
+  const ticks: React.ReactElement[] = [];
+  const { cx, cy, outerR } = RING;
 
-    ticks.push(
-      <text
-        key={`label-${h}`}
-        x={labelPos.x}
-        y={labelPos.y}
-        textAnchor="middle"
-        dominantBaseline="central"
-        fontSize={isCardinal ? 30 : 20}
-        fontWeight={isCardinal ? 800 : 700}
-        fill={
-          isCardinal
-            ? 'hsl(var(--foreground) / 0.95)'
-            : 'hsl(var(--foreground) / 0.7)'
-        }
-        fontFamily="inherit"
-      >
-        {label}
-      </text>,
-    );
+  if (spec.view === 'full') {
+    // 24h clock: all 24 hour labels, cardinals (00/06/12/18) emphasised.
+    for (let h = 0; h < 24; h++) {
+      const angleDeg = -90 + h * 15;
+      pushHourTick(ticks, cx, cy, outerR, angleDeg, angleDeg, String(h).padStart(2, '0'), CARDINAL_HOURS.has(h), String(h));
+    }
+    return <g className="hour-ticks">{ticks}</g>;
   }
 
+  // 12h clock window: the start & end hours meet at the BOTTOM seam (e.g. 06/18
+  // for the day view, 18/06 for night) — their labels are nudged apart so both
+  // read clearly; the window midpoint sits at the top.
+  const hoursCount = spec.spanMin / 60; // 12
+  for (let i = 0; i <= hoursCount; i++) {
+    const min = (spec.startMin + i * 60) % 1440;
+    const h = Math.floor(min / 60);
+    const tickAngle = angleForMin(min, spec);
+    const isSeamStart = i === 0;
+    const isSeamEnd = i === hoursCount;
+    const labelAngle = isSeamStart ? tickAngle - 7 : isSeamEnd ? tickAngle + 7 : tickAngle;
+    const isCardinal = isSeamStart || isSeamEnd || i === hoursCount / 2;
+    pushHourTick(
+      ticks,
+      cx,
+      cy,
+      outerR,
+      isSeamEnd ? null : tickAngle, // single shared seam tick (skip the duplicate)
+      labelAngle,
+      String(h).padStart(2, '0'),
+      isCardinal,
+      `w${i}`,
+    );
+  }
   return <g className="hour-ticks">{ticks}</g>;
 }
 
@@ -170,11 +209,12 @@ function HourTicks() {
 
 interface NowIndicatorProps {
   hhmm: string; // "HH:mm" current time
+  spec?: ViewSpec;
 }
 
-function NowIndicator({ hhmm }: NowIndicatorProps) {
+function NowIndicator({ hhmm, spec = FULL_SPEC }: NowIndicatorProps) {
   const { cx, cy, innerR, outerR } = RING;
-  const angleDeg = hhmmToAngle(hhmm);
+  const angleDeg = angleForMin(hhmmToMinutes(hhmm), spec);
 
   const hubEdge = polarToCartesian(cx, cy, innerR + 2, angleDeg);
   const rimPoint = polarToCartesian(cx, cy, outerR - 2, angleDeg);
@@ -237,6 +277,10 @@ interface SlicePathProps {
   isSelected?: boolean;
   /** Cut mode (desktop): scissors cursor + click splits at the cursor position. */
   cutMode?: boolean;
+  /** Active view window. When `clipped`, the slice is already a window-clipped
+   *  segment and is drawn directly with this spec (no store snapshot). */
+  spec?: ViewSpec;
+  clipped?: boolean;
   onSliceClick?: (id: string) => void;
   onSliceDoubleClick?: (id: string) => void;
   onSliceSplit?: (e: React.MouseEvent<SVGElement>) => void;
@@ -249,6 +293,8 @@ function SlicePath({
   isInteractive,
   isSelected,
   cutMode,
+  spec = FULL_SPEC,
+  clipped = false,
   onSliceClick,
   onSliceDoubleClick,
   onSliceSplit,
@@ -256,8 +302,13 @@ function SlicePath({
   onSliceLeave,
 }: SlicePathProps) {
   // During drag, returns snapshot value for affected slices (snapshot-to-snapshot = no-op diff).
+  // Hook must run unconditionally; in 12h (clipped) we draw the passed segment instead.
   const liveSlice = useSliceSelector(slice.id);
-  const d = liveSlice ? slicePath(liveSlice) : slicePath(slice);
+  const d = clipped
+    ? slicePath(slice, RING, spec)
+    : liveSlice
+      ? slicePath(liveSlice)
+      : slicePath(slice);
 
   const className = [
     isInteractive ? 'slice-path' : undefined,
@@ -415,6 +466,15 @@ export function CircleTimeline({
   const { t, lang } = useTranslation();
   const showClock = useShowClock();
   const showNowLine = useShowNowLine();
+  // Active view window (24h / 12h day / 12h night). Drives the angle remap below.
+  // Preview thumbnails (preset gallery, day strip) always show the full 24h clock.
+  const chartView = useChartView();
+  const spec = mode === 'preview' ? FULL_SPEC : viewSpec(chartView);
+  const is12h = spec.view !== 'full';
+  const specRef = useRef<ViewSpec>(spec);
+  useEffect(() => {
+    specRef.current = spec;
+  });
   // On touch, double-click/double-tap to edit is awkward, so a single tap opens
   // the editor instead. (Boundary handles sit on top, so taps near a division
   // still hit the boundary first — see BoundaryHandles.)
@@ -438,7 +498,8 @@ export function CircleTimeline({
       const line = cutPreviewRef.current;
       if (!svg || !line) return;
       const { x, y } = clientToSvgPoint(svg, e.clientX, e.clientY);
-      const ang = hhmmToAngle(angleToHhmm(svgPointToAngleDeg(x, y)));
+      const sp = specRef.current;
+      const ang = angleForMin(snapMinutes(minForAngle(svgPointToAngleDeg(x, y), sp)), sp);
       const inner = polarToCartesian(RING.cx, RING.cy, RING.innerR, ang);
       const outer = polarToCartesian(RING.cx, RING.cy, RING.outerR, ang);
       line.setAttribute('x1', String(inner.x));
@@ -465,6 +526,38 @@ export function CircleTimeline({
 
   const backdropD = annulusPath(cx, cy, outerR, innerR);
   const handleDoubleClick = onRequestEdit ?? onSliceDoubleClick;
+
+  // 12h views render the schedule clipped to the active window. Each visible
+  // segment is a real slice trimmed to the window (keeps id/colour/label so cut
+  // + edit map back to the underlying 24h data). `clipSegments` are the drawn
+  // wedges (a slice can yield 2 when it straddles both window ends); `labelSlices`
+  // place one label per slice at its largest visible segment.
+  const clipSegments = useMemo(() => {
+    if (!is12h) return [];
+    const out: Array<{ key: string; slice: TimeSlice }> = [];
+    for (const s of slices) {
+      const parts = visibleSegments(hhmmToMinutes(s.startTime), sliceWidthMinutes(s), spec);
+      parts.forEach((p, i) => {
+        out.push({
+          key: `${s.id}__${i}`,
+          slice: { ...s, startTime: minutesToHhmm(p.startMin), endTime: minutesToHhmm(p.endMin) },
+        });
+      });
+    }
+    return out;
+  }, [is12h, slices, spec]);
+
+  const labelSlices = useMemo(() => {
+    if (!is12h) return slices;
+    const out: TimeSlice[] = [];
+    for (const s of slices) {
+      const parts = visibleSegments(hhmmToMinutes(s.startTime), sliceWidthMinutes(s), spec);
+      if (parts.length === 0) continue;
+      const largest = parts.reduce((a, b) => (b.widthMin > a.widthMin ? b : a));
+      out.push({ ...s, startTime: minutesToHhmm(largest.startMin), endTime: minutesToHhmm(largest.endMin) });
+    }
+    return out;
+  }, [is12h, slices, spec]);
 
   // Live clock for the center hub overlay (HTML — excluded from SVG export)
   // Also drives the now-indicator angle (SVG, but export-excluded via data-export-exclude).
@@ -531,9 +624,41 @@ export function CircleTimeline({
         strokeWidth={1}
       />
 
-      <HourTicks />
+      <HourTicks spec={spec} />
 
-      {interactionMode === 'interactive' && dragGroupRef && onPointerDownHandle && onBackgroundClick ? (
+      {is12h ? (
+        // 12h clock window: render slices clipped to the window. These are plain
+        // (non-store) paths drawn with the view spec; cut + centre-edit map back
+        // to the underlying 24h slice via data-slice-id, so editing stays linked.
+        <g className="slice-group">
+          {isInteractive && onBackgroundClick ? (
+            <path
+              d={backdropD}
+              fill="transparent"
+              fillRule="evenodd"
+              stroke="none"
+              style={{ cursor: 'crosshair' }}
+              onClick={onBackgroundClick}
+            />
+          ) : null}
+          {clipSegments.map(({ key, slice }) => (
+            <SlicePath
+              key={key}
+              slice={slice}
+              clipped
+              spec={spec}
+              isInteractive={isInteractive}
+              isSelected={selectedSliceId === slice.id}
+              cutMode={isInteractive && !coarse}
+              onSliceClick={coarse ? handleDoubleClick : onSliceClick}
+              onSliceDoubleClick={handleDoubleClick}
+              onSliceSplit={onSliceSplit}
+              onSliceHover={isInteractive && !coarse ? showCutPreview : undefined}
+              onSliceLeave={isInteractive && !coarse ? hideCutPreview : undefined}
+            />
+          ))}
+        </g>
+      ) : interactionMode === 'interactive' && dragGroupRef && onPointerDownHandle && onBackgroundClick ? (
         // Interactive mode: use store-connected layer
         <InteractiveLayer
           slices={slices}
@@ -587,24 +712,29 @@ export function CircleTimeline({
       ) : null}
 
       <g className="label-group">
-        {slices.map((slice) => (
+        {(is12h ? labelSlices : slices).map((slice) => (
           <SliceLabel
             key={slice.id}
             slice={slice}
+            spec={spec}
             onEdit={isInteractive ? handleDoubleClick : undefined}
           />
         ))}
       </g>
 
       {/* Boundary handles ON TOP of labels — so hover +/− buttons aren't hidden
-          behind slice icons. Interactive mode only. */}
+          behind slice icons. Interactive mode only. In 12h, out-of-window
+          boundaries are hidden by BoundaryHandles itself. */}
       {isInteractive && slices.length > 1 && onPointerDownHandle ? (
-        <BoundaryHandles slices={slices} onPointerDownHandle={onPointerDownHandle} />
+        <BoundaryHandles slices={slices} spec={spec} onPointerDownHandle={onPointerDownHandle} />
       ) : null}
 
       {/* Now-indicator: solid red line at current time angle. Toggleable.
+          Hidden in 12h when the current time falls outside the window.
           Tagged data-export-exclude="true" — stripped from PNG/PDF clone. */}
-      {showNowLine ? <NowIndicator hhmm={clock.hhmm} /> : null}
+      {showNowLine && (!is12h || isInWindow(hhmmToMinutes(clock.hhmm), spec)) ? (
+        <NowIndicator hhmm={clock.hhmm} spec={spec} />
+      ) : null}
 
       {/* Center hub glass disc — in SVG so it composites with slices correctly.
           The live clock text is NOT here; it's in the HTML overlay below so

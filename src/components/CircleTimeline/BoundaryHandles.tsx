@@ -2,12 +2,15 @@ import { useState, useEffect, useRef } from 'react';
 import type { TimeSlice } from '@/types/time-slice';
 import { boundaryHandlePosition, RING, polarToCartesian } from '@/lib/svg-geometry';
 import { sliceWidthMinutes, minutesToHhmm, hhmmToMinutes } from '@/lib/time-utils';
+import { FULL_SPEC, isInWindow, type ViewSpec } from '@/lib/chart-view';
 import { useStoreDispatch, useStoreSelector } from '@/hooks/useScheduleStore';
 import { useCoarsePointer } from '@/hooks/useCoarsePointer';
 
 interface BoundaryHandlesProps {
   slices: TimeSlice[];
   onPointerDownHandle: (e: React.PointerEvent<SVGElement>, boundaryIndex: number) => void;
+  /** Active view window — positions handles + hides out-of-window boundaries. */
+  spec?: ViewSpec;
 }
 
 // ─── +/− affordance helpers ───────────────────────────────────────────────────
@@ -159,10 +162,11 @@ interface BoundaryHandleProps {
   slice: TimeSlice;
   slices: TimeSlice[];
   index: number;
+  spec: ViewSpec;
   onPointerDownHandle: (e: React.PointerEvent<SVGElement>, boundaryIndex: number) => void;
 }
 
-function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryHandleProps) {
+function BoundaryHandle({ slice, slices, index, spec, onPointerDownHandle }: BoundaryHandleProps) {
   const dispatch = useStoreDispatch();
   const [hovered, setHovered] = useState(false);
   // On touch there is no hover, so a tap on the boundary "activates" it, keeping
@@ -204,7 +208,7 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
     };
   }, [coarse, tapActive]);
 
-  const { x, y, angleDeg } = boundaryHandlePosition(slice, 'end');
+  const { x, y, angleDeg } = boundaryHandlePosition(slice, 'end', undefined, spec);
   // Endpoints of the division line (hub edge → rim) for the wide hover/grab strip.
   const innerPt = polarToCartesian(RING.cx, RING.cy, RING.innerR + 2, angleDeg);
   const outerPt = polarToCartesian(RING.cx, RING.cy, RING.outerR - 2, angleDeg);
@@ -404,20 +408,27 @@ function BoundaryHandle({ slice, slices, index, onPointerDownHandle }: BoundaryH
  * - touch-action: none
  * - On hover: +/− affordance buttons for split/merge (mouse only)
  */
-export function BoundaryHandles({ slices, onPointerDownHandle }: BoundaryHandlesProps) {
+export function BoundaryHandles({ slices, onPointerDownHandle, spec = FULL_SPEC }: BoundaryHandlesProps) {
   if (slices.length <= 1) return null;
 
   return (
     <g className="boundary-handles">
-      {slices.map((slice, i) => (
-        <BoundaryHandle
-          key={`boundary-${i}`}
-          slice={slice}
-          slices={slices}
-          index={i}
-          onPointerDownHandle={onPointerDownHandle}
-        />
-      ))}
+      {slices.map((slice, i) => {
+        // 12h views only show handles for boundaries that fall inside the window;
+        // boundaries between two out-of-window slices are hidden.
+        const endStr = slice.endTime === '24:00' ? '00:00' : slice.endTime;
+        if (spec.view !== 'full' && !isInWindow(hhmmToMinutes(endStr), spec)) return null;
+        return (
+          <BoundaryHandle
+            key={`boundary-${i}`}
+            slice={slice}
+            slices={slices}
+            index={i}
+            spec={spec}
+            onPointerDownHandle={onPointerDownHandle}
+          />
+        );
+      })}
     </g>
   );
 }

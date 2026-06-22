@@ -5,6 +5,7 @@ import {
   labelAnchorOutside,
   truncateLabel,
 } from '@/lib/svg-geometry';
+import { FULL_SPEC, type ViewSpec } from '@/lib/chart-view';
 import { idealTextColor, DARK_TEXT } from '@/lib/contrast';
 import { useTranslation, useShowIcons } from '@/hooks/usePreferences';
 import { useCoarsePointer } from '@/hooks/useCoarsePointer';
@@ -14,6 +15,8 @@ interface SliceLabelProps {
   slice: TimeSlice;
   /** Click the label (the "naming part") to open the editor — desktop only. */
   onEdit?: (id: string) => void;
+  /** Active view window — positions the label under the 12h clock remap. */
+  spec?: ViewSpec;
 }
 
 // Outside labels sit on the page (beyond the ring), so they keep a fixed dark
@@ -30,7 +33,7 @@ const LABEL_TEXT_DEFAULT = DARK_TEXT;
  * - Skips rendering for slices < 30 min when textPosition === 'inside'
  *   (too narrow); falls back to icon-only.
  */
-export function SliceLabel({ slice, onEdit }: SliceLabelProps) {
+export function SliceLabel({ slice, onEdit, spec = FULL_SPEC }: SliceLabelProps) {
   const { textPosition, label, icon: rawIcon } = slice;
   // Global "show icons" toggle — when off, every icon below renders as empty so
   // the chart shows text-only labels (and narrow icon-only slices show nothing).
@@ -75,7 +78,7 @@ export function SliceLabel({ slice, onEdit }: SliceLabelProps) {
   const fontStyle = slice.italic ? 'italic' : 'normal';
 
   if (textPosition === 'inside') {
-    const { x, y } = labelAnchorInside(slice);
+    const { x, y } = labelAnchorInside(slice, undefined, spec);
     // Centre edit zone: a single click here opens the editor (text cursor),
     // even when the slice is empty. The slice body OUTSIDE it keeps the scissors
     // cut cursor. Smaller on narrow wedges so it doesn't bleed into neighbours.
@@ -126,7 +129,7 @@ export function SliceLabel({ slice, onEdit }: SliceLabelProps) {
   }
 
   // Outside label
-  const { x, y, leader } = labelAnchorOutside(slice);
+  const { x, y, leader } = labelAnchorOutside(slice, undefined, spec);
   const [leaderStart, leaderEnd] = leader;
 
   return (

@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { Lang, TKey } from '@/i18n/translations';
 import { translate } from '@/i18n/translations';
+import type { ChartView } from '@/lib/chart-view';
 
 // ─── Options ──────────────────────────────────────────────────────────────────
 
@@ -39,6 +40,7 @@ export interface Preferences {
   showIcons: boolean; // global toggle for slice icons in the chart
   showClock: boolean; // center digital clock overlay
   showNowLine: boolean; // red current-time indicator line
+  chartView: ChartView; // 24h ('full') / 12h day / 12h night clock window
 }
 
 const DEFAULT_PREFS: Preferences = {
@@ -49,6 +51,7 @@ const DEFAULT_PREFS: Preferences = {
   showIcons: true,
   showClock: true,
   showNowLine: true,
+  chartView: 'full',
   bgType: 'pattern',
   bgColor: '#f4f5f7',
   bgImage: null,
@@ -184,6 +187,12 @@ export function useShowClock(): boolean {
 export function useShowNowLine(): boolean {
   const ctx = useContext(PreferencesContext);
   return ctx?.prefs.showNowLine ?? true;
+}
+
+/** Null-safe read of the chart view window (default 'full' 24h). */
+export function useChartView(): ChartView {
+  const ctx = useContext(PreferencesContext);
+  return ctx?.prefs.chartView ?? 'full';
 }
 
 /** Translation hook bound to the current language preference. */

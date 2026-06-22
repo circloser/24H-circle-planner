@@ -1,10 +1,18 @@
 import { useRef, useCallback, useEffect } from 'react';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
-import { angleToHhmm, hhmmToAngle, sliceWidthMinutes } from '@/lib/time-utils';
+import { hhmmToAngle, sliceWidthMinutes, snapMinutes, minutesToHhmm } from '@/lib/time-utils';
 import { slicePath, RING, polarToCartesian, labelAnchorInside } from '@/lib/svg-geometry';
+import { useChartView } from '@/hooks/usePreferences';
+import { viewSpec, minForAngle, type ViewSpec } from '@/lib/chart-view';
 import type { TimeSlice } from '@/types/time-slice';
 import type { Schedule } from '@/types/schedule';
 import type { DragRef } from '@/types/drag';
+
+/** Chart angle (deg) → snapped "HH:mm" under the active view window. For the full
+ *  24h view this matches the legacy angleToHhmm exactly. */
+function angleToHhmmView(deg: number, spec: ViewSpec): string {
+  return minutesToHhmm(snapMinutes(minForAngle(deg, spec)));
+}
 
 // ─── Public interface ─────────────────────────────────────────────────────────
 
@@ -148,6 +156,14 @@ export function useSliceInteraction(opts: {
   const dispatch = useStoreDispatch();
   const isDraggingBoundary = useStoreSelector((s) => s.isDraggingBoundary);
 
+  // Active view window (full 24h / 12h day / 12h night). All angle↔time uses this
+  // so editing stays correct in any view; a ref keeps the window handlers current.
+  const spec = viewSpec(useChartView());
+  const specRef = useRef<ViewSpec>(spec);
+  useEffect(() => {
+    specRef.current = spec;
+  });
+
   // DOM refs
   const liveDragGroupRef = useRef<SVGGElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -260,7 +276,7 @@ export function useSliceInteraction(opts: {
         let initialHHmm: string;
         if (svg) {
           const { x, y } = clientToSvgPoint(svg, e.clientX, e.clientY);
-          initialHHmm = angleToHhmm(svgPointToAngleDeg(x, y));
+          initialHHmm = angleToHhmmView(svgPointToAngleDeg(x, y), specRef.current);
         } else {
           initialHHmm = ccwSlice.endTime === '24:00' ? '00:00' : ccwSlice.endTime;
         }
@@ -284,13 +300,17 @@ export function useSliceInteraction(opts: {
       let hhmm: string;
       if (svg) {
         const { x, y } = clientToSvgPoint(svg, e.clientX, e.clientY);
-        hhmm = angleToHhmm(svgPointToAngleDeg(x, y));
+        hhmm = angleToHhmmView(svgPointToAngleDeg(x, y), specRef.current);
       } else {
         hhmm = scratch.lastHHmm;
       }
 
       if (hhmm === scratch.lastHHmm) return;
       scratch.lastHHmm = hhmm;
+
+      // 12h views render clipped slices, which the imperative path preview can't
+      // track — skip the live preview there and just commit on release.
+      if (specRef.current.view !== 'full') return;
 
       const { ccwD, cwD } = recomputeAdjacentPaths(
         dragRef.snapshot.slices,
@@ -346,7 +366,7 @@ export function useSliceInteraction(opts: {
       let finalHHmm = scratch.lastHHmm;
       if (svg) {
         const { x, y } = clientToSvgPoint(svg, e.clientX, e.clientY);
-        finalHHmm = angleToHhmm(svgPointToAngleDeg(x, y));
+        finalHHmm = angleToHhmmView(svgPointToAngleDeg(x, y), specRef.current);
       }
 
       // React 18 batches all three
@@ -430,7 +450,7 @@ export function useSliceInteraction(opts: {
       splitTimerRef.current = setTimeout(() => {
         splitTimerRef.current = null;
         const { x, y } = clientToSvgPoint(svg, clientX, clientY);
-        const hhmm = angleToHhmm(svgPointToAngleDeg(x, y));
+        const hhmm = angleToHhmmView(svgPointToAngleDeg(x, y), specRef.current);
         // Empty the smaller half so the larger keeps the original name + colour.
         dispatch({ type: 'SPLIT', hhmm, newSlotSide: 'smaller' });
       }, 220);
@@ -446,7 +466,7 @@ export function useSliceInteraction(opts: {
       const svg = svgRef.current;
       if (!svg) return;
       const { x, y } = clientToSvgPoint(svg, e.clientX, e.clientY);
-      const hhmm = angleToHhmm(svgPointToAngleDeg(x, y));
+      const hhmm = angleToHhmmView(svgPointToAngleDeg(x, y), specRef.current);
       dispatch({ type: 'SPLIT', hhmm, newSlotSide: 'smaller' });
     },
     [dispatch],
