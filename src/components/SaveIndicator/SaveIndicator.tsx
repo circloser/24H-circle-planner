@@ -9,10 +9,15 @@ import { useTranslation } from '@/hooks/usePreferences';
  * can see their work is being kept (reduces the "will I lose this?" anxiety).
  * Tied to the schedule store (the primary editing surface).
  */
+/** Show "Saved" for this long after the save settles, then fade the indicator out. */
+const SAVED_LINGER_MS = 10_000;
+
+type Phase = 'idle' | 'saving' | 'saved';
+
 export function SaveIndicator() {
   const present = useStoreSelector((s) => s.history.present);
   const { t } = useTranslation();
-  const [saving, setSaving] = useState(false);
+  const [phase, setPhase] = useState<Phase>('idle');
   const firstRef = useRef(true);
 
   useEffect(() => {
@@ -20,11 +25,20 @@ export function SaveIndicator() {
       firstRef.current = false; // skip the initial mount (no edit happened)
       return;
     }
-    setSaving(true);
-    const id = setTimeout(() => setSaving(false), 800);
-    return () => clearTimeout(id);
+    setPhase('saving');
+    const savedId = setTimeout(() => setPhase('saved'), 800);
+    // ~10s after it settles on "Saved", hide the indicator for a clean header.
+    const hideId = setTimeout(() => setPhase('idle'), 800 + SAVED_LINGER_MS);
+    return () => {
+      clearTimeout(savedId);
+      clearTimeout(hideId);
+    };
   }, [present]);
 
+  // Idle (initial, or 10s after the last save): show nothing.
+  if (phase === 'idle') return null;
+
+  const saving = phase === 'saving';
   return (
     <div
       className="inline-flex shrink-0 items-center gap-1 text-xs"

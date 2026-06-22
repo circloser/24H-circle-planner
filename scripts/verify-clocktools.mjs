@@ -40,7 +40,9 @@ await fab().click(); // close the popup menu
 await page.waitForTimeout(200);
 const analogShown = (await page.locator('svg[aria-label^="아날로그"]').count()) > 0;
 
-// Switch analog → digital.
+// Switch analog → digital. Controls only appear (and accept clicks) on hover.
+await page.locator('svg[aria-label^="아날로그"]').first().hover();
+await page.waitForTimeout(150);
 await page.getByRole('button', { name: 'Digital', exact: true }).first().click();
 await page.waitForTimeout(150);
 const analogGone = (await page.locator('svg[aria-label^="아날로그"]').count()) === 0;
