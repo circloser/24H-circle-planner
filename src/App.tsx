@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import './index.css';
-import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -33,6 +34,8 @@ import { MemoLayer } from '@/components/Memo/MemoLayer';
 import { DayBar } from '@/components/Days/DayBar';
 import { SaveIndicator } from '@/components/SaveIndicator/SaveIndicator';
 import { ChartViewToggle } from '@/components/ChartViewToggle/ChartViewToggle';
+import { AddToHomeDialog, type BeforeInstallPromptEvent } from '@/components/AddToHomeDialog/AddToHomeDialog';
+import { shareChartImage } from '@/lib/share';
 import { requestPersistentStorage } from '@/lib/persistent-storage';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
@@ -95,6 +98,8 @@ function App() {
   const [savePresetOpen, setSavePresetOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [homeOpen, setHomeOpen] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [editingSliceId, setEditingSliceId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
   const [settingsSection, setSettingsSection] = useState<SettingsSection | null>(null);
@@ -139,6 +144,38 @@ function App() {
   useEffect(() => {
     void requestPersistentStorage();
   }, []);
+
+  // Capture the browser's install prompt (Chrome/Edge/Android) so the "add to
+  // home screen" dialog can offer a one-tap install. Clear it once installed.
+  useEffect(() => {
+    const onPrompt = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e as BeforeInstallPromptEvent);
+    };
+    const onInstalled = () => setInstallPrompt(null);
+    window.addEventListener('beforeinstallprompt', onPrompt);
+    window.addEventListener('appinstalled', onInstalled);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onPrompt);
+      window.removeEventListener('appinstalled', onInstalled);
+    };
+  }, []);
+
+  // Share the current timetable as an image (native share sheet on mobile →
+  // Instagram etc.; image download as the desktop fallback).
+  async function handleShare() {
+    if (!svgRef.current) {
+      toast.error(t('share.noChart'));
+      return;
+    }
+    try {
+      const outcome = await shareChartImage(svgRef.current, present.name, t('share.text'));
+      if (outcome === 'downloaded') toast.success(t('share.saved'));
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return; // user cancelled
+      toast.error(`${t('share.fail')}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -229,6 +266,16 @@ function App() {
                 <DropdownMenuItem onClick={() => setSettingsSection('theme')}>
                   {t('settings.colorTheme')}
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleShare} className="gap-2">
+                  <Share2 className="h-4 w-4" />
+                  {t('share.button')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setHomeOpen(true)} className="gap-2">
+                  <Smartphone className="h-4 w-4" />
+                  {t('home.button')}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => setResetOpen(true)}
                   style={{ color: 'hsl(var(--destructive))' }}
@@ -343,6 +390,14 @@ function App() {
         scheduleName={present.name}
         schedule={present}
         onImport={(s: Schedule) => dispatch({ type: 'LOAD_SCHEDULE', schedule: s })}
+      />
+
+      {/* Add-to-home-screen helper (install prompt + instructions) */}
+      <AddToHomeDialog
+        open={homeOpen}
+        onOpenChange={setHomeOpen}
+        installPrompt={installPrompt}
+        onConsumePrompt={() => setInstallPrompt(null)}
       />
 
       {/* Multi-day switcher (top thumbnails + bottom day indicator) */}

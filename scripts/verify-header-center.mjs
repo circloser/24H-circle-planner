@@ -13,8 +13,11 @@ const errors = [];
 const browser = await chromium.launch({ headless: true });
 const ctx = await browser.newContext({ viewport: { width: 1280, height: 200 }, locale: 'en-US' });
 const page = await ctx.newPage();
-page.on('console', (m) => { if (m.type() === 'error' && !m.text().includes('favicon')) errors.push(m.text()); });
-page.on('pageerror', (e) => { if (!e.message.includes('favicon')) errors.push('PAGE ERROR: ' + e.message); });
+// On file:// the absolute /manifest, /icon-*, /favicon and the external AdSense
+// loader 404 — ignore that offline-only noise; assert on real app errors.
+const IGNORE = /favicon|manifest|icon-\d|pagead|googlesyndication|adsbygoogle|Failed to load resource/i;
+page.on('console', (m) => { if (m.type() === 'error' && !IGNORE.test(m.text())) errors.push(m.text()); });
+page.on('pageerror', (e) => { if (!IGNORE.test(e.message)) errors.push('PAGE ERROR: ' + e.message); });
 
 await page.goto(FILE, { waitUntil: 'domcontentloaded', timeout: 30000 });
 await page.waitForSelector('svg[role="img"]', { timeout: 15000 });

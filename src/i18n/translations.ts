@@ -166,7 +166,19 @@ export type TKey =
   | 'view.full'
   | 'view.day'
   | 'view.night'
-  | 'view.cycle';
+  | 'view.cycle'
+  | 'share.button'
+  | 'share.text'
+  | 'share.saved'
+  | 'share.noChart'
+  | 'share.fail'
+  | 'home.button'
+  | 'home.title'
+  | 'home.body'
+  | 'home.install'
+  | 'home.installed'
+  | 'home.copyLink'
+  | 'home.copied';
 
 type Dict = Record<TKey, string>;
 
@@ -318,6 +330,18 @@ const ko: Dict = {
   'view.day': '낮 6–18',
   'view.night': '밤 18–6',
   'view.cycle': '시간표 보기 전환 (24시간 → 낮 → 밤)',
+  'share.button': '공유하기',
+  'share.text': '내 하루 시간표 — 24Houring',
+  'share.saved': '시간표 이미지를 저장했어요. 인스타그램 등에 올려보세요!',
+  'share.noChart': '공유할 시간표를 찾을 수 없습니다.',
+  'share.fail': '공유에 실패했습니다',
+  'home.button': '첫 화면에 추가',
+  'home.title': '브라우저 첫 화면에 추가',
+  'home.body': '24Houring을 앱처럼 빠르게 열 수 있어요. 모바일은 공유 메뉴에서 “홈 화면에 추가”, 데스크톱은 주소창의 설치 아이콘 또는 브라우저 메뉴 → “앱으로 설치/바로가기 만들기”를 선택하세요.',
+  'home.install': '지금 설치',
+  'home.installed': '설치되었습니다',
+  'home.copyLink': '주소 복사',
+  'home.copied': '주소를 복사했어요',
 };
 
 const en: Dict = {
@@ -470,6 +494,18 @@ const en: Dict = {
   'view.day': 'Day 6–18',
   'view.night': 'Night 18–6',
   'view.cycle': 'Switch view (24h → Day → Night)',
+  'share.button': 'Share',
+  'share.text': 'My daily timetable — 24Houring',
+  'share.saved': 'Saved the timetable image — post it to Instagram and beyond!',
+  'share.noChart': 'Could not find a timetable to share.',
+  'share.fail': 'Share failed',
+  'home.button': 'Add to home screen',
+  'home.title': 'Add to your home screen',
+  'home.body': 'Open 24Houring like an app. On mobile, use the browser share menu → “Add to Home Screen”. On desktop, click the install icon in the address bar, or the browser menu → “Install / Create shortcut”.',
+  'home.install': 'Install now',
+  'home.installed': 'Installed',
+  'home.copyLink': 'Copy link',
+  'home.copied': 'Link copied',
 };
 
 // Skeleton languages — cover the most visible chrome; everything else falls
