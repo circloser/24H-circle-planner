@@ -1,0 +1,5 @@
+# 24Houring — allow all crawlers (Googlebot, Yeti/Naver, Bingbot, …)
+User-agent: *
+Allow: /
+
+Sitemap: https://24houringp.singlena.workers.dev/sitemap.xml
