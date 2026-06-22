@@ -35,7 +35,6 @@ import { DayBar } from '@/components/Days/DayBar';
 import { SaveIndicator } from '@/components/SaveIndicator/SaveIndicator';
 import { ChartViewToggle } from '@/components/ChartViewToggle/ChartViewToggle';
 import { AddToHomeDialog, type BeforeInstallPromptEvent } from '@/components/AddToHomeDialog/AddToHomeDialog';
-import { ShareDialog } from '@/components/ShareDialog/ShareDialog';
 import { shareChartImage } from '@/lib/share';
 import { requestPersistentStorage } from '@/lib/persistent-storage';
 import { useTranslation } from '@/hooks/usePreferences';
@@ -100,7 +99,6 @@ function App() {
   const [resetOpen, setResetOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [homeOpen, setHomeOpen] = useState(false);
-  const [shareOpen, setShareOpen] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [editingSliceId, setEditingSliceId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -269,7 +267,7 @@ function App() {
                   {t('settings.colorTheme')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setShareOpen(true)} className="gap-2">
+                <DropdownMenuItem onClick={handleShare} className="gap-2">
                   <Share2 className="h-4 w-4" />
                   {t('share.button')}
                 </DropdownMenuItem>
@@ -392,14 +390,6 @@ function App() {
         scheduleName={present.name}
         schedule={present}
         onImport={(s: Schedule) => dispatch({ type: 'LOAD_SCHEDULE', schedule: s })}
-      />
-
-      {/* Share hub: timetable image (native sheet/download) + AddToAny link share */}
-      <ShareDialog
-        open={shareOpen}
-        onOpenChange={setShareOpen}
-        onShareImage={handleShare}
-        shareTitle={t('share.text')}
       />
 
       {/* Add-to-home-screen helper (install prompt + instructions) */}

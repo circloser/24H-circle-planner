@@ -16,7 +16,7 @@ const DIR = path.resolve('.omc/verification');
 const errors = [];
 // Offline-only noise: absolute /manifest, /icon-*, /favicon 404 and the external
 // AdSense loader is 403'd from a file:// origin (its console line carries no URL).
-const IGNORE = /favicon|manifest|icon-\d|pagead|googlesyndication|adsbygoogle|addtoany|Failed to load resource/i;
+const IGNORE = /favicon|manifest|icon-\d|pagead|googlesyndication|adsbygoogle|Failed to load resource/i;
 const browser = await chromium.launch({ headless: true });
 const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'en-US', acceptDownloads: true });
 const page = await ctx.newPage();
@@ -51,17 +51,12 @@ const shareItem = await page.getByRole('menuitem', { name: 'Share' }).first().is
 const homeItem = await page.getByRole('menuitem', { name: 'Add to home screen' }).first().isVisible().catch(() => false);
 await page.screenshot({ path: path.join(DIR, 'gear-menu.png') });
 
-// Click Share → opens the share dialog (image share + AddToAny link buttons).
-await page.getByRole('menuitem', { name: 'Share' }).first().click();
-await page.waitForTimeout(300);
-const a2aPresent = (await page.locator('.a2a_kit').count()) > 0;
-await page.screenshot({ path: path.join(DIR, 'share-dialog.png') });
-// Image share → desktop fallback downloads the PNG (proves image generation).
+// Click Share → desktop fallback downloads the PNG (proves image generation).
 let shared = false;
 try {
   const [download] = await Promise.all([
     page.waitForEvent('download', { timeout: 12000 }),
-    page.getByRole('button', { name: 'Share / save as image' }).first().click(),
+    page.getByRole('menuitem', { name: 'Share' }).first().click(),
   ]);
   shared = (await download.suggestedFilename()).endsWith('.png');
 } catch { shared = false; }
@@ -77,7 +72,7 @@ await page.screenshot({ path: path.join(DIR, 'home-dialog.png') });
 await browser.close();
 
 console.log('head:', JSON.stringify(head));
-console.log('menu: share', shareItem, '| home', homeItem, '| a2aButtons', a2aPresent, '| sharedPng', shared, '| copyVisible', copyVisible);
+console.log('menu: share', shareItem, '| home', homeItem, '| sharedPng', shared, '| copyVisible', copyVisible);
 console.log('console errors:', errors.length);
 errors.forEach((e) => console.log('  ', e));
 
@@ -87,7 +82,6 @@ const checks = {
   appleIcon: !!head.appleHref,
   shareMenuItem: shareItem === true,
   homeMenuItem: homeItem === true,
-  addToAnyButtons: a2aPresent === true,
   shareGeneratesImage: shared === true,
   homeDialogCopy: copyVisible === true,
   noErrors: errors.length === 0,
