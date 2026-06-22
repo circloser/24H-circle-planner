@@ -178,7 +178,23 @@ export type TKey =
   | 'home.install'
   | 'home.installed'
   | 'home.copyLink'
-  | 'home.copied';
+  | 'home.copied'
+  | 'clock.tools'
+  | 'clock.clock'
+  | 'clock.timer'
+  | 'clock.alarm'
+  | 'clock.analog'
+  | 'clock.digital'
+  | 'clock.start'
+  | 'clock.pause'
+  | 'clock.reset'
+  | 'clock.clear'
+  | 'clock.close'
+  | 'clock.alarmTime'
+  | 'clock.alarmOn'
+  | 'clock.alarmOff'
+  | 'clock.timerDone'
+  | 'clock.alarmRing';
 
 type Dict = Record<TKey, string>;
 
@@ -342,6 +358,22 @@ const ko: Dict = {
   'home.installed': '설치되었습니다',
   'home.copyLink': '주소 복사',
   'home.copied': '주소를 복사했어요',
+  'clock.tools': '시계 도구',
+  'clock.clock': '시계',
+  'clock.timer': '타이머',
+  'clock.alarm': '알람',
+  'clock.analog': '아날로그',
+  'clock.digital': '디지털',
+  'clock.start': '시작',
+  'clock.pause': '일시정지',
+  'clock.reset': '초기화',
+  'clock.clear': '지우기',
+  'clock.close': '닫기',
+  'clock.alarmTime': '알람 시각',
+  'clock.alarmOn': '켜짐',
+  'clock.alarmOff': '꺼짐',
+  'clock.timerDone': '⏰ 타이머 종료!',
+  'clock.alarmRing': '⏰ 알람!',
 };
 
 const en: Dict = {
@@ -506,6 +538,22 @@ const en: Dict = {
   'home.installed': 'Installed',
   'home.copyLink': 'Copy link',
   'home.copied': 'Link copied',
+  'clock.tools': 'Clock tools',
+  'clock.clock': 'Clock',
+  'clock.timer': 'Timer',
+  'clock.alarm': 'Alarm',
+  'clock.analog': 'Analog',
+  'clock.digital': 'Digital',
+  'clock.start': 'Start',
+  'clock.pause': 'Pause',
+  'clock.reset': 'Reset',
+  'clock.clear': 'Clear',
+  'clock.close': 'Close',
+  'clock.alarmTime': 'Alarm time',
+  'clock.alarmOn': 'On',
+  'clock.alarmOff': 'Off',
+  'clock.timerDone': '⏰ Timer finished!',
+  'clock.alarmRing': '⏰ Alarm!',
 };
 
 // Skeleton languages — cover the most visible chrome; everything else falls

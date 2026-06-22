@@ -31,6 +31,7 @@ import { SavePresetDialog } from '@/components/SavePresetDialog/SavePresetDialog
 import { ExportDialog } from '@/components/ExportPanel/ExportDialog';
 import { SettingsDialog, type SettingsSection } from '@/components/Settings/SettingsDialog';
 import { MemoLayer } from '@/components/Memo/MemoLayer';
+import { ClockToolsLayer } from '@/components/ClockTools/ClockToolsLayer';
 import { DayBar } from '@/components/Days/DayBar';
 import { SaveIndicator } from '@/components/SaveIndicator/SaveIndicator';
 import { ChartViewToggle } from '@/components/ChartViewToggle/ChartViewToggle';
@@ -403,8 +404,11 @@ function App() {
       {/* Multi-day switcher (top thumbnails + bottom day indicator) */}
       <DayBar />
 
-      {/* Post-it memo layer (floating add button + notes) */}
+      {/* Post-it memo layer (floating add button + notes) — bottom-right */}
       <MemoLayer />
+
+      {/* Clock tools (clock / timer / alarm) — bottom-left */}
+      <ClockToolsLayer />
     </div>
   );
 }
