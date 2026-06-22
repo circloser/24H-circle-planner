@@ -43,6 +43,14 @@ const scheduleSliceCount = () =>
     } catch { return -1; }
   });
 const toggle = () => page.getByRole('button', { name: /Switch view/ }).first();
+// SVG x-coordinate (user units, cx=500) of a seam hour label, by its text.
+const seamLabelX = (txt) =>
+  page.evaluate((t) => {
+    const el = [...document.querySelectorAll('svg[role="img"] .hour-ticks text')].find(
+      (n) => n.textContent === t,
+    );
+    return el ? parseFloat(el.getAttribute('x')) : null;
+  }, txt);
 
 // ── 24h baseline ──────────────────────────────────────────────────────────
 const fullLabels = await tickLabels();
@@ -54,6 +62,8 @@ await toggle().click();
 await page.waitForTimeout(300);
 const dayLabels = await tickLabels();
 const daySlicePaths = await page.locator('svg[role="img"] path[data-slice-id]').count();
+const day06x = await seamLabelX('06');
+const day18x = await seamLabelX('18');
 await page.screenshot({ path: path.join(DIR, 'clock-day.png') });
 
 // Edit in the day view: a scissors cut on the band (~10:00) splits the slice.
@@ -76,6 +86,8 @@ const afterCutCount = await scheduleSliceCount();
 await toggle().click();
 await page.waitForTimeout(300);
 const nightLabels = await tickLabels();
+const night18x = await seamLabelX('18');
+const night06x = await seamLabelX('06');
 await page.screenshot({ path: path.join(DIR, 'clock-night.png') });
 
 // ── → back to 24h ────────────────────────────────────────────────────────
@@ -91,6 +103,7 @@ const has = (arr, v) => arr.includes(v);
 console.log('full labels:', fullLabels.join(','));
 console.log('day labels :', dayLabels.join(','));
 console.log('night labels:', nightLabels.join(','));
+console.log('seam x: day 06=', day06x, '18=', day18x, '| night 18=', night18x, '06=', night06x, '(cx=500)');
 console.log('counts: full', fullCount, '→ afterCut', afterCutCount, '→ back', backCount, '| daySlicePaths', daySlicePaths);
 console.log('console errors:', errors.length);
 errors.forEach((e) => console.log('  ', e));
@@ -100,6 +113,8 @@ const checks = {
   dayWindow: has(dayLabels, '06') && has(dayLabels, '12') && has(dayLabels, '18') && !has(dayLabels, '23') && !has(dayLabels, '00'),
   nightWindow: has(nightLabels, '18') && has(nightLabels, '00') && has(nightLabels, '06') && !has(nightLabels, '12'),
   daySlicesRendered: daySlicePaths > 0,
+  daySeamOrder: day06x < 500 && day18x > 500, // 06 left, 18 right of the bottom seam
+  nightSeamOrder: night18x < 500 && night06x > 500, // 18 left, 06 right of the bottom seam
   cutChangedSharedData: afterCutCount === fullCount + 1, // edit in day view added a slice
   back24hReflectsEdit: backLabels.length === 24 && backCount === fullCount + 1,
   noErrors: errors.length === 0,

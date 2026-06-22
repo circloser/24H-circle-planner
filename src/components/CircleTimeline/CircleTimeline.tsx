@@ -186,7 +186,10 @@ function HourTicks({ spec = FULL_SPEC }: { spec?: ViewSpec }) {
     const tickAngle = angleForMin(min, spec);
     const isSeamStart = i === 0;
     const isSeamEnd = i === hoursCount;
-    const labelAngle = isSeamStart ? tickAngle - 7 : isSeamEnd ? tickAngle + 7 : tickAngle;
+    // Nudge the two coincident seam labels apart so each sits next to its own
+    // adjacent hour: the window-start hour leans toward the next hour (clockwise,
+    // +angle), the window-end hour toward the previous hour (−angle).
+    const labelAngle = isSeamStart ? tickAngle + 7 : isSeamEnd ? tickAngle - 7 : tickAngle;
     const isCardinal = isSeamStart || isSeamEnd || i === hoursCount / 2;
     pushHourTick(
       ticks,
