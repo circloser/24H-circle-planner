@@ -30,7 +30,9 @@ import { SavePresetDialog } from '@/components/SavePresetDialog/SavePresetDialog
 import { ExportDialog } from '@/components/ExportPanel/ExportDialog';
 import { SettingsDialog, type SettingsSection } from '@/components/Settings/SettingsDialog';
 import { MemoLayer } from '@/components/Memo/MemoLayer';
+import { MobileMemoSection } from '@/components/Memo/MobileMemoSection';
 import { ClockToolsLayer } from '@/components/ClockTools/ClockToolsLayer';
+import { MobileClockSection } from '@/components/ClockTools/MobileClockSection';
 import { RimMemoLayer } from '@/components/RimMemo/RimMemoLayer';
 import { DayBar } from '@/components/Days/DayBar';
 import { SaveIndicator } from '@/components/SaveIndicator/SaveIndicator';
@@ -40,6 +42,7 @@ import { AboutDialog } from '@/components/About/AboutDialog';
 import { shareChartImage } from '@/lib/share';
 import { requestPersistentStorage } from '@/lib/persistent-storage';
 import { useTranslation } from '@/hooks/usePreferences';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useSliceInteraction } from '@/hooks/useSliceInteraction';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -107,6 +110,7 @@ function App() {
   const [editingTitle, setEditingTitle] = useState(false);
   const [settingsSection, setSettingsSection] = useState<SettingsSection | null>(null);
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
 
   /**
    * Called when user confirms loading a slot from SlotSheet.
@@ -306,8 +310,20 @@ function App() {
         </div>
       </header>
 
-      <main className="flex-1 container mx-auto py-8 flex items-center justify-center px-4">
-        <div className="relative max-w-[720px] w-full mx-auto aspect-square">
+      <main
+        className={
+          isMobile
+            ? 'flex-1 container mx-auto flex flex-col items-center gap-6 px-3 pb-12 pt-12'
+            : 'flex-1 container mx-auto py-8 flex items-center justify-center px-4'
+        }
+      >
+        <div
+          className={
+            isMobile
+              ? 'relative w-full max-w-[560px] aspect-square'
+              : 'relative max-w-[720px] w-full mx-auto aspect-square'
+          }
+        >
           <CircleTimeline
             slices={present.slices}
             mode="interactive"
@@ -326,6 +342,18 @@ function App() {
           {/* Rim annotation memos (hover near the edge → leader line + note). */}
           <RimMemoLayer />
         </div>
+
+        {/* Mobile: stacked sections below the chart. Editing stays enabled (touch
+            + long-press); only the desktop floating overlays are replaced. */}
+        {isMobile && (
+          <>
+            <p className="-mt-2 text-center text-xs" style={{ color: 'hsl(var(--text-muted) / 0.85)' }}>
+              {t('mobile.editHint')}
+            </p>
+            <MobileMemoSection />
+            <MobileClockSection />
+          </>
+        )}
       </main>
 
       <PresetGallery
@@ -425,11 +453,11 @@ function App() {
       {/* Multi-day switcher (top thumbnails + bottom day indicator) */}
       <DayBar />
 
-      {/* Post-it memo layer (floating add button + notes) — bottom-right */}
-      <MemoLayer />
-
-      {/* Clock tools (clock / timer / alarm) — bottom-left */}
-      <ClockToolsLayer />
+      {/* Desktop only: floating post-it memos (bottom-right) + clock tools
+          (bottom-left). On mobile these move into the stacked sections under the
+          chart (MobileMemoSection / MobileClockSection inside <main>). */}
+      {!isMobile && <MemoLayer />}
+      {!isMobile && <ClockToolsLayer />}
     </div>
   );
 }

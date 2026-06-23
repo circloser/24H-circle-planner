@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { makeDragStart, useNow, type Pos } from './clock-utils';
 import type { CalendarState } from './useClockTools';
 import { useTranslation } from '@/hooks/usePreferences';
+import { FloatingInlineContext } from './floatingInline';
 
 interface CalendarWidgetProps {
   calendar: CalendarState;
@@ -44,12 +45,22 @@ export function CalendarWidget({ calendar, onMove, onClose }: CalendarWidgetProp
       return { y: y + Math.floor(nm / 12), m: ((nm % 12) + 12) % 12 };
     });
 
+  // Inline (mobile clock-tools section): static, full-width card; box, controls
+  // and month-nav arrows always visible; dragging disabled.
+  const inline = useContext(FloatingInlineContext);
+  const navBtnCls = inline
+    ? 'grid h-6 w-6 place-items-center rounded transition hover:bg-black/10'
+    : navBtn;
+
   return (
-    <div className="group" style={{ position: 'fixed', left: calendar.pos.x, top: calendar.pos.y, width: 232, zIndex: 25 }}>
-      {/* Box — fades in only on hover (clean calendar by default). */}
+    <div
+      className={inline ? 'group relative w-full' : 'group'}
+      style={inline ? undefined : { position: 'fixed', left: calendar.pos.x, top: calendar.pos.y, width: 232, zIndex: 25 }}
+    >
+      {/* Box — fades in only on hover (clean calendar by default); always inline. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+        className={`pointer-events-none absolute inset-0 rounded-2xl transition-opacity duration-150 ${inline ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
         style={{ backgroundColor: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))', boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}
       />
 
@@ -57,7 +68,7 @@ export function CalendarWidget({ calendar, onMove, onClose }: CalendarWidgetProp
           arrows live on the left, so there is no overlap and no hover gap). */}
       <div
         data-no-drag
-        className="pointer-events-none absolute right-1.5 top-1.5 z-20 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100"
+        className={`absolute right-1.5 top-1.5 z-20 flex items-center gap-1 transition-opacity duration-150 ${inline ? 'opacity-100' : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100'}`}
       >
         <button
           type="button"
@@ -78,18 +89,18 @@ export function CalendarWidget({ calendar, onMove, onClose }: CalendarWidgetProp
         </button>
       </div>
 
-      {/* Calendar body — always visible; drag from here (nav buttons opt out). */}
+      {/* Calendar body — always visible; drag from here (disabled inline). */}
       <div
-        onPointerDown={makeDragStart(calendar.pos, onMove)}
-        className="relative z-10 cursor-grab touch-none select-none px-3 py-3 active:cursor-grabbing"
+        onPointerDown={inline ? undefined : makeDragStart(calendar.pos, onMove)}
+        className={`relative z-10 px-3 py-3 ${inline ? '' : 'cursor-grab touch-none select-none active:cursor-grabbing'}`}
       >
         {/* Nav arrows grouped on the left so the top-right stays free for the
             hover controls. The label gets right padding so it never runs under them. */}
         <div className="mb-1.5 flex items-center gap-0.5 pr-14" data-no-drag>
-          <button type="button" className={navBtn} aria-label="prev" onClick={() => shift(-1)}>
+          <button type="button" className={navBtnCls} aria-label="prev" onClick={() => shift(-1)}>
             <ChevronLeft className="h-4 w-4" style={{ color: 'hsl(var(--foreground))' }} />
           </button>
-          <button type="button" className={navBtn} aria-label="next" onClick={() => shift(1)}>
+          <button type="button" className={navBtnCls} aria-label="next" onClick={() => shift(1)}>
             <ChevronRight className="h-4 w-4" style={{ color: 'hsl(var(--foreground))' }} />
           </button>
           <span className="ml-1 min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: 'hsl(var(--foreground))' }}>

@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react';
+import { useContext, type ReactNode } from 'react';
 import { X, GripHorizontal } from 'lucide-react';
 import { makeDragStart, type Pos } from './clock-utils';
+import { FloatingInlineContext } from './floatingInline';
 
 interface FloatingPanelProps {
   pos: Pos;
@@ -26,6 +27,42 @@ export function FloatingPanel({
   headerRight,
   children,
 }: FloatingPanelProps) {
+  const inline = useContext(FloatingInlineContext);
+
+  // Inline (mobile): a static, full-width card stacked in the clock-tools
+  // section — no fixed positioning, no drag handle. pos/width/onMove are unused.
+  if (inline) {
+    return (
+      <div
+        className="w-full overflow-hidden rounded-xl shadow-sm"
+        style={{ border: '1px solid hsl(var(--border))' }}
+      >
+        <div
+          className="flex select-none items-center gap-1.5 px-2.5 py-1.5"
+          style={{ backgroundColor: 'hsl(var(--surface))', borderBottom: '1px solid hsl(var(--border))' }}
+        >
+          <span className="truncate text-xs font-semibold" style={{ color: 'hsl(var(--foreground))' }}>
+            {title}
+          </span>
+          <div className="ml-auto flex items-center gap-1">
+            {headerRight}
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={closeLabel}
+              className="grid h-6 w-6 place-items-center rounded transition-colors hover:bg-black/10"
+            >
+              <X className="h-3.5 w-3.5" style={{ color: 'hsl(var(--text-muted))' }} />
+            </button>
+          </div>
+        </div>
+        <div className="px-3 py-3" style={{ backgroundColor: 'hsl(var(--surface))' }}>
+          {children}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       style={{ position: 'fixed', left: pos.x, top: pos.y, width, zIndex: 25 }}

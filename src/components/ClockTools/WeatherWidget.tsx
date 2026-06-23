@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 import { Search, RefreshCw, MapPin, Loader2, X } from 'lucide-react';
 import { makeDragStart, type Pos } from './clock-utils';
 import type { WeatherState, WeatherPlace } from './useClockTools';
 import { useTranslation } from '@/hooks/usePreferences';
+import { FloatingInlineContext } from './floatingInline';
 
 interface WeatherWidgetProps {
   weather: WeatherState;
@@ -64,6 +65,9 @@ export function WeatherWidget({ weather, onChange, onMove, onClose }: WeatherWid
   const [data, setData] = useState<Current | null>(null);
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const place = weather.place;
+  // Inline (mobile clock-tools section): static, full-width card; box, controls
+  // and the city-search form always visible; dragging disabled.
+  const inline = useContext(FloatingInlineContext);
 
   const fetchForecast = useCallback(async (lat: number, lon: number) => {
     setStatus('loading');
@@ -121,18 +125,21 @@ export function WeatherWidget({ weather, onChange, onMove, onClose }: WeatherWid
   };
 
   return (
-    <div className="group" style={{ position: 'fixed', left: weather.pos.x, top: weather.pos.y, width: 204, zIndex: 25 }}>
-      {/* Box — fades in only on hover (clean reading by default). */}
+    <div
+      className={inline ? 'group relative w-full' : 'group'}
+      style={inline ? undefined : { position: 'fixed', left: weather.pos.x, top: weather.pos.y, width: 204, zIndex: 25 }}
+    >
+      {/* Box — fades in only on hover (clean reading by default); always inline. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+        className={`pointer-events-none absolute inset-0 rounded-2xl transition-opacity duration-150 ${inline ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
         style={{ backgroundColor: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))', boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}
       />
 
-      {/* Hover controls — refresh + close. */}
+      {/* Hover controls — refresh + close; always shown inline. */}
       <div
         data-no-drag
-        className="pointer-events-none absolute right-1.5 top-1.5 z-20 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100"
+        className={`absolute right-1.5 top-1.5 z-20 flex items-center gap-1 transition-opacity duration-150 ${inline ? 'opacity-100' : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100'}`}
       >
         {place ? (
           <button
@@ -156,10 +163,10 @@ export function WeatherWidget({ weather, onChange, onMove, onClose }: WeatherWid
         </button>
       </div>
 
-      {/* Reading — always visible; drag from here. */}
+      {/* Reading — always visible; drag from here (disabled inline). */}
       <div
-        onPointerDown={makeDragStart(weather.pos, onMove)}
-        className="relative z-10 cursor-grab touch-none select-none px-3 py-3 active:cursor-grabbing"
+        onPointerDown={inline ? undefined : makeDragStart(weather.pos, onMove)}
+        className={`relative z-10 px-3 py-3 ${inline ? '' : 'cursor-grab touch-none select-none active:cursor-grabbing'}`}
       >
         {place ? (
           <div className="text-center" style={{ color: 'hsl(var(--foreground))' }}>
@@ -179,9 +186,9 @@ export function WeatherWidget({ weather, onChange, onMove, onClose }: WeatherWid
           <p className="text-center text-xs" style={{ color: 'hsl(var(--text-muted))' }}>{t('clock.weatherEmpty')}</p>
         )}
 
-        {/* City search — hover-only (transparent + inert until hover). */}
+        {/* City search — hover-only on desktop; always visible inline. */}
         <form
-          className="pointer-events-none mt-2 flex items-center gap-1.5 opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100"
+          className={`mt-2 flex items-center gap-1.5 transition-opacity duration-150 ${inline ? 'opacity-100' : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100'}`}
           data-no-drag
           onSubmit={search}
         >

@@ -1,8 +1,10 @@
+import { useContext } from 'react';
 import { X } from 'lucide-react';
 import { AnalogClock } from './AnalogClock';
 import { makeDragStart, useNow, pad2, type Pos } from './clock-utils';
 import type { ClockState } from './useClockTools';
 import { useTranslation } from '@/hooks/usePreferences';
+import { FloatingInlineContext } from './floatingInline';
 
 interface ClockWidgetProps {
   clock: ClockState;
@@ -33,13 +35,19 @@ function DigitalDisplay({ now }: { now: Date }) {
 export function ClockWidget({ clock, onMove, onClose, onToggleMode }: ClockWidgetProps) {
   const { t } = useTranslation();
   const now = useNow(true);
+  // Inline (mobile clock-tools section): static, full-width card; controls and
+  // the box always visible (no hover), and dragging disabled.
+  const inline = useContext(FloatingInlineContext);
 
   return (
-    <div className="group" style={{ position: 'fixed', left: clock.pos.x, top: clock.pos.y, width: 168, zIndex: 25 }}>
-      {/* Box — fades in only on hover (clean clock by default). */}
+    <div
+      className={inline ? 'group relative w-full' : 'group'}
+      style={inline ? undefined : { position: 'fixed', left: clock.pos.x, top: clock.pos.y, width: 168, zIndex: 25 }}
+    >
+      {/* Box — fades in only on hover (clean clock by default); always shown inline. */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+        className={`pointer-events-none absolute inset-0 rounded-2xl transition-opacity duration-150 ${inline ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
         style={{
           backgroundColor: 'hsl(var(--surface))',
           border: '1px solid hsl(var(--border))',
@@ -47,10 +55,10 @@ export function ClockWidget({ clock, onMove, onClose, onToggleMode }: ClockWidge
         }}
       />
 
-      {/* Hover controls — mode switch + close, top-right. */}
+      {/* Hover controls — mode switch + close, top-right; always shown inline. */}
       <div
         data-no-drag
-        className="pointer-events-none absolute right-1.5 top-1.5 z-20 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100"
+        className={`absolute right-1.5 top-1.5 z-20 flex items-center gap-1 transition-opacity duration-150 ${inline ? 'opacity-100' : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100'}`}
       >
         <button
           type="button"
@@ -71,10 +79,10 @@ export function ClockWidget({ clock, onMove, onClose, onToggleMode }: ClockWidge
         </button>
       </div>
 
-      {/* Clock face — always visible; drag from here. */}
+      {/* Clock face — always visible; drag from here (disabled inline). */}
       <div
-        onPointerDown={makeDragStart(clock.pos, onMove)}
-        className="relative z-10 grid cursor-grab touch-none select-none place-items-center px-3 py-3 active:cursor-grabbing"
+        onPointerDown={inline ? undefined : makeDragStart(clock.pos, onMove)}
+        className={`relative z-10 grid place-items-center px-3 py-3 ${inline ? '' : 'cursor-grab touch-none select-none active:cursor-grabbing'}`}
       >
         {clock.mode === 'analog' ? <AnalogClock date={now} size={140} /> : <DigitalDisplay now={now} />}
       </div>
