@@ -37,6 +37,7 @@ import { DayBar } from '@/components/Days/DayBar';
 import { SaveIndicator } from '@/components/SaveIndicator/SaveIndicator';
 import { ChartViewToggle } from '@/components/ChartViewToggle/ChartViewToggle';
 import { AddToHomeDialog, type BeforeInstallPromptEvent } from '@/components/AddToHomeDialog/AddToHomeDialog';
+import { AboutDialog } from '@/components/About/AboutDialog';
 import { shareChartImage } from '@/lib/share';
 import { requestPersistentStorage } from '@/lib/persistent-storage';
 import { useTranslation } from '@/hooks/usePreferences';
@@ -100,6 +101,7 @@ function App() {
   const [savePresetOpen, setSavePresetOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const [homeOpen, setHomeOpen] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [editingSliceId, setEditingSliceId] = useState<string | null>(null);
@@ -194,7 +196,15 @@ function App() {
         <div className="container mx-auto grid h-14 grid-cols-[1fr_auto_1fr] items-center gap-1.5 px-3 sm:gap-2 sm:px-4">
           <div className="flex min-w-0 items-center gap-2">
             <h1 className="min-w-0 shrink truncate font-semibold text-sm sm:text-base">
-              24Houring
+              <button
+                type="button"
+                onClick={() => setAboutOpen(true)}
+                title={t('about.open')}
+                aria-label={t('about.open')}
+                className="rounded transition-opacity hover:opacity-70"
+              >
+                24Houring
+              </button>
             </h1>
             <SaveIndicator />
           </div>
@@ -403,6 +413,9 @@ function App() {
         installPrompt={installPrompt}
         onConsumePrompt={() => setInstallPrompt(null)}
       />
+
+      {/* About / manual + Circloser brand (opened from the title) */}
+      <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
 
       {/* Multi-day switcher (top thumbnails + bottom day indicator) */}
       <DayBar />

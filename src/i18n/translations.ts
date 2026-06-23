@@ -222,7 +222,8 @@ export type TKey =
   | 'memo.alignCenter'
   | 'rim.placeholder'
   | 'rim.delete'
-  | 'rim.move';
+  | 'rim.move'
+  | 'about.open';
 
 type Dict = Record<TKey, string>;
 
@@ -430,6 +431,7 @@ const ko: Dict = {
   'rim.placeholder': '메모…',
   'rim.delete': '메모 삭제',
   'rim.move': '테두리 따라 이동',
+  'about.open': '24Houring 소개 · 사용 안내',
 };
 
 const en: Dict = {
@@ -638,6 +640,7 @@ const en: Dict = {
   'rim.placeholder': 'Memo…',
   'rim.delete': 'Delete memo',
   'rim.move': 'Drag along the rim',
+  'about.open': 'About 24Houring · guide',
 };
 
 // Skeleton languages — cover the most visible chrome; everything else falls
