@@ -10,7 +10,10 @@ interface CalendarWidgetProps {
   onClose: () => void;
 }
 
-const navBtn = 'grid h-6 w-6 place-items-center rounded transition-colors hover:bg-black/10';
+// Arrows reveal on hover only; they keep their layout space so the label never
+// shifts. Inert (pointer-events-none) until the calendar is hovered.
+const navBtn =
+  'grid h-6 w-6 place-items-center rounded opacity-0 transition pointer-events-none hover:bg-black/10 group-hover:opacity-100 group-hover:pointer-events-auto';
 
 /**
  * Floating mini calendar. Like the clock, only the calendar itself shows by

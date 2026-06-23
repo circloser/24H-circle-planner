@@ -21,6 +21,7 @@ import {
   type WorldClock,
 } from '@/hooks/usePreferences';
 import { fileToBackgroundDataUrl } from '@/lib/image-bg';
+import { AdSlot } from '@/components/Ads/AdSlot';
 import { useStoreDispatch } from '@/hooks/useScheduleStore';
 import { COLOR_THEMES } from '@/data/color-themes';
 import { TIMEZONES, WORLD_LINE_COLORS } from '@/data/timezones';
@@ -28,7 +29,7 @@ import { LANGUAGES, type Lang } from '@/i18n/translations';
 import type { TKey } from '@/i18n/translations';
 
 /** Each settings category is its own focused dialog, opened from the gear menu. */
-export type SettingsSection = 'language' | 'font' | 'icons' | 'clock' | 'timeline' | 'background' | 'theme';
+export type SettingsSection = 'language' | 'font' | 'icons' | 'timeline' | 'background' | 'theme';
 
 export interface SettingsDialogProps {
   section: SettingsSection | null;
@@ -39,7 +40,6 @@ const SECTION_TITLE: Record<SettingsSection, TKey> = {
   language: 'settings.language',
   font: 'settings.font',
   icons: 'settings.icons',
-  clock: 'settings.clock',
   timeline: 'settings.timeline',
   background: 'settings.background',
   theme: 'settings.colorTheme',
@@ -193,21 +193,6 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
               >
                 {t('settings.iconsHide')}
               </button>
-            </div>
-          )}
-
-          {/* Clock: digital center clock toggle */}
-          {section === 'clock' && (
-            <div className="flex flex-col gap-2">
-              <span className="text-xs text-muted-foreground">{t('settings.clockDigital')}</span>
-              <div className="flex gap-1.5">
-                <button type="button" onClick={() => setPreference('showClock', true)} aria-pressed={prefs.showClock} className={OPT_CHIP}>
-                  {t('settings.iconsShow')}
-                </button>
-                <button type="button" onClick={() => setPreference('showClock', false)} aria-pressed={!prefs.showClock} className={OPT_CHIP}>
-                  {t('settings.iconsHide')}
-                </button>
-              </div>
             </div>
           )}
 
@@ -413,6 +398,9 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
             </div>
           )}
         </div>
+
+        {/* Reserved ad space for this dialog. */}
+        <AdSlot slot="settings" className="mt-1" />
       </DialogContent>
     </Dialog>
   );

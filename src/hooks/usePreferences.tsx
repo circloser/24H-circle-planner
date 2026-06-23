@@ -49,7 +49,6 @@ export interface Preferences {
   bgColor: string; // hex, used when bgType === 'color'
   bgImage: string | null; // data URL, used when bgType === 'image'
   showIcons: boolean; // global toggle for slice icons in the chart
-  showClock: boolean; // center digital clock overlay
   showNowLine: boolean; // current-time indicator line
   nowLineColor: string; // colour of the current-time line
   nowLineWidth: number; // stroke width of the current-time line
@@ -63,7 +62,6 @@ const DEFAULT_PREFS: Preferences = {
   fontScale: 1,
   background: 'none',
   showIcons: true,
-  showClock: true,
   showNowLine: true,
   nowLineColor: NOW_LINE_DEFAULT_COLOR,
   nowLineWidth: NOW_LINE_DEFAULT_WIDTH,
@@ -192,12 +190,6 @@ export function usePreferences(): PreferencesContextValue {
 export function useShowIcons(): boolean {
   const ctx = useContext(PreferencesContext);
   return ctx?.prefs.showIcons ?? true;
-}
-
-/** Null-safe read of the center digital-clock toggle (default true). */
-export function useShowClock(): boolean {
-  const ctx = useContext(PreferencesContext);
-  return ctx?.prefs.showClock ?? true;
 }
 
 /** Null-safe read of the red current-time line toggle (default true). */

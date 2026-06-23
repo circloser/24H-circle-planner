@@ -12,7 +12,7 @@ import {
   type ViewSpec,
 } from '@/lib/chart-view';
 import { useSliceSelector, useStoreSelector } from '@/hooks/useScheduleStore';
-import { useTranslation, useShowClock, useShowNowLine, useChartView, useNowLineStyle, useWorldClocks } from '@/hooks/usePreferences';
+import { useTranslation, useShowNowLine, useChartView, useNowLineStyle, useWorldClocks } from '@/hooks/usePreferences';
 import { useCoarsePointer } from '@/hooks/useCoarsePointer';
 import { translatePresetName } from '@/i18n/content';
 import { SliceLabel } from './SliceLabel';
@@ -472,7 +472,6 @@ export function CircleTimeline({
 }: CircleTimelineProps) {
   const { cx, cy, innerR, outerR } = RING;
   const { t, lang } = useTranslation();
-  const showClock = useShowClock();
   const showNowLine = useShowNowLine();
   const nowLineStyle = useNowLineStyle();
   const worldClocks = useWorldClocks();
@@ -587,10 +586,6 @@ export function CircleTimeline({
   // (cx=cy=500); the padded box just adds breathing room.
   const VB_MARGIN = 36;
   const VB_SIZE = 1000 + VB_MARGIN * 2; // 1072
-
-  // Hub HTML-overlay sizing: (500,500) still maps to 50%/50% of the padded box.
-  // Hub radius as a fraction of the rendered width = innerR / VB_SIZE.
-  const hubPct = (innerR / VB_SIZE) * 100;
 
   const svgElement = (
     <svg
@@ -822,43 +817,6 @@ export function CircleTimeline({
   return (
     <div style={wrapperStyle}>
       {svgElement}
-
-      {/* Center hub live current time — HTML overlay (excluded from export).
-          Sits below the SVG title so exports show the title, not a stale clock.
-          Toggleable via the clock setting. */}
-      {showClock && (
-      <div
-        aria-hidden="true"
-        data-clock="true"
-        style={{
-          position: 'absolute',
-          left: `${50 - hubPct}%`,
-          top: `${50 - hubPct}%`,
-          width: `${hubPct * 2}%`,
-          height: `${hubPct * 2}%`,
-          display: 'flex',
-          alignItems: 'flex-end',
-          justifyContent: 'center',
-          paddingBottom: '16%',
-          pointerEvents: 'none',
-          userSelect: 'none',
-        }}
-      >
-        <span
-          style={{
-            fontSize: 'clamp(0.4rem, 1vw, 0.62rem)',
-            fontWeight: 500,
-            letterSpacing: '0.01em',
-            lineHeight: 1,
-            color: 'hsl(var(--text-muted) / 0.8)',
-            fontFamily: 'Pretendard, system-ui, sans-serif',
-            fontVariantNumeric: 'tabular-nums',
-          }}
-        >
-          {clock.displayTime}
-        </span>
-      </div>
-      )}
 
       {/* Empty state hint — only when requested.
           Positioned in the lower wedge band (below the center hub clock at 40–60%)

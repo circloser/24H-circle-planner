@@ -48,13 +48,13 @@ const monthNow = await page.evaluate(() => {
   const el = [...document.querySelectorAll('span')].find((s) => /\b20\d\d\b/.test(s.textContent || '') && s.className.includes('truncate'));
   return el ? el.textContent.trim() : '';
 });
-// Navigate two months forward.
+// Hover the (always-on) month label so the hover-only arrows become interactive,
+// then navigate; the mouse stays inside the calendar so the arrows remain active.
+await page.getByText('June', { exact: false }).first().hover();
+await page.waitForTimeout(120);
 await page.getByRole('button', { name: 'next' }).first().click();
 await page.getByRole('button', { name: 'next' }).first().click();
 await page.waitForTimeout(150);
-// Hover then click Today (the failing scenario was losing hover before the click).
-await page.getByRole('button', { name: 'next' }).first().hover();
-await page.waitForTimeout(120);
 await page.getByRole('button', { name: 'Today' }).first().click();
 await page.waitForTimeout(150);
 const monthAfter = await page.evaluate(() => {
