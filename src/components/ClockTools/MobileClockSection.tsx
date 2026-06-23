@@ -1,11 +1,7 @@
-import { Clock, Timer, AlarmClock, Calendar, CloudSun, Check } from 'lucide-react';
-import { toast } from 'sonner';
+import { Clock, Calendar, CloudSun, Check } from 'lucide-react';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useClockTools, type ToolKind } from './useClockTools';
-import { playBeep } from './clock-utils';
 import { ClockWidget } from './ClockWidget';
-import { TimerWidget } from './TimerWidget';
-import { AlarmWidget } from './AlarmWidget';
 import { CalendarWidget } from './CalendarWidget';
 import { WeatherWidget } from './WeatherWidget';
 import { FloatingInlineContext } from './floatingInline';
@@ -15,28 +11,18 @@ const noMove = () => {};
 /**
  * Mobile clock tools — a FIXED section (below the memos) instead of the desktop
  * floating widgets. A row of toggle chips turns each tool on/off; active tools
- * render INLINE, stacked, via FloatingInlineContext (so the widget code is
- * reused unchanged).
+ * render INLINE, stacked, via FloatingInlineContext (the widget code is reused
+ * unchanged). Timer + alarm are intentionally omitted on mobile — the phone's
+ * own clock app already covers those.
  */
 export function MobileClockSection() {
-  const { state, toggle, setClock, setTimer, setAlarm, setWeather } = useClockTools();
+  const { state, toggle, setClock, setWeather } = useClockTools();
   const { t } = useTranslation();
-
-  const ringTimer = () => {
-    playBeep(5);
-    toast.success(t('clock.timerDone'));
-  };
-  const ringAlarm = () => {
-    playBeep(6);
-    toast(t('clock.alarmRing'));
-  };
 
   const chips: Array<[ToolKind, React.ReactNode, string]> = [
     ['clock', <Clock className="h-4 w-4" />, t('clock.clock')],
     ['calendar', <Calendar className="h-4 w-4" />, t('clock.calendar')],
     ['weather', <CloudSun className="h-4 w-4" />, t('clock.weather')],
-    ['timer', <Timer className="h-4 w-4" />, t('clock.timer')],
-    ['alarm', <AlarmClock className="h-4 w-4" />, t('clock.alarm')],
   ];
 
   return (
@@ -84,12 +70,6 @@ export function MobileClockSection() {
           )}
           {state.weather.on && (
             <WeatherWidget weather={state.weather} onChange={setWeather} onMove={noMove} onClose={() => toggle('weather')} />
-          )}
-          {state.timer.on && (
-            <TimerWidget timer={state.timer} onChange={setTimer} onMove={noMove} onClose={() => toggle('timer')} onRing={ringTimer} />
-          )}
-          {state.alarm.on && (
-            <AlarmWidget alarm={state.alarm} onChange={setAlarm} onMove={noMove} onClose={() => toggle('alarm')} onRing={ringAlarm} />
           )}
         </div>
       </FloatingInlineContext.Provider>

@@ -11,11 +11,13 @@ import type { DragRef } from '@/types/drag';
 import { HISTORY_DEPTH } from '@/types/history';
 import {
   splitSliceAt,
+  setBlock,
   mergeSlices,
   resizeBoundary,
   replaceSlice,
   applyPalette,
   ContiguityError,
+  type BlockContent,
 } from '@/lib/schedule';
 import { loadSchedule, saveScheduleDebounced, STORAGE_KEY_DAYS } from '@/lib/storage';
 import { createInitialSchedule } from '@/lib/initial-schedule';
@@ -33,6 +35,7 @@ export interface StoreState {
 export type StoreAction =
   | { type: 'LOAD_SCHEDULE'; schedule: Schedule }
   | { type: 'SPLIT'; hhmm: string; newSlotSide?: 'before' | 'after' | 'smaller' }
+  | { type: 'SET_BLOCK'; start: string; end: string; newId: string; content?: BlockContent }
   | { type: 'MERGE'; idCw: string; idCcw: string }
   | { type: 'APPLY_PALETTE'; colors: string[] }
   | {
@@ -139,6 +142,11 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
     case 'SPLIT':
       return applyMutation(state, (present) =>
         splitSliceAt(present, action.hhmm, action.newSlotSide),
+      );
+
+    case 'SET_BLOCK':
+      return applyMutation(state, (present) =>
+        setBlock(present, action.start, action.end, action.newId, action.content),
       );
 
     case 'APPLY_PALETTE':

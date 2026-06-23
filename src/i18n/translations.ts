@@ -168,6 +168,14 @@ export type TKey =
   | 'memo.add'
   | 'memo.title'
   | 'mobile.editHint'
+  | 'block.add'
+  | 'block.addTitle'
+  | 'block.name'
+  | 'block.namePlaceholder'
+  | 'block.start'
+  | 'block.end'
+  | 'block.color'
+  | 'block.invalid'
   | 'memo.delete'
   | 'memo.placeholder'
   | 'memo.show'
@@ -377,7 +385,15 @@ const ko: Dict = {
   'app.loaded': '{name}을(를) 불러왔습니다',
   'memo.add': '메모 추가',
   'memo.title': '메모',
-  'mobile.editHint': '항목을 탭하면 편집 · 경계를 길게 눌러 드래그',
+  'mobile.editHint': '항목을 탭하면 편집 · 아래 + 버튼으로 시간 추가',
+  'block.add': '일정 추가',
+  'block.addTitle': '일정 추가',
+  'block.name': '이름',
+  'block.namePlaceholder': '예: 오전 업무',
+  'block.start': '시작 시간',
+  'block.end': '끝 시간',
+  'block.color': '색상',
+  'block.invalid': '시작과 끝 시간을 다르게 입력하세요.',
   'memo.delete': '메모 삭제',
   'memo.placeholder': '메모를 입력하세요',
   'memo.show': '메모 보이기',
@@ -588,7 +604,15 @@ const en: Dict = {
   'app.loaded': '{name} loaded',
   'memo.add': 'Add memo',
   'memo.title': 'Memos',
-  'mobile.editHint': 'Tap an item to edit · long-press a boundary to drag',
+  'mobile.editHint': 'Tap an item to edit · use the + button below to add a time block',
+  'block.add': 'Add item',
+  'block.addTitle': 'Add item',
+  'block.name': 'Name',
+  'block.namePlaceholder': 'e.g. Morning work',
+  'block.start': 'Start time',
+  'block.end': 'End time',
+  'block.color': 'Color',
+  'block.invalid': 'Start and end times must differ.',
   'memo.delete': 'Delete memo',
   'memo.placeholder': 'Type a memo…',
   'memo.show': 'Show memos',

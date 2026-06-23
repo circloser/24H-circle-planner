@@ -71,6 +71,9 @@ interface CircleTimelineProps {
   title?: string;
   /** Called when the center hub is clicked (interactive mode) — opens the title editor. */
   onHubClick?: () => void;
+  /** Mobile: hide the boundary drag handles (editing happens via the + time-block
+   *  form instead of finger-dragging). Tap-to-edit and the view toggle stay. */
+  mobileNoChartDrag?: boolean;
 }
 
 // ─── Center hub live clock (HTML overlay, excluded from SVG export) ──────────
@@ -469,6 +472,7 @@ export function CircleTimeline({
   selectedSliceId,
   title,
   onHubClick,
+  mobileNoChartDrag = false,
 }: CircleTimelineProps) {
   const { cx, cy, innerR, outerR } = RING;
   const { t, lang } = useTranslation();
@@ -731,7 +735,7 @@ export function CircleTimeline({
       {/* Boundary handles ON TOP of labels — so hover +/− buttons aren't hidden
           behind slice icons. Interactive mode only. In 12h, out-of-window
           boundaries are hidden by BoundaryHandles itself. */}
-      {isInteractive && slices.length > 1 && onPointerDownHandle ? (
+      {isInteractive && slices.length > 1 && onPointerDownHandle && !mobileNoChartDrag ? (
         <BoundaryHandles slices={slices} spec={spec} onPointerDownHandle={onPointerDownHandle} />
       ) : null}
 

@@ -307,6 +307,90 @@ export function splitSliceAt(
   return out;
 }
 
+/** Content applied to the block created by setBlock. */
+export interface BlockContent {
+  label?: string;
+  icon?: string;
+  color?: string;
+  textColor?: string;
+  bold?: boolean;
+  italic?: boolean;
+  textPosition?: 'inside' | 'outside';
+}
+
+/**
+ * Carve [start, end) on the 24h ring into a single slice with `newId` + `content`,
+ * keeping the rest of the ring contiguous (the surrounding slices are trimmed /
+ * absorbed and re-issued with fresh ids). Wrap-around (end < start, crossing
+ * midnight) is supported. This is the form-driven "add a time block" primitive
+ * used on mobile instead of dragging — type a start and end, get a wedge.
+ *
+ * Times snap to the 10-minute grid. Throws if the block would be <10 min.
+ */
+export function setBlock(
+  schedule: Schedule,
+  startHhmm: string,
+  endHhmm: string,
+  newId: string,
+  content: BlockContent = {},
+): Schedule {
+  const action = 'setBlock';
+  const s = snapMinutes(hhmmToMinutes(startHhmm)) % 1440;
+  const e = snapMinutes(hhmmToMinutes(endHhmm)) % 1440;
+  const blockW = (e - s + 1440) % 1440;
+  if (blockW < 10) throw new ContiguityError(action, `block must be ≥10 min (got ${blockW})`);
+
+  // Original coverage sampler: which slice covers minute t (mod 1440).
+  const ranges = schedule.slices.map((sl) => ({
+    sl,
+    st: hhmmToMinutes(sl.startTime) % 1440,
+    w: sliceWidthMinutes(sl),
+  }));
+  const coverAt = (t: number) => {
+    const tt = ((t % 1440) + 1440) % 1440;
+    for (const r of ranges) {
+      if (((tt - r.st + 1440) % 1440) < r.w) return r;
+    }
+    return ranges[0]; // contiguous ring → unreachable
+  };
+
+  const hhmm = (m: number) => minutesToHhmm(((m % 1440) + 1440) % 1440);
+
+  // The new block.
+  const block: TimeSlice = {
+    id: newId,
+    label: content.label ?? '',
+    icon: content.icon ?? '',
+    color: content.color ?? SPLIT_PALETTE[0],
+    textPosition: content.textPosition ?? 'inside',
+    startTime: hhmm(s),
+    endTime: hhmm(e),
+    ...(content.textColor ? { textColor: content.textColor } : {}),
+    ...(content.bold ? { bold: true } : {}),
+    ...(content.italic ? { italic: true } : {}),
+  };
+
+  // Rebuild the remaining arc [e → s] from the original coverage, trimmed.
+  const segments: TimeSlice[] = [block];
+  const remW = 1440 - blockW;
+  let cursor = e;
+  let covered = 0;
+  let guard = 0;
+  while (covered < remW && guard++ < 1000) {
+    const r = coverAt(cursor);
+    const rel = (cursor - r.st + 1440) % 1440;
+    const take = Math.min(r.w - rel, remW - covered); // r.w - rel > 0 always
+    const segEnd = (cursor + take) % 1440;
+    segments.push({ ...r.sl, id: uuid(), startTime: hhmm(cursor), endTime: hhmm(segEnd) });
+    cursor = segEnd;
+    covered += take;
+  }
+
+  const out: Schedule = { ...schedule, slices: segments, updatedAt: now() };
+  if (!isContiguous24h(out.slices)) throw new ContiguityError(action, 'isContiguous24h failed');
+  return out;
+}
+
 /**
  * Merge two adjacent slices into one.
  * `idCw` is the clockwise (later) slice; `idCcw` is the counter-clockwise (earlier) slice.

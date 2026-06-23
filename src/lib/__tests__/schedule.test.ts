@@ -7,6 +7,7 @@ import {
   applyPalette,
   pickSimilarColor,
   pickSimilarColorBetween,
+  setBlock,
   ContiguityError,
 } from '../schedule';
 import { isContiguous24h, sliceWidthMinutes } from '../time-utils';
@@ -479,5 +480,71 @@ describe('midnight-wrap slice width in context', () => {
     const s2 = makeSlice('23:50', '00:10');
     expect(isContiguous24h([s1, s2])).toBe(true);
     expect(sliceWidthMinutes(s1) + sliceWidthMinutes(s2)).toBe(1440);
+  });
+});
+
+// ─── setBlock (form-driven time block) ────────────────────────────────────────
+
+function totalWidth(s: Schedule): number {
+  return s.slices.reduce((sum, sl) => sum + sliceWidthMinutes(sl), 0);
+}
+function find(s: Schedule, start: string, end: string): TimeSlice | undefined {
+  return s.slices.find((sl) => sl.startTime === start && sl.endTime === end);
+}
+
+describe('setBlock', () => {
+  function blankDay(): Schedule {
+    return makeSchedule([makeSlice('00:00', '24:00', { label: '' })]);
+  }
+
+  it('carves a block out of a blank day, staying contiguous', () => {
+    const out = setBlock(blankDay(), '09:00', '12:00', 'new-1', { label: '오전', color: '#93c5fd' });
+    expect(isContiguous24h(out.slices)).toBe(true);
+    expect(totalWidth(out)).toBe(1440);
+    const block = out.slices.find((sl) => sl.id === 'new-1');
+    expect(block).toBeDefined();
+    expect(block!.startTime).toBe('09:00');
+    expect(block!.endTime).toBe('12:00');
+    expect(block!.label).toBe('오전');
+    expect(block!.color).toBe('#93c5fd');
+  });
+
+  it('leaves the carved-from activity on BOTH sides when carving its middle', () => {
+    const sched = makeSchedule([
+      makeSlice('00:00', '09:00', { label: 'sleep', color: '#d1d5db' }),
+      makeSlice('09:00', '18:00', { label: 'work', color: '#fca5a5' }),
+      makeSlice('18:00', '24:00', { label: 'evening', color: '#6ee7b7' }),
+    ]);
+    const out = setBlock(sched, '12:00', '13:00', 'lunch-1', { label: 'lunch' });
+    expect(isContiguous24h(out.slices)).toBe(true);
+    expect(totalWidth(out)).toBe(1440);
+    // The lunch block exists with both work halves flanking it.
+    expect(out.slices.find((s) => s.id === 'lunch-1')?.label).toBe('lunch');
+    const workBefore = find(out, '09:00', '12:00');
+    const workAfter = find(out, '13:00', '18:00');
+    expect(workBefore?.label).toBe('work');
+    expect(workAfter?.label).toBe('work');
+    expect(workBefore!.id).not.toBe(workAfter!.id); // distinct slices, same content
+  });
+
+  it('supports a wrap-around (cross-midnight) block', () => {
+    const out = setBlock(blankDay(), '23:00', '07:00', 'sleep-1', { label: '수면' });
+    expect(isContiguous24h(out.slices)).toBe(true);
+    expect(totalWidth(out)).toBe(1440);
+    const block = out.slices.find((s) => s.id === 'sleep-1')!;
+    expect(block.startTime).toBe('23:00');
+    expect(block.endTime).toBe('07:00');
+    expect(sliceWidthMinutes(block)).toBe(480); // 8h across midnight
+  });
+
+  it('snaps times to the 10-min grid', () => {
+    const out = setBlock(blankDay(), '09:03', '12:07', 'snap-1', {});
+    const block = out.slices.find((s) => s.id === 'snap-1')!;
+    expect(block.startTime).toBe('09:00');
+    expect(block.endTime).toBe('12:10');
+  });
+
+  it('throws for a <10-min (or zero-width) block', () => {
+    expect(() => setBlock(blankDay(), '09:00', '09:00', 'z', {})).toThrow(ContiguityError);
   });
 });

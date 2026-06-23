@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import './index.css';
-import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,7 @@ import { MemoLayer } from '@/components/Memo/MemoLayer';
 import { MobileMemoSection } from '@/components/Memo/MobileMemoSection';
 import { ClockToolsLayer } from '@/components/ClockTools/ClockToolsLayer';
 import { MobileClockSection } from '@/components/ClockTools/MobileClockSection';
+import { TimeBlockDialog } from '@/components/TimeBlock/TimeBlockDialog';
 import { RimMemoLayer } from '@/components/RimMemo/RimMemoLayer';
 import { DayBar } from '@/components/Days/DayBar';
 import { SaveIndicator } from '@/components/SaveIndicator/SaveIndicator';
@@ -105,6 +106,7 @@ function App() {
   const [exportOpen, setExportOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [homeOpen, setHomeOpen] = useState(false);
+  const [timeBlockOpen, setTimeBlockOpen] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [editingSliceId, setEditingSliceId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -338,6 +340,7 @@ function App() {
             selectedSliceId={editingSliceId}
             title={present.name}
             onHubClick={() => setEditingTitle(true)}
+            mobileNoChartDrag={isMobile}
           />
           {/* Rim annotation memos (hover near the edge → leader line + note). */}
           <RimMemoLayer />
@@ -347,9 +350,19 @@ function App() {
             + long-press); only the desktop floating overlays are replaced. */}
         {isMobile && (
           <>
-            <p className="-mt-2 text-center text-xs" style={{ color: 'hsl(var(--text-muted) / 0.85)' }}>
-              {t('mobile.editHint')}
-            </p>
+            <div className="-mt-2 flex flex-col items-center gap-1.5">
+              <Button
+                onClick={() => setTimeBlockOpen(true)}
+                className="gap-1.5"
+                style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+              >
+                <Plus className="h-4 w-4" />
+                {t('block.add')}
+              </Button>
+              <p className="text-center text-xs" style={{ color: 'hsl(var(--text-muted) / 0.85)' }}>
+                {t('mobile.editHint')}
+              </p>
+            </div>
             <MobileMemoSection />
             <MobileClockSection />
           </>
@@ -449,6 +462,9 @@ function App() {
 
       {/* About / manual + Circloser brand (opened from the title) */}
       <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />
+
+      {/* Mobile: add a time block by typing start/end (instead of finger-dragging). */}
+      <TimeBlockDialog open={timeBlockOpen} onOpenChange={setTimeBlockOpen} />
 
       {/* Multi-day switcher (top thumbnails + bottom day indicator) */}
       <DayBar />
