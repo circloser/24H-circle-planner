@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { X } from 'lucide-react';
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
+import { X, Move } from 'lucide-react';
 import { useRimMemos, type RimMemo } from './useRimMemos';
 import { useChartView, useTranslation } from '@/hooks/usePreferences';
 import { viewSpec, angleForMin, minForAngle, isInWindow } from '@/lib/chart-view';
@@ -41,12 +41,14 @@ function RimMemoBox({
   autoFocus,
   onChange,
   onDelete,
+  onStartDrag,
 }: {
   memo: RimMemo;
   angleDeg: number;
   autoFocus: boolean;
   onChange: (text: string) => void;
   onDelete: () => void;
+  onStartDrag: (e: ReactPointerEvent<HTMLElement>) => void;
 }) {
   const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
@@ -77,20 +79,30 @@ function RimMemoBox({
 
   return (
     <div className="group pointer-events-auto" style={style}>
-      {/* Hover-only delete. */}
-      <button
-        type="button"
-        onClick={onDelete}
-        aria-label={t('rim.delete')}
-        className="absolute -top-2 z-10 grid h-5 w-5 place-items-center rounded-full opacity-0 shadow transition-opacity group-hover:opacity-100"
-        style={{
-          [right ? 'left' : 'right']: -8,
-          backgroundColor: 'hsl(var(--surface))',
-          border: '1px solid hsl(var(--border))',
-        } as CSSProperties}
+      {/* Hover-only controls — drag along the rim + delete. */}
+      <div
+        className="absolute -top-2.5 z-10 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+        style={{ [right ? 'left' : 'right']: -8 } as CSSProperties}
       >
-        <X className="h-3 w-3" style={{ color: 'hsl(var(--text-muted))' }} />
-      </button>
+        <button
+          type="button"
+          onPointerDown={onStartDrag}
+          aria-label={t('rim.move')}
+          className="grid h-5 w-5 cursor-grab place-items-center rounded-full shadow active:cursor-grabbing"
+          style={{ backgroundColor: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))', touchAction: 'none' }}
+        >
+          <Move className="h-3 w-3" style={{ color: 'hsl(var(--text-muted))' }} />
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          aria-label={t('rim.delete')}
+          className="grid h-5 w-5 place-items-center rounded-full shadow"
+          style={{ backgroundColor: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))' }}
+        >
+          <X className="h-3 w-3" style={{ color: 'hsl(var(--text-muted))' }} />
+        </button>
+      </div>
 
       <div
         ref={ref}
@@ -132,7 +144,7 @@ function RimMemoBox({
  * hover-capture ring sits OUTSIDE the slices so it never blocks slice editing.
  */
 export function RimMemoLayer() {
-  const { memos, add, update, remove } = useRimMemos();
+  const { memos, add, update, setMinute, remove } = useRimMemos();
   const spec = viewSpec(useChartView());
   const svgRef = useRef<SVGSVGElement>(null);
   const [hoverAngle, setHoverAngle] = useState<number | null>(null);
@@ -151,6 +163,26 @@ export function RimMemoLayer() {
     pt.y = clientY;
     const p = pt.matrixTransform(ctm.inverse());
     return (Math.atan2(p.y - CY, p.x - CX) * 180) / Math.PI;
+  };
+
+  // Drag a memo around the rim: the pointer angle → minute, so the note (and its
+  // leader) glide along the edge naturally.
+  const startDrag = (id: string, e: ReactPointerEvent<HTMLElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const el = e.currentTarget;
+    el.setPointerCapture(e.pointerId);
+    const move = (ev: PointerEvent) => {
+      const a = toAngle(ev.clientX, ev.clientY);
+      if (a !== null) setMinute(id, minForAngle(a, spec));
+    };
+    const up = () => {
+      el.releasePointerCapture(e.pointerId);
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', up);
+    };
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up);
   };
 
   const band = annulusPath(BAND_OUTER, OUTER_R);
@@ -220,6 +252,7 @@ export function RimMemoLayer() {
           autoFocus={editingId === m.id}
           onChange={(text) => update(m.id, text)}
           onDelete={() => remove(m.id)}
+          onStartDrag={(e) => startDrag(m.id, e)}
         />
       ))}
     </div>

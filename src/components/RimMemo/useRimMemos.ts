@@ -68,9 +68,13 @@ export function useRimMemos() {
     setMemos((m) => m.map((x) => (x.id === id ? { ...x, text } : x)));
   }, []);
 
+  const setMinute = useCallback((id: string, minute: number) => {
+    setMemos((m) => m.map((x) => (x.id === id ? { ...x, minute } : x)));
+  }, []);
+
   const remove = useCallback((id: string) => {
     setMemos((m) => m.filter((x) => x.id !== id));
   }, []);
 
-  return { memos, add, update, remove };
+  return { memos, add, update, setMinute, remove };
 }

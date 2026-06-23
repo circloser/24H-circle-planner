@@ -218,8 +218,11 @@ export type TKey =
   | 'memo.restore'
   | 'memo.hideFromScreen'
   | 'memo.deleteForever'
+  | 'memo.alignLeft'
+  | 'memo.alignCenter'
   | 'rim.placeholder'
-  | 'rim.delete';
+  | 'rim.delete'
+  | 'rim.move';
 
 type Dict = Record<TKey, string>;
 
@@ -422,8 +425,11 @@ const ko: Dict = {
   'memo.restore': '화면에 표시',
   'memo.hideFromScreen': '화면에서 숨김',
   'memo.deleteForever': '완전 삭제',
+  'memo.alignLeft': '왼쪽 정렬',
+  'memo.alignCenter': '가운데 정렬',
   'rim.placeholder': '메모…',
   'rim.delete': '메모 삭제',
+  'rim.move': '테두리 따라 이동',
 };
 
 const en: Dict = {
@@ -627,8 +633,11 @@ const en: Dict = {
   'memo.restore': 'Show on screen',
   'memo.hideFromScreen': 'Hide from screen',
   'memo.deleteForever': 'Delete forever',
+  'memo.alignLeft': 'Align left',
+  'memo.alignCenter': 'Align center',
   'rim.placeholder': 'Memo…',
   'rim.delete': 'Delete memo',
+  'rim.move': 'Drag along the rim',
 };
 
 // Skeleton languages — cover the most visible chrome; everything else falls

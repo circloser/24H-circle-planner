@@ -50,10 +50,11 @@ export function CalendarWidget({ calendar, onMove, onClose }: CalendarWidgetProp
         style={{ backgroundColor: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))', boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}
       />
 
-      {/* Hover controls — Today + close, top-right. */}
+      {/* Hover controls — Today + close, floated ABOVE the calendar so they never
+          overlap the month-navigation arrows. */}
       <div
         data-no-drag
-        className="pointer-events-none absolute right-1.5 top-1.5 z-20 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100"
+        className="pointer-events-none absolute -top-8 right-0 z-20 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100"
       >
         <button
           type="button"

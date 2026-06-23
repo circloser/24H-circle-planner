@@ -113,7 +113,7 @@ export function ClockToolsLayer() {
         aria-expanded={menuOpen}
         title={t('clock.tools')}
         className="fixed bottom-5 left-5 z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105"
-        style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+        style={{ backgroundColor: 'hsl(var(--border))', color: 'hsl(var(--text-muted))', border: '1px solid hsl(var(--text-muted) / 0.25)' }}
       >
         <Clock className="h-5 w-5" />
       </button>

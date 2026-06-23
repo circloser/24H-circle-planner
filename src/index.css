@@ -295,7 +295,7 @@ svg text {
   text-align: center;
   padding: 22px 14px 20px;
   outline: none;
-  overflow: auto;
+  overflow: hidden;
   font: inherit;
   font-size: 14px;
   line-height: 1.4;

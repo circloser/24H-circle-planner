@@ -13,6 +13,7 @@ export interface Memo {
   y: number;
   color: string; // post-it background
   fontFamily: string; // css family value
+  align: 'left' | 'center'; // text alignment
   createdAt: number; // epoch ms — drives newest-first ordering in the list
   onScreen: boolean; // shown on the canvas; archived (false) memos stay in the list
 }
@@ -44,6 +45,7 @@ function loadState(): MemoState {
         // as creation order; default to shown on screen).
         const memos = (parsed.memos as Array<Partial<Memo> & Memo>).map((m, i) => ({
           ...m,
+          align: m.align === 'left' ? 'left' : 'center',
           createdAt: typeof m.createdAt === 'number' ? m.createdAt : i,
           onScreen: m.onScreen !== false,
         }));
@@ -133,6 +135,7 @@ export function MemoProvider({ children }: { children: React.ReactNode }) {
       y,
       color: DEFAULT_COLOR,
       fontFamily: 'Pretendard',
+      align: 'center',
       createdAt: Date.now(),
       onScreen: true,
     };
