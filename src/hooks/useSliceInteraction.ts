@@ -1,9 +1,9 @@
 import { useRef, useCallback, useEffect } from 'react';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
-import { hhmmToAngle, sliceWidthMinutes, snapMinutes, minutesToHhmm } from '@/lib/time-utils';
-import { slicePath, RING, polarToCartesian, labelAnchorInside } from '@/lib/svg-geometry';
+import { sliceWidthMinutes, snapMinutes, minutesToHhmm, hhmmToMinutes } from '@/lib/time-utils';
+import { slicePath, RING, polarToCartesian, labelAnchorInside, labelRadialOffset } from '@/lib/svg-geometry';
 import { useChartView } from '@/hooks/usePreferences';
-import { viewSpec, minForAngle, type ViewSpec } from '@/lib/chart-view';
+import { viewSpec, minForAngle, angleForMin, FULL_SPEC, type ViewSpec } from '@/lib/chart-view';
 import type { TimeSlice } from '@/types/time-slice';
 import type { Schedule } from '@/types/schedule';
 import type { DragRef } from '@/types/drag';
@@ -93,10 +93,12 @@ function moveBoundaryHandleImperative(
   svg: SVGSVGElement,
   boundaryIndex: number,
   hhmm: string,
+  spec: ViewSpec,
 ): void {
   const { innerR, outerR, cx, cy } = RING;
   const midR = (innerR + outerR) / 2;
-  const angleDeg = hhmmToAngle(hhmm);
+  // View-aware angle so the handle + pill track the cursor in the 12h views too.
+  const angleDeg = angleForMin(hhmmToMinutes(hhmm), spec);
   const { x, y } = polarToCartesian(cx, cy, midR, angleDeg);
 
   const handleGroup = svg.querySelector<SVGGElement>(`[data-boundary-index="${boundaryIndex}"]`);
@@ -134,11 +136,11 @@ function moveBoundaryHandleImperative(
  * 'inside-narrow' icon-only labels via x/y; 'outside' labels are left alone.
  * Queried from the svg root so it resolves to null gracefully under test mocks.
  */
-function moveSliceLabelImperative(svg: SVGSVGElement, slice: TimeSlice): void {
+function moveSliceLabelImperative(svg: SVGSVGElement, slice: TimeSlice, radialOffset = 0): void {
   if (sliceWidthMinutes(slice) <= 0) return;
   const el = svg.querySelector<SVGGraphicsElement>(`[data-label-id="${slice.id}"]`);
   if (!el) return;
-  const { x, y } = labelAnchorInside(slice);
+  const { x, y } = labelAnchorInside(slice, RING, FULL_SPEC, radialOffset);
   const kind = el.getAttribute('data-label-kind');
   if (kind === 'inside') {
     el.setAttribute('transform', `translate(${x} ${y})`);
@@ -228,11 +230,12 @@ export function useSliceInteraction(opts: {
           const cwSlice =
             dragRef.snapshot.slices[(dragRef.boundaryIndex + 1) % dragRef.snapshot.slices.length];
           const originalHhmm = ccwSlice.endTime === '24:00' ? '00:00' : ccwSlice.endTime;
-          moveBoundaryHandleImperative(svgEl, dragRef.boundaryIndex, originalHhmm);
+          moveBoundaryHandleImperative(svgEl, dragRef.boundaryIndex, originalHhmm, specRef.current);
           // Cancel leaves `present` unchanged, so React won't re-render the
           // labels — restore the two we moved back to their snapshot anchors.
-          moveSliceLabelImperative(svgEl, ccwSlice);
-          moveSliceLabelImperative(svgEl, cwSlice);
+          const cancelLen = dragRef.snapshot.slices.length;
+          moveSliceLabelImperative(svgEl, ccwSlice, labelRadialOffset(ccwSlice, dragRef.boundaryIndex));
+          moveSliceLabelImperative(svgEl, cwSlice, labelRadialOffset(cwSlice, (dragRef.boundaryIndex + 1) % cancelLen));
         }
       }
       dispatch({ type: 'SET_DRAG_REF', value: null });
@@ -308,9 +311,16 @@ export function useSliceInteraction(opts: {
       if (hhmm === scratch.lastHHmm) return;
       scratch.lastHHmm = hhmm;
 
-      // 12h views render clipped slices, which the imperative path preview can't
-      // track — skip the live preview there and just commit on release.
-      if (specRef.current.view !== 'full') return;
+      const sp = specRef.current;
+      const svgEl = svgRef.current;
+
+      // The boundary handle (dot) + time pill follow the cursor in EVERY view
+      // (view-aware angle), so the division reads correctly while dragging in 12h.
+      if (svgEl) moveBoundaryHandleImperative(svgEl, dragRef.boundaryIndex, hhmm, sp);
+
+      // The clipped slice-path + label preview only works in the full 24h view;
+      // in the 12h views the resize just commits on release.
+      if (sp.view !== 'full') return;
 
       const { ccwD, cwD } = recomputeAdjacentPaths(
         dragRef.snapshot.slices,
@@ -328,21 +338,14 @@ export function useSliceInteraction(opts: {
       g.querySelector<SVGPathElement>(`[data-slice-id="${ccwSlice.id}"]`)?.setAttribute('d', ccwD);
       g.querySelector<SVGPathElement>(`[data-slice-id="${cwSlice.id}"]`)?.setAttribute('d', cwD);
 
-      // Issue T13 / Issue 2: also move the boundary handle circle imperatively
-      // so it tracks the cursor live (no React re-render during drag).
-      const svgEl = svgRef.current;
+      // Re-anchor the two adjacent slice labels so they track their wedge centroid
+      // live, mirroring the path update above (full view only).
       if (svgEl) {
-        moveBoundaryHandleImperative(svgEl, dragRef.boundaryIndex, hhmm);
-
-        // Re-anchor the two adjacent slice labels so they track their wedge
-        // centroid live (proportionally), mirroring the path update above. Only
-        // when both halves stay valid — matching recomputeAdjacentPaths, which
-        // keeps the original paths (and thus labels) when a half would collapse.
         const ccwModified: TimeSlice = { ...ccwSlice, endTime: hhmm };
         const cwModified: TimeSlice = { ...cwSlice, startTime: hhmm };
         if (sliceWidthMinutes(ccwModified) > 0 && sliceWidthMinutes(cwModified) > 0) {
-          moveSliceLabelImperative(svgEl, ccwModified);
-          moveSliceLabelImperative(svgEl, cwModified);
+          moveSliceLabelImperative(svgEl, ccwModified, labelRadialOffset(ccwModified, dragRef.boundaryIndex));
+          moveSliceLabelImperative(svgEl, cwModified, labelRadialOffset(cwModified, cwIdx));
         }
       }
     };

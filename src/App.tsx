@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import './index.css';
-import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { Button } from '@/components/ui/button';
@@ -259,23 +259,29 @@ function App() {
                   <SettingsIcon className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setSettingsSection('language')}>
+              <DropdownMenuContent align="end" className="min-w-[12rem]">
+                <DropdownMenuItem onClick={() => setSettingsSection('language')} className="gap-2">
+                  <Languages className="h-4 w-4" />
                   {t('settings.language')}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSettingsSection('font')}>
+                <DropdownMenuItem onClick={() => setSettingsSection('font')} className="gap-2">
+                  <Type className="h-4 w-4" />
                   {t('settings.font')}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSettingsSection('icons')}>
+                <DropdownMenuItem onClick={() => setSettingsSection('icons')} className="gap-2">
+                  <Smile className="h-4 w-4" />
                   {t('settings.icons')}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSettingsSection('timeline')}>
+                <DropdownMenuItem onClick={() => setSettingsSection('timeline')} className="gap-2">
+                  <Ruler className="h-4 w-4" />
                   {t('settings.timeline')}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSettingsSection('background')}>
+                <DropdownMenuItem onClick={() => setSettingsSection('background')} className="gap-2">
+                  <ImageIcon className="h-4 w-4" />
                   {t('settings.background')}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSettingsSection('theme')}>
+                <DropdownMenuItem onClick={() => setSettingsSection('theme')} className="gap-2">
+                  <Palette className="h-4 w-4" />
                   {t('settings.colorTheme')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -290,8 +296,10 @@ function App() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => setResetOpen(true)}
+                  className="gap-2"
                   style={{ color: 'hsl(var(--destructive))' }}
                 >
+                  <RotateCcw className="h-4 w-4" />
                   {t('settings.reset')}
                 </DropdownMenuItem>
               </DropdownMenuContent>

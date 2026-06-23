@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as R
 import { X, Move } from 'lucide-react';
 import { useRimMemos, type RimMemo } from './useRimMemos';
 import { useChartView, useTranslation } from '@/hooks/usePreferences';
+import { useDays } from '@/hooks/useDays';
 import { viewSpec, angleForMin, minForAngle, isInWindow } from '@/lib/chart-view';
 
 // Must mirror the chart's geometry (CircleTimeline).
@@ -144,7 +145,8 @@ function RimMemoBox({
  * hover-capture ring sits OUTSIDE the slices so it never blocks slice editing.
  */
 export function RimMemoLayer() {
-  const { memos, add, update, setMinute, remove } = useRimMemos();
+  const { activeId } = useDays();
+  const { memos, add, update, setMinute, remove } = useRimMemos(activeId);
   const spec = viewSpec(useChartView());
   const svgRef = useRef<SVGSVGElement>(null);
   const [hoverAngle, setHoverAngle] = useState<number | null>(null);

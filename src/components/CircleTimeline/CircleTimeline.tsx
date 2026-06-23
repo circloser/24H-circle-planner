@@ -717,11 +717,12 @@ export function CircleTimeline({
       ) : null}
 
       <g className="label-group">
-        {(is12h ? labelSlices : slices).map((slice) => (
+        {(is12h ? labelSlices : slices).map((slice, i) => (
           <SliceLabel
             key={slice.id}
             slice={slice}
             spec={spec}
+            index={i}
             onEdit={isInteractive ? handleDoubleClick : undefined}
           />
         ))}

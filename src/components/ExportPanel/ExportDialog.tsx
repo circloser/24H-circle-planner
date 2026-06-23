@@ -323,7 +323,7 @@ function ExportPreview({
     <div className="flex flex-col gap-1.5">
       <p className="text-xs font-medium text-muted-foreground">{t('export.preview')}</p>
       <div
-        className="mx-auto grid aspect-square w-full max-w-[260px] place-items-center overflow-hidden rounded-lg border bg-muted/30"
+        className="mx-auto grid aspect-square w-full max-w-[260px] place-items-center overflow-hidden rounded-lg bg-muted/30"
         data-export-exclude="true"
       >
         {url ? (

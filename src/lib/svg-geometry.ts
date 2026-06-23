@@ -117,9 +117,10 @@ export function labelAnchorInside(
   slice: TimeSlice,
   geom: RingGeom = RING,
   spec: ViewSpec = FULL_SPEC,
+  radialOffset = 0,
 ): { x: number; y: number; angleDeg: number; rotation: number } {
   const { innerR, outerR, cx, cy } = geom;
-  const midR = innerR + (outerR - innerR) * 0.55;
+  const midR = innerR + (outerR - innerR) * 0.55 + radialOffset;
 
   const startAngle = angleForMin(hhmmToMinutes(slice.startTime), spec);
   const widthMin = sliceWidthMinutes(slice);
@@ -128,6 +129,18 @@ export function labelAnchorInside(
 
   const { x, y } = polarToCartesian(cx, cy, midR, midAngle);
   return { x, y, angleDeg: midAngle, rotation: midAngle + 90 };
+}
+
+// Below this slice width, adjacent labels are prone to colliding tangentially, so
+// we stagger them radially (alternating in/out by index) to keep both readable.
+const NARROW_LABEL_MIN = 120;
+const LABEL_STAGGER = 30;
+
+/** Radial nudge for an inside label so adjacent NARROW slices don't overlap.
+ *  Wide slices stay centred (offset 0); narrow ones alternate in/out by index. */
+export function labelRadialOffset(slice: TimeSlice, index: number): number {
+  if (sliceWidthMinutes(slice) >= NARROW_LABEL_MIN) return 0;
+  return index % 2 === 0 ? -LABEL_STAGGER : LABEL_STAGGER;
 }
 
 /**
