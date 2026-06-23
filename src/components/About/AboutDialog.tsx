@@ -4,7 +4,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { AdSlot } from '@/components/Ads/AdSlot';
 import { useTranslation } from '@/hooks/usePreferences';
+
+/** Public contact for feedback / questions (shown in the brand section). */
+const CONTACT_EMAIL = 'singlena@gmail.com';
 
 interface AboutDialogProps {
   open: boolean;
@@ -102,7 +106,21 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
               ? 'Circloser는 1인 창업 기업입니다. 원(circle)에 한 걸음 더 가까이(closer) — 일상을 더 단순하고 아름답게 만드는 작은 도구를 직접 설계하고 만듭니다. 24Houring은 Circloser가 선보이는 제품입니다.'
               : 'Circloser is a one-person (indie) startup. A step closer to the circle — we design and build small tools that make everyday life simpler and more beautiful. 24Houring is a product by Circloser.'}
           </p>
+          {/* Public contact for feedback / questions. */}
+          <p className="mt-2 text-xs" style={{ color: 'hsl(var(--text-muted))' }}>
+            {ko ? '문의 · 피드백' : 'Contact · feedback'}:{' '}
+            <a
+              href={`mailto:${CONTACT_EMAIL}`}
+              className="font-medium underline underline-offset-2"
+              style={{ color: 'hsl(var(--foreground))' }}
+            >
+              {CONTACT_EMAIL}
+            </a>
+          </p>
         </section>
+
+        {/* Reserved ad space (consistent with the other dialogs). */}
+        <AdSlot slot="about" className="mt-3" />
 
         <p className="mt-2 text-center text-[11px]" style={{ color: 'hsl(var(--text-muted) / 0.8)' }}>
           24houring.com · © Circloser
