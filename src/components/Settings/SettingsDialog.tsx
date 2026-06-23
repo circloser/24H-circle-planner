@@ -1,4 +1,6 @@
-import { useRef, type ChangeEvent } from 'react';
+import { useRef, useState, type ChangeEvent } from 'react';
+import { Trash2, Plus } from 'lucide-react';
+import { v4 as uuid } from 'uuid';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -14,16 +16,19 @@ import {
   FONT_SCALE_MAX,
   FONT_SCALE_STEP,
   BACKGROUNDS,
+  NOW_LINE_DEFAULT_COLOR,
   type Background,
+  type WorldClock,
 } from '@/hooks/usePreferences';
 import { fileToBackgroundDataUrl } from '@/lib/image-bg';
 import { useStoreDispatch } from '@/hooks/useScheduleStore';
 import { COLOR_THEMES } from '@/data/color-themes';
+import { TIMEZONES, WORLD_LINE_COLORS } from '@/data/timezones';
 import { LANGUAGES, type Lang } from '@/i18n/translations';
 import type { TKey } from '@/i18n/translations';
 
 /** Each settings category is its own focused dialog, opened from the gear menu. */
-export type SettingsSection = 'language' | 'font' | 'icons' | 'clock' | 'background' | 'theme';
+export type SettingsSection = 'language' | 'font' | 'icons' | 'clock' | 'timeline' | 'background' | 'theme';
 
 export interface SettingsDialogProps {
   section: SettingsSection | null;
@@ -35,6 +40,7 @@ const SECTION_TITLE: Record<SettingsSection, TKey> = {
   font: 'settings.font',
   icons: 'settings.icons',
   clock: 'settings.clock',
+  timeline: 'settings.timeline',
   background: 'settings.background',
   theme: 'settings.colorTheme',
 };
@@ -60,6 +66,19 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
   const { t, lang } = useTranslation();
   const dispatch = useStoreDispatch();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [tzToAdd, setTzToAdd] = useState(TIMEZONES[0].tz);
+
+  const addWorldClock = () => {
+    const opt = TIMEZONES.find((z) => z.tz === tzToAdd);
+    if (!opt) return;
+    const color = WORLD_LINE_COLORS[prefs.worldClocks.length % WORLD_LINE_COLORS.length];
+    const wc: WorldClock = { id: uuid(), tz: opt.tz, label: lang === 'ko' ? opt.ko : opt.en, color };
+    setPreference('worldClocks', [...prefs.worldClocks, wc]);
+  };
+  const updateWorldClock = (id: string, patch: Partial<WorldClock>) =>
+    setPreference('worldClocks', prefs.worldClocks.map((w) => (w.id === id ? { ...w, ...patch } : w)));
+  const removeWorldClock = (id: string) =>
+    setPreference('worldClocks', prefs.worldClocks.filter((w) => w.id !== id));
 
   const selectPattern = (bg: Background) => {
     setPreference('background', bg);
@@ -177,48 +196,107 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
             </div>
           )}
 
-          {/* Clock: digital clock + current-time line */}
+          {/* Clock: digital center clock toggle */}
           {section === 'clock' && (
+            <div className="flex flex-col gap-2">
+              <span className="text-xs text-muted-foreground">{t('settings.clockDigital')}</span>
+              <div className="flex gap-1.5">
+                <button type="button" onClick={() => setPreference('showClock', true)} aria-pressed={prefs.showClock} className={OPT_CHIP}>
+                  {t('settings.iconsShow')}
+                </button>
+                <button type="button" onClick={() => setPreference('showClock', false)} aria-pressed={!prefs.showClock} className={OPT_CHIP}>
+                  {t('settings.iconsHide')}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Timeline: now-line style + world-clock lines */}
+          {section === 'timeline' && (
             <div className="flex flex-col gap-4">
+              {/* Now line on/off */}
               <div className="flex flex-col gap-2">
-                <span className="text-xs text-muted-foreground">{t('settings.clockDigital')}</span>
+                <span className="text-xs text-muted-foreground">{t('settings.clockNowLine')}</span>
                 <div className="flex gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setPreference('showClock', true)}
-                    aria-pressed={prefs.showClock}
-                    className={OPT_CHIP}
-                  >
+                  <button type="button" onClick={() => setPreference('showNowLine', true)} aria-pressed={prefs.showNowLine} className={OPT_CHIP}>
                     {t('settings.iconsShow')}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setPreference('showClock', false)}
-                    aria-pressed={!prefs.showClock}
-                    className={OPT_CHIP}
-                  >
+                  <button type="button" onClick={() => setPreference('showNowLine', false)} aria-pressed={!prefs.showNowLine} className={OPT_CHIP}>
                     {t('settings.iconsHide')}
                   </button>
                 </div>
               </div>
+
+              {/* Now line colour */}
+              <div className="flex items-center gap-3">
+                <span className="w-16 shrink-0 text-xs text-muted-foreground">{t('settings.lineColor')}</span>
+                <label className="opt-pick inline-flex w-fit cursor-pointer items-center gap-2 rounded-md px-2 py-1.5">
+                  <span className="h-6 w-6 rounded border" style={{ backgroundColor: prefs.nowLineColor, borderColor: 'hsl(var(--border))' }} />
+                  <span className="text-sm tabular-nums">{prefs.nowLineColor}</span>
+                  <input type="color" value={prefs.nowLineColor} onChange={(e) => setPreference('nowLineColor', e.target.value)} className="sr-only" aria-label={t('settings.lineColor')} />
+                </label>
+                <button type="button" onClick={() => setPreference('nowLineColor', NOW_LINE_DEFAULT_COLOR)} className="text-xs text-muted-foreground underline">
+                  {t('settings.lineReset')}
+                </button>
+              </div>
+
+              {/* Now line width */}
+              <div className="flex items-center gap-3">
+                <span className="w-16 shrink-0 text-xs text-muted-foreground">{t('settings.lineWidth')}</span>
+                <input
+                  type="range"
+                  min={1}
+                  max={6}
+                  step={0.5}
+                  value={prefs.nowLineWidth}
+                  onChange={(e) => setPreference('nowLineWidth', Number(e.target.value))}
+                  className="flex-1 cursor-pointer accent-[hsl(var(--primary))]"
+                  aria-label={t('settings.lineWidth')}
+                />
+                <span className="w-8 text-right text-xs tabular-nums text-muted-foreground">{prefs.nowLineWidth}</span>
+              </div>
+
+              {/* World clocks */}
               <div className="flex flex-col gap-2">
-                <span className="text-xs text-muted-foreground">{t('settings.clockNowLine')}</span>
-                <div className="flex gap-1.5">
+                <span className="text-xs text-muted-foreground">{t('settings.worldClocks')}</span>
+                {prefs.worldClocks.map((w) => (
+                  <div key={w.id} className="flex items-center gap-2">
+                    <label className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md">
+                      <span className="h-5 w-5 rounded-full border border-black/15" style={{ backgroundColor: w.color }} />
+                      <input type="color" value={w.color} onChange={(e) => updateWorldClock(w.id, { color: e.target.value })} className="sr-only" aria-label={w.label} />
+                    </label>
+                    <span className="flex-1 text-sm" style={{ color: 'hsl(var(--foreground))' }}>{w.label}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeWorldClock(w.id)}
+                      aria-label={t('settings.lineRemove')}
+                      className="grid h-7 w-7 place-items-center rounded hover:bg-muted"
+                      style={{ color: 'hsl(var(--destructive))' }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+                <div className="flex items-center gap-2">
+                  <select
+                    value={tzToAdd}
+                    onChange={(e) => setTzToAdd(e.target.value)}
+                    aria-label={t('settings.worldClocks')}
+                    className="flex-1 rounded-md px-2 py-1.5 text-sm"
+                    style={{ backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--foreground))', border: '1px solid hsl(var(--border))' }}
+                  >
+                    {TIMEZONES.map((z) => (
+                      <option key={z.tz} value={z.tz}>{lang === 'ko' ? z.ko : z.en}</option>
+                    ))}
+                  </select>
                   <button
                     type="button"
-                    onClick={() => setPreference('showNowLine', true)}
-                    aria-pressed={prefs.showNowLine}
-                    className={OPT_CHIP}
+                    onClick={addWorldClock}
+                    className="flex items-center gap-1 rounded-md px-3 py-1.5 text-sm"
+                    style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
                   >
-                    {t('settings.iconsShow')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPreference('showNowLine', false)}
-                    aria-pressed={!prefs.showNowLine}
-                    className={OPT_CHIP}
-                  >
-                    {t('settings.iconsHide')}
+                    <Plus className="h-4 w-4" />
+                    {t('settings.addLine')}
                   </button>
                 </div>
               </div>

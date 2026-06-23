@@ -29,6 +29,17 @@ export type Background = (typeof BACKGROUNDS)[number];
 /** Which background mode is active (mutually exclusive). */
 export type BgType = 'pattern' | 'color' | 'image';
 
+/** An extra current-time line for another timezone (world clock). */
+export interface WorldClock {
+  id: string;
+  tz: string; // IANA time zone, e.g. "America/New_York"
+  label: string;
+  color: string; // hex line colour
+}
+
+export const NOW_LINE_DEFAULT_COLOR = '#EF4444';
+export const NOW_LINE_DEFAULT_WIDTH = 2.5;
+
 export interface Preferences {
   language: Lang;
   fontFamily: string; // css family value, e.g. "Pretendard" or "'Jua'"
@@ -39,7 +50,10 @@ export interface Preferences {
   bgImage: string | null; // data URL, used when bgType === 'image'
   showIcons: boolean; // global toggle for slice icons in the chart
   showClock: boolean; // center digital clock overlay
-  showNowLine: boolean; // red current-time indicator line
+  showNowLine: boolean; // current-time indicator line
+  nowLineColor: string; // colour of the current-time line
+  nowLineWidth: number; // stroke width of the current-time line
+  worldClocks: WorldClock[]; // extra timezone lines
   chartView: ChartView; // 24h ('full') / 12h day / 12h night clock window
 }
 
@@ -51,6 +65,9 @@ const DEFAULT_PREFS: Preferences = {
   showIcons: true,
   showClock: true,
   showNowLine: true,
+  nowLineColor: NOW_LINE_DEFAULT_COLOR,
+  nowLineWidth: NOW_LINE_DEFAULT_WIDTH,
+  worldClocks: [],
   chartView: 'full',
   bgType: 'pattern',
   bgColor: '#f4f5f7',
@@ -187,6 +204,21 @@ export function useShowClock(): boolean {
 export function useShowNowLine(): boolean {
   const ctx = useContext(PreferencesContext);
   return ctx?.prefs.showNowLine ?? true;
+}
+
+/** Null-safe read of the current-time line style (colour + stroke width). */
+export function useNowLineStyle(): { color: string; width: number } {
+  const ctx = useContext(PreferencesContext);
+  return {
+    color: ctx?.prefs.nowLineColor ?? NOW_LINE_DEFAULT_COLOR,
+    width: ctx?.prefs.nowLineWidth ?? NOW_LINE_DEFAULT_WIDTH,
+  };
+}
+
+/** Null-safe read of the configured world-clock lines (default none). */
+export function useWorldClocks(): WorldClock[] {
+  const ctx = useContext(PreferencesContext);
+  return ctx?.prefs.worldClocks ?? [];
 }
 
 /** Null-safe read of the chart view window (default 'full' 24h). */

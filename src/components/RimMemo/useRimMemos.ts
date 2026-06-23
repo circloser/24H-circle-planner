@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { v4 as uuid } from 'uuid';
+import { minForAngle, FULL_SPEC } from '@/lib/chart-view';
 
 export interface RimMemo {
   id: string;
-  /** Geometric angle on the rim (deg, 0 = 3 o'clock, +y downward like SVG). */
-  angleDeg: number;
+  /** Anchor time, minute-of-day (0..1439). The on-screen angle is derived from
+   *  the active view (24h / 12h), so the memo follows the time when views switch. */
+  minute: number;
   text: string;
   createdAt: number;
 }
@@ -15,8 +17,24 @@ function load(): RimMemo[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      const parsed = JSON.parse(raw) as { version?: number; memos?: RimMemo[] };
-      if (parsed && parsed.version === 1 && Array.isArray(parsed.memos)) return parsed.memos;
+      const parsed = JSON.parse(raw) as {
+        version?: number;
+        memos?: Array<Partial<RimMemo> & { angleDeg?: number }>;
+      };
+      if (parsed && parsed.version === 1 && Array.isArray(parsed.memos)) {
+        // Migrate v1 memos that anchored to a geometric angle (24h view) → minute.
+        return parsed.memos.map((m) => ({
+          id: m.id ?? uuid(),
+          text: m.text ?? '',
+          createdAt: typeof m.createdAt === 'number' ? m.createdAt : 0,
+          minute:
+            typeof m.minute === 'number'
+              ? m.minute
+              : typeof m.angleDeg === 'number'
+                ? minForAngle(m.angleDeg, FULL_SPEC)
+                : 0,
+        }));
+      }
     }
   } catch {
     // ignore corrupt/unavailable storage
@@ -40,9 +58,9 @@ export function useRimMemos() {
     save(memos);
   }, [memos]);
 
-  const add = useCallback((angleDeg: number): string => {
+  const add = useCallback((minute: number): string => {
     const id = uuid();
-    setMemos((m) => [...m, { id, angleDeg, text: '', createdAt: Date.now() }]);
+    setMemos((m) => [...m, { id, minute, text: '', createdAt: Date.now() }]);
     return id;
   }, []);
 

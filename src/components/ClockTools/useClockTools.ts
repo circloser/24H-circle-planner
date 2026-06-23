@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Pos } from './clock-utils';
 
 export type ClockMode = 'analog' | 'digital';
-export type ToolKind = 'clock' | 'timer' | 'alarm' | 'calendar';
+export type ToolKind = 'clock' | 'timer' | 'alarm' | 'calendar' | 'weather';
 
 export interface ClockState {
   on: boolean;
@@ -12,6 +12,16 @@ export interface ClockState {
 export interface CalendarState {
   on: boolean;
   pos: Pos;
+}
+export interface WeatherPlace {
+  name: string;
+  lat: number;
+  lon: number;
+}
+export interface WeatherState {
+  on: boolean;
+  pos: Pos;
+  place: WeatherPlace | null;
 }
 export interface TimerState {
   on: boolean;
@@ -32,6 +42,7 @@ export interface ClockToolsState {
   timer: TimerState;
   alarm: AlarmState;
   calendar: CalendarState;
+  weather: WeatherState;
 }
 
 const STORAGE_KEY = '24h-circle-planner.clocktools';
@@ -45,6 +56,7 @@ function defaultState(): ClockToolsState {
     clock: { on: false, mode: 'analog', pos: { x: 20, y: clampY(vh - 600) } },
     calendar: { on: false, pos: { x: 206, y: clampY(vh - 600) } },
     timer: { on: false, pos: { x: 20, y: clampY(vh - 360) }, setSec: 300, remainingSec: 300, running: false, endAt: null },
+    weather: { on: false, pos: { x: 206, y: clampY(vh - 360) }, place: null },
     alarm: { on: false, pos: { x: 20, y: clampY(vh - 200) }, time: '07:00', enabled: false },
   };
 }
@@ -61,6 +73,7 @@ function loadState(): ClockToolsState {
           clock: { ...def.clock, ...s.clock, pos: { ...def.clock.pos, ...s.clock?.pos } },
           calendar: { ...def.calendar, ...s.calendar, pos: { ...def.calendar.pos, ...s.calendar?.pos } },
           timer: { ...def.timer, ...s.timer, pos: { ...def.timer.pos, ...s.timer?.pos } },
+          weather: { ...def.weather, ...s.weather, pos: { ...def.weather.pos, ...s.weather?.pos } },
           alarm: { ...def.alarm, ...s.alarm, pos: { ...def.alarm.pos, ...s.alarm?.pos } },
         };
         // A timer that finished while the tab was closed: stop it silently.
@@ -91,6 +104,7 @@ export interface ClockToolsApi {
   setTimer: (patch: Partial<TimerState>) => void;
   setAlarm: (patch: Partial<AlarmState>) => void;
   setCalendar: (patch: Partial<CalendarState>) => void;
+  setWeather: (patch: Partial<WeatherState>) => void;
 }
 
 /** Self-contained store for the floating clock tools (no provider needed). */
@@ -117,6 +131,9 @@ export function useClockTools(): ClockToolsApi {
   const setCalendar = useCallback((patch: Partial<CalendarState>) => {
     setState((s) => ({ ...s, calendar: { ...s.calendar, ...patch } }));
   }, []);
+  const setWeather = useCallback((patch: Partial<WeatherState>) => {
+    setState((s) => ({ ...s, weather: { ...s.weather, ...patch } }));
+  }, []);
 
-  return { state, toggle, setClock, setTimer, setAlarm, setCalendar };
+  return { state, toggle, setClock, setTimer, setAlarm, setCalendar, setWeather };
 }

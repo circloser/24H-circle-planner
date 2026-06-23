@@ -48,6 +48,13 @@ export type TKey =
   | 'settings.clock'
   | 'settings.clockDigital'
   | 'settings.clockNowLine'
+  | 'settings.timeline'
+  | 'settings.lineColor'
+  | 'settings.lineWidth'
+  | 'settings.lineReset'
+  | 'settings.lineRemove'
+  | 'settings.worldClocks'
+  | 'settings.addLine'
   | 'size.small'
   | 'size.medium'
   | 'size.large'
@@ -197,6 +204,13 @@ export type TKey =
   | 'clock.alarmRing'
   | 'clock.calendar'
   | 'clock.today'
+  | 'clock.weather'
+  | 'clock.weatherSearch'
+  | 'clock.weatherSet'
+  | 'clock.weatherEmpty'
+  | 'clock.weatherError'
+  | 'clock.weatherRefresh'
+  | 'clock.myLocation'
   | 'memo.list'
   | 'memo.listTitle'
   | 'memo.listDesc'
@@ -238,6 +252,13 @@ const ko: Dict = {
   'settings.clock': '시계',
   'settings.clockDigital': '디지털 시계',
   'settings.clockNowLine': '현재 시간선',
+  'settings.timeline': '시간선',
+  'settings.lineColor': '선 색상',
+  'settings.lineWidth': '선 두께',
+  'settings.lineReset': '기본값',
+  'settings.lineRemove': '시간선 삭제',
+  'settings.worldClocks': '세계 시간선',
+  'settings.addLine': '추가',
   'size.small': '작게',
   'size.medium': '보통',
   'size.large': '크게',
@@ -387,6 +408,13 @@ const ko: Dict = {
   'clock.alarmRing': '⏰ 알람!',
   'clock.calendar': '캘린더',
   'clock.today': '오늘',
+  'clock.weather': '날씨',
+  'clock.weatherSearch': '도시 검색',
+  'clock.weatherSet': '지역 설정',
+  'clock.weatherEmpty': '지역을 검색해 설정하세요.',
+  'clock.weatherError': '날씨를 불러오지 못했습니다.',
+  'clock.weatherRefresh': '새로고침',
+  'clock.myLocation': '현재 위치',
   'memo.list': '메모 목록',
   'memo.listTitle': '메모 목록',
   'memo.listDesc': '화면에서 지운 메모도 여기에 남아 있어요. 눈 아이콘으로 화면 표시를 켜고 끄고, 휴지통으로 완전히 삭제합니다.',
@@ -427,6 +455,13 @@ const en: Dict = {
   'settings.clock': 'Clock',
   'settings.clockDigital': 'Digital clock',
   'settings.clockNowLine': 'Current-time line',
+  'settings.timeline': 'Time lines',
+  'settings.lineColor': 'Line color',
+  'settings.lineWidth': 'Line width',
+  'settings.lineReset': 'Default',
+  'settings.lineRemove': 'Remove time line',
+  'settings.worldClocks': 'World time lines',
+  'settings.addLine': 'Add',
   'size.small': 'Small',
   'size.medium': 'Medium',
   'size.large': 'Large',
@@ -578,6 +613,13 @@ const en: Dict = {
   'clock.alarmRing': '⏰ Alarm!',
   'clock.calendar': 'Calendar',
   'clock.today': 'Today',
+  'clock.weather': 'Weather',
+  'clock.weatherSearch': 'Search city',
+  'clock.weatherSet': 'Set region',
+  'clock.weatherEmpty': 'Search to set your region.',
+  'clock.weatherError': 'Could not load weather.',
+  'clock.weatherRefresh': 'Refresh',
+  'clock.myLocation': 'My location',
   'memo.list': 'Memo list',
   'memo.listTitle': 'Memo list',
   'memo.listDesc': 'Memos removed from the screen stay here. Toggle the eye to show/hide on screen, or the trash to delete for good.',

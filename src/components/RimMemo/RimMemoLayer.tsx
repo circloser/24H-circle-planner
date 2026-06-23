@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { X } from 'lucide-react';
 import { useRimMemos, type RimMemo } from './useRimMemos';
-import { useTranslation } from '@/hooks/usePreferences';
+import { useChartView, useTranslation } from '@/hooks/usePreferences';
+import { viewSpec, angleForMin, minForAngle, isInWindow } from '@/lib/chart-view';
 
 // Must mirror the chart's geometry (CircleTimeline).
 const CX = 500;
@@ -36,19 +37,21 @@ function annulusPath(ro: number, ri: number): string {
 
 function RimMemoBox({
   memo,
+  angleDeg,
   autoFocus,
   onChange,
   onDelete,
 }: {
   memo: RimMemo;
+  angleDeg: number;
   autoFocus: boolean;
   onChange: (text: string) => void;
   onDelete: () => void;
 }) {
   const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
-  const right = Math.cos((memo.angleDeg * Math.PI) / 180) >= 0;
-  const elbow = polar(ELBOW_R, memo.angleDeg);
+  const right = Math.cos((angleDeg * Math.PI) / 180) >= 0;
+  const elbow = polar(ELBOW_R, angleDeg);
   const leftPct = pctX(elbow.x);
   const topPct = pctY(elbow.y);
 
@@ -130,9 +133,13 @@ function RimMemoBox({
  */
 export function RimMemoLayer() {
   const { memos, add, update, remove } = useRimMemos();
+  const spec = viewSpec(useChartView());
   const svgRef = useRef<SVGSVGElement>(null);
   const [hoverAngle, setHoverAngle] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Only memos whose anchor time is visible in the current window are shown.
+  const visible = memos.filter((m) => isInWindow(m.minute, spec));
 
   const toAngle = (clientX: number, clientY: number): number | null => {
     const svg = svgRef.current;
@@ -173,7 +180,7 @@ export function RimMemoLayer() {
             const a = toAngle(e.clientX, e.clientY);
             if (a === null) return;
             setHoverAngle(null);
-            setEditingId(add(a));
+            setEditingId(add(minForAngle(a, spec)));
           }}
         />
 
@@ -190,10 +197,11 @@ export function RimMemoLayer() {
           );
         })()}
 
-        {/* Leader line per memo. */}
-        {memos.map((m) => {
-          const rim = polar(OUTER_R, m.angleDeg);
-          const elbow = polar(ELBOW_R, m.angleDeg);
+        {/* Leader line per memo (angle derived from the active view). */}
+        {visible.map((m) => {
+          const ang = angleForMin(m.minute, spec);
+          const rim = polar(OUTER_R, ang);
+          const elbow = polar(ELBOW_R, ang);
           return (
             <g key={m.id} style={{ pointerEvents: 'none' }}>
               <line x1={rim.x} y1={rim.y} x2={elbow.x} y2={elbow.y} stroke="hsl(var(--text-muted))" strokeWidth={1.5} opacity={0.6} />
@@ -204,10 +212,11 @@ export function RimMemoLayer() {
       </svg>
 
       {/* HTML memo boxes (outside the chart; editable). */}
-      {memos.map((m) => (
+      {visible.map((m) => (
         <RimMemoBox
           key={m.id}
           memo={m}
+          angleDeg={angleForMin(m.minute, spec)}
           autoFocus={editingId === m.id}
           onChange={(text) => update(m.id, text)}
           onDelete={() => remove(m.id)}

@@ -262,6 +262,9 @@ function App() {
                 <DropdownMenuItem onClick={() => setSettingsSection('clock')}>
                   {t('settings.clock')}
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSettingsSection('timeline')}>
+                  {t('settings.timeline')}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSettingsSection('background')}>
                   {t('settings.background')}
                 </DropdownMenuItem>

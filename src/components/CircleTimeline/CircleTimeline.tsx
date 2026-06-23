@@ -12,7 +12,7 @@ import {
   type ViewSpec,
 } from '@/lib/chart-view';
 import { useSliceSelector, useStoreSelector } from '@/hooks/useScheduleStore';
-import { useTranslation, useShowClock, useShowNowLine, useChartView } from '@/hooks/usePreferences';
+import { useTranslation, useShowClock, useShowNowLine, useChartView, useNowLineStyle, useWorldClocks } from '@/hooks/usePreferences';
 import { useCoarsePointer } from '@/hooks/useCoarsePointer';
 import { translatePresetName } from '@/i18n/content';
 import { SliceLabel } from './SliceLabel';
@@ -210,44 +210,49 @@ function HourTicks({ spec = FULL_SPEC }: { spec?: ViewSpec }) {
 // Rendered in the SVG but tagged data-export-exclude="true" so the PNG/PDF
 // export clone strips it (see png.ts and stripFilters.ts strip steps).
 
-interface NowIndicatorProps {
-  hhmm: string; // "HH:mm" current time
-  spec?: ViewSpec;
+/** Current minute-of-day in an IANA time zone (0..1439), or null if unsupported. */
+function tzMinutes(tz: string, now: Date): number | null {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(now);
+    const h = Number(parts.find((p) => p.type === 'hour')?.value);
+    const m = Number(parts.find((p) => p.type === 'minute')?.value);
+    if (Number.isNaN(h) || Number.isNaN(m)) return null;
+    return (h % 24) * 60 + m;
+  } catch {
+    return null;
+  }
 }
 
-function NowIndicator({ hhmm, spec = FULL_SPEC }: NowIndicatorProps) {
+/** A radial time line + rim dot at a minute-of-day, in the given view + colour. */
+function TimeMark({ minute, spec, color, width }: { minute: number; spec: ViewSpec; color: string; width: number }) {
   const { cx, cy, innerR, outerR } = RING;
-  const angleDeg = angleForMin(hhmmToMinutes(hhmm), spec);
-
+  const angleDeg = angleForMin(minute, spec);
   const hubEdge = polarToCartesian(cx, cy, innerR + 2, angleDeg);
   const rimPoint = polarToCartesian(cx, cy, outerR - 2, angleDeg);
-
   return (
-    <g
-      className="now-indicator"
-      data-export-exclude="true"
-      style={{ pointerEvents: 'none' }}
-      aria-hidden="true"
-    >
-      {/* Radial line from hub edge to rim */}
-      <line
-        x1={hubEdge.x}
-        y1={hubEdge.y}
-        x2={rimPoint.x}
-        y2={rimPoint.y}
-        stroke="#EF4444"
-        strokeWidth={2.5}
-        strokeLinecap="round"
-        opacity={0.9}
-      />
-      {/* Filled dot at the rim end */}
-      <circle
-        cx={rimPoint.x}
-        cy={rimPoint.y}
-        r={5}
-        fill="#EF4444"
-        opacity={0.9}
-      />
+    <g style={{ pointerEvents: 'none' }} aria-hidden="true">
+      <line x1={hubEdge.x} y1={hubEdge.y} x2={rimPoint.x} y2={rimPoint.y} stroke={color} strokeWidth={width} strokeLinecap="round" opacity={0.9} />
+      <circle cx={rimPoint.x} cy={rimPoint.y} r={Math.max(4, width * 1.9)} fill={color} opacity={0.9} />
+    </g>
+  );
+}
+
+interface NowIndicatorProps {
+  hhmm: string; // "HH:mm" current local time
+  spec?: ViewSpec;
+  color?: string;
+  width?: number;
+}
+
+function NowIndicator({ hhmm, spec = FULL_SPEC, color = '#EF4444', width = 2.5 }: NowIndicatorProps) {
+  return (
+    <g className="now-indicator" data-export-exclude="true">
+      <TimeMark minute={hhmmToMinutes(hhmm)} spec={spec} color={color} width={width} />
     </g>
   );
 }
@@ -469,6 +474,8 @@ export function CircleTimeline({
   const { t, lang } = useTranslation();
   const showClock = useShowClock();
   const showNowLine = useShowNowLine();
+  const nowLineStyle = useNowLineStyle();
+  const worldClocks = useWorldClocks();
   // Active view window (24h / 12h day / 12h night). Drives the angle remap below.
   // Preview thumbnails (preset gallery, day strip) always show the full 24h clock.
   const chartView = useChartView();
@@ -736,8 +743,20 @@ export function CircleTimeline({
           Hidden in 12h when the current time falls outside the window.
           Tagged data-export-exclude="true" — stripped from PNG/PDF clone. */}
       {showNowLine && (!is12h || isInWindow(hhmmToMinutes(clock.hhmm), spec)) ? (
-        <NowIndicator hhmm={clock.hhmm} spec={spec} />
+        <NowIndicator hhmm={clock.hhmm} spec={spec} color={nowLineStyle.color} width={nowLineStyle.width} />
       ) : null}
+
+      {/* World-clock lines: an extra time line per configured timezone (own colour).
+          Re-renders each clock tick; export-excluded like the now-line. */}
+      {worldClocks.map((wc) => {
+        const min = tzMinutes(wc.tz, new Date());
+        if (min === null || (is12h && !isInWindow(min, spec))) return null;
+        return (
+          <g key={wc.id} className="now-indicator" data-export-exclude="true">
+            <TimeMark minute={min} spec={spec} color={wc.color} width={nowLineStyle.width} />
+          </g>
+        );
+      })}
 
       {/* Center hub glass disc — in SVG so it composites with slices correctly.
           The live clock text is NOT here; it's in the HTML overlay below so
