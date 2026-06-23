@@ -8,7 +8,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -244,7 +243,7 @@ function App() {
               <span className="hidden sm:inline">{t('header.presets')}</span>
             </Button>
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               className="px-2 sm:px-3"
               onClick={() => setExportOpen(true)}
@@ -284,7 +283,6 @@ function App() {
                   <Palette className="h-4 w-4" />
                   {t('settings.colorTheme')}
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleShare} className="gap-2">
                   <Share2 className="h-4 w-4" />
                   {t('share.button')}
@@ -293,7 +291,6 @@ function App() {
                   <Smartphone className="h-4 w-4" />
                   {t('home.button')}
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => setResetOpen(true)}
                   className="gap-2"

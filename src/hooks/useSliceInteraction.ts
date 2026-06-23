@@ -3,7 +3,7 @@ import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { sliceWidthMinutes, snapMinutes, minutesToHhmm, hhmmToMinutes } from '@/lib/time-utils';
 import { slicePath, RING, polarToCartesian, labelAnchorInside, labelRadialOffset } from '@/lib/svg-geometry';
 import { useChartView } from '@/hooks/usePreferences';
-import { viewSpec, minForAngle, angleForMin, FULL_SPEC, type ViewSpec } from '@/lib/chart-view';
+import { viewSpec, minForAngle, angleForMin, visibleSegments, FULL_SPEC, type ViewSpec } from '@/lib/chart-view';
 import type { TimeSlice } from '@/types/time-slice';
 import type { Schedule } from '@/types/schedule';
 import type { DragRef } from '@/types/drag';
@@ -136,17 +136,94 @@ function moveBoundaryHandleImperative(
  * 'inside-narrow' icon-only labels via x/y; 'outside' labels are left alone.
  * Queried from the svg root so it resolves to null gracefully under test mocks.
  */
-function moveSliceLabelImperative(svg: SVGSVGElement, slice: TimeSlice, radialOffset = 0): void {
+function moveSliceLabelImperative(
+  svg: SVGSVGElement,
+  slice: TimeSlice,
+  radialOffset = 0,
+  spec: ViewSpec = FULL_SPEC,
+): void {
   if (sliceWidthMinutes(slice) <= 0) return;
   const el = svg.querySelector<SVGGraphicsElement>(`[data-label-id="${slice.id}"]`);
   if (!el) return;
-  const { x, y } = labelAnchorInside(slice, RING, FULL_SPEC, radialOffset);
+  const { x, y } = labelAnchorInside(slice, RING, spec, radialOffset);
   const kind = el.getAttribute('data-label-kind');
   if (kind === 'inside') {
     el.setAttribute('transform', `translate(${x} ${y})`);
   } else if (kind === 'inside-narrow') {
     el.setAttribute('x', String(x));
     el.setAttribute('y', String(y));
+  }
+}
+
+// ─── 12h-view live drag preview (clipped areas + labels) ──────────────────────
+
+/** The largest visible segment of a slice within the view window, as a slice
+ *  trimmed to that segment — mirrors CircleTimeline's labelSlices anchor. Null
+ *  when the slice has no visible part in the window. */
+function largestVisibleSegment(slice: TimeSlice, spec: ViewSpec): TimeSlice | null {
+  const parts = visibleSegments(hhmmToMinutes(slice.startTime), sliceWidthMinutes(slice), spec);
+  if (parts.length === 0) return null;
+  const largest = parts.reduce((a, b) => (b.widthMin > a.widthMin ? b : a));
+  return { ...slice, startTime: minutesToHhmm(largest.startMin), endTime: minutesToHhmm(largest.endMin) };
+}
+
+/** Index of a slice among the rendered labels (slices that have a visible
+ *  segment), so the radial-stagger parity matches CircleTimeline's labelSlices. */
+function labelIndexInView(slices: TimeSlice[], sliceId: string, spec: ViewSpec): number {
+  let idx = 0;
+  for (const s of slices) {
+    if (s.id === sliceId) return idx;
+    if (visibleSegments(hhmmToMinutes(s.startTime), sliceWidthMinutes(s), spec).length > 0) idx++;
+  }
+  return idx;
+}
+
+/** Rewrite a clipped slice's visible-segment path(s) to its modified geometry.
+ *  Clipped segments of one slice share data-slice-id; surplus paths are blanked. */
+function updateClippedSlicePaths(svg: SVGSVGElement, slice: TimeSlice, spec: ViewSpec): void {
+  const paths = svg.querySelectorAll<SVGPathElement>(`path[data-slice-id="${slice.id}"]`);
+  if (paths.length === 0) return;
+  const segs = visibleSegments(hhmmToMinutes(slice.startTime), sliceWidthMinutes(slice), spec).map((p) => ({
+    ...slice,
+    startTime: minutesToHhmm(p.startMin),
+    endTime: minutesToHhmm(p.endMin),
+  }));
+  paths.forEach((path, i) => {
+    path.setAttribute('d', i < segs.length ? slicePath(segs[i], RING, spec) : '');
+  });
+}
+
+/**
+ * Live preview for a 12h-view boundary drag: redraw the two adjacent slices'
+ * clipped areas and re-anchor their labels so the division, areas, and names all
+ * track the cursor — matching the full-view behaviour. Fully recomputable from
+ * the snapshot, so the cancel path reuses it with the original boundary time.
+ */
+function update12hClippedPreview(
+  svg: SVGSVGElement,
+  snapshotSlices: TimeSlice[],
+  boundaryIndex: number,
+  hhmm: string,
+  spec: ViewSpec,
+): void {
+  const len = snapshotSlices.length;
+  const ccwSlice = snapshotSlices[boundaryIndex];
+  const cwIdx = (boundaryIndex + 1) % len;
+  const cwSlice = snapshotSlices[cwIdx];
+  const ccwMod: TimeSlice = { ...ccwSlice, endTime: hhmm };
+  const cwMod: TimeSlice = { ...cwSlice, startTime: hhmm };
+  if (sliceWidthMinutes(ccwMod) <= 0 || sliceWidthMinutes(cwMod) <= 0) return;
+
+  updateClippedSlicePaths(svg, ccwMod, spec);
+  updateClippedSlicePaths(svg, cwMod, spec);
+
+  const ccwLabel = largestVisibleSegment(ccwMod, spec);
+  const cwLabel = largestVisibleSegment(cwMod, spec);
+  if (ccwLabel) {
+    moveSliceLabelImperative(svg, ccwLabel, labelRadialOffset(ccwLabel, labelIndexInView(snapshotSlices, ccwSlice.id, spec)), spec);
+  }
+  if (cwLabel) {
+    moveSliceLabelImperative(svg, cwLabel, labelRadialOffset(cwLabel, labelIndexInView(snapshotSlices, cwSlice.id, spec)), spec);
   }
 }
 
@@ -213,29 +290,35 @@ export function useSliceInteraction(opts: {
 
     function performCancelDrag() {
       detach();
-      const g = liveDragGroupRef.current;
       const dragRef = dragRefStoreRef.current;
-      if (g && dragRef) {
-        g.querySelectorAll<SVGPathElement>('[data-slice-id]').forEach((child) => {
-          const id = child.getAttribute('data-slice-id');
-          if (id && dragRef.originalSlicePaths[id] !== undefined) {
-            child.setAttribute('d', dragRef.originalSlicePaths[id]);
-          }
-        });
-        // Issue T13 / Issue 2: restore boundary handle to original position on cancel.
+      const svgEl = svgRef.current;
+      // Cancel leaves `present` unchanged, so React won't re-render the affected
+      // paths/labels — restore them to their snapshot geometry imperatively.
+      if (dragRef && svgEl) {
+        const sp = specRef.current;
+        const len = dragRef.snapshot.slices.length;
+        const ccwSlice = dragRef.snapshot.slices[dragRef.boundaryIndex];
+        const cwSlice = dragRef.snapshot.slices[(dragRef.boundaryIndex + 1) % len];
         // Original endTime of the CCW slice defines the original boundary angle.
-        const svgEl = svgRef.current;
-        if (svgEl) {
-          const ccwSlice = dragRef.snapshot.slices[dragRef.boundaryIndex];
-          const cwSlice =
-            dragRef.snapshot.slices[(dragRef.boundaryIndex + 1) % dragRef.snapshot.slices.length];
-          const originalHhmm = ccwSlice.endTime === '24:00' ? '00:00' : ccwSlice.endTime;
-          moveBoundaryHandleImperative(svgEl, dragRef.boundaryIndex, originalHhmm, specRef.current);
-          // Cancel leaves `present` unchanged, so React won't re-render the
-          // labels — restore the two we moved back to their snapshot anchors.
-          const cancelLen = dragRef.snapshot.slices.length;
+        const originalHhmm = ccwSlice.endTime === '24:00' ? '00:00' : ccwSlice.endTime;
+        moveBoundaryHandleImperative(svgEl, dragRef.boundaryIndex, originalHhmm, sp);
+
+        if (sp.view !== 'full') {
+          // 12h: redraw the clipped areas + labels at the original boundary.
+          update12hClippedPreview(svgEl, dragRef.snapshot.slices, dragRef.boundaryIndex, originalHhmm, sp);
+        } else {
+          // 24h: restore the dragged paths in the live drag group, then the labels.
+          const g = liveDragGroupRef.current;
+          if (g) {
+            g.querySelectorAll<SVGPathElement>('[data-slice-id]').forEach((child) => {
+              const id = child.getAttribute('data-slice-id');
+              if (id && dragRef.originalSlicePaths[id] !== undefined) {
+                child.setAttribute('d', dragRef.originalSlicePaths[id]);
+              }
+            });
+          }
           moveSliceLabelImperative(svgEl, ccwSlice, labelRadialOffset(ccwSlice, dragRef.boundaryIndex));
-          moveSliceLabelImperative(svgEl, cwSlice, labelRadialOffset(cwSlice, (dragRef.boundaryIndex + 1) % cancelLen));
+          moveSliceLabelImperative(svgEl, cwSlice, labelRadialOffset(cwSlice, (dragRef.boundaryIndex + 1) % len));
         }
       }
       dispatch({ type: 'SET_DRAG_REF', value: null });
@@ -318,9 +401,13 @@ export function useSliceInteraction(opts: {
       // (view-aware angle), so the division reads correctly while dragging in 12h.
       if (svgEl) moveBoundaryHandleImperative(svgEl, dragRef.boundaryIndex, hhmm, sp);
 
-      // The clipped slice-path + label preview only works in the full 24h view;
-      // in the 12h views the resize just commits on release.
-      if (sp.view !== 'full') return;
+      // 12h views: the slices are rendered window-clipped, so the live preview is
+      // redrawn imperatively here (areas + division + labels), matching the full
+      // view. The final resize still commits on release.
+      if (sp.view !== 'full') {
+        if (svgEl) update12hClippedPreview(svgEl, dragRef.snapshot.slices, dragRef.boundaryIndex, hhmm, sp);
+        return;
+      }
 
       const { ccwD, cwD } = recomputeAdjacentPaths(
         dragRef.snapshot.slices,
