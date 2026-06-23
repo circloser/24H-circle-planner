@@ -6,6 +6,7 @@ import {
   replaceSlice,
   applyPalette,
   pickSimilarColor,
+  pickSimilarColorBetween,
   ContiguityError,
 } from '../schedule';
 import { isContiguous24h, sliceWidthMinutes } from '../time-utils';
@@ -75,6 +76,76 @@ describe('pickSimilarColor', () => {
 
   it('falls back gracefully for an unparseable colour', () => {
     expect(pickSimilarColor('not-a-color')).toMatch(/^#[0-9a-f]{6}$/i);
+  });
+});
+
+// ─── pickSimilarColorBetween ──────────────────────────────────────────────────
+
+function rgbOf(hex: string): [number, number, number] {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function dist(a: string, b: string): number {
+  const [r1, g1, b1] = rgbOf(a);
+  const [r2, g2, b2] = rgbOf(b);
+  return Math.hypot(r1 - r2, g1 - g2, b1 - b2);
+}
+
+describe('pickSimilarColorBetween', () => {
+  it('returns a valid hex distinct from BOTH neighbours', () => {
+    const pairs: Array<[string, string]> = [
+      ['#93c5fd', '#fca5a5'], // blue parent, red neighbour
+      ['#6ee7b7', '#5eead4'], // two close teals
+      ['#d1d5db', '#d1d5db'], // identical neighbours
+      ['#fcd34d', '#bef264'], // yellow / lime
+    ];
+    for (const [p, nb] of pairs) {
+      const out = pickSimilarColorBetween(p, nb);
+      expect(out).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(dist(out, p)).toBeGreaterThan(12); // clearly different from the parent
+      expect(dist(out, nb)).toBeGreaterThan(12); // clearly different from the neighbour
+    }
+  });
+
+  it('stays a sibling of the parent hue (blue parent → blue-dominant result)', () => {
+    const out = pickSimilarColorBetween('#93c5fd', '#d1d5db');
+    const [r, g, b] = rgbOf(out);
+    expect(b).toBeGreaterThanOrEqual(r);
+    expect(b).toBeGreaterThanOrEqual(g - 12);
+  });
+
+  it('separates from a neighbour equal to the plain sibling shade', () => {
+    // The plain sibling of this parent collides with the neighbour; the
+    // between-picker must still land clearly apart from that neighbour.
+    const parent = '#93c5fd';
+    const collidingNeighbour = pickSimilarColor(parent);
+    const out = pickSimilarColorBetween(parent, collidingNeighbour);
+    expect(dist(out, collidingNeighbour)).toBeGreaterThan(12);
+    expect(dist(out, parent)).toBeGreaterThan(12);
+  });
+
+  it('falls back to a sibling shade for an unparseable parent', () => {
+    expect(pickSimilarColorBetween('not-a-color', '#93c5fd')).toMatch(/^#[0-9a-f]{6}$/i);
+  });
+});
+
+// ─── split colour: distinct from both flanking slices ─────────────────────────
+
+describe('splitSliceAt new-slice colour', () => {
+  it('gives the new cell a colour distinct from both adjacent slices (after)', () => {
+    const sched = makeSchedule([
+      makeSlice('00:00', '08:00', { label: 'A', color: '#93c5fd' }),
+      makeSlice('08:00', '16:00', { label: 'B', color: '#fca5a5' }),
+      makeSlice('16:00', '00:00', { label: 'C', color: '#6ee7b7' }),
+    ]);
+    // Split B at 12:00, emptying the later half → new cell sits between B-kept
+    // (#fca5a5) and C (#6ee7b7).
+    const out = splitSliceAt(sched, '12:00', 'after');
+    const newCell = out.slices.find((s) => s.label === '' && s.startTime === '12:00');
+    expect(newCell).toBeDefined();
+    expect(dist(newCell!.color, '#fca5a5')).toBeGreaterThan(12);
+    expect(dist(newCell!.color, '#6ee7b7')).toBeGreaterThan(12);
+    expect(isContiguous24h(out.slices)).toBe(true);
   });
 });
 

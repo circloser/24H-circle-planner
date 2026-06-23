@@ -115,6 +115,57 @@ export function pickSimilarColor(base: string): string {
   return rgbToHex(r, g, b);
 }
 
+/** Euclidean distance between two RGB triples (0..~441). */
+function rgbDistance(a: number[], b: number[]): number {
+  return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+}
+
+/**
+ * Pick a colour for a cell inserted BETWEEN two neighbours. The result stays a
+ * soft *sibling* of `parentColor` (same hue family — only a small lightness/hue
+ * step) while being chosen to sit clearly apart from BOTH `parentColor` and
+ * `neighborColor`. So a split reads as related to its surroundings yet every
+ * adjacent wedge stays distinguishable, whichever two colours flank the new one.
+ *
+ * Used for every split (background click, scissors cut, +/− affordance) and thus
+ * applies identically in the 24h, day, and night views — they share this path.
+ */
+export function pickSimilarColorBetween(parentColor: string, neighborColor: string): string {
+  const parentRgb = hexToRgb(parentColor);
+  if (!parentRgb) return pickSimilarColor(parentColor);
+  const neighborRgb = hexToRgb(neighborColor);
+
+  const [h, s, l] = rgbToHsl(parentRgb[0], parentRgb[1], parentRgb[2]);
+  const darker = Math.max(0.12, l - 0.14);
+  const lighter = Math.min(0.92, l + 0.16);
+  const ROT = 0.045; // ~16° hue nudge — an escape route when both siblings collide
+  // Candidate sibling shades: a lighter/darker step, plus slight hue-rotated
+  // variants so a cell can dodge a neighbour when both lightness siblings clash.
+  const candidates: number[][] = [
+    [h, s, darker],
+    [h, s, lighter],
+    [(h + ROT) % 1, s, darker],
+    [(h + 1 - ROT) % 1, s, lighter],
+  ];
+
+  let best = candidates[0];
+  let bestScore = -Infinity;
+  for (const c of candidates) {
+    const rgb = hslToRgb(c[0], c[1], c[2]);
+    const dParent = rgbDistance(rgb, parentRgb);
+    const dNeighbor = neighborRgb ? rgbDistance(rgb, neighborRgb) : Infinity;
+    // Maximise the SMALLER of the two gaps → as distinct as possible from both,
+    // while the deliberately small shifts keep it a sibling (visually similar).
+    const score = Math.min(dParent, dNeighbor);
+    if (score > bestScore) {
+      bestScore = score;
+      best = c;
+    }
+  }
+  const [r, g, b] = hslToRgb(best[0], best[1], best[2]);
+  return rgbToHex(r, g, b);
+}
+
 /**
  * Find the index of the slice that contains the given time (in minutes).
  * Handles midnight-wrap slices.
@@ -200,13 +251,20 @@ export function splitSliceAt(
   if (leftWidth < 10) throw new ContiguityError(action, `Split would create a <10-min left slice (width=${leftWidth})`);
   if (rightWidth < 10) throw new ContiguityError(action, `Split would create a <10-min right slice (width=${rightWidth})`);
 
-  // A fresh empty slot, coloured as a sibling shade of its parent so the new
-  // division blends in (same hue, slightly lighter/darker) rather than clashing.
-  const emptySlot = (startTime: string, endTime: string): TimeSlice => ({
+  // The cells flanking the new empty slot: the parent-kept half (parent.color) on
+  // the inner side, and the existing adjacent slice on the outer side. Indices
+  // wrap circularly; with a single slice both resolve to the parent.
+  const n = slices.length;
+  const ccwNeighborColor = slices[(idx - 1 + n) % n].color; // before the parent
+  const cwNeighborColor = slices[(idx + 1) % n].color; //      after the parent
+
+  // A fresh empty slot, coloured as a sibling shade that stays distinct from BOTH
+  // flanking cells so the split blends in yet every wedge stays distinguishable.
+  const emptySlot = (startTime: string, endTime: string, neighborColor: string): TimeSlice => ({
     id: uuid(),
     label: '',
     icon: '',
-    color: pickSimilarColor(parent.color),
+    color: pickSimilarColorBetween(parent.color, neighborColor),
     textPosition: 'inside',
     startTime,
     endTime,
@@ -226,11 +284,15 @@ export function splitSliceAt(
   let firstSlice: TimeSlice;
   let secondSlice: TimeSlice;
   if (effectiveSide === 'before') {
-    firstSlice = emptySlot(parent.startTime, snappedHhmm);
+    // Empty slot is the earlier half → its outer (CCW) neighbour is the slice
+    // before the parent; the inner side is the parent-kept half (parent.color).
+    firstSlice = emptySlot(parent.startTime, snappedHhmm, ccwNeighborColor);
     secondSlice = { ...parent, startTime: snappedHhmm };
   } else {
+    // Empty slot is the later half → its outer (CW) neighbour is the slice after
+    // the parent; the inner side is the parent-kept half (parent.color).
     firstSlice = { ...parent, endTime: snappedHhmm };
-    secondSlice = emptySlot(snappedHhmm, parent.endTime);
+    secondSlice = emptySlot(snappedHhmm, parent.endTime, cwNeighborColor);
   }
 
   const newSlices = [...slices.slice(0, idx), firstSlice, secondSlice, ...slices.slice(idx + 1)];
