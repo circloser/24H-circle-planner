@@ -45,7 +45,7 @@ function loadState(): MemoState {
         // as creation order; default to shown on screen).
         const memos = (parsed.memos as Array<Partial<Memo> & Memo>).map((m, i) => ({
           ...m,
-          align: m.align === 'left' ? 'left' : 'center',
+          align: (m.align === 'left' ? 'left' : 'center') as 'left' | 'center',
           createdAt: typeof m.createdAt === 'number' ? m.createdAt : i,
           onScreen: m.onScreen !== false,
         }));
