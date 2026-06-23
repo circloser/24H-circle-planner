@@ -48,7 +48,9 @@ await page.getByRole('button', { name: 'next' }).first().hover(); // reveal hove
 await page.waitForTimeout(150);
 const todayBox = await page.getByRole('button', { name: 'Today' }).first().boundingBox();
 const nextBox = await page.getByRole('button', { name: 'next' }).first().boundingBox();
-const calendarNoOverlap = !!(todayBox && nextBox) && todayBox.y + todayBox.height <= nextBox.y + 2;
+// The Today control and the (left-grouped) next-month arrow must not overlap.
+const intersects = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+const calendarNoOverlap = !!(todayBox && nextBox) && !intersects(todayBox, nextBox);
 
 // ── 3/4/5. Memo limit + align + font ─────────────────────────────────────────
 await page.locator('button[aria-label="Add memo"]').click();

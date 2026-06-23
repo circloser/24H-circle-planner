@@ -93,7 +93,7 @@ export function MemoLayer() {
         aria-expanded={menuOpen}
         title={t('memo.add')}
         className="fixed bottom-5 right-5 z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105"
-        style={{ backgroundColor: 'hsl(var(--border))', color: 'hsl(var(--text-muted))', border: '1px solid hsl(var(--text-muted) / 0.25)' }}
+        style={{ backgroundColor: 'hsl(var(--surface))', color: 'hsl(var(--text-muted))', border: '1px solid hsl(var(--border))' }}
       >
         <StickyNote className="h-5 w-5" />
       </button>

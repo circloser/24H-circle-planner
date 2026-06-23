@@ -50,11 +50,11 @@ export function CalendarWidget({ calendar, onMove, onClose }: CalendarWidgetProp
         style={{ backgroundColor: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))', boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}
       />
 
-      {/* Hover controls — Today + close, floated ABOVE the calendar so they never
-          overlap the month-navigation arrows. */}
+      {/* Hover controls — Today + close, INSIDE the box at top-right (the month-nav
+          arrows live on the left, so there is no overlap and no hover gap). */}
       <div
         data-no-drag
-        className="pointer-events-none absolute -top-8 right-0 z-20 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100"
+        className="pointer-events-none absolute right-1.5 top-1.5 z-20 flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100"
       >
         <button
           type="button"
@@ -80,16 +80,18 @@ export function CalendarWidget({ calendar, onMove, onClose }: CalendarWidgetProp
         onPointerDown={makeDragStart(calendar.pos, onMove)}
         className="relative z-10 cursor-grab touch-none select-none px-3 py-3 active:cursor-grabbing"
       >
-        <div className="mb-1.5 flex items-center justify-between" data-no-drag>
+        {/* Nav arrows grouped on the left so the top-right stays free for the
+            hover controls. The label gets right padding so it never runs under them. */}
+        <div className="mb-1.5 flex items-center gap-0.5 pr-14" data-no-drag>
           <button type="button" className={navBtn} aria-label="prev" onClick={() => shift(-1)}>
             <ChevronLeft className="h-4 w-4" style={{ color: 'hsl(var(--foreground))' }} />
           </button>
-          <span className="text-sm font-semibold" style={{ color: 'hsl(var(--foreground))' }}>
-            {monthLabel}
-          </span>
           <button type="button" className={navBtn} aria-label="next" onClick={() => shift(1)}>
             <ChevronRight className="h-4 w-4" style={{ color: 'hsl(var(--foreground))' }} />
           </button>
+          <span className="ml-1 min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: 'hsl(var(--foreground))' }}>
+            {monthLabel}
+          </span>
         </div>
 
         <div className="grid grid-cols-7 gap-y-1 text-center">
