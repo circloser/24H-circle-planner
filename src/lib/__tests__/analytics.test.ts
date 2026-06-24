@@ -18,7 +18,32 @@ describe('categorize', () => {
     expect(categorize('운동')).toBe('leisure');
     expect(categorize('Study session')).toBe('work');
     expect(categorize('')).toBe('other');
-    expect(categorize('영화 감상')).toBe('other'); // not in any list
+    expect(categorize('영화 감상')).toBe('leisure'); // 영화 → leisure
+  });
+
+  it('covers everyday Korean labels users actually type', () => {
+    // work / study
+    for (const w of ['회사', '미팅', '직장', '출장', '프로젝트', '코딩', '보고서', '학교', '학원', '강의', '시험', '면접', '인턴', '발표'])
+      expect(categorize(w)).toBe('work');
+    // leisure / exercise / entertainment / social
+    for (const l of ['헬스', '요가', '러닝', '수영', '등산', '자전거', '넷플릭스', '영화', '드라마', '게임', '데이트', '약속', '모임', '쇼핑', '카페'])
+      expect(categorize(l)).toBe('leisure');
+    // meal
+    for (const m of ['야식', '외식', '브런치', '디저트', '요리'])
+      expect(categorize(m)).toBe('meal');
+    // commute
+    for (const c of ['지하철', '버스', '대중교통', '운전'])
+      expect(categorize(c)).toBe('commute');
+    // sleep
+    for (const s of ['숙면', '낮잠', '잠자리'])
+      expect(categorize(s)).toBe('sleep');
+  });
+
+  it('avoids substring false-positives across categories', () => {
+    expect(categorize('team meeting')).toBe('work'); // "tea" must not win meal
+    expect(categorize('update report')).toBe('work'); // "date" must not win leisure
+    expect(categorize('brunch')).toBe('meal'); // "run" must not win leisure
+    expect(categorize('business call')).not.toBe('commute'); // "bus" must not win commute
   });
 });
 

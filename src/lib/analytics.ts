@@ -19,14 +19,38 @@ export const CATEGORY_COLOR: Record<CategoryKey, string> = {
   other: '#d1d5db',
 };
 
-// Checked in this order; first hit wins.
+// Checked in this order; first hit wins. Leisure precedes meal so "저녁·여가"
+// reads as leisure; commute precedes work so "출근" stays commute. Keep keywords
+// ≥2 chars and specific — `includes()` is a substring match, so short English
+// stems (bus→"business", date→"update", run→"brunch") are intentionally omitted
+// in favour of their Korean equivalents.
 const MATCH_ORDER: Exclude<CategoryKey, 'other'>[] = ['sleep', 'leisure', 'meal', 'commute', 'work'];
 const KEYWORDS: Record<Exclude<CategoryKey, 'other'>, string[]> = {
-  sleep: ['수면', '잠', '취침', '낮잠', 'sleep', 'nap', 'bed'],
-  leisure: ['여가', '휴식', '취미', '운동', '게임', 'tv', '티비', '영상', '유튜브', '산책', '독서', '자유', '여행', '놀이', 'rest', 'leisure', 'hobby', 'exercise', 'workout', 'game', 'relax', 'play', 'walk'],
-  meal: ['식사', '점심', '저녁', '아침', '밥', '간식', '커피', 'meal', 'lunch', 'dinner', 'breakfast', 'brunch', 'snack', 'coffee'],
-  commute: ['이동', '출근', '퇴근', '출퇴근', '통근', '통학', '운전', 'commute', 'drive'],
-  work: ['업무', '근무', '회의', '공부', '학습', '수업', '공강', '과제', '자기계발', '알바', '운영', '영업', '마감', '일과', '작업', 'work', 'study', 'class', 'meeting', 'job', 'office', 'task'],
+  sleep: [
+    '수면', '잠', '취침', '낮잠', '숙면', '잠자리',
+    'sleep', 'nap', 'bed', 'asleep', 'snooze', 'doze', 'slumber',
+  ],
+  leisure: [
+    '여가', '휴식', '취미', '자유', '놀이', '여행', '나들이', '외출', '소풍', '데이트', '약속', '모임', '회식', '파티', '술자리',
+    '운동', '헬스', '요가', '필라테스', '스트레칭', '조깅', '러닝', '달리기', '수영', '등산', '산책', '자전거', '라이딩', '축구', '농구', '야구', '테니스', '배드민턴', '골프', '클라이밍', '볼링',
+    '게임', '오락', '피시방', 'tv', '티비', '영상', '유튜브', '넷플릭스', '넷플', '영화', '드라마', '예능', '방송', '스트리밍', '웹툰', '만화', '음악', '노래', '콘서트', '공연', '전시',
+    '독서', '그림', '사진', '악기', '피아노', '명상', '힐링', '카페', '쇼핑', '캠핑', '낚시', '봉사',
+    'rest', 'leisure', 'hobby', 'game', 'gaming', 'relax', 'play', 'walk', 'exercise', 'workout', 'gym', 'fitness', 'running', 'jog', 'jogging', 'yoga', 'pilates', 'swim', 'swimming', 'hike', 'hiking', 'bike', 'cycling', 'soccer', 'basketball', 'tennis', 'golf',
+    'netflix', 'movie', 'film', 'drama', 'music', 'concert', 'party', 'hangout', 'shopping', 'picnic', 'camping', 'fishing', 'meditation', 'reading', 'draw', 'paint', 'piano',
+  ],
+  meal: [
+    '식사', '점심', '저녁', '아침', '밥', '간식', '야식', '브런치', '커피', '외식', '식당', '요리', '디저트', '음료',
+    'meal', 'lunch', 'dinner', 'breakfast', 'brunch', 'snack', 'coffee', 'eating', 'dining', 'supper', 'dessert', 'cook', 'cooking',
+  ],
+  commute: [
+    '이동', '출근', '퇴근', '출퇴근', '통근', '통학', '운전', '지하철', '버스', '대중교통', '교통', '차량',
+    'commute', 'drive', 'driving', 'subway', 'transit', 'transport',
+  ],
+  work: [
+    '업무', '근무', '회의', '미팅', '회사', '직장', '사무', '출장', '작업', '프로젝트', '개발', '코딩', '프로그래밍', '보고서', '문서', '기획', '영업', '운영', '마감', '일과', '알바', '아르바이트', '자기계발',
+    '공부', '학습', '수업', '강의', '강연', '공강', '과제', '학교', '학원', '시험', '연구', '논문', '실험', '인턴', '면접', '취준', '자격증', '독학', '세미나', '발표',
+    'work', 'working', 'study', 'studying', 'class', 'lecture', 'meeting', 'job', 'office', 'task', 'project', 'coding', 'dev', 'report', 'exam', 'school', 'homework', 'research', 'interview',
+  ],
 };
 
 /** Map a slice label to its life-category bucket. */
