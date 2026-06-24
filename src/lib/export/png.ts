@@ -1,5 +1,6 @@
 import { injectFontFaceStyle } from './inlineFonts';
 import { inlineComputedPaint } from './inlineComputedPaint';
+import { addWatermark } from './watermark';
 
 export interface PngExportOptions {
   size: 1080 | 2160 | 3840;
@@ -49,6 +50,9 @@ export async function exportPng(
   // (R16). Embedding every bundled font (~6.5MB) makes the SVG-as-image rasterize
   // before the fonts load and the text comes out blank — so keep the payload small.
   injectFontFaceStyle(clone, [selectedFamily, 'Pretendard']);
+
+  // 2b. Stamp the brand wordmark into the bottom margin (viral loop; free tier).
+  addWatermark(clone);
 
   // 3. Set explicit width/height for rasterization at target resolution
   clone.setAttribute('width', String(size));

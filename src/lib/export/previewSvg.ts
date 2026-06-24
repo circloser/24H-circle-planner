@@ -1,5 +1,6 @@
 import { injectFontFaceStyle } from './inlineFonts';
 import { inlineComputedPaint } from './inlineComputedPaint';
+import { addWatermark } from './watermark';
 
 /**
  * Build a self-contained SVG data URL that mirrors the PNG/PDF export exactly:
@@ -28,6 +29,7 @@ export function buildExportPreviewDataUrl(sourceSvg: SVGSVGElement): string {
   clone.style.setProperty('--app-font-scale', scaleVar || '1');
 
   injectFontFaceStyle(clone, [selectedFamily, 'Pretendard']);
+  addWatermark(clone);
 
   const svgString = new XMLSerializer().serializeToString(clone);
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`;
