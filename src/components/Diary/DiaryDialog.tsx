@@ -57,8 +57,11 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
     toast.success(t('diary.saved'));
   }
   function loadEntry(e: DiaryEntry) {
+    // Load as a protected, locked diary view (carries the record's date so the
+    // day bar can show it and gate edits). Editing requires explicit unlock.
     dispatch({
-      type: 'LOAD_SCHEDULE',
+      type: 'LOAD_DIARY',
+      date: e.date,
       schedule: {
         id: uuid(),
         version: 1,

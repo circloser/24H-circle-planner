@@ -28,12 +28,18 @@ export interface StoreState {
   history: HistoryState;
   isDraggingBoundary: boolean;
   dragRef: DragRef | null;
+  /** When a diary record is loaded for viewing, its date key (YYYY-MM-DD). */
+  diaryDate: string | null;
+  /** Edits are blocked while true — protects a loaded diary record. */
+  locked: boolean;
 }
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
 
 export type StoreAction =
   | { type: 'LOAD_SCHEDULE'; schedule: Schedule }
+  | { type: 'LOAD_DIARY'; schedule: Schedule; date: string }
+  | { type: 'SET_LOCKED'; value: boolean }
   | { type: 'SPLIT'; hhmm: string; newSlotSide?: 'before' | 'after' | 'smaller' }
   | { type: 'SET_BLOCK'; start: string; end: string; newId: string; content?: BlockContent }
   | { type: 'MERGE'; idCw: string; idCcw: string }
@@ -131,13 +137,37 @@ function applyMutation(
   }
 }
 
+// Edit actions that mutate the schedule — blocked while a diary record is locked.
+const LOCKABLE_ACTIONS = new Set<StoreAction['type']>([
+  'SPLIT', 'SET_BLOCK', 'APPLY_PALETTE', 'MERGE', 'RESIZE_BOUNDARY', 'REPLACE_SLICE', 'SET_SCHEDULE_NAME', 'UNDO', 'REDO',
+]);
+
 function reducer(state: StoreState, action: StoreAction): StoreState {
+  // Protect a loaded diary record: while locked, drop every mutation. The UI
+  // surfaces a toast on the user-facing edit gestures (see App / DayBar).
+  if (state.locked && LOCKABLE_ACTIONS.has(action.type)) return state;
+
   switch (action.type) {
     case 'LOAD_SCHEDULE':
+      // A normal load (day switch, slot, share) leaves any diary-view mode.
       return {
         ...state,
         history: { past: [], present: action.schedule, future: [] },
+        diaryDate: null,
+        locked: false,
       };
+
+    case 'LOAD_DIARY':
+      // Loading a past diary enters a protected, locked view of that date.
+      return {
+        ...state,
+        history: { past: [], present: action.schedule, future: [] },
+        diaryDate: action.date,
+        locked: true,
+      };
+
+    case 'SET_LOCKED':
+      return { ...state, locked: action.value };
 
     case 'SPLIT':
       return applyMutation(state, (present) =>
@@ -195,6 +225,8 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
       return {
         ...state,
         history: pushHistory(state.history, next),
+        diaryDate: null,
+        locked: false,
       };
     }
 
@@ -248,6 +280,8 @@ function makeInitialState(): StoreState {
     },
     isDraggingBoundary: false,
     dragRef: null,
+    diaryDate: null,
+    locked: false,
   };
 }
 

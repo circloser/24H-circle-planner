@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, X, Copy, FileText, LayoutGrid } from 'lucide-react';
+import { Plus, X, Copy, FileText, LayoutGrid, Lock, Unlock, CalendarDays } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { PresetGallery } from '@/components/PresetGallery/PresetGallery';
 import { slicePath } from '@/lib/svg-geometry';
 import { useDays, MAX_DAYS } from '@/hooks/useDays';
+import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useCoarsePointer } from '@/hooks/useCoarsePointer';
 import { PRESETS } from '@/data/presets';
@@ -21,6 +22,13 @@ import type { Preset } from '@/types/preset';
 import type { TimeSlice } from '@/types/time-slice';
 
 const THUMB = 46;
+
+/** "2026-06-21" → a locale-friendly date for the loaded-diary indicator. */
+function formatDiaryDate(key: string, lang: string): string {
+  const [y, m, d] = key.split('-').map(Number);
+  if (!y || !m || !d) return key;
+  return new Date(y, m - 1, d).toLocaleDateString(lang, { year: 'numeric', month: 'long', day: 'numeric' });
+}
 
 /** A tiny donut thumbnail of a day's schedule — wedges only, no labels/ticks. */
 function DayThumb({ schedule, size }: { schedule: Schedule; size: number }) {
@@ -46,8 +54,11 @@ function DayThumb({ schedule, size }: { schedule: Schedule; size: number }) {
  */
 export function DayBar() {
   const { days, activeId, activeIndex, switchTo, addDay, addDayFromSlices, deleteDay } = useDays();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const coarse = useCoarsePointer();
+  const diaryDate = useStoreSelector((s) => s.diaryDate);
+  const locked = useStoreSelector((s) => s.locked);
+  const dispatch = useStoreDispatch();
   const [addOpen, setAddOpen] = useState(false);
   const [presetOpen, setPresetOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
@@ -164,8 +175,45 @@ export function DayBar() {
         </div>
       </div>
 
-      {/* Bottom-centre day indicator — only meaningful with 2+ days. */}
-      {multi && activeIndex >= 0 && (
+      {/* Bottom-centre indicator: a loaded diary's date + lock toggle takes
+          priority; otherwise the "Day M of N" counter (2+ days only). */}
+      {diaryDate ? (
+        <div
+          className="fixed bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full py-1.5 pl-3 pr-1.5 text-xs font-medium shadow"
+          style={{
+            backgroundColor: 'hsl(var(--surface) / 0.94)',
+            border: '1px solid hsl(var(--border))',
+            color: 'hsl(var(--foreground))',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+          }}
+        >
+          <span className="flex items-center gap-1">
+            <CalendarDays className="h-3.5 w-3.5" style={{ color: 'hsl(var(--text-muted))' }} />
+            {formatDiaryDate(diaryDate, lang)}
+          </span>
+          <span className="h-3.5 w-px" style={{ backgroundColor: 'hsl(var(--border))' }} />
+          <button
+            type="button"
+            onClick={() => {
+              const next = !locked;
+              dispatch({ type: 'SET_LOCKED', value: next });
+              toast(next ? t('diary.relocked') : t('diary.unlockedToast'));
+            }}
+            aria-pressed={locked}
+            title={locked ? t('diary.unlock') : t('diary.lock')}
+            className="flex items-center gap-1 rounded-full px-2 py-1 font-semibold transition-colors"
+            style={
+              locked
+                ? { backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }
+                : { backgroundColor: 'hsl(var(--muted) / 0.6)', color: 'hsl(var(--foreground))' }
+            }
+          >
+            {locked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
+            {locked ? t('diary.unlock') : t('diary.lock')}
+          </button>
+        </div>
+      ) : multi && activeIndex >= 0 ? (
         <div
           className="fixed bottom-5 left-1/2 z-20 -translate-x-1/2 rounded-full px-3 py-1 text-xs font-medium shadow"
           style={{
@@ -178,7 +226,7 @@ export function DayBar() {
         >
           {t('day.indicator', { m: String(activeIndex + 1), n: String(days.length) })}
         </div>
-      )}
+      ) : null}
 
       {/* Add-day choice: duplicate current schedule or start empty. */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>

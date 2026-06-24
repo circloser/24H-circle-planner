@@ -80,6 +80,7 @@ function markOnboarded(): void {
 
 function App() {
   const present = useStoreSelector((s) => s.history.present);
+  const locked = useStoreSelector((s) => s.locked);
   const dispatch = useStoreDispatch();
 
   const [presetOpen, setPresetOpen] = useState(false);
@@ -159,6 +160,10 @@ function App() {
   // T4: interaction engine
   const { liveDragGroupRef, svgRef, handlers, isDragging } = useSliceInteraction({
     onRequestEdit: (id: string) => {
+      if (locked) {
+        toast(t('diary.locked'));
+        return;
+      }
       setEditingSliceId(id);
     },
   });
@@ -390,12 +395,18 @@ function App() {
             onPointerDownHandle={handlers.onPointerDownHandle}
             onSliceDoubleClick={handlers.onSliceDoubleClick}
             onBackgroundClick={handlers.onBackgroundClick}
-            onSliceSplit={handlers.onSliceSplit}
+            onSliceSplit={locked ? undefined : handlers.onSliceSplit}
             showEmptyHint={false}
             selectedSliceId={editingSliceId}
             title={present.name}
-            onHubClick={() => setEditingTitle(true)}
-            mobileNoChartDrag={isMobile}
+            onHubClick={() => {
+              if (locked) {
+                toast(t('diary.locked'));
+                return;
+              }
+              setEditingTitle(true);
+            }}
+            mobileNoChartDrag={isMobile || locked}
           />
           {/* Rim annotation memos (hover near the edge → leader line + note). */}
           <RimMemoLayer />
@@ -430,7 +441,7 @@ function App() {
           <>
             <div className="-mt-2 flex flex-col items-center gap-1.5">
               <Button
-                onClick={() => setTimeBlockOpen(true)}
+                onClick={() => (locked ? toast(t('diary.locked')) : setTimeBlockOpen(true))}
                 className="gap-1.5"
                 style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
               >

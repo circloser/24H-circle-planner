@@ -216,6 +216,11 @@ export type TKey =
   | 'diary.empty'
   | 'diary.delete'
   | 'diary.today'
+  | 'diary.locked'
+  | 'diary.unlock'
+  | 'diary.lock'
+  | 'diary.unlockedToast'
+  | 'diary.relocked'
   | 'analytics.scopeCurrent'
   | 'analytics.scopeAll'
   | 'analytics.scopeDiary'
@@ -480,6 +485,11 @@ const ko: Dict = {
   'diary.empty': '날짜를 눌러 그날의 시간표를 기록하세요.',
   'diary.delete': '삭제',
   'diary.today': '오늘',
+  'diary.locked': '🔒 보호된 일기예요. 편집하려면 잠금을 해제하세요.',
+  'diary.unlock': '잠금 해제',
+  'diary.lock': '잠금',
+  'diary.unlockedToast': '잠금을 해제했어요. 이제 편집할 수 있어요.',
+  'diary.relocked': '다시 잠갔어요.',
   'analytics.scopeCurrent': '현재 시간표',
   'analytics.scopeAll': '전체 일정',
   'analytics.scopeDiary': '일기',
@@ -745,6 +755,11 @@ const en: Dict = {
   'diary.empty': "Tap a date to log that day's timetable.",
   'diary.delete': 'Delete',
   'diary.today': 'Today',
+  'diary.locked': '🔒 This diary is protected. Unlock it to edit.',
+  'diary.unlock': 'Unlock',
+  'diary.lock': 'Lock',
+  'diary.unlockedToast': 'Unlocked — you can edit now.',
+  'diary.relocked': 'Locked again.',
   'analytics.scopeCurrent': 'Current',
   'analytics.scopeAll': 'All days',
   'analytics.scopeDiary': 'Diary',
