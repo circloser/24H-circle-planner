@@ -194,6 +194,17 @@ export type TKey =
   | 'sharelink.importTitle'
   | 'sharelink.importBody'
   | 'sharelink.importConfirm'
+  | 'analytics.open'
+  | 'analytics.title'
+  | 'analytics.subtitle'
+  | 'analytics.trend'
+  | 'analytics.empty'
+  | 'cat.sleep'
+  | 'cat.work'
+  | 'cat.meal'
+  | 'cat.leisure'
+  | 'cat.commute'
+  | 'cat.other'
   | 'memo.delete'
   | 'memo.placeholder'
   | 'memo.show'
@@ -430,6 +441,17 @@ const ko: Dict = {
   'sharelink.importTitle': '공유된 시간표 불러오기',
   'sharelink.importBody': '링크로 공유된 시간표를 불러올까요? 현재 시간표가 대체됩니다.',
   'sharelink.importConfirm': '불러오기',
+  'analytics.open': '시간 분석',
+  'analytics.title': '시간 분석',
+  'analytics.subtitle': '{n}일 기준 · 하루 평균',
+  'analytics.trend': '일별 추세',
+  'analytics.empty': '분석할 일정이 없어요.',
+  'cat.sleep': '수면',
+  'cat.work': '업무·학업',
+  'cat.meal': '식사',
+  'cat.leisure': '여가',
+  'cat.commute': '이동',
+  'cat.other': '기타',
   'memo.delete': '메모 삭제',
   'memo.placeholder': '메모를 입력하세요',
   'memo.show': '메모 보이기',
@@ -667,6 +689,17 @@ const en: Dict = {
   'sharelink.importTitle': 'Open shared schedule',
   'sharelink.importBody': 'Open the schedule shared via this link? Your current one will be replaced.',
   'sharelink.importConfirm': 'Open',
+  'analytics.open': 'Time analysis',
+  'analytics.title': 'Time analysis',
+  'analytics.subtitle': 'Across {n} day(s) · daily average',
+  'analytics.trend': 'Daily trend',
+  'analytics.empty': 'No schedule to analyze yet.',
+  'cat.sleep': 'Sleep',
+  'cat.work': 'Work & study',
+  'cat.meal': 'Meals',
+  'cat.leisure': 'Leisure',
+  'cat.commute': 'Commute',
+  'cat.other': 'Other',
   'memo.delete': 'Delete memo',
   'memo.placeholder': 'Type a memo…',
   'memo.show': 'Show memos',

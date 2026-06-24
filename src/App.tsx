@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import './index.css';
-import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Plus, Link2 } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Plus, Link2, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { Button } from '@/components/ui/button';
@@ -49,6 +49,7 @@ import { useSliceInteraction } from '@/hooks/useSliceInteraction';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { WelcomeOverlay } from '@/components/Onboarding/WelcomeOverlay';
 import { buildShareUrl, readSharedFromHash, clearShareHash, copyToClipboard } from '@/lib/share-link';
+import { AnalyticsDialog } from '@/components/Analytics/AnalyticsDialog';
 import { PRESETS } from '@/data/presets';
 import type { Slot } from '@/types/slot';
 import type { Schedule } from '@/types/schedule';
@@ -123,6 +124,7 @@ function App() {
   const [aboutOpen, setAboutOpen] = useState(false);
   const [homeOpen, setHomeOpen] = useState(false);
   const [timeBlockOpen, setTimeBlockOpen] = useState(false);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [editingSliceId, setEditingSliceId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -327,6 +329,10 @@ function App() {
                   <Link2 className="h-4 w-4" />
                   {t('sharelink.copy')}
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setAnalyticsOpen(true)} className="gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  {t('analytics.open')}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setHomeOpen(true)} className="gap-2">
                   <Smartphone className="h-4 w-4" />
                   {t('home.button')}
@@ -522,6 +528,9 @@ function App() {
 
       {/* Mobile: add a time block by typing start/end (instead of finger-dragging). */}
       <TimeBlockDialog open={timeBlockOpen} onOpenChange={setTimeBlockOpen} />
+
+      {/* Time analysis — categorised daily-average split + per-day trend. */}
+      <AnalyticsDialog open={analyticsOpen} onOpenChange={setAnalyticsOpen} />
 
       {/* One-time first-visit welcome over the seeded demo schedule. */}
       <WelcomeOverlay
