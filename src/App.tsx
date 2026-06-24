@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import './index.css';
-import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Plus } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Plus, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { Button } from '@/components/ui/button';
@@ -48,6 +48,7 @@ import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useSliceInteraction } from '@/hooks/useSliceInteraction';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { WelcomeOverlay } from '@/components/Onboarding/WelcomeOverlay';
+import { buildShareUrl, readSharedFromHash, clearShareHash, copyToClipboard } from '@/lib/share-link';
 import { PRESETS } from '@/data/presets';
 import type { Slot } from '@/types/slot';
 import type { Schedule } from '@/types/schedule';
@@ -79,8 +80,10 @@ function App() {
   const dispatch = useStoreDispatch();
 
   const [presetOpen, setPresetOpen] = useState(false);
-  // First visit → one-time welcome over the seeded demo schedule.
-  const [welcomeOpen, setWelcomeOpen] = useState<boolean>(isFirstVisit);
+  // A schedule arriving via a share link (#p=…) → confirm before it replaces.
+  const [shareImport, setShareImport] = useState<Schedule | null>(() => readSharedFromHash());
+  // First visit → one-time welcome over the seeded demo (skipped when opening a link).
+  const [welcomeOpen, setWelcomeOpen] = useState<boolean>(() => isFirstVisit() && shareImport === null);
   const dismissWelcome = () => {
     markOnboarded();
     setWelcomeOpen(false);
@@ -166,6 +169,20 @@ function App() {
   useEffect(() => {
     void requestPersistentStorage();
   }, []);
+
+  // A shared schedule was parsed from the URL fragment on init — strip the
+  // fragment so a reload doesn't re-prompt; the confirm dialog handles loading.
+  useEffect(() => {
+    if (shareImport) clearShareHash();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Copy a shareable link encoding the current schedule (the "today's routine" link).
+  async function handleCopyLink() {
+    const ok = await copyToClipboard(buildShareUrl(present));
+    if (ok) toast.success(t('sharelink.copied'));
+    else toast.error(t('sharelink.copyFail'));
+  }
 
   // Capture the browser's install prompt (Chrome/Edge/Android) so the "add to
   // home screen" dialog can offer a one-tap install. Clear it once installed.
@@ -305,6 +322,10 @@ function App() {
                 <DropdownMenuItem onClick={handleShare} className="gap-2">
                   <Share2 className="h-4 w-4" />
                   {t('share.button')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleCopyLink} className="gap-2">
+                  <Link2 className="h-4 w-4" />
+                  {t('sharelink.copy')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setHomeOpen(true)} className="gap-2">
                   <Smartphone className="h-4 w-4" />
@@ -509,6 +530,30 @@ function App() {
         onPickPreset={() => setPresetOpen(true)}
         isMobile={isMobile}
       />
+
+      {/* Incoming share link (#p=…) → confirm before replacing the schedule. */}
+      <Dialog open={shareImport !== null} onOpenChange={(o) => { if (!o) setShareImport(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t('sharelink.importTitle')}</DialogTitle>
+            <DialogDescription>{t('sharelink.importBody')}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShareImport(null)}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              onClick={() => {
+                if (shareImport) dispatch({ type: 'LOAD_SCHEDULE', schedule: shareImport });
+                setShareImport(null);
+              }}
+              style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+            >
+              {t('sharelink.importConfirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Multi-day switcher (top thumbnails + bottom day indicator) */}
       <DayBar />

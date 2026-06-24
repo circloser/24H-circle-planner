@@ -188,6 +188,12 @@ export type TKey =
   | 'welcome.startBlank'
   | 'empty.heroTitle'
   | 'empty.heroCta'
+  | 'sharelink.copy'
+  | 'sharelink.copied'
+  | 'sharelink.copyFail'
+  | 'sharelink.importTitle'
+  | 'sharelink.importBody'
+  | 'sharelink.importConfirm'
   | 'memo.delete'
   | 'memo.placeholder'
   | 'memo.show'
@@ -418,6 +424,12 @@ const ko: Dict = {
   'welcome.startBlank': '직접 편집',
   'empty.heroTitle': '시간표가 비어 있어요',
   'empty.heroCta': '프리셋으로 30초 만에 시작',
+  'sharelink.copy': '링크 복사',
+  'sharelink.copied': '시간표 링크가 복사되었어요',
+  'sharelink.copyFail': '링크 복사에 실패했어요',
+  'sharelink.importTitle': '공유된 시간표 불러오기',
+  'sharelink.importBody': '링크로 공유된 시간표를 불러올까요? 현재 시간표가 대체됩니다.',
+  'sharelink.importConfirm': '불러오기',
   'memo.delete': '메모 삭제',
   'memo.placeholder': '메모를 입력하세요',
   'memo.show': '메모 보이기',
@@ -649,6 +661,12 @@ const en: Dict = {
   'welcome.startBlank': 'Edit it myself',
   'empty.heroTitle': 'Your timetable is empty',
   'empty.heroCta': 'Start in 30s with a preset',
+  'sharelink.copy': 'Copy link',
+  'sharelink.copied': 'Schedule link copied',
+  'sharelink.copyFail': 'Could not copy the link',
+  'sharelink.importTitle': 'Open shared schedule',
+  'sharelink.importBody': 'Open the schedule shared via this link? Your current one will be replaced.',
+  'sharelink.importConfirm': 'Open',
   'memo.delete': 'Delete memo',
   'memo.placeholder': 'Type a memo…',
   'memo.show': 'Show memos',
