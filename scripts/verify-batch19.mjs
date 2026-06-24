@@ -1,7 +1,7 @@
 /**
- * Batch 19 verification (offline, dist-single): weekly time analytics.
- *  - "시간 분석" shows the daily-average split (sleep/work/meal/leisure/commute)
- *    with bars, and a per-day trend strip once there are 2+ days.
+ * Batch 19 verification (offline, dist-single): time analytics.
+ *  - "시간 분석" shows the daily-average split as one row per RAW label actually
+ *    entered (no bucketing), with bars, and a per-day timeline strip for 2+ days.
  */
 import { chromium } from 'playwright';
 
@@ -55,17 +55,15 @@ const info = await page.evaluate(() => {
   if (!dlg) return null;
   const txt = dlg.textContent || '';
   return {
-    sleep: txt.includes('수면'),
-    work: txt.includes('업무·학업'),
-    leisure: txt.includes('여가'),
+    rows: dlg.querySelectorAll('.truncate').length, // one per distinct raw label
+    bars: dlg.querySelectorAll('.rounded-full > .rounded-full').length, // per-item fill bars
     trend: txt.includes('일별 추세'),
     twoDays: txt.includes('2일 기준'),
-    bars: dlg.querySelectorAll('.rounded-full > .rounded-full').length, // category fill bars
   };
 });
 pass('analytics dialog opens', info !== null);
-pass('shows sleep / work / leisure categories', !!info && info.sleep && info.work && info.leisure, JSON.stringify(info));
-pass('shows category bars', !!info && info.bars >= 4, `bars=${info?.bars}`);
+pass('shows raw item rows (one per entered label)', !!info && info.rows >= 4, JSON.stringify(info));
+pass('shows per-item bars', !!info && info.bars >= 4, `bars=${info?.bars}`);
 pass('shows per-day trend (2 days)', !!info && info.trend && info.twoDays);
 
 // Diary scope exposes the range sub-tabs.

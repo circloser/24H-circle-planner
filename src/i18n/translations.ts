@@ -200,6 +200,7 @@ export type TKey =
   | 'analytics.subtitle'
   | 'analytics.trend'
   | 'analytics.empty'
+  | 'analytics.untitled'
   | 'cat.sleep'
   | 'cat.work'
   | 'cat.meal'
@@ -463,6 +464,7 @@ const ko: Dict = {
   'analytics.subtitle': '{n}일 기준 · 하루 평균',
   'analytics.trend': '일별 추세',
   'analytics.empty': '분석할 일정이 없어요.',
+  'analytics.untitled': '(제목 없음)',
   'cat.sleep': '수면',
   'cat.work': '업무·학업',
   'cat.meal': '식사',
@@ -727,6 +729,7 @@ const en: Dict = {
   'analytics.subtitle': 'Across {n} day(s) · daily average',
   'analytics.trend': 'Daily trend',
   'analytics.empty': 'No schedule to analyze yet.',
+  'analytics.untitled': '(untitled)',
   'cat.sleep': 'Sleep',
   'cat.work': 'Work & study',
   'cat.meal': 'Meals',

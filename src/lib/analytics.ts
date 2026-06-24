@@ -1,97 +1,63 @@
 import type { TimeSlice } from '@/types/time-slice';
 import { sliceWidthMinutes } from '@/lib/time-utils';
 
-// Categorise free-text slice labels into a handful of life buckets so we can show
-// "how your day splits" (sleep / work / leisure …). Keyword match is order-
-// sensitive: the first matching category wins (e.g. "저녁·여가" → leisure, not meal).
+// Analyse a set of day-schedules using the slices EXACTLY as entered — every
+// distinct label is its own line (no keyword bucketing), carrying the slice's
+// own colour and icon so the read-out matches the chart 1:1.
 
-export type CategoryKey = 'sleep' | 'leisure' | 'meal' | 'commute' | 'work' | 'other';
+const FALLBACK_COLOR = '#9ca3af';
 
-export const CATEGORY_ORDER: CategoryKey[] = ['sleep', 'work', 'meal', 'leisure', 'commute', 'other'];
-
-/** Fixed display colour per category (independent of slice colours). */
-export const CATEGORY_COLOR: Record<CategoryKey, string> = {
-  sleep: '#c7d2fe',
-  work: '#93c5fd',
-  meal: '#fde68a',
-  leisure: '#6ee7b7',
-  commute: '#fdba74',
-  other: '#d1d5db',
-};
-
-// Checked in this order; first hit wins. Leisure precedes meal so "저녁·여가"
-// reads as leisure; commute precedes work so "출근" stays commute. Keep keywords
-// ≥2 chars and specific — `includes()` is a substring match, so short English
-// stems (bus→"business", date→"update", run→"brunch") are intentionally omitted
-// in favour of their Korean equivalents.
-const MATCH_ORDER: Exclude<CategoryKey, 'other'>[] = ['sleep', 'leisure', 'meal', 'commute', 'work'];
-const KEYWORDS: Record<Exclude<CategoryKey, 'other'>, string[]> = {
-  sleep: [
-    '수면', '잠', '취침', '낮잠', '숙면', '잠자리',
-    'sleep', 'nap', 'bed', 'asleep', 'snooze', 'doze', 'slumber',
-  ],
-  leisure: [
-    '여가', '휴식', '취미', '자유', '놀이', '여행', '나들이', '외출', '소풍', '데이트', '약속', '모임', '회식', '파티', '술자리',
-    '운동', '헬스', '요가', '필라테스', '스트레칭', '조깅', '러닝', '달리기', '수영', '등산', '산책', '자전거', '라이딩', '축구', '농구', '야구', '테니스', '배드민턴', '골프', '클라이밍', '볼링',
-    '게임', '오락', '피시방', 'tv', '티비', '영상', '유튜브', '넷플릭스', '넷플', '영화', '드라마', '예능', '방송', '스트리밍', '웹툰', '만화', '음악', '노래', '콘서트', '공연', '전시',
-    '독서', '그림', '사진', '악기', '피아노', '명상', '힐링', '카페', '쇼핑', '캠핑', '낚시', '봉사',
-    'rest', 'leisure', 'hobby', 'game', 'gaming', 'relax', 'play', 'walk', 'exercise', 'workout', 'gym', 'fitness', 'running', 'jog', 'jogging', 'yoga', 'pilates', 'swim', 'swimming', 'hike', 'hiking', 'bike', 'cycling', 'soccer', 'basketball', 'tennis', 'golf',
-    'netflix', 'movie', 'film', 'drama', 'music', 'concert', 'party', 'hangout', 'shopping', 'picnic', 'camping', 'fishing', 'meditation', 'reading', 'draw', 'paint', 'piano',
-  ],
-  meal: [
-    '식사', '점심', '저녁', '아침', '밥', '간식', '야식', '브런치', '커피', '외식', '식당', '요리', '디저트', '음료',
-    'meal', 'lunch', 'dinner', 'breakfast', 'brunch', 'snack', 'coffee', 'eating', 'dining', 'supper', 'dessert', 'cook', 'cooking',
-  ],
-  commute: [
-    '이동', '출근', '퇴근', '출퇴근', '통근', '통학', '운전', '지하철', '버스', '대중교통', '교통', '차량',
-    'commute', 'drive', 'driving', 'subway', 'transit', 'transport',
-  ],
-  work: [
-    '업무', '근무', '회의', '미팅', '회사', '직장', '사무', '출장', '작업', '프로젝트', '개발', '코딩', '프로그래밍', '보고서', '문서', '기획', '영업', '운영', '마감', '일과', '알바', '아르바이트', '자기계발',
-    '공부', '학습', '수업', '강의', '강연', '공강', '과제', '학교', '학원', '시험', '연구', '논문', '실험', '인턴', '면접', '취준', '자격증', '독학', '세미나', '발표',
-    'work', 'working', 'study', 'studying', 'class', 'lecture', 'meeting', 'job', 'office', 'task', 'project', 'coding', 'dev', 'report', 'exam', 'school', 'homework', 'research', 'interview',
-  ],
-};
-
-/** Map a slice label to its life-category bucket. */
-export function categorize(label: string): CategoryKey {
-  const s = (label ?? '').toLowerCase();
-  if (!s.trim()) return 'other';
-  for (const cat of MATCH_ORDER) {
-    if (KEYWORDS[cat].some((k) => s.includes(k))) return cat;
-  }
-  return 'other';
+/** Aggregate stat for one distinct label across all analysed days. */
+export interface LabelStat {
+  /** Raw label as typed ('' → the caller shows a placeholder). */
+  label: string;
+  /** Total minutes across every analysed day. */
+  minutes: number;
+  /** Representative colour (first occurrence of the label). */
+  color: string;
+  /** Representative icon (first non-empty occurrence), '' when none. */
+  icon: string;
 }
 
-export interface DayBreakdown {
+/** One day's ordered segments, for a per-day timeline strip. */
+export interface DaySegments {
   /** 1-based day number for display. */
   n: number;
-  minutes: Record<CategoryKey, number>;
+  segments: Array<{ label: string; minutes: number; color: string }>;
 }
 
 export interface Analytics {
   dayCount: number;
-  /** Total minutes per category across all days. */
-  totalByCat: Record<CategoryKey, number>;
-  perDay: DayBreakdown[];
+  /** Distinct labels, summed across days, sorted by minutes desc. */
+  byLabel: LabelStat[];
+  perDay: DaySegments[];
 }
 
-function emptyMinutes(): Record<CategoryKey, number> {
-  return { sleep: 0, work: 0, meal: 0, leisure: 0, commute: 0, other: 0 };
-}
-
-/** Aggregate categorised time across every day's schedule. */
+/**
+ * Aggregate raw slice time across every day's schedule, grouped by the exact
+ * label. Two slices share a row only when their labels match character-for-
+ * character; the colour/icon shown is the first occurrence's.
+ */
 export function analyzeDays(days: Array<{ schedule: { slices: TimeSlice[] } }>): Analytics {
-  const totalByCat = emptyMinutes();
-  const perDay: DayBreakdown[] = days.map((d, i) => {
-    const minutes = emptyMinutes();
-    for (const sl of d.schedule.slices) {
-      const cat = categorize(sl.label);
+  const agg = new Map<string, { minutes: number; color: string; icon: string }>();
+  const perDay: DaySegments[] = days.map((d, i) => {
+    const segments = d.schedule.slices.map((sl) => {
+      const key = sl.label ?? '';
       const w = sliceWidthMinutes(sl);
-      minutes[cat] += w;
-      totalByCat[cat] += w;
-    }
-    return { n: i + 1, minutes };
+      const color = sl.color || FALLBACK_COLOR;
+      const cur = agg.get(key);
+      if (cur) {
+        cur.minutes += w;
+        if (!cur.icon && sl.icon) cur.icon = sl.icon;
+      } else {
+        agg.set(key, { minutes: w, color, icon: sl.icon || '' });
+      }
+      return { label: key, minutes: w, color };
+    });
+    return { n: i + 1, segments };
   });
-  return { dayCount: days.length, totalByCat, perDay };
+  const byLabel: LabelStat[] = [...agg.entries()]
+    .map(([label, v]) => ({ label, minutes: v.minutes, color: v.color, icon: v.icon }))
+    .sort((a, b) => b.minutes - a.minutes);
+  return { dayCount: days.length, byLabel, perDay };
 }

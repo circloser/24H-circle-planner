@@ -10,7 +10,7 @@ import { useStoreSelector } from '@/hooks/useScheduleStore';
 import { useDays } from '@/hooks/useDays';
 import { useDiary, dateKey } from '@/hooks/useDiary';
 import { useTranslation } from '@/hooks/usePreferences';
-import { analyzeDays, CATEGORY_ORDER, CATEGORY_COLOR, type CategoryKey } from '@/lib/analytics';
+import { analyzeDays } from '@/lib/analytics';
 import type { TimeSlice } from '@/types/time-slice';
 
 interface AnalyticsDialogProps {
@@ -21,14 +21,11 @@ interface AnalyticsDialogProps {
 type Scope = 'current' | 'all' | 'diary';
 type Range = 'all' | 'month' | 'week';
 
-const CAT_KEY: Record<CategoryKey, 'cat.sleep' | 'cat.work' | 'cat.meal' | 'cat.leisure' | 'cat.commute' | 'cat.other'> = {
-  sleep: 'cat.sleep', work: 'cat.work', meal: 'cat.meal', leisure: 'cat.leisure', commute: 'cat.commute', other: 'cat.other',
-};
-
 /**
  * Time analysis across three sources — the current timetable, all days, or the
- * diary (all / last month / last week) — each categorised into life buckets and
- * shown as a daily-average split plus a per-day trend strip.
+ * diary (all / last month / last week). Every distinct label entered into the
+ * timetable is its own line (raw, no bucketing), shown with the slice's own
+ * colour and icon, as a daily-average split plus a per-day timeline strip.
  */
 export function AnalyticsDialog({ open, onOpenChange }: AnalyticsDialogProps) {
   const present = useStoreSelector((s) => s.history.present);
@@ -55,10 +52,16 @@ export function AnalyticsDialog({ open, onOpenChange }: AnalyticsDialogProps) {
 
   const a = useMemo(() => analyzeDays(sources.map((s) => ({ schedule: { slices: s.slices } }))), [sources]);
   const totalMin = a.dayCount * 1440 || 1;
-  const cats = CATEGORY_ORDER.filter((c) => a.totalByCat[c] > 0).sort((x, y) => a.totalByCat[y] - a.totalByCat[x]);
-  const hUnit = lang === 'ko' ? '시간' : 'h';
-  const hPerDay = (min: number) => (min / a.dayCount / 60).toFixed(1);
   const pct = (min: number) => Math.round((min / totalMin) * 100);
+
+  // Average minutes/day → "8시간 30분" / "8h 30m" (drops a zero part).
+  const fmtAvg = (min: number) => {
+    const v = Math.round(min / a.dayCount);
+    const h = Math.floor(v / 60);
+    const m = v % 60;
+    if (lang === 'ko') return h && m ? `${h}시간 ${m}분` : h ? `${h}시간` : `${m}분`;
+    return h && m ? `${h}h ${m}m` : h ? `${h}h` : `${m}m`;
+  };
 
   const seg = (active: boolean): React.CSSProperties =>
     active
@@ -92,7 +95,7 @@ export function AnalyticsDialog({ open, onOpenChange }: AnalyticsDialogProps) {
           </div>
         )}
 
-        {a.dayCount === 0 ? (
+        {a.dayCount === 0 || a.byLabel.length === 0 ? (
           <p className="py-4 text-sm" style={{ color: 'hsl(var(--text-muted))' }}>{t('analytics.empty')}</p>
         ) : (
           <>
@@ -100,27 +103,28 @@ export function AnalyticsDialog({ open, onOpenChange }: AnalyticsDialogProps) {
               {t('analytics.subtitle', { n: String(a.dayCount) })}
             </p>
 
-            {/* Daily-average split bars */}
+            {/* Per-label split bars — one row per item actually entered. */}
             <div className="mt-1 flex flex-col gap-2.5">
-              {cats.map((c) => (
-                <div key={c}>
-                  <div className="mb-1 flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-1.5" style={{ color: 'hsl(var(--foreground))' }}>
-                      <span className="h-3 w-3 rounded-full" style={{ backgroundColor: CATEGORY_COLOR[c] }} />
-                      {t(CAT_KEY[c])}
+              {a.byLabel.map((it, idx) => (
+                <div key={idx}>
+                  <div className="mb-1 flex items-center justify-between gap-2 text-sm">
+                    <span className="flex min-w-0 items-center gap-1.5" style={{ color: 'hsl(var(--foreground))' }}>
+                      <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: it.color }} />
+                      {it.icon && <span aria-hidden className="shrink-0">{it.icon}</span>}
+                      <span className="truncate">{it.label.trim() || t('analytics.untitled')}</span>
                     </span>
-                    <span style={{ color: 'hsl(var(--text-muted))' }}>
-                      {hPerDay(a.totalByCat[c])}{hUnit} · {pct(a.totalByCat[c])}%
+                    <span className="shrink-0 whitespace-nowrap" style={{ color: 'hsl(var(--text-muted))' }}>
+                      {fmtAvg(it.minutes)} · {pct(it.minutes)}%
                     </span>
                   </div>
                   <div className="h-2.5 w-full overflow-hidden rounded-full" style={{ backgroundColor: 'hsl(var(--text-muted) / 0.12)' }}>
-                    <div className="h-full rounded-full" style={{ width: `${pct(a.totalByCat[c])}%`, backgroundColor: CATEGORY_COLOR[c] }} />
+                    <div className="h-full rounded-full" style={{ width: `${pct(it.minutes)}%`, backgroundColor: it.color }} />
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Per-day trend strip (when 2+ days) */}
+            {/* Per-day timeline strip (when 2+ days) — each day's slices in order. */}
             {a.dayCount > 1 && (
               <section className="mt-4">
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(var(--text-muted))' }}>
@@ -133,11 +137,9 @@ export function AnalyticsDialog({ open, onOpenChange }: AnalyticsDialogProps) {
                         {sources[i]?.label}
                       </span>
                       <div className="flex h-3 w-full overflow-hidden rounded" style={{ border: '1px solid hsl(var(--border))' }}>
-                        {CATEGORY_ORDER.map((c) =>
-                          d.minutes[c] > 0 ? (
-                            <div key={c} style={{ width: `${(d.minutes[c] / 1440) * 100}%`, backgroundColor: CATEGORY_COLOR[c] }} />
-                          ) : null,
-                        )}
+                        {d.segments.map((s, j) => (
+                          <div key={j} title={s.label} style={{ width: `${(s.minutes / 1440) * 100}%`, backgroundColor: s.color }} />
+                        ))}
                       </div>
                     </div>
                   ))}
