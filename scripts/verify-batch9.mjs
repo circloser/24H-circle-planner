@@ -26,7 +26,7 @@ fs.mkdirSync(DIR, { recursive: true });
 await page.keyboard.press('Escape').catch(() => {}); // dismiss first-visit welcome
 let _pc = page.locator('button:has(h3)').first();
 if (!(await _pc.isVisible({ timeout: 1500 }).catch(() => false))) {
-  await page.getByRole('button', { name: 'Presets' }).first().click().catch(() => {});
+  await page.locator('button[aria-label="Design"]').first().click().catch(() => {}); await page.waitForTimeout(200); await page.getByRole("menuitem", { name: "Presets" }).first().click().catch(() => {});
   await page.waitForTimeout(400);
   _pc = page.locator('button:has(h3)').first();
 }

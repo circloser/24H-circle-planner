@@ -18,7 +18,7 @@ await page.keyboard.press('Escape').catch(() => {});
 
 let card = page.locator('button.glass-card:has(h3:has-text("직장인"))').first();
 if (!(await card.isVisible({ timeout: 2000 }).catch(() => false))) {
-  await page.locator('button:has-text("프리셋")').first().click().catch(() => {});
+  await page.locator('button[aria-label="디자인"]').first().click().catch(() => {}); await page.waitForTimeout(200); await page.locator('[role="menuitem"]:has-text("프리셋")').first().click().catch(() => {});
   await wait(300);
   card = page.locator('button.glass-card:has(h3:has-text("직장인"))').first();
 }
@@ -27,7 +27,7 @@ await page.locator('button:has-text("현재 창에 적용")').first().click().ca
 await wait(600);
 
 async function openDiary() {
-  await page.locator('button[aria-label="설정"]').first().click();
+  await page.locator('button[aria-label="내 시간표"]').first().click();
   await wait(250);
   await page.locator('[role="menuitem"]:has-text("일기")').first().click();
   await wait(350);

@@ -8,6 +8,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -270,18 +271,53 @@ function App() {
                 <DropdownMenuItem onClick={() => setSavePresetOpen(true)}>
                   {t('header.savePreset')}
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setDiaryOpen(true)} className="gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  {t('diary.open')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setAnalyticsOpen(true)} className="gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  {t('analytics.open')}
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button
-              variant="default"
-              size="sm"
-              className="px-2 sm:px-3"
-              onClick={() => setPresetOpen(true)}
-              aria-label={t('header.presets')}
-            >
-              <Sparkles className="h-4 w-4 sm:hidden" />
-              <span className="hidden sm:inline">{t('header.presets')}</span>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="px-2 sm:px-3" aria-label={t('header.design')}>
+                  <Palette className="h-4 w-4 sm:hidden" />
+                  <span className="hidden sm:inline">{t('header.design')}</span>
+                  <ChevronDown className="ml-1 hidden h-4 w-4 sm:inline" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[12rem]">
+                <DropdownMenuItem onClick={() => setPresetOpen(true)} className="gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  {t('header.presets')}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setSettingsSection('font')} className="gap-2">
+                  <Type className="h-4 w-4" />
+                  {t('settings.font')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSettingsSection('icons')} className="gap-2">
+                  <Smile className="h-4 w-4" />
+                  {t('settings.icons')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSettingsSection('timeline')} className="gap-2">
+                  <Ruler className="h-4 w-4" />
+                  {t('settings.timeline')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSettingsSection('background')} className="gap-2">
+                  <ImageIcon className="h-4 w-4" />
+                  {t('settings.background')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSettingsSection('theme')} className="gap-2">
+                  <Palette className="h-4 w-4" />
+                  {t('settings.colorTheme')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               variant="ghost"
               size="sm"
@@ -303,26 +339,7 @@ function App() {
                   <Languages className="h-4 w-4" />
                   {t('settings.language')}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSettingsSection('font')} className="gap-2">
-                  <Type className="h-4 w-4" />
-                  {t('settings.font')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSettingsSection('icons')} className="gap-2">
-                  <Smile className="h-4 w-4" />
-                  {t('settings.icons')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSettingsSection('timeline')} className="gap-2">
-                  <Ruler className="h-4 w-4" />
-                  {t('settings.timeline')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSettingsSection('background')} className="gap-2">
-                  <ImageIcon className="h-4 w-4" />
-                  {t('settings.background')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSettingsSection('theme')} className="gap-2">
-                  <Palette className="h-4 w-4" />
-                  {t('settings.colorTheme')}
-                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleShare} className="gap-2">
                   <Share2 className="h-4 w-4" />
                   {t('share.button')}
@@ -330,14 +347,6 @@ function App() {
                 <DropdownMenuItem onClick={handleCopyLink} className="gap-2">
                   <Link2 className="h-4 w-4" />
                   {t('sharelink.copy')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setDiaryOpen(true)} className="gap-2">
-                  <BookOpen className="h-4 w-4" />
-                  {t('diary.open')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setAnalyticsOpen(true)} className="gap-2">
-                  <BarChart3 className="h-4 w-4" />
-                  {t('analytics.open')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setHomeOpen(true)} className="gap-2">
                   <Smartphone className="h-4 w-4" />

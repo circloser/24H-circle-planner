@@ -22,7 +22,7 @@ fs.mkdirSync(DIR, { recursive: true });
 let card = page.locator('button.glass-card:has(h3:has-text("직장인"))').first();
 if (!(await card.isVisible({ timeout: 3000 }).catch(() => false))) {
   await page.keyboard.press('Escape').catch(() => {});
-  await page.locator('button:has-text("프리셋")').first().click().catch(() => {});
+  await page.locator('button[aria-label="디자인"]').first().click().catch(() => {}); await page.waitForTimeout(200); await page.locator('[role="menuitem"]:has-text("프리셋")').first().click().catch(() => {});
   await page.waitForTimeout(300);
   card = page.locator('button.glass-card:has(h3:has-text("직장인"))').first();
 }
@@ -31,7 +31,7 @@ await page.locator('button:has-text("현재 창에 적용")').first().click().ca
 await page.waitForTimeout(600);
 
 async function pickFont(label) {
-  await page.locator('button[aria-label="설정"]').first().click();
+  await page.locator('button[aria-label="디자인"]').first().click();
   await page.waitForTimeout(200);
   await page.locator('[role="menuitem"]:has-text("폰트")').first().click();
   await page.waitForTimeout(250);

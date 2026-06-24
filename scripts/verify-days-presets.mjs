@@ -68,7 +68,7 @@ await page.waitForTimeout(200);
 await page.getByRole('textbox').first().fill('Trip Day Template');
 await page.getByRole('button', { name: 'Save' }).first().click();
 await page.waitForTimeout(300);
-await page.getByRole('button', { name: 'Presets' }).first().click();
+await page.locator('button[aria-label="Design"]').first().click().catch(() => {}); await page.waitForTimeout(200); await page.getByRole("menuitem", { name: "Presets" }).first().click().catch(() => {});
 await page.waitForTimeout(400);
 const myPresetsShown = await page.getByText('My presets', { exact: false }).first().isVisible().catch(() => false);
 const savedCard = await page.getByRole('heading', { name: 'Trip Day Template' }).first().isVisible().catch(() => false);

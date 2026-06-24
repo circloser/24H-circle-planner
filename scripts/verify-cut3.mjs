@@ -36,7 +36,7 @@ await page.mouse.click(5, 450).catch(() => {});
 await page.waitForTimeout(250);
 
 // ── Load a preset for the rest ────────────────────────────────────────────────
-await page.getByRole('button', { name: 'Presets' }).first().click();
+await page.locator('button[aria-label="Design"]').first().click().catch(() => {}); await page.waitForTimeout(200); await page.getByRole("menuitem", { name: "Presets" }).first().click().catch(() => {});
 await page.waitForTimeout(300);
 await page.locator('button:has(h3)').first().click();
 await page.getByRole('button', { name: 'Apply to current' }).first().click().catch(() => {});

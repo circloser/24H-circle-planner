@@ -23,7 +23,7 @@ fs.mkdirSync(DIR, { recursive: true });
 
 // First-launch gallery should be open; if not, open it.
 if (!(await page.locator('[role="dialog"]:has-text("프리셋")').first().isVisible({ timeout: 2000 }).catch(() => false))) {
-  await page.locator('button:has-text("프리셋")').first().click().catch(() => {});
+  await page.locator('button[aria-label="디자인"]').first().click().catch(() => {}); await page.waitForTimeout(200); await page.locator('[role="menuitem"]:has-text("프리셋")').first().click().catch(() => {});
   await page.waitForTimeout(400);
 }
 

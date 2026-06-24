@@ -18,7 +18,7 @@ async function loadPreset(page) {
   let card = page.locator('button.glass-card:has(h3:has-text("직장인"))').first();
   if (!(await card.isVisible({ timeout: 2500 }).catch(() => false))) {
     await page.keyboard.press('Escape').catch(() => {});
-    await page.locator('button:has-text("프리셋")').first().click().catch(() => {});
+    await page.locator('button[aria-label="디자인"]').first().click().catch(() => {}); await page.waitForTimeout(200); await page.locator('[role="menuitem"]:has-text("프리셋")').first().click().catch(() => {});
     await wait(300);
     card = page.locator('button.glass-card:has(h3:has-text("직장인"))').first();
   }

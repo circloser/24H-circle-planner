@@ -25,7 +25,7 @@ fs.mkdirSync(DIR, { recursive: true });
 let card = page.locator('button.glass-card:has(h3:has-text("직장인"))').first();
 if (!(await card.isVisible({ timeout: 3000 }).catch(() => false))) {
   await page.keyboard.press('Escape').catch(() => {});
-  await page.locator('button:has-text("프리셋")').first().click().catch(() => {});
+  await page.locator('button[aria-label="디자인"]').first().click().catch(() => {}); await page.waitForTimeout(200); await page.locator('[role="menuitem"]:has-text("프리셋")').first().click().catch(() => {});
   await page.waitForTimeout(300);
   card = page.locator('button.glass-card:has(h3:has-text("직장인"))').first();
 }
@@ -56,7 +56,7 @@ const darkFill = (await labelAttrs('수면'))?.fill;
 await page.screenshot({ path: path.join(DIR, 'textstyle-dark.png') });
 
 // ── 1. Settings gear dropdown → focused dialogs ───────────────────────────────
-await page.locator('button[aria-label="설정"]').first().click();
+await page.locator('button[aria-label="디자인"]').first().click();
 await page.waitForTimeout(250);
 const menuItems = await page.locator('[role="menuitem"]').allTextContents();
 await page.locator('[role="menuitem"]:has-text("배경")').first().click();

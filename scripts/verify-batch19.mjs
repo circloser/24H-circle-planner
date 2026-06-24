@@ -18,7 +18,7 @@ await page.keyboard.press('Escape').catch(() => {});
 // Load 직장인 preset.
 let card = page.locator('button.glass-card:has(h3:has-text("직장인"))').first();
 if (!(await card.isVisible({ timeout: 2000 }).catch(() => false))) {
-  await page.locator('button:has-text("프리셋")').first().click().catch(() => {});
+  await page.locator('button[aria-label="디자인"]').first().click().catch(() => {}); await page.waitForTimeout(200); await page.locator('[role="menuitem"]:has-text("프리셋")').first().click().catch(() => {});
   await wait(300);
   card = page.locator('button.glass-card:has(h3:has-text("직장인"))').first();
 }
@@ -33,7 +33,7 @@ await page.locator('[role="dialog"] button:has-text("현재 시간표 복제")')
 await wait(500);
 
 // Open the analysis dialog (defaults to the "현재 시간표" scope).
-await page.locator('button[aria-label="설정"]').first().click();
+await page.locator('button[aria-label="내 시간표"]').first().click();
 await wait(300);
 await page.locator('[role="menuitem"]:has-text("시간 분석")').first().click();
 await wait(400);
