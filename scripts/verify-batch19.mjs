@@ -32,11 +32,23 @@ await wait(300);
 await page.locator('[role="dialog"] button:has-text("현재 시간표 복제")').first().click().catch(() => {});
 await wait(500);
 
-// Open the analysis dialog.
+// Open the analysis dialog (defaults to the "현재 시간표" scope).
 await page.locator('button[aria-label="설정"]').first().click();
 await wait(300);
 await page.locator('[role="menuitem"]:has-text("시간 분석")').first().click();
 await wait(400);
+
+// Composite scope tabs are present.
+const hasScopes = await page.evaluate(() => {
+  const d = [...document.querySelectorAll('[role="dialog"]')].find((x) => (x.textContent || '').includes('시간 분석'));
+  const t = d ? d.textContent : '';
+  return t.includes('현재 시간표') && t.includes('전체 일정') && t.includes('일기');
+});
+pass('composite scope tabs present', hasScopes);
+
+// Switch to "전체 일정" → multi-day analysis with a trend strip.
+await page.locator('[role="dialog"] button:has-text("전체 일정")').first().click();
+await wait(300);
 
 const info = await page.evaluate(() => {
   const dlg = [...document.querySelectorAll('[role="dialog"]')].find((d) => (d.textContent || '').includes('시간 분석'));
@@ -55,6 +67,16 @@ pass('analytics dialog opens', info !== null);
 pass('shows sleep / work / leisure categories', !!info && info.sleep && info.work && info.leisure, JSON.stringify(info));
 pass('shows category bars', !!info && info.bars >= 4, `bars=${info?.bars}`);
 pass('shows per-day trend (2 days)', !!info && info.trend && info.twoDays);
+
+// Diary scope exposes the range sub-tabs.
+await page.locator('[role="dialog"] button:has-text("일기")').first().click();
+await wait(300);
+const hasRanges = await page.evaluate(() => {
+  const d = [...document.querySelectorAll('[role="dialog"]')].find((x) => (x.textContent || '').includes('시간 분석'));
+  const t = d ? d.textContent : '';
+  return t.includes('최근 1달') && t.includes('최근 1주일');
+});
+pass('diary scope shows range sub-tabs', hasRanges);
 
 await browser.close();
 const allOk = results.every((r) => r.ok);

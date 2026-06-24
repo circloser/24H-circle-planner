@@ -214,6 +214,12 @@ export type TKey =
   | 'diary.empty'
   | 'diary.delete'
   | 'diary.today'
+  | 'analytics.scopeCurrent'
+  | 'analytics.scopeAll'
+  | 'analytics.scopeDiary'
+  | 'analytics.rangeAll'
+  | 'analytics.rangeMonth'
+  | 'analytics.rangeWeek'
   | 'memo.delete'
   | 'memo.placeholder'
   | 'memo.show'
@@ -470,6 +476,12 @@ const ko: Dict = {
   'diary.empty': '날짜를 눌러 그날의 시간표를 기록하세요.',
   'diary.delete': '삭제',
   'diary.today': '오늘',
+  'analytics.scopeCurrent': '현재 시간표',
+  'analytics.scopeAll': '전체 일정',
+  'analytics.scopeDiary': '일기',
+  'analytics.rangeAll': '전체',
+  'analytics.rangeMonth': '최근 1달',
+  'analytics.rangeWeek': '최근 1주일',
   'memo.delete': '메모 삭제',
   'memo.placeholder': '메모를 입력하세요',
   'memo.show': '메모 보이기',
@@ -727,6 +739,12 @@ const en: Dict = {
   'diary.empty': "Tap a date to log that day's timetable.",
   'diary.delete': 'Delete',
   'diary.today': 'Today',
+  'analytics.scopeCurrent': 'Current',
+  'analytics.scopeAll': 'All days',
+  'analytics.scopeDiary': 'Diary',
+  'analytics.rangeAll': 'All',
+  'analytics.rangeMonth': 'Last month',
+  'analytics.rangeWeek': 'Last week',
   'memo.delete': 'Delete memo',
   'memo.placeholder': 'Type a memo…',
   'memo.show': 'Show memos',
