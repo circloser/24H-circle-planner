@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import './index.css';
-import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Plus, Link2, BarChart3 } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Plus, Link2, BarChart3, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { Button } from '@/components/ui/button';
@@ -50,6 +50,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { WelcomeOverlay } from '@/components/Onboarding/WelcomeOverlay';
 import { buildShareUrl, readSharedFromHash, clearShareHash, copyToClipboard } from '@/lib/share-link';
 import { AnalyticsDialog } from '@/components/Analytics/AnalyticsDialog';
+import { DiaryDialog } from '@/components/Diary/DiaryDialog';
 import { PRESETS } from '@/data/presets';
 import type { Slot } from '@/types/slot';
 import type { Schedule } from '@/types/schedule';
@@ -125,6 +126,7 @@ function App() {
   const [homeOpen, setHomeOpen] = useState(false);
   const [timeBlockOpen, setTimeBlockOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  const [diaryOpen, setDiaryOpen] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [editingSliceId, setEditingSliceId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -329,6 +331,10 @@ function App() {
                   <Link2 className="h-4 w-4" />
                   {t('sharelink.copy')}
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setDiaryOpen(true)} className="gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  {t('diary.open')}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setAnalyticsOpen(true)} className="gap-2">
                   <BarChart3 className="h-4 w-4" />
                   {t('analytics.open')}
@@ -531,6 +537,9 @@ function App() {
 
       {/* Time analysis — categorised daily-average split + per-day trend. */}
       <AnalyticsDialog open={analyticsOpen} onOpenChange={setAnalyticsOpen} />
+
+      {/* Diary — month calendar of saved days, each shown as a mini timetable. */}
+      <DiaryDialog open={diaryOpen} onOpenChange={setDiaryOpen} />
 
       {/* One-time first-visit welcome over the seeded demo schedule. */}
       <WelcomeOverlay

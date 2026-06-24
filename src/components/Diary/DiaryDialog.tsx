@@ -1,0 +1,155 @@
+import { useState } from 'react';
+import { v4 as uuid } from 'uuid';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { AdSlot } from '@/components/Ads/AdSlot';
+import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
+import { useDiary, dateKey, type DiaryEntry } from '@/hooks/useDiary';
+import { useTranslation } from '@/hooks/usePreferences';
+import { MiniChart } from './MiniChart';
+
+interface DiaryDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+const pad2 = (n: number) => String(n).padStart(2, '0');
+
+/**
+ * Timetable diary — a month calendar where each saved day shows a mini-chart of
+ * that day's timetable (saved vs unsaved days are visually distinct). "Save today"
+ * (or tapping any date) snapshots the current schedule under that date; tapping a
+ * saved day loads it back into the editor.
+ */
+export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
+  const present = useStoreSelector((s) => s.history.present);
+  const dispatch = useStoreDispatch();
+  const { entries, saveEntry, removeEntry } = useDiary();
+  const { t, lang } = useTranslation();
+
+  const today = new Date();
+  const todayKey = dateKey(today);
+  const [view, setView] = useState(() => ({ y: today.getFullYear(), m: today.getMonth() }));
+
+  const first = new Date(view.y, view.m, 1);
+  const startOffset = first.getDay();
+  const daysInMonth = new Date(view.y, view.m + 1, 0).getDate();
+  const monthLabel = first.toLocaleDateString(lang, { year: 'numeric', month: 'long' });
+  const weekdays = Array.from({ length: 7 }, (_, i) =>
+    new Date(2024, 0, 7 + i).toLocaleDateString(lang, { weekday: 'narrow' }),
+  );
+  const keyOf = (day: number) => `${view.y}-${pad2(view.m + 1)}-${pad2(day)}`;
+  const shift = (d: number) =>
+    setView(({ y, m }) => {
+      const nm = m + d;
+      return { y: y + Math.floor(nm / 12), m: ((nm % 12) + 12) % 12 };
+    });
+
+  function saveToDate(key: string) {
+    saveEntry(present, key);
+    toast.success(t('diary.saved'));
+  }
+  function loadEntry(e: DiaryEntry) {
+    dispatch({
+      type: 'LOAD_SCHEDULE',
+      schedule: {
+        id: uuid(),
+        version: 1,
+        name: e.name || '내 시간표',
+        presetSource: null,
+        updatedAt: new Date().toISOString(),
+        slices: e.slices.map((s) => ({ ...s, id: uuid() })),
+      },
+    });
+    toast.success(t('diary.loaded'));
+    onOpenChange(false);
+  }
+
+  const cells: Array<number | null> = [
+    ...Array.from({ length: startOffset }, () => null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[88vh] max-w-md overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{t('diary.title')}</DialogTitle>
+        </DialogHeader>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-0.5">
+            <button type="button" aria-label="prev" onClick={() => shift(-1)} className="grid h-7 w-7 place-items-center rounded transition-colors hover:bg-black/10">
+              <ChevronLeft className="h-4 w-4" style={{ color: 'hsl(var(--foreground))' }} />
+            </button>
+            <button type="button" aria-label="next" onClick={() => shift(1)} className="grid h-7 w-7 place-items-center rounded transition-colors hover:bg-black/10">
+              <ChevronRight className="h-4 w-4" style={{ color: 'hsl(var(--foreground))' }} />
+            </button>
+            <span className="ml-1 text-sm font-semibold" style={{ color: 'hsl(var(--foreground))' }}>{monthLabel}</span>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => saveToDate(todayKey)}
+            style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+          >
+            {t('diary.saveToday')}
+          </Button>
+        </div>
+
+        <p className="text-xs" style={{ color: 'hsl(var(--text-muted) / 0.85)' }}>{t('diary.empty')}</p>
+
+        <div className="grid grid-cols-7 gap-1 text-center">
+          {weekdays.map((w, i) => (
+            <div key={`wd-${i}`} className="pb-0.5 text-[11px] font-semibold" style={{ color: i === 0 ? '#EF4444' : 'hsl(var(--text-muted))' }}>
+              {w}
+            </div>
+          ))}
+          {cells.map((day, i) => {
+            if (day === null) return <div key={`b-${i}`} />;
+            const key = keyOf(day);
+            const entry = entries[key];
+            const isToday = key === todayKey;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => (entry ? loadEntry(entry) : saveToDate(key))}
+                className="group relative grid aspect-square place-items-center rounded-md p-0.5 transition-colors hover:bg-black/5"
+                style={isToday ? { outline: '2px solid hsl(var(--primary))', outlineOffset: '-2px' } : undefined}
+                title={key}
+              >
+                {entry ? (
+                  <>
+                    <MiniChart slices={entry.slices} />
+                    <span className="absolute left-0.5 top-0 text-[10px] font-bold" style={{ color: 'hsl(var(--foreground))' }}>{day}</span>
+                    <span
+                      role="button"
+                      aria-label={t('diary.delete')}
+                      onClick={(e) => { e.stopPropagation(); removeEntry(key); toast(t('diary.deleted')); }}
+                      className="absolute right-0 top-0 hidden h-4 w-4 place-items-center rounded-full group-hover:grid"
+                      style={{ backgroundColor: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))' }}
+                    >
+                      <X className="h-2.5 w-2.5" style={{ color: 'hsl(var(--text-muted))' }} />
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-xs" style={{ color: 'hsl(var(--text-muted) / 0.85)' }}>{day}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Reserved ad space (consistent with the other dialogs). */}
+        <AdSlot slot="diary" className="mt-3" />
+      </DialogContent>
+    </Dialog>
+  );
+}

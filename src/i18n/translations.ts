@@ -205,6 +205,15 @@ export type TKey =
   | 'cat.leisure'
   | 'cat.commute'
   | 'cat.other'
+  | 'diary.open'
+  | 'diary.title'
+  | 'diary.saveToday'
+  | 'diary.saved'
+  | 'diary.loaded'
+  | 'diary.deleted'
+  | 'diary.empty'
+  | 'diary.delete'
+  | 'diary.today'
   | 'memo.delete'
   | 'memo.placeholder'
   | 'memo.show'
@@ -452,6 +461,15 @@ const ko: Dict = {
   'cat.leisure': '여가',
   'cat.commute': '이동',
   'cat.other': '기타',
+  'diary.open': '일기',
+  'diary.title': '시간표 일기',
+  'diary.saveToday': '오늘 저장',
+  'diary.saved': '오늘 시간표를 일기에 저장했어요',
+  'diary.loaded': '일기에서 불러왔어요',
+  'diary.deleted': '일기에서 삭제했어요',
+  'diary.empty': '날짜를 눌러 그날의 시간표를 기록하세요.',
+  'diary.delete': '삭제',
+  'diary.today': '오늘',
   'memo.delete': '메모 삭제',
   'memo.placeholder': '메모를 입력하세요',
   'memo.show': '메모 보이기',
@@ -700,6 +718,15 @@ const en: Dict = {
   'cat.leisure': 'Leisure',
   'cat.commute': 'Commute',
   'cat.other': 'Other',
+  'diary.open': 'Diary',
+  'diary.title': 'Timetable diary',
+  'diary.saveToday': 'Save today',
+  'diary.saved': "Saved today's timetable to your diary",
+  'diary.loaded': 'Loaded from your diary',
+  'diary.deleted': 'Removed from your diary',
+  'diary.empty': "Tap a date to log that day's timetable.",
+  'diary.delete': 'Delete',
+  'diary.today': 'Today',
   'memo.delete': 'Delete memo',
   'memo.placeholder': 'Type a memo…',
   'memo.show': 'Show memos',
