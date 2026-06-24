@@ -12,6 +12,7 @@ import type { Schedule } from '@/types/schedule';
 import type { TimeSlice } from '@/types/time-slice';
 import { loadSchedule, STORAGE_KEY_DAYS } from '@/lib/storage';
 import { createInitialSchedule } from '@/lib/initial-schedule';
+import { createDemoSchedule } from '@/data/demo-schedule';
 import { useStoreDispatch, useStoreSelector } from '@/hooks/useScheduleStore';
 
 /**
@@ -62,11 +63,12 @@ function loadDaysEnvelope(): { state: DaysState; existed: boolean } {
 }
 
 /** Synchronous initial state: restore the envelope, or seed day 1 from the
- *  existing single schedule (so returning users keep their plan as day 1). */
+ *  existing single schedule (returning users keep their plan), else a friendly
+ *  demo example on a genuine first visit (so the circle is never empty). */
 function initDaysState(): DaysState {
   const env = loadDaysEnvelope();
   if (env.existed) return env.state;
-  const seed = loadSchedule() ?? createInitialSchedule();
+  const seed = loadSchedule() ?? createDemoSchedule();
   const day: DayDoc = { id: uuid(), schedule: seed };
   return { days: [day], activeId: day.id };
 }

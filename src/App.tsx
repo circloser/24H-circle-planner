@@ -47,22 +47,30 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useSliceInteraction } from '@/hooks/useSliceInteraction';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { STORAGE_KEY_SCHEDULE } from '@/lib/storage';
+import { WelcomeOverlay } from '@/components/Onboarding/WelcomeOverlay';
 import { PRESETS } from '@/data/presets';
 import type { Slot } from '@/types/slot';
 import type { Schedule } from '@/types/schedule';
 import type { Preset } from '@/types/preset';
 
-/**
- * F6: Returns true if this is a genuine first launch —
- * no saved schedule exists in localStorage.
- * Called as a lazy useState initializer so it runs once on first render.
- */
-function checkIsFirstLaunch(): boolean {
+// First-visit onboarding flag. When absent, we show the one-time welcome overlay
+// (the day-1 schedule is seeded with a demo example by useDays so the circle is
+// never empty). Set once the welcome is dismissed.
+const ONBOARDED_KEY = '24h-circle-planner.onboarded';
+
+function isFirstVisit(): boolean {
   try {
-    return localStorage.getItem(STORAGE_KEY_SCHEDULE) === null;
+    return localStorage.getItem(ONBOARDED_KEY) === null;
   } catch {
     return false;
+  }
+}
+
+function markOnboarded(): void {
+  try {
+    localStorage.setItem(ONBOARDED_KEY, '1');
+  } catch {
+    // storage unavailable — the welcome may show again, which is harmless
   }
 }
 
@@ -70,8 +78,13 @@ function App() {
   const present = useStoreSelector((s) => s.history.present);
   const dispatch = useStoreDispatch();
 
-  // F6: lazy initializer opens preset gallery on genuine first launch
-  const [presetOpen, setPresetOpen] = useState<boolean>(checkIsFirstLaunch);
+  const [presetOpen, setPresetOpen] = useState(false);
+  // First visit → one-time welcome over the seeded demo schedule.
+  const [welcomeOpen, setWelcomeOpen] = useState<boolean>(isFirstVisit);
+  const dismissWelcome = () => {
+    markOnboarded();
+    setWelcomeOpen(false);
+  };
 
   // Apply the chosen colour theme (if any) to a preset and load it, so content +
   // palette are chosen together in one undoable step. Shared by built-in presets
@@ -336,7 +349,7 @@ function App() {
             onSliceDoubleClick={handlers.onSliceDoubleClick}
             onBackgroundClick={handlers.onBackgroundClick}
             onSliceSplit={handlers.onSliceSplit}
-            showEmptyHint={isEmptyState}
+            showEmptyHint={false}
             selectedSliceId={editingSliceId}
             title={present.name}
             onHubClick={() => setEditingTitle(true)}
@@ -344,6 +357,29 @@ function App() {
           />
           {/* Rim annotation memos (hover near the edge → leader line + note). */}
           <RimMemoLayer />
+
+          {/* Empty-state hero — a value-prop CTA when the circle is empty
+              (e.g. after a reset). Sits in the lower band, clear of the hub. */}
+          {isEmptyState && !welcomeOpen && (
+            <div className="pointer-events-none absolute inset-0 flex items-end justify-center pb-[14%]">
+              <div
+                className="pointer-events-auto flex flex-col items-center gap-2 rounded-xl px-4 py-3 text-center shadow-lg"
+                style={{ backgroundColor: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))' }}
+              >
+                <p className="text-sm font-semibold" style={{ color: 'hsl(var(--foreground))' }}>
+                  {t('empty.heroTitle')}
+                </p>
+                <Button
+                  onClick={() => setPresetOpen(true)}
+                  className="gap-1.5"
+                  style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {t('empty.heroCta')}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Mobile: stacked sections below the chart. Editing stays enabled (touch
@@ -465,6 +501,14 @@ function App() {
 
       {/* Mobile: add a time block by typing start/end (instead of finger-dragging). */}
       <TimeBlockDialog open={timeBlockOpen} onOpenChange={setTimeBlockOpen} />
+
+      {/* One-time first-visit welcome over the seeded demo schedule. */}
+      <WelcomeOverlay
+        open={welcomeOpen}
+        onOpenChange={(o) => { if (!o) dismissWelcome(); }}
+        onPickPreset={() => setPresetOpen(true)}
+        isMobile={isMobile}
+      />
 
       {/* Multi-day switcher (top thumbnails + bottom day indicator) */}
       <DayBar />

@@ -176,6 +176,18 @@ export type TKey =
   | 'block.end'
   | 'block.color'
   | 'block.invalid'
+  | 'welcome.title'
+  | 'welcome.subtitle'
+  | 'welcome.howto'
+  | 'welcome.gClick'
+  | 'welcome.gDrag'
+  | 'welcome.gEdit'
+  | 'welcome.gTap'
+  | 'welcome.gAdd'
+  | 'welcome.startPreset'
+  | 'welcome.startBlank'
+  | 'empty.heroTitle'
+  | 'empty.heroCta'
   | 'memo.delete'
   | 'memo.placeholder'
   | 'memo.show'
@@ -394,6 +406,18 @@ const ko: Dict = {
   'block.end': '끝 시간',
   'block.color': '색상',
   'block.invalid': '시작과 끝 시간을 다르게 입력하세요.',
+  'welcome.title': '하루를 한눈에, 원형 시간표',
+  'welcome.subtitle': '아래 예시를 바로 바꾸거나, 프리셋으로 30초 만에 시작하세요.',
+  'welcome.howto': '편집하는 법',
+  'welcome.gClick': '클릭 — 시간대 나누기',
+  'welcome.gDrag': '경계 드래그 — 시간 조절',
+  'welcome.gEdit': '더블클릭 — 이름·색·아이콘',
+  'welcome.gTap': '탭 — 이름·색·아이콘 편집',
+  'welcome.gAdd': '+ 일정 추가 — 시작·끝 시간 입력',
+  'welcome.startPreset': '프리셋으로 시작',
+  'welcome.startBlank': '직접 편집',
+  'empty.heroTitle': '시간표가 비어 있어요',
+  'empty.heroCta': '프리셋으로 30초 만에 시작',
   'memo.delete': '메모 삭제',
   'memo.placeholder': '메모를 입력하세요',
   'memo.show': '메모 보이기',
@@ -613,6 +637,18 @@ const en: Dict = {
   'block.end': 'End time',
   'block.color': 'Color',
   'block.invalid': 'Start and end times must differ.',
+  'welcome.title': 'Your whole day, at a glance',
+  'welcome.subtitle': 'Edit the example below, or start in 30 seconds with a preset.',
+  'welcome.howto': 'How to edit',
+  'welcome.gClick': 'Click — split a time block',
+  'welcome.gDrag': 'Drag a boundary — adjust the time',
+  'welcome.gEdit': 'Double-click — name, color, icon',
+  'welcome.gTap': 'Tap — edit name, color, icon',
+  'welcome.gAdd': '+ Add item — type start & end times',
+  'welcome.startPreset': 'Start with a preset',
+  'welcome.startBlank': 'Edit it myself',
+  'empty.heroTitle': 'Your timetable is empty',
+  'empty.heroCta': 'Start in 30s with a preset',
   'memo.delete': 'Delete memo',
   'memo.placeholder': 'Type a memo…',
   'memo.show': 'Show memos',

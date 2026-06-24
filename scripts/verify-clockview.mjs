@@ -27,8 +27,16 @@ await page.goto(FILE, { waitUntil: 'domcontentloaded', timeout: 30000 });
 await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
 fs.mkdirSync(DIR, { recursive: true });
 
-// Load a preset so the schedule has several slices.
-await page.locator('button:has(h3)').first().click();
+// Load a preset so the schedule has several slices. Dismiss the first-visit
+// welcome overlay, then open the preset gallery if it isn't already showing.
+await page.keyboard.press('Escape').catch(() => {});
+let presetCard = page.locator('button:has(h3)').first();
+if (!(await presetCard.isVisible({ timeout: 1500 }).catch(() => false))) {
+  await page.getByRole('button', { name: 'Presets' }).first().click().catch(() => {});
+  await page.waitForTimeout(400);
+  presetCard = page.locator('button:has(h3)').first();
+}
+await presetCard.click();
 await page.getByRole('button', { name: 'Apply to current' }).first().click().catch(() => {});
 await page.waitForTimeout(500);
 

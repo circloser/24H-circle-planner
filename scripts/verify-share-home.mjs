@@ -39,8 +39,15 @@ const head = await page.evaluate(() => {
   };
 });
 
-// Dismiss the first-launch preset gallery (modal makes the header inert).
-await page.locator('button:has(h3)').first().click();
+// Dismiss the first-visit welcome, then open the preset gallery and load one.
+await page.keyboard.press('Escape').catch(() => {});
+let _pc = page.locator('button:has(h3)').first();
+if (!(await _pc.isVisible({ timeout: 1500 }).catch(() => false))) {
+  await page.getByRole('button', { name: 'Presets' }).first().click().catch(() => {});
+  await page.waitForTimeout(400);
+  _pc = page.locator('button:has(h3)').first();
+}
+await _pc.click();
 await page.getByRole('button', { name: 'Apply to current' }).first().click().catch(() => {});
 await page.waitForTimeout(400);
 

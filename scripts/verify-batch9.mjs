@@ -23,7 +23,14 @@ page.on('pageerror', (e) => { if (!IGNORE.test(e.message)) errors.push('PAGE ERR
 await page.goto(FILE, { waitUntil: 'domcontentloaded', timeout: 30000 });
 await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
 fs.mkdirSync(DIR, { recursive: true });
-await page.locator('button:has(h3)').first().click();
+await page.keyboard.press('Escape').catch(() => {}); // dismiss first-visit welcome
+let _pc = page.locator('button:has(h3)').first();
+if (!(await _pc.isVisible({ timeout: 1500 }).catch(() => false))) {
+  await page.getByRole('button', { name: 'Presets' }).first().click().catch(() => {});
+  await page.waitForTimeout(400);
+  _pc = page.locator('button:has(h3)').first();
+}
+await _pc.click();
 await page.getByRole('button', { name: 'Apply to current' }).first().click().catch(() => {});
 await page.waitForTimeout(400);
 
