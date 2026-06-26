@@ -3,6 +3,8 @@ import { X, Move } from 'lucide-react';
 import { useRimMemos, type RimMemo } from './useRimMemos';
 import { useChartView, useTranslation } from '@/hooks/usePreferences';
 import { useDays } from '@/hooks/useDays';
+import { useDiary } from '@/hooks/useDiary';
+import { useStoreSelector } from '@/hooks/useScheduleStore';
 import { viewSpec, angleForMin, minForAngle, isInWindow } from '@/lib/chart-view';
 
 // Must mirror the chart's geometry (CircleTimeline).
@@ -40,6 +42,7 @@ function RimMemoBox({
   memo,
   angleDeg,
   autoFocus,
+  readOnly = false,
   onChange,
   onDelete,
   onStartDrag,
@@ -47,6 +50,7 @@ function RimMemoBox({
   memo: RimMemo;
   angleDeg: number;
   autoFocus: boolean;
+  readOnly?: boolean;
   onChange: (text: string) => void;
   onDelete: () => void;
   onStartDrag: (e: ReactPointerEvent<HTMLElement>) => void;
@@ -80,7 +84,8 @@ function RimMemoBox({
 
   return (
     <div className="group pointer-events-auto" style={style}>
-      {/* Hover-only controls — drag along the rim + delete. */}
+      {/* Hover-only controls — drag along the rim + delete (hidden when locked). */}
+      {!readOnly && (
       <div
         className="absolute -top-2.5 z-10 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
         style={{ [right ? 'left' : 'right']: -8 } as CSSProperties}
@@ -104,14 +109,15 @@ function RimMemoBox({
           <X className="h-3 w-3" style={{ color: 'hsl(var(--text-muted))' }} />
         </button>
       </div>
+      )}
 
       <div
         ref={ref}
-        contentEditable
+        contentEditable={!readOnly}
         suppressContentEditableWarning
         role="textbox"
         aria-label={t('rim.placeholder')}
-        data-placeholder={t('rim.placeholder')}
+        data-placeholder={readOnly ? undefined : t('rim.placeholder')}
         className="rim-memo-text"
         style={{
           background: 'transparent',
@@ -122,12 +128,12 @@ function RimMemoBox({
           outline: 'none',
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-word',
-          cursor: 'text',
+          cursor: readOnly ? 'default' : 'text',
           padding: '1px 3px',
           textShadow: '0 1px 2px hsl(var(--background)), 0 0 2px hsl(var(--background))',
         }}
-        onInput={(e) => onChange(e.currentTarget.innerText)}
-        onBlur={(e) => {
+        onInput={readOnly ? undefined : (e) => onChange(e.currentTarget.innerText)}
+        onBlur={readOnly ? undefined : (e) => {
           // An empty memo left behind is just visual noise — drop it.
           if (!e.currentTarget.innerText.trim()) onDelete();
         }}
@@ -146,11 +152,27 @@ function RimMemoBox({
  */
 export function RimMemoLayer() {
   const { activeId } = useDays();
-  const { memos, add, update, setMinute, remove } = useRimMemos(activeId);
+  const { memos, add, update, setMinute, remove, replace } = useRimMemos(activeId);
+  const { entries } = useDiary();
+  const diaryDate = useStoreSelector((s) => s.diaryDate);
+  const locked = useStoreSelector((s) => s.locked);
   const spec = viewSpec(useChartView());
   const svgRef = useRef<SVGSVGElement>(null);
   const [hoverAngle, setHoverAngle] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // When a diary record is loaded, swap in that date's rim memos so they belong
+  // to the loaded date (replacing the active day's). The prevDiaryDate guard
+  // ensures this fires only on an actual date change — re-renders from entries/
+  // replace updates pass the guard and do nothing.
+  const prevDiaryDate = useRef<string | null>(null);
+  useEffect(() => {
+    const prev = prevDiaryDate.current;
+    prevDiaryDate.current = diaryDate;
+    if (diaryDate && diaryDate !== prev) {
+      replace(entries[diaryDate]?.rimMemos ?? []);
+    }
+  }, [diaryDate, entries, replace]);
 
   // Only memos whose anchor time is visible in the current window are shown.
   const visible = memos.filter((m) => isInWindow(m.minute, spec));
@@ -204,7 +226,7 @@ export function RimMemoLayer() {
           d={band}
           fillRule="evenodd"
           fill="transparent"
-          style={{ pointerEvents: 'auto', cursor: 'copy' }}
+          style={{ pointerEvents: locked ? 'none' : 'auto', cursor: 'copy' }}
           onPointerMove={(e) => {
             const a = toAngle(e.clientX, e.clientY);
             if (a !== null) setHoverAngle(a);
@@ -252,6 +274,7 @@ export function RimMemoLayer() {
           memo={m}
           angleDeg={angleForMin(m.minute, spec)}
           autoFocus={editingId === m.id}
+          readOnly={locked}
           onChange={(text) => update(m.id, text)}
           onDelete={() => remove(m.id)}
           onStartDrag={(e) => startDrag(m.id, e)}

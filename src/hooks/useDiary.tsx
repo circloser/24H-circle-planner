@@ -2,6 +2,8 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { Schedule } from '@/types/schedule';
 import type { TimeSlice } from '@/types/time-slice';
+import { useDays } from '@/hooks/useDays';
+import { readRimMemos, type RimMemo } from '@/components/RimMemo/useRimMemos';
 
 /**
  * Diary: a per-DATE record of a day's timetable (distinct from the clock-tools
@@ -13,6 +15,9 @@ export interface DiaryEntry {
   date: string; // local YYYY-MM-DD
   name: string;
   slices: TimeSlice[];
+  /** Rim memos belonging to this date (optional — entries saved before this
+   *  feature have none). Restored when the record is loaded. */
+  rimMemos?: RimMemo[];
   savedAt: number; // epoch ms
 }
 
@@ -61,6 +66,7 @@ const DiaryContext = createContext<DiaryApi | null>(null);
 
 export function DiaryProvider({ children }: { children: React.ReactNode }) {
   const [entries, setEntries] = useState<DiaryMap>(loadMap);
+  const { activeId } = useDays();
 
   useEffect(() => {
     saveMap(entries);
@@ -74,10 +80,12 @@ export function DiaryProvider({ children }: { children: React.ReactNode }) {
         date: key,
         name: schedule.name ?? '',
         slices: schedule.slices.map((s) => ({ ...s })),
+        // Snapshot the current day's rim memos so they belong to this date.
+        rimMemos: readRimMemos(activeId).map((m) => ({ ...m })),
         savedAt: Date.now(),
       },
     }));
-  }, []);
+  }, [activeId]);
 
   const removeEntry = useCallback((date: string) => {
     setEntries((prev) => {

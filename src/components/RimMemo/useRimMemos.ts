@@ -66,6 +66,16 @@ function saveByDay(byDay: ByDay): void {
 }
 
 /**
+ * Read a day's rim memos straight from storage — used when snapshotting the
+ * current day into a diary entry (the live state lives in RimMemoLayer's hook,
+ * but it persists on every change, so storage is authoritative).
+ */
+export function readRimMemos(dayId: string | null): RimMemo[] {
+  const byDay = loadByDay();
+  return byDay[dayId ?? LEGACY_KEY] ?? [];
+}
+
+/**
  * One-time: hand legacy (pre per-day) memos parked under LEGACY_KEY to the active
  * day so existing rim memos aren't orphaned. Done in the load path (not an effect)
  * so it runs once at mount — `activeId` is already known synchronously by then.
@@ -119,6 +129,11 @@ export function useRimMemos(dayId: string | null) {
   const remove = useCallback((id: string) => {
     setList((m) => m.filter((x) => x.id !== id));
   }, [setList]);
+  // Replace the active day's whole list — used to restore a diary's rim memos
+  // when that record is loaded (so memos belong to the loaded date).
+  const replace = useCallback((list: RimMemo[]) => {
+    setByDay((prev) => ({ ...prev, [key]: list }));
+  }, [key]);
 
-  return { memos, add, update, setMinute, remove };
+  return { memos, add, update, setMinute, remove, replace };
 }
