@@ -27,6 +27,9 @@ export type TKey =
   | 'header.export'
   | 'header.settings'
   | 'header.design'
+  | 'footer.about'
+  | 'footer.privacy'
+  | 'footer.contact'
   | 'settings.title'
   | 'settings.language'
   | 'settings.font'
@@ -296,6 +299,9 @@ const ko: Dict = {
   'header.export': '내보내기',
   'header.settings': '설정',
   'header.design': '디자인',
+  'footer.about': '소개',
+  'footer.privacy': '개인정보처리방침',
+  'footer.contact': '문의',
   'settings.title': '설정',
   'settings.language': '언어',
   'settings.font': '폰트',
@@ -564,6 +570,9 @@ const en: Dict = {
   'header.export': 'Export',
   'header.settings': 'Settings',
   'header.design': 'Design',
+  'footer.about': 'About',
+  'footer.privacy': 'Privacy Policy',
+  'footer.contact': 'Contact',
   'settings.title': 'Settings',
   'settings.language': 'Language',
   'settings.font': 'Font',

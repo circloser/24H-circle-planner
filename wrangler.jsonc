@@ -7,7 +7,10 @@
   "compatibility_date": "2025-06-01",
   "assets": {
     "directory": "./dist",
-    // This is a single-page app: serve index.html for unknown paths.
+    // Clean URLs for the static legal pages: /about → about.html, etc.
+    // (auto-trailing-slash is the default; set explicitly so it's guaranteed.)
+    "html_handling": "auto-trailing-slash",
+    // This is a single-page app: serve index.html for paths with no asset match.
     "not_found_handling": "single-page-application"
   }
 }

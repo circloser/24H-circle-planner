@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>문의 (Contact) · 24Houring</title>
+<meta name="description" content="24Houring 문의 — 실제 동작하는 이메일(singlena@gmail.com)로 피드백·버그·제휴 문의를 보내세요. Contact 24Houring by email." />
+<link rel="canonical" href="https://24houring.com/contact" />
+<meta name="robots" content="index, follow" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:'Pretendard',system-ui,-apple-system,'Segoe UI',Roboto,'Apple SD Gothic Neo','Noto Sans KR',sans-serif; color:#1f2430; background:#f4f5f7; line-height:1.7; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:760px; margin:0 auto; padding:28px 22px 64px; }
+  header.site { display:flex; align-items:center; justify-content:space-between; padding:6px 0 22px; border-bottom:1px solid #e3e6ec; margin-bottom:26px; }
+  .logo { font-size:22px; font-weight:800; letter-spacing:-0.5px; color:#1f2430; text-decoration:none; }
+  .logo b { color:#FF4D4D; }
+  h1 { font-size:28px; font-weight:800; letter-spacing:-0.5px; margin:0 0 6px; }
+  h2 { font-size:18px; font-weight:700; margin:28px 0 8px; }
+  p, li, label { font-size:15px; color:#333a48; }
+  a { color:#d83a3a; }
+  .lead { font-size:16px; color:#3a4150; }
+  .en { color:#6b7280; font-size:14px; }
+  .card { background:#fff; border:1px solid #e3e6ec; border-radius:12px; padding:18px 18px; margin:16px 0; }
+  .email-btn { display:inline-block; font-size:19px; font-weight:800; color:#fff; background:#FF4D4D; padding:12px 22px; border-radius:999px; text-decoration:none; letter-spacing:-0.2px; }
+  .email-plain { display:block; margin-top:10px; font-size:15px; }
+  form { display:flex; flex-direction:column; gap:10px; margin-top:6px; }
+  label { font-weight:600; }
+  input, textarea { width:100%; font:inherit; padding:10px 12px; border:1px solid #d3d8e0; border-radius:8px; background:#fff; color:#1f2430; }
+  textarea { min-height:120px; resize:vertical; }
+  button { align-self:flex-start; font:inherit; font-weight:700; color:#fff; background:#1f2430; border:none; padding:10px 20px; border-radius:999px; cursor:pointer; }
+  footer.site { margin-top:40px; padding-top:18px; border-top:1px solid #e3e6ec; font-size:14px; color:#6b7280; }
+  footer.site a { color:#6b7280; text-decoration:none; margin-right:14px; }
+  footer.site a:hover { color:#d83a3a; text-decoration:underline; }
+  @media (prefers-color-scheme: dark) {
+    body { background:#15171c; color:#e5e7eb; }
+    .logo, h1 { color:#f3f4f6; }
+    p, li, label { color:#c5cad3; }
+    header.site, footer.site { border-color:#2a2e37; }
+    .card { background:#1c1f26; border-color:#2a2e37; }
+    input, textarea { background:#15171c; color:#e5e7eb; border-color:#2a2e37; }
+    button { background:#e5e7eb; color:#15171c; }
+    .en, footer.site, footer.site a { color:#9aa3b2; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="logo" href="/">24Hour<b>ing</b></a>
+    <nav style="font-size:14px"><a href="/" style="color:inherit;text-decoration:none">홈 Home</a></nav>
+  </header>
+
+  <main>
+    <h1>문의 <span class="en" style="display:inline">/ Contact</span></h1>
+    <p class="lead">질문·피드백·버그 신고·제휴 등 무엇이든 편하게 연락 주세요. 보통 며칠 이내에 답장드립니다.</p>
+    <p class="en">Questions, feedback, bug reports or partnership — feel free to reach out. We usually reply within a few days.</p>
+
+    <div class="card">
+      <p style="margin:0 0 8px"><strong>이메일 / Email</strong> — 운영자 Circloser</p>
+      <a class="email-btn" href="mailto:singlena@gmail.com?subject=24Houring%20%EB%AC%B8%EC%9D%98">✉️ singlena@gmail.com</a>
+      <span class="email-plain">또는 메일 앱에서 직접: <a href="mailto:singlena@gmail.com">singlena@gmail.com</a></span>
+    </div>
+
+    <h2>빠른 문의 양식 <span class="en">/ Quick form</span></h2>
+    <p class="en" style="margin-top:0">아래 양식을 작성하고 ‘메일 보내기’를 누르면 기본 메일 앱이 열립니다. The form opens your email app with the message prefilled.</p>
+    <form action="mailto:singlena@gmail.com" method="post" enctype="text/plain">
+      <div>
+        <label for="name">이름 / Name</label>
+        <input id="name" name="name" type="text" autocomplete="name" />
+      </div>
+      <div>
+        <label for="from">회신 이메일 / Your email</label>
+        <input id="from" name="from" type="email" autocomplete="email" placeholder="you@example.com" />
+      </div>
+      <div>
+        <label for="message">내용 / Message</label>
+        <textarea id="message" name="message" required></textarea>
+      </div>
+      <button type="submit">메일 보내기 / Send email</button>
+    </form>
+  </main>
+
+  <footer class="site">
+    <nav>
+      <a href="/">홈 Home</a>
+      <a href="/about">소개 About</a>
+      <a href="/privacy">개인정보처리방침 Privacy</a>
+      <a href="/contact">문의 Contact</a>
+    </nav>
+    <p style="margin:10px 0 0">© 2026 Circloser · 24houring.com</p>
+  </footer>
+</div>
+</body>
+</html>
