@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import './index.css';
-import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Plus, Link2, BarChart3, BookOpen } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Plus, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { Button } from '@/components/ui/button';
@@ -267,13 +267,16 @@ function App() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setSlotSheetOpen(true)}>
+                <DropdownMenuItem onClick={() => setSlotSheetOpen(true)} className="gap-2">
+                  <List className="h-4 w-4" />
                   {t('header.viewSlots')}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSaveAsOpen(true)}>
+                <DropdownMenuItem onClick={() => setSaveAsOpen(true)} className="gap-2">
+                  <Save className="h-4 w-4" />
                   {t('header.saveAs')}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSavePresetOpen(true)}>
+                <DropdownMenuItem onClick={() => setSavePresetOpen(true)} className="gap-2">
+                  <BookmarkPlus className="h-4 w-4" />
                   {t('header.savePreset')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
