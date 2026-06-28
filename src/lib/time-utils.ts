@@ -76,6 +76,24 @@ export function sliceWidthMinutes(slice: TimeSlice): number {
   return endMin - startMin;
 }
 
+/** Current minute-of-day (0..1439) in an IANA time zone, or null if unsupported. */
+export function tzMinutes(tz: string, now: Date = new Date()): number | null {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(now);
+    const h = Number(parts.find((p) => p.type === 'hour')?.value);
+    const m = Number(parts.find((p) => p.type === 'minute')?.value);
+    if (Number.isNaN(h) || Number.isNaN(m)) return null;
+    return (h % 24) * 60 + m;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Returns true if the slices together cover exactly 24h with no gaps/overlaps,
  * in clockwise order, with at most one wrap-around slice.

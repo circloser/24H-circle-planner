@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { GripVertical, X, Plus } from 'lucide-react';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
-import { useTranslation, useShowIcons } from '@/hooks/usePreferences';
-import { hhmmToMinutes, sliceWidthMinutes } from '@/lib/time-utils';
+import { useTranslation, useShowIcons, useShowNowLine, useNowLineStyle, useWorldClocks } from '@/hooks/usePreferences';
+import { hhmmToMinutes, minutesToHhmm, sliceWidthMinutes, tzMinutes } from '@/lib/time-utils';
 
 /** End-of-day is stored as "24:00"; show it as "00:00" in fields. */
 const normTime = (hhmm: string) => (hhmm === '24:00' ? '00:00' : hhmm);
+
+/** Inherit the (scaled) font from the table container — form controls don't by default. */
+const INHERIT_FONT = { fontSize: 'inherit', fontFamily: 'inherit' } as const;
 
 /**
  * A borderless 24h "HH:MM" time field. Locale-independent (unlike <input
@@ -56,8 +59,8 @@ function TimeCell({
         if (e.key === 'Enter') e.currentTarget.blur();
         else if (e.key === 'Escape') { setText(display); e.currentTarget.blur(); }
       }}
-      className="w-[3.4rem] rounded px-1 py-0.5 text-center text-sm tabular-nums outline-none transition-colors focus:bg-black/10 disabled:opacity-60"
-      style={{ color: 'hsl(var(--text-muted))', background: 'transparent' }}
+      className="w-[4em] rounded px-1 py-0.5 text-center tabular-nums outline-none transition-colors focus:bg-black/10 disabled:opacity-60"
+      style={{ ...INHERIT_FONT, color: 'hsl(var(--text-muted))', background: 'transparent' }}
     />
   );
 }
@@ -70,19 +73,39 @@ interface ScheduleTableProps {
 
 /**
  * List/table view of the timetable — one row per slice (drag-handle · colour ·
- * start ~ end · label · delete). Editing a time moves the shared boundary
- * (neighbour follows); dragging the handle reorders the activity sequence and
- * restacks the times. A toolbar exports the table as CSV or PNG.
+ * start ~ end · label · delete). Editing a time moves the shared boundary;
+ * dragging the handle reorders + restacks. Honours the font-scale preference,
+ * and overlays horizontal time lines (current time + each world clock) at the
+ * matching position inside the row.
  */
 export function ScheduleTable({ locked = false, onEditLabel, onAddRow }: ScheduleTableProps) {
   const slices = useStoreSelector((s) => s.history.present.slices);
   const dispatch = useStoreDispatch();
   const { t } = useTranslation();
   const showIcons = useShowIcons();
+  const showNowLine = useShowNowLine();
+  const nowLineStyle = useNowLineStyle();
+  const worldClocks = useWorldClocks();
   const len = slices.length;
+
+  // Live tick so the time lines + current-row highlight track the clock.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((n) => n + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const now = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
+
+  // Horizontal time-line markers: the current time + each configured world clock.
+  const markers: Array<{ minute: number; color: string; text: string }> = [];
+  if (showNowLine) markers.push({ minute: nowMin, color: nowLineStyle.color, text: minutesToHhmm(nowMin) });
+  for (const wc of worldClocks) {
+    const m = tzMinutes(wc.tz, now);
+    if (m !== null) markers.push({ minute: m, color: wc.color, text: `${wc.label} ${minutesToHhmm(m)}` });
+  }
+  const lineW = Math.max(1.5, nowLineStyle.width);
 
   const resize = (boundaryIndex: number, hhmm: string) =>
     dispatch({ type: 'RESIZE_BOUNDARY', boundaryIndex, newHHmm: hhmm });
@@ -124,16 +147,23 @@ export function ScheduleTable({ locked = false, onEditLabel, onAddRow }: Schedul
   };
 
   return (
-    <div className="w-full max-w-[560px]">
+    <div className="w-full max-w-[560px]" style={{ fontSize: 'calc(var(--app-font-scale, 1) * 0.875rem)' }}>
       <ul ref={ulRef} className="flex flex-col" style={{ borderTop: '1px solid hsl(var(--border))' }}>
         {slices.map((s, i) => {
-          const isNow = ((nowMin - hhmmToMinutes(s.startTime) + 1440) % 1440) < sliceWidthMinutes(s);
+          const sStart = hhmmToMinutes(s.startTime);
+          const w = sliceWidthMinutes(s);
+          const rel = (nowMin - sStart + 1440) % 1440;
+          const isNow = rel < w;
           const dragging = drag?.from === i;
           const isOver = drag && drag.over === i && drag.from !== i;
+          // Which time lines fall inside this row, and at what fraction of it.
+          const rowMarks = markers
+            .map((mk) => ({ ...mk, frac: w > 0 ? ((mk.minute - sStart + 1440) % 1440) / w : 0, inRow: ((mk.minute - sStart + 1440) % 1440) < w }))
+            .filter((mk) => mk.inRow);
           return (
             <li
               key={s.id}
-              className="flex items-center gap-1.5 py-2 pr-1"
+              className="relative flex items-center gap-1.5 py-2 pr-1"
               style={{
                 borderBottom: '1px solid hsl(var(--border))',
                 borderTop: isOver ? '2px solid hsl(var(--primary))' : '2px solid transparent',
@@ -142,6 +172,21 @@ export function ScheduleTable({ locked = false, onEditLabel, onAddRow }: Schedul
                 touchAction: 'pan-y',
               }}
             >
+              {/* Horizontal time lines (current time + world clocks). */}
+              {!drag && rowMarks.map((mk, k) => (
+                <div
+                  key={`mk${k}`}
+                  aria-hidden
+                  style={{ position: 'absolute', left: 0, right: 0, top: `${mk.frac * 100}%`, transform: 'translateY(-50%)', borderTop: `${lineW}px solid ${mk.color}`, pointerEvents: 'none', zIndex: 4 }}
+                >
+                  <span
+                    style={{ position: 'absolute', right: '2.2rem', top: '50%', transform: 'translateY(-50%)', backgroundColor: mk.color, color: '#fff', borderRadius: '0.4em', padding: '0 0.4em', fontSize: '0.62em', fontWeight: 700, lineHeight: 1.6, whiteSpace: 'nowrap', boxShadow: '0 1px 2px rgba(0,0,0,0.25)' }}
+                  >
+                    {mk.text}
+                  </span>
+                </div>
+              ))}
+
               <button
                 type="button"
                 aria-label={t('table.reorder')}
@@ -158,15 +203,15 @@ export function ScheduleTable({ locked = false, onEditLabel, onAddRow }: Schedul
               <span className="h-3.5 w-3.5 shrink-0 rounded-full" style={{ backgroundColor: s.color }} />
               <div className="flex shrink-0 items-center gap-0.5">
                 <TimeCell value={s.startTime} disabled={locked} label={t('block.start')} onCommit={(hhmm) => resize((i - 1 + len) % len, hhmm)} />
-                <span className="text-sm" style={{ color: 'hsl(var(--text-muted) / 0.7)' }}>~</span>
+                <span style={{ color: 'hsl(var(--text-muted) / 0.7)' }}>~</span>
                 <TimeCell value={s.endTime} disabled={locked} label={t('block.end')} onCommit={(hhmm) => resize(i, hhmm)} />
               </div>
 
               <button
                 type="button"
                 onClick={() => onEditLabel(s.id)}
-                className="flex min-w-0 flex-1 items-center gap-1.5 rounded px-2 py-1 text-left text-sm transition-colors hover:bg-black/5"
-                style={{ color: 'hsl(var(--foreground))' }}
+                className="flex min-w-0 flex-1 items-center gap-1.5 rounded px-2 py-1 text-left transition-colors hover:bg-black/5"
+                style={{ ...INHERIT_FONT, color: 'hsl(var(--foreground))' }}
               >
                 {showIcons && s.icon && <span aria-hidden className="shrink-0">{s.icon}</span>}
                 <span className="truncate">{s.label.trim() || t('analytics.untitled')}</span>
@@ -193,8 +238,8 @@ export function ScheduleTable({ locked = false, onEditLabel, onAddRow }: Schedul
         type="button"
         onClick={onAddRow}
         disabled={locked}
-        className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium transition-colors disabled:opacity-50"
-        style={{ border: '1px dashed hsl(var(--border))', color: 'hsl(var(--text-muted))' }}
+        className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg py-2 font-medium transition-colors disabled:opacity-50"
+        style={{ ...INHERIT_FONT, border: '1px dashed hsl(var(--border))', color: 'hsl(var(--text-muted))' }}
       >
         <Plus className="h-4 w-4" /> {t('block.add')}
       </button>

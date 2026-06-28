@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import type { TimeSlice } from '@/types/time-slice';
 import { RING, polarToCartesian, slicePath, wrapText } from '@/lib/svg-geometry';
-import { hhmmToMinutes, minutesToHhmm, snapMinutes, sliceWidthMinutes } from '@/lib/time-utils';
+import { hhmmToMinutes, minutesToHhmm, snapMinutes, sliceWidthMinutes, tzMinutes } from '@/lib/time-utils';
 import {
   viewSpec,
   angleForMin,
@@ -212,24 +212,6 @@ function HourTicks({ spec = FULL_SPEC }: { spec?: ViewSpec }) {
 // ─── Current-time "now" indicator line ───────────────────────────────────────
 // Rendered in the SVG but tagged data-export-exclude="true" so the PNG/PDF
 // export clone strips it (see png.ts and stripFilters.ts strip steps).
-
-/** Current minute-of-day in an IANA time zone (0..1439), or null if unsupported. */
-function tzMinutes(tz: string, now: Date): number | null {
-  try {
-    const parts = new Intl.DateTimeFormat('en-US', {
-      timeZone: tz,
-      hour: '2-digit',
-      minute: '2-digit',
-      hourCycle: 'h23',
-    }).formatToParts(now);
-    const h = Number(parts.find((p) => p.type === 'hour')?.value);
-    const m = Number(parts.find((p) => p.type === 'minute')?.value);
-    if (Number.isNaN(h) || Number.isNaN(m)) return null;
-    return (h % 24) * 60 + m;
-  } catch {
-    return null;
-  }
-}
 
 /** A radial time line + rim dot at a minute-of-day, in the given view + colour. */
 function TimeMark({ minute, spec, color, width }: { minute: number; spec: ViewSpec; color: string; width: number }) {
