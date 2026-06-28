@@ -35,6 +35,8 @@ async function openDiary() {
 
 await openDiary();
 await page.locator('[role="dialog"] button:has-text("오늘 저장")').first().click();
+await wait(300);
+await page.getByRole('button', { name: '저장', exact: true }).click();
 await wait(400);
 const savedCells = await page.locator('[role="dialog"] .grid button:has(svg)').count();
 const stored = await page.evaluate(() => {
@@ -56,6 +58,8 @@ pass('diary persists across reload', afterReload >= 1, `cells=${afterReload}`);
 
 // Tapping a saved day loads it (dialog closes, chart populated).
 await page.locator('[role="dialog"] .grid button:has(svg)').first().click();
+await wait(300);
+await page.getByRole('button', { name: '불러오기', exact: true }).click();
 await wait(400);
 const closed = !(await page.locator('[role="dialog"]:has-text("시간표 일기")').first().isVisible().catch(() => false));
 const slices = await page.locator('svg[role="img"] path[data-slice-id]').count();

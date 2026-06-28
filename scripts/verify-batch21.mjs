@@ -28,11 +28,15 @@ async function openDiary() {
 // Save today, then reopen and tap the saved day to load it (locked diary view).
 await openDiary();
 await page.locator('[role="dialog"] button:has-text("오늘 저장")').first().click();
+await wait(300);
+await page.getByRole('button', { name: '저장', exact: true }).click();
 await wait(400);
 await page.keyboard.press('Escape').catch(() => {});
 await wait(250);
 await openDiary();
 await page.locator('[role="dialog"] .grid button:has(svg)').first().click();
+await wait(300);
+await page.getByRole('button', { name: '불러오기', exact: true }).click();
 await wait(500);
 
 // 1) Bottom pill shows the record's date + the unlock toggle (locked).

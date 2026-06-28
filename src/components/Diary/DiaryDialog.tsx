@@ -7,6 +7,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { AdSlot } from '@/components/Ads/AdSlot';
@@ -75,12 +77,31 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
     onOpenChange(false);
   }
 
+  // A confirmation step gates both saving and loading (loading replaces the
+  // current timetable; saving can overwrite an existing entry).
+  type Pending = { kind: 'save'; key: string } | { kind: 'load'; entry: DiaryEntry };
+  const [pending, setPending] = useState<Pending | null>(null);
+
+  const fmtDate = (key: string) => {
+    const [y, m, d] = key.split('-').map(Number);
+    if (!y || !m || !d) return key;
+    return new Date(y, m - 1, d).toLocaleDateString(lang, { year: 'numeric', month: 'long', day: 'numeric' });
+  };
+
+  function confirmPending() {
+    if (!pending) return;
+    if (pending.kind === 'save') saveToDate(pending.key);
+    else loadEntry(pending.entry);
+    setPending(null);
+  }
+
   const cells: Array<number | null> = [
     ...Array.from({ length: startOffset }, () => null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[88vh] max-w-md overflow-y-auto">
         <DialogHeader>
@@ -99,7 +120,7 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
           </div>
           <Button
             size="sm"
-            onClick={() => saveToDate(todayKey)}
+            onClick={() => setPending({ kind: 'save', key: todayKey })}
             style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
           >
             {t('diary.saveToday')}
@@ -123,7 +144,7 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
               <button
                 key={key}
                 type="button"
-                onClick={() => (entry ? loadEntry(entry) : saveToDate(key))}
+                onClick={() => setPending(entry ? { kind: 'load', entry } : { kind: 'save', key })}
                 className="group relative grid aspect-square place-items-center rounded-md p-0.5 transition-colors hover:bg-black/5"
                 style={isToday ? { outline: '2px solid hsl(var(--primary))', outlineOffset: '-2px' } : undefined}
                 title={key}
@@ -154,5 +175,34 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
         <AdSlot slot="diary" className="mt-3" />
       </DialogContent>
     </Dialog>
+
+    {/* Save / load confirmation step. */}
+    <Dialog open={pending !== null} onOpenChange={(o) => { if (!o) setPending(null); }}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{pending?.kind === 'load' ? t('diary.confirmLoadTitle') : t('diary.confirmSaveTitle')}</DialogTitle>
+          <DialogDescription>
+            {pending?.kind === 'load' ? t('diary.confirmLoad') : t('diary.confirmSave')}
+          </DialogDescription>
+        </DialogHeader>
+        <p className="text-xs" style={{ color: 'hsl(var(--text-muted))' }}>
+          {pending?.kind === 'load'
+            ? t('diary.confirmLoadBody', { date: fmtDate(pending.entry.date) })
+            : pending
+              ? t(entries[pending.key] ? 'diary.confirmOverwriteBody' : 'diary.confirmSaveBody', { date: fmtDate(pending.key) })
+              : ''}
+        </p>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setPending(null)}>{t('common.cancel')}</Button>
+          <Button
+            onClick={confirmPending}
+            style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+          >
+            {pending?.kind === 'load' ? t('diary.confirmLoadCta') : t('diary.confirmSaveCta')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

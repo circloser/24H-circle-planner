@@ -224,6 +224,15 @@ export type TKey =
   | 'diary.lock'
   | 'diary.unlockedToast'
   | 'diary.relocked'
+  | 'diary.confirmSaveTitle'
+  | 'diary.confirmSave'
+  | 'diary.confirmSaveBody'
+  | 'diary.confirmOverwriteBody'
+  | 'diary.confirmSaveCta'
+  | 'diary.confirmLoadTitle'
+  | 'diary.confirmLoad'
+  | 'diary.confirmLoadBody'
+  | 'diary.confirmLoadCta'
   | 'analytics.scopeCurrent'
   | 'analytics.scopeAll'
   | 'analytics.scopeDiary'
@@ -496,6 +505,15 @@ const ko: Dict = {
   'diary.lock': '잠금',
   'diary.unlockedToast': '잠금을 해제했어요. 이제 편집할 수 있어요.',
   'diary.relocked': '다시 잠갔어요.',
+  'diary.confirmSaveTitle': '일기 저장',
+  'diary.confirmSave': '일기를 저장하시겠습니까?',
+  'diary.confirmSaveBody': '{date}에 현재 시간표를 일기로 기록합니다.',
+  'diary.confirmOverwriteBody': '{date}에 이미 저장된 일기를 덮어씁니다.',
+  'diary.confirmSaveCta': '저장',
+  'diary.confirmLoadTitle': '일기 불러오기',
+  'diary.confirmLoad': '일기를 불러오시겠습니까?',
+  'diary.confirmLoadBody': '현재 시간표가 {date} 기록으로 바뀌고 잠깁니다.',
+  'diary.confirmLoadCta': '불러오기',
   'analytics.scopeCurrent': '현재 시간표',
   'analytics.scopeAll': '전체 일정',
   'analytics.scopeDiary': '일기',
@@ -769,6 +787,15 @@ const en: Dict = {
   'diary.lock': 'Lock',
   'diary.unlockedToast': 'Unlocked — you can edit now.',
   'diary.relocked': 'Locked again.',
+  'diary.confirmSaveTitle': 'Save diary',
+  'diary.confirmSave': 'Save this diary?',
+  'diary.confirmSaveBody': 'Records the current timetable as a diary entry on {date}.',
+  'diary.confirmOverwriteBody': 'This overwrites the diary already saved on {date}.',
+  'diary.confirmSaveCta': 'Save',
+  'diary.confirmLoadTitle': 'Load diary',
+  'diary.confirmLoad': 'Load this diary?',
+  'diary.confirmLoadBody': 'Your current timetable will be replaced by the {date} record and locked.',
+  'diary.confirmLoadCta': 'Load',
   'analytics.scopeCurrent': 'Current',
   'analytics.scopeAll': 'All days',
   'analytics.scopeDiary': 'Diary',

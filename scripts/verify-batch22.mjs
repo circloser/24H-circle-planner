@@ -44,6 +44,8 @@ async function openDiary() {
 // Save today → the entry should capture the rim memo.
 await openDiary();
 await page.locator('[role="dialog"] button:has-text("오늘 저장")').first().click();
+await wait(300);
+await page.getByRole('button', { name: '저장', exact: true }).click();
 await wait(400);
 const saved = await page.evaluate(() => {
   const e = Object.values(JSON.parse(localStorage.getItem('24h-circle-planner.diary')).entries)[0];
@@ -63,6 +65,8 @@ pass('new day shows no rim memos (not carried over)', !(await seenA()));
 // Load the saved diary → its rim memo is restored (belongs to that date).
 await openDiary();
 await page.locator('[role="dialog"] .grid button:has(svg)').first().click();
+await wait(300);
+await page.getByRole('button', { name: '불러오기', exact: true }).click();
 await wait(500);
 
 const after = await page.evaluate(() => {
