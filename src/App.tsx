@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { resetAllData } from '@/lib/backup';
 import { CircleTimeline } from '@/components/CircleTimeline/CircleTimeline';
+import { ScheduleTable } from '@/components/ScheduleTable/ScheduleTable';
 import { ThemeToggle } from '@/components/ThemeToggle/ThemeToggle';
 import { PresetGallery } from '@/components/PresetGallery/PresetGallery';
 import { SliceEditor } from '@/components/SliceEditor/SliceEditor';
@@ -43,7 +44,7 @@ import { AddToHomeDialog, type BeforeInstallPromptEvent } from '@/components/Add
 import { AboutDialog } from '@/components/About/AboutDialog';
 import { shareChartImage } from '@/lib/share';
 import { requestPersistentStorage } from '@/lib/persistent-storage';
-import { useTranslation } from '@/hooks/usePreferences';
+import { useTranslation, useChartView } from '@/hooks/usePreferences';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useSliceInteraction } from '@/hooks/useSliceInteraction';
@@ -135,6 +136,7 @@ function App() {
   const [settingsSection, setSettingsSection] = useState<SettingsSection | null>(null);
   const { t } = useTranslation();
   const isMobile = useIsMobile();
+  const chartView = useChartView();
 
   /**
    * Called when user confirms loading a slot from SlotSheet.
@@ -382,6 +384,12 @@ function App() {
             : 'flex-1 container mx-auto py-8 flex items-center justify-center px-4'
         }
       >
+        {chartView === 'table' ? (
+          <ScheduleTable
+            locked={locked}
+            onEditLabel={(id) => { if (locked) { toast(t('diary.locked')); } else { setEditingSliceId(id); } }}
+          />
+        ) : (
         <div
           className={
             isMobile
@@ -437,6 +445,7 @@ function App() {
             </div>
           )}
         </div>
+        )}
 
         {/* Mobile: stacked sections below the chart. Editing stays enabled (touch
             + long-press); only the desktop floating overlays are replaced. */}

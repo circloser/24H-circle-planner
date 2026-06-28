@@ -1,7 +1,7 @@
 /**
  * Batch 13 verification (offline, dist-single):
  *  #1 header "내보내기" button has no border (ghost).
- *  #2 settings (gear) menu has no separators — items evenly spaced.
+ *  #2 settings (gear) menu grouping: 5 items + 1 separator (post-reorg).
  *  #3 12h (day/night) drag: slice AREAS (path d) + division + LABELS follow the
  *     cursor live, like the 24h view (previously only the time pill followed).
  */
@@ -40,7 +40,7 @@ try {
   pass('#1 export button no border', ok, JSON.stringify(b));
 } catch (e) { pass('#1 export button no border', false, e.message); }
 
-// ─── #2 gear menu has no separators ─────────────────────────────────────────
+// ─── #2 gear menu grouping (post-reorg: 언어 · sep · 공유/링크/홈/초기화) ───────
 try {
   await page.locator('button[aria-label="설정"]').first().click();
   await page.waitForTimeout(400);
@@ -50,10 +50,10 @@ try {
     const items = menu ? menu.querySelectorAll('[role="menuitem"]').length : 0;
     return { seps, items };
   });
-  pass('#2 gear menu no separators', info.seps === 0 && info.items === 9, `separators=${info.seps} items=${info.items}`);
+  pass('#2 gear menu grouping (5 items, 1 separator)', info.seps === 1 && info.items === 5, `separators=${info.seps} items=${info.items}`);
   await page.keyboard.press('Escape');
   await page.waitForTimeout(200);
-} catch (e) { pass('#2 gear menu no separators', false, e.message); }
+} catch (e) { pass('#2 gear menu grouping (5 items, 1 separator)', false, e.message); }
 
 // ─── #3 12h drag: areas + labels follow ─────────────────────────────────────
 async function snapshot() {
@@ -101,11 +101,13 @@ try {
   const committed = diffCount(before.paths, after.paths) > 0;
   const ok = pathsChanged >= 1 && labelsChanged >= 1 && pillChanged && committed;
   pass('#3 12h areas+labels follow', ok, `Δpaths=${pathsChanged} Δlabels=${labelsChanged} pill=${before.pill}->${during.pill} committed=${committed}`);
-  // back to full view
-  await page.locator('button[aria-label*="시간표 보기 전환"]').first().click();
-  await page.waitForTimeout(150);
-  await page.locator('button[aria-label*="시간표 보기 전환"]').first().click();
-  await page.waitForTimeout(300);
+  // back to full view — cycle until the toggle shows 24h (robust to view count)
+  for (let _i = 0; _i < 5; _i++) {
+    const _lbl = await page.locator('button[aria-label*="시간표 보기 전환"]').first().textContent();
+    if ((_lbl || '').includes('24')) break;
+    await page.locator('button[aria-label*="시간표 보기 전환"]').first().click();
+    await page.waitForTimeout(200);
+  }
 } catch (e) { pass('#3 12h areas+labels follow', false, e.message); }
 
 // ─── regression: 24h drag still moves areas + labels ────────────────────────

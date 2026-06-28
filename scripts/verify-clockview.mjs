@@ -101,9 +101,13 @@ const night18x = await seamLabelX('18');
 const night06x = await seamLabelX('06');
 await page.screenshot({ path: path.join(DIR, 'clock-night.png') });
 
-// ── → back to 24h ────────────────────────────────────────────────────────
-await toggle().click();
-await page.waitForTimeout(300);
+// ── → back to 24h (cycle until the toggle shows 24h) ─────────────────────
+for (let _i = 0; _i < 5; _i++) {
+  const _lbl = await toggle().textContent();
+  if ((_lbl || '').includes('24')) break;
+  await toggle().click();
+  await page.waitForTimeout(250);
+}
 const backLabels = await tickLabels();
 const backCount = await scheduleSliceCount();
 await page.screenshot({ path: path.join(DIR, 'clock-back24h.png') });

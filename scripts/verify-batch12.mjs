@@ -99,11 +99,13 @@ try {
   await page.waitForTimeout(150);
   const ok = !!before.pill && !!after.pill && before.pill !== after.pill;
   pass('#1 12h drag pill follows', ok, `pill ${before.pill} -> ${after.pill}`);
-  // back to full view (cycle day->night->full = 2 clicks)
-  await page.locator('button[aria-label*="시간표 보기 전환"]').first().click();
-  await page.waitForTimeout(150);
-  await page.locator('button[aria-label*="시간표 보기 전환"]').first().click();
-  await page.waitForTimeout(300);
+  // back to full view — cycle until the toggle shows 24h (robust to view count)
+  for (let _i = 0; _i < 5; _i++) {
+    const _lbl = await page.locator('button[aria-label*="시간표 보기 전환"]').first().textContent();
+    if ((_lbl || '').includes('24')) break;
+    await page.locator('button[aria-label*="시간표 보기 전환"]').first().click();
+    await page.waitForTimeout(200);
+  }
 } catch (e) { pass('#1 12h drag pill follows', false, e.message); }
 
 // ─── #4 export preview has no border ────────────────────────────────────────

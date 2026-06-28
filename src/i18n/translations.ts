@@ -246,6 +246,7 @@ export type TKey =
   | 'view.full'
   | 'view.day'
   | 'view.night'
+  | 'view.table'
   | 'view.cycle'
   | 'share.button'
   | 'share.text'
@@ -527,7 +528,8 @@ const ko: Dict = {
   'view.full': '24시간',
   'view.day': '낮 6–18',
   'view.night': '밤 18–6',
-  'view.cycle': '시간표 보기 전환 (24시간 → 낮 → 밤)',
+  'view.table': '표',
+  'view.cycle': '시간표 보기 전환 (24시간 → 낮 → 밤 → 표)',
   'share.button': '공유하기',
   'share.text': '내 하루 시간표 — 24Houring',
   'share.saved': '시간표 이미지를 저장했어요. 인스타그램 등에 올려보세요!',
@@ -809,7 +811,8 @@ const en: Dict = {
   'view.full': '24h',
   'view.day': 'Day 6–18',
   'view.night': 'Night 18–6',
-  'view.cycle': 'Switch view (24h → Day → Night)',
+  'view.table': 'Table',
+  'view.cycle': 'Switch view (24h → Day → Night → Table)',
   'share.button': 'Share',
   'share.text': 'My daily timetable — 24Houring',
   'share.saved': 'Saved the timetable image — post it to Instagram and beyond!',

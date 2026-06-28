@@ -1,4 +1,4 @@
-import { Clock, Sun, Moon } from 'lucide-react';
+import { Clock, Sun, Moon, Table as TableIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
 import { CHART_VIEWS, type ChartView } from '@/lib/chart-view';
@@ -8,19 +8,21 @@ const ICON: Record<ChartView, typeof Clock> = {
   full: Clock,
   day: Sun,
   night: Moon,
+  table: TableIcon,
 };
 
 const LABEL_KEY: Record<ChartView, TKey> = {
   full: 'view.full',
   day: 'view.day',
   night: 'view.night',
+  table: 'view.table',
 };
 
 /**
- * Independent top-of-title control that cycles the chart between the three view
- * windows: 24h → 12h day (06–18) → 12h night (18–06) → 24h. Shows the current
- * window; one click advances to the next. The schedule data is shared across all
- * views, so editing in any view edits the same underlying 24h timetable.
+ * Independent top-of-title control that cycles the view: 24h → 12h day (06–18)
+ * → 12h night (18–06) → table (list) → 24h. Shows the current view; one click
+ * advances. The schedule data is shared across all views, so editing in any view
+ * (including the table) edits the same underlying 24h timetable.
  */
 export function ChartViewToggle() {
   const { prefs, setPreference } = usePreferences();
