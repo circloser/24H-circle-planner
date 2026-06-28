@@ -25,4 +25,10 @@ describe('buildTableSvg', () => {
     expect(svg).toContain('24houring.com');
     expect(height).toBeGreaterThan(60);
   });
+
+  it('omits slice icons when showIcons is false', () => {
+    const withIcon: TimeSlice = { ...sl('00:00', '24:00', 'sleep'), icon: '😴' };
+    expect(buildTableSvg([withIcon], 'd').svg).toContain('😴');
+    expect(buildTableSvg([withIcon], 'd', { showIcons: false }).svg).not.toContain('😴');
+  });
 });

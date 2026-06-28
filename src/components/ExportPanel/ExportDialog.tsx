@@ -12,8 +12,10 @@ import { Button } from '@/components/ui/button';
 import { slug, formatDateYYYYMMDD } from '@/lib/export/_internal';
 import { buildExportPreviewDataUrl } from '@/lib/export/previewSvg';
 import { exportAllData, importAllData } from '@/lib/backup';
-import { useTranslation } from '@/hooks/usePreferences';
+import { exportTableCsv, exportTablePng, buildTableSvg } from '@/lib/export/tableExport';
+import { useTranslation, useChartView, useShowIcons } from '@/hooks/usePreferences';
 import type { Schedule } from '@/types/schedule';
+import type { TimeSlice } from '@/types/time-slice';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -471,6 +473,62 @@ function BackupTab({ onOpenChange }: { onOpenChange: (open: boolean) => void }) 
   );
 }
 
+// ─── Table tabs (shown in table view) ────────────────────────────────────────
+
+function TableImageTab({ slices, scheduleName, showIcons }: { slices: TimeSlice[]; scheduleName: string; showIcons: boolean }) {
+  const { t } = useTranslation();
+  const [loading, setLoading] = useState(false);
+  async function handleExport() {
+    setLoading(true);
+    try {
+      await exportTablePng(slices, scheduleName, { showIcons });
+      toast.success(t('table.exported'));
+    } catch (err) {
+      toast.error(`${t('export.pngFail')}: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setLoading(false);
+    }
+  }
+  return (
+    <div className="flex flex-col gap-4 pt-2">
+      <p className="text-sm text-muted-foreground">{t('export.tableImageNote')}</p>
+      <Button onClick={handleExport} disabled={loading} className="w-full">
+        {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+        {t('export.tableImage')}
+      </Button>
+    </div>
+  );
+}
+
+function CsvTab({ slices, scheduleName }: { slices: TimeSlice[]; scheduleName: string }) {
+  const { t } = useTranslation();
+  function handleExport() {
+    exportTableCsv(slices, scheduleName);
+    toast.success(t('table.exported'));
+  }
+  return (
+    <div className="flex flex-col gap-4 pt-2">
+      <p className="text-sm text-muted-foreground">{t('export.csvNote')}</p>
+      <Button onClick={handleExport} className="w-full">{t('export.csvSave')}</Button>
+    </div>
+  );
+}
+
+/** Preview of the table image (the table view has no chart SVG to preview). */
+function TablePreview({ schedule, showIcons }: { schedule: Schedule; showIcons: boolean }) {
+  const { t } = useTranslation();
+  const { svg } = buildTableSvg(schedule.slices, schedule.name, { showIcons });
+  const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <p className="text-xs font-medium text-muted-foreground">{t('export.preview')}</p>
+      <div className="mx-auto max-h-[240px] w-full max-w-[300px] overflow-auto rounded-lg bg-muted/30 p-2" data-export-exclude="true">
+        <img src={url} alt={t('export.preview')} className="w-full" />
+      </div>
+    </div>
+  );
+}
+
 // ─── ExportDialog ─────────────────────────────────────────────────────────────
 
 export function ExportDialog({
@@ -482,6 +540,8 @@ export function ExportDialog({
   onImport,
 }: ExportDialogProps) {
   const { t } = useTranslation();
+  const isTable = useChartView() === 'table';
+  const showIcons = useShowIcons();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
@@ -489,24 +549,48 @@ export function ExportDialog({
           <DialogTitle>{t('header.export')}</DialogTitle>
         </DialogHeader>
 
-        <ExportPreview open={open} svgRef={svgRef} schedule={schedule} />
+        {/* In table view the chart isn't rendered, so preview/export the table. */}
+        {isTable
+          ? <TablePreview schedule={schedule} showIcons={showIcons} />
+          : <ExportPreview open={open} svgRef={svgRef} schedule={schedule} />}
         <AdSlot />
 
-        <Tabs defaultValue="png">
+        <Tabs defaultValue={isTable ? 'image' : 'png'} key={isTable ? 'table' : 'chart'}>
           <TabsList className="w-full">
-            <TabsTrigger value="png" className="flex-1">PNG</TabsTrigger>
-            <TabsTrigger value="pdf" className="flex-1">PDF</TabsTrigger>
+            {isTable ? (
+              <>
+                <TabsTrigger value="image" className="flex-1">{t('table.image')}</TabsTrigger>
+                <TabsTrigger value="csv" className="flex-1">CSV</TabsTrigger>
+              </>
+            ) : (
+              <>
+                <TabsTrigger value="png" className="flex-1">PNG</TabsTrigger>
+                <TabsTrigger value="pdf" className="flex-1">PDF</TabsTrigger>
+              </>
+            )}
             <TabsTrigger value="json" className="flex-1">JSON</TabsTrigger>
             <TabsTrigger value="backup" className="flex-1">{t('export.backup')}</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="png">
-            <PngTab svgRef={svgRef} scheduleName={scheduleName} />
-          </TabsContent>
-
-          <TabsContent value="pdf">
-            <PdfTab svgRef={svgRef} scheduleName={scheduleName} />
-          </TabsContent>
+          {isTable ? (
+            <>
+              <TabsContent value="image">
+                <TableImageTab slices={schedule.slices} scheduleName={scheduleName} showIcons={showIcons} />
+              </TabsContent>
+              <TabsContent value="csv">
+                <CsvTab slices={schedule.slices} scheduleName={scheduleName} />
+              </TabsContent>
+            </>
+          ) : (
+            <>
+              <TabsContent value="png">
+                <PngTab svgRef={svgRef} scheduleName={scheduleName} />
+              </TabsContent>
+              <TabsContent value="pdf">
+                <PdfTab svgRef={svgRef} scheduleName={scheduleName} />
+              </TabsContent>
+            </>
+          )}
 
           <TabsContent value="json">
             <JsonTab

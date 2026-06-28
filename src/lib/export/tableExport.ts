@@ -42,7 +42,12 @@ function esc(s: string): string {
 }
 
 /** Build a standalone SVG that mirrors the table view (one row per slice). */
-export function buildTableSvg(slices: TimeSlice[], title?: string): { svg: string; width: number; height: number } {
+export function buildTableSvg(
+  slices: TimeSlice[],
+  title?: string,
+  opts: { showIcons?: boolean } = {},
+): { svg: string; width: number; height: number } {
+  const showIcons = opts.showIcons !== false;
   const W = 520;
   const padX = 24;
   const padTop = 60;
@@ -55,7 +60,7 @@ export function buildTableSvg(slices: TimeSlice[], title?: string): { svg: strin
       const y = padTop + i * rowH;
       const cy = y + rowH / 2;
       const label = (s.label || '').trim() || '—';
-      const text = (s.icon ? `${s.icon} ` : '') + label;
+      const text = (showIcons && s.icon ? `${s.icon} ` : '') + label;
       return [
         `<circle cx="${padX + 8}" cy="${cy}" r="7" fill="${esc(s.color || '#9ca3af')}"/>`,
         `<text x="${padX + 28}" y="${cy}" dominant-baseline="middle" font-size="15" fill="#6b7280">${esc(s.startTime)} ~ ${esc(s.endTime)}</text>`,
@@ -101,8 +106,12 @@ async function svgToPngBlob(svg: string, width: number, height: number): Promise
   }
 }
 
-export async function exportTablePng(slices: TimeSlice[], name?: string): Promise<void> {
-  const { svg, width, height } = buildTableSvg(slices, name);
+export async function exportTablePng(
+  slices: TimeSlice[],
+  name?: string,
+  opts: { showIcons?: boolean } = {},
+): Promise<void> {
+  const { svg, width, height } = buildTableSvg(slices, name, opts);
   const blob = await svgToPngBlob(svg, width, height);
   triggerDownload(blob, `${safeName(name)}-table.png`);
 }

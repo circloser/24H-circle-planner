@@ -64,21 +64,24 @@ pass('“+ 일정 추가” opens the add form', addDialog);
 await page.keyboard.press('Escape').catch(() => {});
 await wait(200);
 
-// CSV export downloads a .csv.
-let csvOk = false;
-try {
-  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 8000 }), page.locator('button:has-text("CSV")').first().click()]);
-  csvOk = (await dl.suggestedFilename()).endsWith('.csv');
-} catch { csvOk = false; }
-pass('CSV export downloads .csv', csvOk);
-
-// Image export downloads a .png.
+// Export is integrated into 내보내기 (table view → 표 이미지 + CSV).
+await page.locator('button[aria-label="내보내기"]').first().click();
+await wait(400);
 let pngOk = false;
 try {
-  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 10000 }), page.locator('button:has-text("이미지")').first().click()]);
+  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 10000 }), page.locator('button:has-text("표 이미지로 저장")').first().click()]);
   pngOk = (await dl.suggestedFilename()).endsWith('.png');
 } catch { pngOk = false; }
-pass('Image export downloads .png', pngOk);
+pass('내보내기 → 표 이미지 downloads .png', pngOk);
+
+await page.locator('[role="tab"]:has-text("CSV")').first().click();
+await wait(250);
+let csvOk = false;
+try {
+  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 8000 }), page.locator('button:has-text("CSV로 저장")').first().click()]);
+  csvOk = (await dl.suggestedFilename()).endsWith('.csv');
+} catch { csvOk = false; }
+pass('내보내기 → CSV downloads .csv', csvOk);
 
 await browser.close();
 const allOk = results.every((r) => r.ok);

@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { GripVertical, X, Plus, FileDown, Image as ImageIcon } from 'lucide-react';
-import { toast } from 'sonner';
+import { GripVertical, X, Plus } from 'lucide-react';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
-import { useTranslation } from '@/hooks/usePreferences';
+import { useTranslation, useShowIcons } from '@/hooks/usePreferences';
 import { hhmmToMinutes, sliceWidthMinutes } from '@/lib/time-utils';
-import { exportTableCsv, exportTablePng } from '@/lib/export/tableExport';
 
 /** End-of-day is stored as "24:00"; show it as "00:00" in fields. */
 const normTime = (hhmm: string) => (hhmm === '24:00' ? '00:00' : hhmm);
@@ -78,9 +76,9 @@ interface ScheduleTableProps {
  */
 export function ScheduleTable({ locked = false, onEditLabel, onAddRow }: ScheduleTableProps) {
   const slices = useStoreSelector((s) => s.history.present.slices);
-  const name = useStoreSelector((s) => s.history.present.name);
   const dispatch = useStoreDispatch();
   const { t } = useTranslation();
+  const showIcons = useShowIcons();
   const len = slices.length;
 
   const now = new Date();
@@ -125,25 +123,8 @@ export function ScheduleTable({ locked = false, onEditLabel, onAddRow }: Schedul
     if (over !== from) dispatch({ type: 'REORDER_SLICES', from, to: over });
   };
 
-  const onExportCsv = () => { exportTableCsv(slices, name); toast.success(t('table.exported')); };
-  const onExportPng = () => { void exportTablePng(slices, name).then(() => toast.success(t('table.exported'))).catch(() => {}); };
-
-  const btn = 'inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors';
-
   return (
     <div className="w-full max-w-[560px]">
-      {/* Export toolbar */}
-      <div className="mb-2 flex items-center justify-end gap-1.5">
-        <button type="button" onClick={onExportCsv} className={btn}
-          style={{ backgroundColor: 'hsl(var(--surface))', color: 'hsl(var(--foreground))', border: '1px solid hsl(var(--border))' }}>
-          <FileDown className="h-3.5 w-3.5" /> {t('table.csv')}
-        </button>
-        <button type="button" onClick={onExportPng} className={btn}
-          style={{ backgroundColor: 'hsl(var(--surface))', color: 'hsl(var(--foreground))', border: '1px solid hsl(var(--border))' }}>
-          <ImageIcon className="h-3.5 w-3.5" /> {t('table.image')}
-        </button>
-      </div>
-
       <ul ref={ulRef} className="flex flex-col" style={{ borderTop: '1px solid hsl(var(--border))' }}>
         {slices.map((s, i) => {
           const isNow = ((nowMin - hhmmToMinutes(s.startTime) + 1440) % 1440) < sliceWidthMinutes(s);
@@ -187,7 +168,7 @@ export function ScheduleTable({ locked = false, onEditLabel, onAddRow }: Schedul
                 className="flex min-w-0 flex-1 items-center gap-1.5 rounded px-2 py-1 text-left text-sm transition-colors hover:bg-black/5"
                 style={{ color: 'hsl(var(--foreground))' }}
               >
-                {s.icon && <span aria-hidden className="shrink-0">{s.icon}</span>}
+                {showIcons && s.icon && <span aria-hidden className="shrink-0">{s.icon}</span>}
                 <span className="truncate">{s.label.trim() || t('analytics.untitled')}</span>
               </button>
 

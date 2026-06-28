@@ -105,6 +105,10 @@ export type TKey =
   | 'export.jsonImportFail'
   | 'export.imported'
   | 'export.preview'
+  | 'export.tableImage'
+  | 'export.tableImageNote'
+  | 'export.csvSave'
+  | 'export.csvNote'
   | 'export.adLabel'
   | 'header.savePreset'
   | 'preset.myPresets'
@@ -391,6 +395,10 @@ const ko: Dict = {
   'export.jsonImportFail': 'JSON 가져오기 실패',
   'export.imported': '시간표를 가져왔습니다',
   'export.preview': '미리보기',
+  'export.tableImage': '표 이미지로 저장',
+  'export.tableImageNote': '현재 표를 이미지(PNG)로 저장합니다.',
+  'export.csvSave': 'CSV로 저장',
+  'export.csvNote': '시작·끝·항목을 CSV 파일로 내보냅니다.',
   'export.adLabel': '광고',
   'header.savePreset': '프리셋으로 저장',
   'preset.myPresets': '내 프리셋',
@@ -678,6 +686,10 @@ const en: Dict = {
   'export.jsonImportFail': 'JSON import failed',
   'export.imported': 'Schedule imported',
   'export.preview': 'Preview',
+  'export.tableImage': 'Save table image',
+  'export.tableImageNote': 'Save the current table as an image (PNG).',
+  'export.csvSave': 'Save as CSV',
+  'export.csvNote': 'Export start, end and label as a CSV file.',
   'export.adLabel': 'Advertisement',
   'header.savePreset': 'Save as preset',
   'preset.myPresets': 'My presets',
