@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { GripVertical, X, Plus, FileDown, Image as ImageIcon } from 'lucide-react';
+import { toast } from 'sonner';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useTranslation } from '@/hooks/usePreferences';
 import { hhmmToMinutes, sliceWidthMinutes } from '@/lib/time-utils';
+import { exportTableCsv, exportTablePng } from '@/lib/export/tableExport';
 
 /** End-of-day is stored as "24:00"; show it as "00:00" in fields. */
 const normTime = (hhmm: string) => (hhmm === '24:00' ? '00:00' : hhmm);
@@ -24,8 +27,6 @@ function TimeCell({
   const display = normTime(value);
   const [text, setText] = useState(display);
   const focused = useRef(false);
-  // Re-sync from the store when the value changes externally (e.g. a neighbour
-  // edit moved this shared boundary) — but never while the user is typing.
   useEffect(() => {
     if (!focused.current) setText(display);
   }, [display]);
@@ -66,18 +67,18 @@ function TimeCell({
 interface ScheduleTableProps {
   locked?: boolean;
   onEditLabel: (sliceId: string) => void;
+  onAddRow: () => void;
 }
 
 /**
- * List/table view of the timetable — one row per slice (colour · start ~ end ·
- * label) as an alternative to the circular chart. Editing a start or end time
- * moves the SHARED boundary, so the touching neighbour follows automatically
- * (RESIZE_BOUNDARY — exactly like dragging on the ring). The store array is in
- * chronological ring order, so row i's end is boundary i and row i's start is
- * boundary (i-1). Tapping a label opens the slice editor.
+ * List/table view of the timetable — one row per slice (drag-handle · colour ·
+ * start ~ end · label · delete). Editing a time moves the shared boundary
+ * (neighbour follows); dragging the handle reorders the activity sequence and
+ * restacks the times. A toolbar exports the table as CSV or PNG.
  */
-export function ScheduleTable({ locked = false, onEditLabel }: ScheduleTableProps) {
+export function ScheduleTable({ locked = false, onEditLabel, onAddRow }: ScheduleTableProps) {
   const slices = useStoreSelector((s) => s.history.present.slices);
+  const name = useStoreSelector((s) => s.history.present.name);
   const dispatch = useStoreDispatch();
   const { t } = useTranslation();
   const len = slices.length;
@@ -85,30 +86,101 @@ export function ScheduleTable({ locked = false, onEditLabel }: ScheduleTableProp
   const now = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
 
-  const resize = (boundaryIndex: number, hhmm: string) => {
+  const resize = (boundaryIndex: number, hhmm: string) =>
     dispatch({ type: 'RESIZE_BOUNDARY', boundaryIndex, newHHmm: hhmm });
+
+  // ── Drag-to-reorder (pointer-based; works on touch + mouse) ──────────────────
+  const ulRef = useRef<HTMLUListElement>(null);
+  const meas = useRef({ rowH: 44, top: 0 });
+  const fromRef = useRef(-1);
+  const overRef = useRef(-1);
+  const [drag, setDrag] = useState<{ from: number; over: number } | null>(null);
+
+  const startReorder = (i: number, e: React.PointerEvent) => {
+    if (locked || len < 2) return;
+    const ul = ulRef.current;
+    if (!ul) return;
+    const rows = Array.from(ul.children) as HTMLElement[];
+    meas.current = { rowH: rows[i]?.offsetHeight || 44, top: ul.getBoundingClientRect().top };
+    fromRef.current = i;
+    overRef.current = i;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setDrag({ from: i, over: i });
   };
+  const moveReorder = (e: React.PointerEvent) => {
+    if (fromRef.current < 0) return;
+    const { rowH, top } = meas.current;
+    let over = Math.floor((e.clientY - top) / rowH);
+    over = Math.max(0, Math.min(len - 1, over));
+    if (over !== overRef.current) { overRef.current = over; setDrag({ from: fromRef.current, over }); }
+  };
+  const endReorder = (e: React.PointerEvent) => {
+    if (fromRef.current < 0) return;
+    e.currentTarget.releasePointerCapture?.(e.pointerId);
+    const from = fromRef.current;
+    const over = overRef.current;
+    fromRef.current = -1;
+    overRef.current = -1;
+    setDrag(null);
+    if (over !== from) dispatch({ type: 'REORDER_SLICES', from, to: over });
+  };
+
+  const onExportCsv = () => { exportTableCsv(slices, name); toast.success(t('table.exported')); };
+  const onExportPng = () => { void exportTablePng(slices, name).then(() => toast.success(t('table.exported'))).catch(() => {}); };
+
+  const btn = 'inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors';
 
   return (
     <div className="w-full max-w-[560px]">
-      <ul className="flex flex-col" style={{ borderTop: '1px solid hsl(var(--border))' }}>
+      {/* Export toolbar */}
+      <div className="mb-2 flex items-center justify-end gap-1.5">
+        <button type="button" onClick={onExportCsv} className={btn}
+          style={{ backgroundColor: 'hsl(var(--surface))', color: 'hsl(var(--foreground))', border: '1px solid hsl(var(--border))' }}>
+          <FileDown className="h-3.5 w-3.5" /> {t('table.csv')}
+        </button>
+        <button type="button" onClick={onExportPng} className={btn}
+          style={{ backgroundColor: 'hsl(var(--surface))', color: 'hsl(var(--foreground))', border: '1px solid hsl(var(--border))' }}>
+          <ImageIcon className="h-3.5 w-3.5" /> {t('table.image')}
+        </button>
+      </div>
+
+      <ul ref={ulRef} className="flex flex-col" style={{ borderTop: '1px solid hsl(var(--border))' }}>
         {slices.map((s, i) => {
           const isNow = ((nowMin - hhmmToMinutes(s.startTime) + 1440) % 1440) < sliceWidthMinutes(s);
+          const dragging = drag?.from === i;
+          const isOver = drag && drag.over === i && drag.from !== i;
           return (
             <li
               key={s.id}
-              className="flex items-center gap-2 py-2 pl-1 pr-1"
+              className="flex items-center gap-1.5 py-2 pr-1"
               style={{
                 borderBottom: '1px solid hsl(var(--border))',
-                backgroundColor: isNow ? 'hsl(var(--text-muted) / 0.10)' : 'transparent',
+                borderTop: isOver ? '2px solid hsl(var(--primary))' : '2px solid transparent',
+                opacity: dragging ? 0.4 : 1,
+                backgroundColor: isNow && !drag ? 'hsl(var(--text-muted) / 0.10)' : 'transparent',
+                touchAction: 'pan-y',
               }}
             >
+              <button
+                type="button"
+                aria-label={t('table.reorder')}
+                disabled={locked || len < 2}
+                onPointerDown={(e) => startReorder(i, e)}
+                onPointerMove={moveReorder}
+                onPointerUp={endReorder}
+                className="grid h-7 w-5 shrink-0 cursor-grab place-items-center rounded touch-none active:cursor-grabbing disabled:cursor-default disabled:opacity-30"
+                style={{ color: 'hsl(var(--text-muted))' }}
+              >
+                <GripVertical className="h-4 w-4" />
+              </button>
+
               <span className="h-3.5 w-3.5 shrink-0 rounded-full" style={{ backgroundColor: s.color }} />
               <div className="flex shrink-0 items-center gap-0.5">
                 <TimeCell value={s.startTime} disabled={locked} label={t('block.start')} onCommit={(hhmm) => resize((i - 1 + len) % len, hhmm)} />
                 <span className="text-sm" style={{ color: 'hsl(var(--text-muted) / 0.7)' }}>~</span>
                 <TimeCell value={s.endTime} disabled={locked} label={t('block.end')} onCommit={(hhmm) => resize(i, hhmm)} />
               </div>
+
               <button
                 type="button"
                 onClick={() => onEditLabel(s.id)}
@@ -118,10 +190,33 @@ export function ScheduleTable({ locked = false, onEditLabel }: ScheduleTableProp
                 {s.icon && <span aria-hidden className="shrink-0">{s.icon}</span>}
                 <span className="truncate">{s.label.trim() || t('analytics.untitled')}</span>
               </button>
+
+              <button
+                type="button"
+                aria-label={t('diary.delete')}
+                title={t('diary.delete')}
+                disabled={locked || len <= 1}
+                onClick={() => dispatch({ type: 'DELETE_SLICE', id: s.id })}
+                className="grid h-7 w-7 shrink-0 place-items-center rounded transition-colors hover:bg-black/10 disabled:opacity-30"
+                style={{ color: 'hsl(var(--text-muted))' }}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
             </li>
           );
         })}
       </ul>
+
+      {/* Add a row (opens the start/end time form) */}
+      <button
+        type="button"
+        onClick={onAddRow}
+        disabled={locked}
+        className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium transition-colors disabled:opacity-50"
+        style={{ border: '1px dashed hsl(var(--border))', color: 'hsl(var(--text-muted))' }}
+      >
+        <Plus className="h-4 w-4" /> {t('block.add')}
+      </button>
     </div>
   );
 }

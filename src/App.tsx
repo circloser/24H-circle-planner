@@ -388,6 +388,7 @@ function App() {
           <ScheduleTable
             locked={locked}
             onEditLabel={(id) => { if (locked) { toast(t('diary.locked')); } else { setEditingSliceId(id); } }}
+            onAddRow={() => (locked ? toast(t('diary.locked')) : setTimeBlockOpen(true))}
           />
         ) : (
         <div

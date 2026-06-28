@@ -439,6 +439,66 @@ export function mergeSlices(schedule: Schedule, idCw: string, idCcw: string): Sc
 }
 
 /**
+ * Remove a slice; an adjacent neighbour absorbs its time so the day stays a
+ * contiguous 24h ring. The previous slice extends over it (its label/colour
+ * survive); for the first slice, the next one extends back to the day start.
+ * The last remaining slice can't be deleted.
+ */
+export function deleteSlice(schedule: Schedule, sliceId: string): Schedule {
+  const action = 'deleteSlice';
+  const slices = cloneSlices(schedule.slices);
+  if (slices.length <= 1) return { ...schedule, updatedAt: now() }; // keep at least one
+  const i = slices.findIndex((s) => s.id === sliceId);
+  if (i === -1) throw new ContiguityError(action, `Slice ${sliceId} not found`);
+
+  if (i === 0) {
+    // First block: the next slice extends back to the day start.
+    slices[1] = { ...slices[1], startTime: slices[0].startTime };
+    slices.splice(0, 1);
+  } else {
+    // The previous slice absorbs this one's time range.
+    slices[i - 1] = { ...slices[i - 1], endTime: slices[i].endTime };
+    slices.splice(i, 1);
+  }
+
+  if (!isContiguous24h(slices)) throw new ContiguityError(action, 'isContiguous24h failed');
+  return { ...schedule, slices, updatedAt: now() };
+}
+
+/**
+ * Move the slice at `from` to `to` (sequence reorder), then restack every
+ * slice's start/end from 00:00 so durations are preserved and the day stays a
+ * contiguous 24h ring. Reordering the activities therefore re-times them.
+ */
+export function reorderSlices(schedule: Schedule, from: number, to: number): Schedule {
+  const action = 'reorderSlices';
+  const slices = cloneSlices(schedule.slices);
+  const n = slices.length;
+  if (from < 0 || from >= n || to < 0 || to >= n) {
+    throw new ContiguityError(action, `index out of range (from=${from} to=${to} n=${n})`);
+  }
+  if (from === to) return { ...schedule, updatedAt: now() };
+
+  const [moved] = slices.splice(from, 1);
+  slices.splice(to, 0, moved);
+
+  // Restack from the canonical day start (00:00), preserving each duration.
+  const startMins: number[] = [];
+  let cursor = 0;
+  for (let k = 0; k < n; k++) {
+    startMins.push(cursor);
+    cursor += sliceWidthMinutes(slices[k]);
+  }
+  for (let k = 0; k < n; k++) {
+    const endMin = k + 1 < n ? startMins[k + 1] : 1440;
+    slices[k] = { ...slices[k], startTime: minutesToHhmm(startMins[k]), endTime: minutesToHhmm(endMin) };
+  }
+
+  if (!isContiguous24h(slices)) throw new ContiguityError(action, 'isContiguous24h failed');
+  return { ...schedule, slices, updatedAt: now() };
+}
+
+/**
  * Resize the boundary between slices[boundaryIndex] (CCW side) and
  * slices[(boundaryIndex+1) % len] (CW side).
  *

@@ -248,6 +248,10 @@ export type TKey =
   | 'view.night'
   | 'view.table'
   | 'view.cycle'
+  | 'table.csv'
+  | 'table.image'
+  | 'table.reorder'
+  | 'table.exported'
   | 'share.button'
   | 'share.text'
   | 'share.saved'
@@ -530,6 +534,10 @@ const ko: Dict = {
   'view.night': '밤 18–6',
   'view.table': '표',
   'view.cycle': '시간표 보기 전환 (24시간 → 낮 → 밤 → 표)',
+  'table.csv': 'CSV',
+  'table.image': '이미지',
+  'table.reorder': '순서 변경',
+  'table.exported': '내보냈어요',
   'share.button': '공유하기',
   'share.text': '내 하루 시간표 — 24Houring',
   'share.saved': '시간표 이미지를 저장했어요. 인스타그램 등에 올려보세요!',
@@ -813,6 +821,10 @@ const en: Dict = {
   'view.night': 'Night 18–6',
   'view.table': 'Table',
   'view.cycle': 'Switch view (24h → Day → Night → Table)',
+  'table.csv': 'CSV',
+  'table.image': 'Image',
+  'table.reorder': 'Reorder',
+  'table.exported': 'Exported',
   'share.button': 'Share',
   'share.text': 'My daily timetable — 24Houring',
   'share.saved': 'Saved the timetable image — post it to Instagram and beyond!',

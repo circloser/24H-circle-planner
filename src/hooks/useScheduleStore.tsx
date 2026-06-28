@@ -16,6 +16,8 @@ import {
   resizeBoundary,
   replaceSlice,
   applyPalette,
+  deleteSlice,
+  reorderSlices,
   ContiguityError,
   type BlockContent,
 } from '@/lib/schedule';
@@ -51,6 +53,8 @@ export type StoreAction =
       baseSnapshot?: Schedule;
     }
   | { type: 'REPLACE_SLICE'; id: string; patch: Partial<TimeSlice> }
+  | { type: 'DELETE_SLICE'; id: string }
+  | { type: 'REORDER_SLICES'; from: number; to: number }
   | { type: 'SET_SCHEDULE_NAME'; name: string }
   | { type: 'LOAD_PRESET'; preset: Preset; presetName: string }
   | { type: 'UNDO' }
@@ -139,7 +143,7 @@ function applyMutation(
 
 // Edit actions that mutate the schedule — blocked while a diary record is locked.
 const LOCKABLE_ACTIONS = new Set<StoreAction['type']>([
-  'SPLIT', 'SET_BLOCK', 'APPLY_PALETTE', 'MERGE', 'RESIZE_BOUNDARY', 'REPLACE_SLICE', 'SET_SCHEDULE_NAME', 'UNDO', 'REDO',
+  'SPLIT', 'SET_BLOCK', 'APPLY_PALETTE', 'MERGE', 'RESIZE_BOUNDARY', 'REPLACE_SLICE', 'DELETE_SLICE', 'REORDER_SLICES', 'SET_SCHEDULE_NAME', 'UNDO', 'REDO',
 ]);
 
 function reducer(state: StoreState, action: StoreAction): StoreState {
@@ -198,6 +202,14 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
     case 'REPLACE_SLICE':
       return applyMutation(state, (present) =>
         replaceSlice(present, action.id, action.patch),
+      );
+
+    case 'DELETE_SLICE':
+      return applyMutation(state, (present) => deleteSlice(present, action.id));
+
+    case 'REORDER_SLICES':
+      return applyMutation(state, (present) =>
+        reorderSlices(present, action.from, action.to),
       );
 
     case 'SET_SCHEDULE_NAME': {

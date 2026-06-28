@@ -8,6 +8,8 @@ import {
   pickSimilarColor,
   pickSimilarColorBetween,
   setBlock,
+  deleteSlice,
+  reorderSlices,
   ContiguityError,
 } from '../schedule';
 import { isContiguous24h, sliceWidthMinutes } from '../time-utils';
@@ -546,5 +548,61 @@ describe('setBlock', () => {
 
   it('throws for a <10-min (or zero-width) block', () => {
     expect(() => setBlock(blankDay(), '09:00', '09:00', 'z', {})).toThrow(ContiguityError);
+  });
+});
+
+// ─── deleteSlice ──────────────────────────────────────────────────────────────
+
+describe('deleteSlice', () => {
+  const three = () => makeSchedule([
+    makeSlice('00:00', '08:00', { id: 'a', label: 'A' }),
+    makeSlice('08:00', '16:00', { id: 'b', label: 'B' }),
+    makeSlice('16:00', '24:00', { id: 'c', label: 'C' }),
+  ]);
+
+  it('a middle slice is absorbed by its previous neighbour', () => {
+    const out = deleteSlice(three(), 'b');
+    expect(out.slices.map((s) => s.label)).toEqual(['A', 'C']);
+    expect(out.slices[0]).toMatchObject({ startTime: '00:00', endTime: '16:00' }); // A absorbed B
+    expect(isContiguous24h(out.slices)).toBe(true);
+  });
+
+  it('the first slice is absorbed by the next (day still starts at 00:00)', () => {
+    const out = deleteSlice(three(), 'a');
+    expect(out.slices.map((s) => s.label)).toEqual(['B', 'C']);
+    expect(out.slices[0]).toMatchObject({ startTime: '00:00', endTime: '16:00' });
+    expect(isContiguous24h(out.slices)).toBe(true);
+  });
+
+  it('refuses to delete the last remaining slice', () => {
+    const single = makeSchedule([makeSlice('00:00', '24:00', { id: 'solo' })]);
+    expect(deleteSlice(single, 'solo').slices).toHaveLength(1);
+  });
+});
+
+// ─── reorderSlices ────────────────────────────────────────────────────────────
+
+describe('reorderSlices', () => {
+  const days = () => makeSchedule([
+    makeSlice('00:00', '07:00', { id: 'sleep', label: 'sleep' }), // 420
+    makeSlice('07:00', '08:00', { id: 'wake', label: 'wake' }),   // 60
+    makeSlice('08:00', '24:00', { id: 'work', label: 'work' }),   // 960
+  ]);
+
+  it('moves an item and restacks times, preserving durations + contiguity', () => {
+    const out = reorderSlices(days(), 0, 2); // sleep → end
+    expect(out.slices.map((s) => s.label)).toEqual(['wake', 'work', 'sleep']);
+    expect(out.slices[0]).toMatchObject({ startTime: '00:00', endTime: '01:00' }); // wake 60
+    expect(out.slices[1]).toMatchObject({ startTime: '01:00', endTime: '17:00' }); // work 960
+    expect(out.slices[2]).toMatchObject({ startTime: '17:00', endTime: '24:00' }); // sleep 420
+    expect(isContiguous24h(out.slices)).toBe(true);
+    // durations preserved
+    expect(out.slices.map((s) => sliceWidthMinutes(s)).sort((a, b) => a - b)).toEqual([60, 420, 960]);
+  });
+
+  it('from === to is a no-op (still contiguous)', () => {
+    const out = reorderSlices(days(), 1, 1);
+    expect(out.slices.map((s) => s.label)).toEqual(['sleep', 'wake', 'work']);
+    expect(isContiguous24h(out.slices)).toBe(true);
   });
 });
