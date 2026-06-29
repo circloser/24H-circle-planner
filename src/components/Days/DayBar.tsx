@@ -16,6 +16,7 @@ import { useDays, MAX_DAYS } from '@/hooks/useDays';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useCoarsePointer } from '@/hooks/useCoarsePointer';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { PRESETS } from '@/data/presets';
 import type { Schedule } from '@/types/schedule';
 import type { Preset } from '@/types/preset';
@@ -56,6 +57,7 @@ export function DayBar() {
   const { days, activeId, activeIndex, switchTo, addDay, addDayFromSlices, deleteDay } = useDays();
   const { t, lang } = useTranslation();
   const coarse = useCoarsePointer();
+  const isMobile = useIsMobile();
   const diaryDate = useStoreSelector((s) => s.diaryDate);
   const locked = useStoreSelector((s) => s.locked);
   const dispatch = useStoreDispatch();
@@ -106,8 +108,8 @@ export function DayBar() {
 
   return (
     <>
-      {/* Top-centre day strip */}
-      <div className="fixed left-1/2 top-16 z-20 -translate-x-1/2">
+      {/* Day strip — pinned in-flow at the top on mobile; floating top-centre on desktop. */}
+      <div className={isMobile ? 'z-20 mb-1 flex w-full justify-center' : 'fixed left-1/2 top-16 z-20 -translate-x-1/2'}>
         <div
           className="flex items-center gap-2 overflow-x-auto rounded-full px-2 py-1.5 shadow-md max-w-[88vw]"
           style={multi ? pillStyle : { background: 'transparent', border: 'none', boxShadow: 'none' }}

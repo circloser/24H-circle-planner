@@ -380,10 +380,12 @@ function App() {
       <main
         className={
           isMobile
-            ? 'flex-1 container mx-auto flex flex-col items-center gap-6 px-3 pb-12 pt-12'
+            ? 'flex-1 container mx-auto flex flex-col items-center gap-6 px-3 pb-12 pt-3'
             : 'flex-1 container mx-auto py-8 flex items-center justify-center px-4'
         }
       >
+        {/* Multi-day switcher — pinned at the top in-flow on mobile, floating on desktop. */}
+        <DayBar />
         {chartView === 'table' ? (
           <ScheduleTable
             locked={locked}
@@ -620,9 +622,6 @@ function App() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Multi-day switcher (top thumbnails + bottom day indicator) */}
-      <DayBar />
 
       {/* Desktop only: floating post-it memos (bottom-right) + clock tools
           (bottom-left). On mobile these move into the stacked sections under the

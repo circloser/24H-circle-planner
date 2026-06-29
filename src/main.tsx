@@ -30,6 +30,14 @@ if (import.meta.env.VITE_SINGLEFILE === 'true') {
 const isSpike = new URLSearchParams(window.location.search).get('spike') === '1';
 const root = createRoot(document.getElementById('root')!);
 
+// PWA: register the service worker for offline + installability. Production only
+// (https) — skips the Vite dev server (http://localhost) and the file:// build.
+if (!isSpike && 'serviceWorker' in navigator && window.location.protocol === 'https:') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+
 if (isSpike) {
   root.render(
     <StrictMode>
