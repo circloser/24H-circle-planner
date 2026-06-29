@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import './index.css';
-import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Plus, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Plus, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { Button } from '@/components/ui/button';
@@ -48,6 +48,7 @@ import { shareChartImage } from '@/lib/share';
 import { requestPersistentStorage } from '@/lib/persistent-storage';
 import { useTranslation, useChartView } from '@/hooks/usePreferences';
 import { useAuth } from '@/hooks/useAuth';
+import { useSyncStatus } from '@/hooks/useSync';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useSliceInteraction } from '@/hooks/useSliceInteraction';
@@ -142,6 +143,7 @@ function App() {
   const isMobile = useIsMobile();
   const chartView = useChartView();
   const { user, login, logout, loading: authLoading } = useAuth();
+  const sync = useSyncStatus();
 
   // One-time toast for the OAuth round-trip result: the Worker lands us back on
   // /?login=ok (or /?login_error=…). Show feedback, then strip the param so a
@@ -379,6 +381,27 @@ function App() {
                             {user.email ?? user.provider}
                           </span>
                         </DropdownMenuLabel>
+                        <div
+                          className="flex items-center gap-1.5 px-2 pb-1.5 text-xs"
+                          style={{ color: 'hsl(var(--muted-foreground))' }}
+                        >
+                          {sync.status === 'syncing' ? (
+                            <RefreshCw className="h-3 w-3 animate-spin" />
+                          ) : sync.status === 'offline' || sync.status === 'error' ? (
+                            <CloudOff className="h-3 w-3" />
+                          ) : (
+                            <Cloud className="h-3 w-3" />
+                          )}
+                          <span>
+                            {sync.status === 'syncing'
+                              ? t('sync.syncing')
+                              : sync.status === 'offline'
+                                ? t('sync.offline')
+                                : sync.status === 'error'
+                                  ? t('sync.error')
+                                  : t('sync.synced')}
+                          </span>
+                        </div>
                         <DropdownMenuItem onClick={handleLogout} className="gap-2">
                           <LogOut className="h-4 w-4" />
                           {t('auth.logout')}

@@ -108,6 +108,14 @@ async function sessionUser(db: D1Database, token: string): Promise<UserRow | nul
   return db.prepare('SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token=? AND s.expires_at > ?').bind(token, Date.now()).first<UserRow>();
 }
 
+/** The signed-in user for this request (via the `sid` cookie), or null. */
+async function currentUser(request: Request, env: Env): Promise<UserRow | null> {
+  if (!env.DB) return null;
+  const sid = parseCookies(request.headers.get('cookie'))[SID_COOKIE];
+  if (!sid) return null;
+  return sessionUser(env.DB, sid);
+}
+
 // ─── OAuth (Google) ───────────────────────────────────────────────────────────
 
 function callbackUrl(request: Request): string {
@@ -211,6 +219,67 @@ async function handleLogout(request: Request, env: Env): Promise<Response> {
   return json({ ok: true }, 200, { 'set-cookie': cookie(SID_COOKIE, '', 0) });
 }
 
+// ─── Sync (Pro cross-device) ───────────────────────────────────────────────────
+// One JSON blob per user + a monotonic version for last-write-wins. See
+// docs/pro-sync-design.md §4. Beta: any signed-in user may sync (subscription
+// gating arrives with billing in a later phase).
+
+const MAX_BLOB_BYTES = 1_000_000; // 1 MB cap (design §4-1)
+
+interface SyncRow { blob: string; version: number; updated_at: number; device_label: string | null }
+
+async function handleSyncGet(request: Request, env: Env): Promise<Response> {
+  if (!env.DB) return json({ error: 'unconfigured' }, 503);
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'unauthorized' }, 401);
+  const row = await env.DB.prepare('SELECT blob, version, updated_at, device_label FROM sync_data WHERE user_id=?').bind(user.id).first<SyncRow>();
+  if (!row) return new Response(null, { status: 204, headers: { 'cache-control': 'no-store' } });
+  return json({ blob: row.blob, version: row.version, updatedAt: row.updated_at, deviceLabel: row.device_label });
+}
+
+async function handleSyncPut(request: Request, env: Env): Promise<Response> {
+  if (!env.DB) return json({ error: 'unconfigured' }, 503);
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'unauthorized' }, 401);
+
+  let body: { blob?: unknown; baseVersion?: unknown; deviceLabel?: unknown };
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    return json({ error: 'bad_json' }, 400);
+  }
+  const blob = typeof body.blob === 'string' ? body.blob : null;
+  if (blob === null) return json({ error: 'missing_blob' }, 400);
+  if (blob.length > MAX_BLOB_BYTES) return json({ error: 'too_large' }, 413);
+  const baseVersion = typeof body.baseVersion === 'number' ? body.baseVersion : 0;
+  const deviceLabel = typeof body.deviceLabel === 'string' ? body.deviceLabel.slice(0, 64) : null;
+  const now = Date.now();
+
+  const row = await env.DB.prepare('SELECT blob, version, updated_at, device_label FROM sync_data WHERE user_id=?').bind(user.id).first<SyncRow>();
+
+  if (!row) {
+    // First snapshot for this user.
+    try {
+      await env.DB.prepare('INSERT INTO sync_data (user_id, blob, version, updated_at, device_label) VALUES (?,?,?,?,?)').bind(user.id, blob, 1, now, deviceLabel).run();
+      return json({ version: 1, updatedAt: now });
+    } catch {
+      // Lost an insert race — re-read and report the conflict.
+      const r2 = await env.DB.prepare('SELECT blob, version, updated_at, device_label FROM sync_data WHERE user_id=?').bind(user.id).first<SyncRow>();
+      if (r2) return json({ error: 'conflict', blob: r2.blob, version: r2.version, updatedAt: r2.updated_at, deviceLabel: r2.device_label }, 409);
+      return json({ error: 'write_failed' }, 500);
+    }
+  }
+
+  if (baseVersion !== row.version) {
+    // Caller is behind — hand back the server's current snapshot to reconcile.
+    return json({ error: 'conflict', blob: row.blob, version: row.version, updatedAt: row.updated_at, deviceLabel: row.device_label }, 409);
+  }
+
+  const newVersion = row.version + 1;
+  await env.DB.prepare('UPDATE sync_data SET blob=?, version=?, updated_at=?, device_label=? WHERE user_id=?').bind(blob, newVersion, now, deviceLabel, user.id).run();
+  return json({ version: newVersion, updatedAt: now });
+}
+
 // ─── Router ──────────────────────────────────────────────────────────────────
 
 export default {
@@ -227,6 +296,8 @@ export default {
       if (p === '/api/auth/google/callback' && m === 'GET') return handleCallback(request, env);
       if (p === '/api/me' && m === 'GET') return handleMe(request, env);
       if (p === '/api/logout' && m === 'POST') return handleLogout(request, env);
+      if (p === '/api/sync' && m === 'GET') return handleSyncGet(request, env);
+      if (p === '/api/sync' && m === 'PUT') return handleSyncPut(request, env);
       return json({ error: 'not_found' }, 404);
     }
 

@@ -5,6 +5,8 @@ import './index.css'
 import App from './App.tsx'
 import { ScheduleStoreProvider } from './hooks/useScheduleStore.tsx'
 import { PreferencesProvider } from './hooks/usePreferences.tsx'
+import { AuthProvider } from './hooks/useAuth.tsx'
+import { SyncProvider } from './hooks/useSync.tsx'
 import { MemoProvider } from './hooks/useMemos.tsx'
 import { UserPresetsProvider } from './hooks/useUserPresets.tsx'
 import { DaysProvider } from './hooks/useDays.tsx'
@@ -69,20 +71,24 @@ if (isSpike) {
 } else {
   root.render(
     <StrictMode>
-      <PreferencesProvider>
-        <ScheduleStoreProvider>
-          <DaysProvider>
-            <UserPresetsProvider>
-              <MemoProvider>
-                <DiaryProvider>
-                  <App />
-                </DiaryProvider>
-              </MemoProvider>
-            </UserPresetsProvider>
-          </DaysProvider>
-          <Toaster />
-        </ScheduleStoreProvider>
-      </PreferencesProvider>
+      <AuthProvider>
+        <PreferencesProvider>
+          <SyncProvider>
+            <ScheduleStoreProvider>
+              <DaysProvider>
+                <UserPresetsProvider>
+                  <MemoProvider>
+                    <DiaryProvider>
+                      <App />
+                    </DiaryProvider>
+                  </MemoProvider>
+                </UserPresetsProvider>
+              </DaysProvider>
+              <Toaster />
+            </ScheduleStoreProvider>
+          </SyncProvider>
+        </PreferencesProvider>
+      </AuthProvider>
     </StrictMode>,
   );
 }

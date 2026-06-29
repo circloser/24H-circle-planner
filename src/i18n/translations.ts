@@ -205,6 +205,12 @@ export type TKey =
   | 'auth.welcome'
   | 'auth.signedOut'
   | 'auth.loginFailed'
+  | 'sync.synced'
+  | 'sync.syncing'
+  | 'sync.offline'
+  | 'sync.error'
+  | 'sync.appliedFromCloud'
+  | 'sync.undo'
   | 'sharelink.copy'
   | 'sharelink.copied'
   | 'sharelink.copyFail'
@@ -507,6 +513,12 @@ const ko: Dict = {
   'auth.welcome': '로그인되었습니다',
   'auth.signedOut': '로그아웃되었습니다',
   'auth.loginFailed': '로그인에 실패했습니다',
+  'sync.synced': '동기화됨',
+  'sync.syncing': '동기화 중…',
+  'sync.offline': '오프라인',
+  'sync.error': '동기화 오류',
+  'sync.appliedFromCloud': '클라우드에서 동기화되었습니다',
+  'sync.undo': '되돌리기',
   'sharelink.importTitle': '공유된 시간표 불러오기',
   'sharelink.importBody': '링크로 공유된 시간표를 불러올까요? 현재 시간표가 대체됩니다.',
   'sharelink.importConfirm': '불러오기',
@@ -807,6 +819,12 @@ const en: Dict = {
   'auth.welcome': 'Signed in',
   'auth.signedOut': 'Signed out',
   'auth.loginFailed': 'Sign-in failed',
+  'sync.synced': 'Synced',
+  'sync.syncing': 'Syncing…',
+  'sync.offline': 'Offline',
+  'sync.error': 'Sync error',
+  'sync.appliedFromCloud': 'Synced from the cloud',
+  'sync.undo': 'Undo',
   'sharelink.importTitle': 'Open shared schedule',
   'sharelink.importBody': 'Open the schedule shared via this link? Your current one will be replaced.',
   'sharelink.importConfirm': 'Open',

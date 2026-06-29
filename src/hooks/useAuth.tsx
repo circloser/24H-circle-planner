@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 export interface AuthUser {
   id: string;
@@ -10,6 +11,12 @@ export interface AuthState {
   user: AuthUser | null;
   plan: 'free' | 'pro';
   loading: boolean;
+}
+
+export interface AuthContextValue extends AuthState {
+  login: () => void;
+  logout: () => Promise<void>;
+  refresh: () => Promise<void>;
 }
 
 const SIGNED_OUT: AuthState = { user: null, plan: 'free', loading: false };
@@ -27,15 +34,17 @@ async function fetchMe(): Promise<AuthState> {
   }
 }
 
+const AuthContext = createContext<AuthContextValue | null>(null);
+
 /**
- * Pro-sync auth. Reads the session from the Worker (`GET /api/me`) and exposes
- * Google sign-in / sign-out.
+ * Pro-sync auth. Reads the session from the Worker (`GET /api/me`) once and
+ * shares it app-wide, exposing Google sign-in / sign-out.
  *
  * On static/offline hosting where no Worker answers `/api/me` (e.g. the file://
  * verification build), the fetch fails and the user is simply treated as signed
  * out — the app is fully usable without an account.
  */
-export function useAuth() {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ user: null, plan: 'free', loading: true });
 
   useEffect(() => {
@@ -66,5 +75,18 @@ export function useAuth() {
     setState(SIGNED_OUT);
   }, []);
 
-  return { ...state, login, logout, refresh };
+  const value = useMemo<AuthContextValue>(
+    () => ({ ...state, login, logout, refresh }),
+    [state, login, logout, refresh],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+/** Consume the shared auth state. Returns signed-out defaults if no provider is
+ * mounted (keeps components safe to render anywhere). */
+export function useAuth(): AuthContextValue {
+  const ctx = useContext(AuthContext);
+  if (ctx) return ctx;
+  return { ...SIGNED_OUT, login: () => {}, logout: async () => {}, refresh: async () => {} };
 }
