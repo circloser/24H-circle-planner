@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import './index.css';
-import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Plus, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Plus, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -46,6 +47,7 @@ import { AboutDialog } from '@/components/About/AboutDialog';
 import { shareChartImage } from '@/lib/share';
 import { requestPersistentStorage } from '@/lib/persistent-storage';
 import { useTranslation, useChartView } from '@/hooks/usePreferences';
+import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useSliceInteraction } from '@/hooks/useSliceInteraction';
@@ -139,6 +141,26 @@ function App() {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const chartView = useChartView();
+  const { user, login, logout, loading: authLoading } = useAuth();
+
+  // One-time toast for the OAuth round-trip result: the Worker lands us back on
+  // /?login=ok (or /?login_error=…). Show feedback, then strip the param so a
+  // refresh doesn't repeat it. The session itself is read by useAuth on mount.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('login') && !params.has('login_error')) return;
+    if (params.get('login') === 'ok') toast.success(t('auth.welcome'));
+    else toast.error(t('auth.loginFailed'));
+    params.delete('login');
+    params.delete('login_error');
+    const qs = params.toString();
+    window.history.replaceState({}, '', window.location.pathname + (qs ? `?${qs}` : '') + window.location.hash);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleLogout = () => {
+    void logout().then(() => toast.success(t('auth.signedOut')));
+  };
 
   /**
    * Called when user confirms loading a slot from SlotSheet.
@@ -347,6 +369,30 @@ function App() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-[12rem]">
+                {!authLoading && (
+                  <>
+                    {user ? (
+                      <>
+                        <DropdownMenuLabel className="flex items-center gap-2 font-normal">
+                          <UserRound className="h-4 w-4 shrink-0" />
+                          <span className="truncate text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                            {user.email ?? user.provider}
+                          </span>
+                        </DropdownMenuLabel>
+                        <DropdownMenuItem onClick={handleLogout} className="gap-2">
+                          <LogOut className="h-4 w-4" />
+                          {t('auth.logout')}
+                        </DropdownMenuItem>
+                      </>
+                    ) : (
+                      <DropdownMenuItem onClick={login} className="gap-2">
+                        <LogIn className="h-4 w-4" />
+                        {t('auth.login')}
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <DropdownMenuItem onClick={() => setSettingsSection('language')} className="gap-2">
                   <Languages className="h-4 w-4" />
                   {t('settings.language')}

@@ -1,7 +1,8 @@
 /**
  * Batch 13 verification (offline, dist-single):
  *  #1 header "내보내기" button has no border (ghost).
- *  #2 settings (gear) menu grouping: 5 items + 1 separator (post-reorg).
+ *  #2 settings (gear) menu grouping: 7 items + 2 separators (signed-out:
+ *     login · language · share · copylink · home · transfer · reset).
  *  #3 12h (day/night) drag: slice AREAS (path d) + division + LABELS follow the
  *     cursor live, like the 24h view (previously only the time pill followed).
  */
@@ -50,10 +51,10 @@ try {
     const items = menu ? menu.querySelectorAll('[role="menuitem"]').length : 0;
     return { seps, items };
   });
-  pass('#2 gear menu grouping (5 items, 1 separator)', info.seps === 1 && info.items === 5, `separators=${info.seps} items=${info.items}`);
+  pass('#2 gear menu grouping (7 items, 2 separators)', info.seps === 2 && info.items === 7, `separators=${info.seps} items=${info.items}`);
   await page.keyboard.press('Escape');
   await page.waitForTimeout(200);
-} catch (e) { pass('#2 gear menu grouping (5 items, 1 separator)', false, e.message); }
+} catch (e) { pass('#2 gear menu grouping (7 items, 2 separators)', false, e.message); }
 
 // ─── #3 12h drag: areas + labels follow ─────────────────────────────────────
 async function snapshot() {

@@ -200,6 +200,11 @@ export type TKey =
   | 'transfer.title'
   | 'transfer.body'
   | 'transfer.note'
+  | 'auth.login'
+  | 'auth.logout'
+  | 'auth.welcome'
+  | 'auth.signedOut'
+  | 'auth.loginFailed'
   | 'sharelink.copy'
   | 'sharelink.copied'
   | 'sharelink.copyFail'
@@ -497,6 +502,11 @@ const ko: Dict = {
   'transfer.title': '다른 기기로 보내기',
   'transfer.body': '다른 기기의 카메라로 이 QR을 스캔하면 현재 시간표를 가져옵니다.',
   'transfer.note': '여러 날짜·일기·메모 등 전체 데이터는 내보내기 → 백업을 이용하세요.',
+  'auth.login': '구글로 로그인',
+  'auth.logout': '로그아웃',
+  'auth.welcome': '로그인되었습니다',
+  'auth.signedOut': '로그아웃되었습니다',
+  'auth.loginFailed': '로그인에 실패했습니다',
   'sharelink.importTitle': '공유된 시간표 불러오기',
   'sharelink.importBody': '링크로 공유된 시간표를 불러올까요? 현재 시간표가 대체됩니다.',
   'sharelink.importConfirm': '불러오기',
@@ -792,6 +802,11 @@ const en: Dict = {
   'transfer.title': 'Send to another device',
   'transfer.body': "Scan this QR with another device's camera to import the current timetable.",
   'transfer.note': 'For all data (multiple days, diary, memos), use Export → Backup.',
+  'auth.login': 'Sign in with Google',
+  'auth.logout': 'Sign out',
+  'auth.welcome': 'Signed in',
+  'auth.signedOut': 'Signed out',
+  'auth.loginFailed': 'Sign-in failed',
   'sharelink.importTitle': 'Open shared schedule',
   'sharelink.importBody': 'Open the schedule shared via this link? Your current one will be replaced.',
   'sharelink.importConfirm': 'Open',
