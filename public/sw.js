@@ -4,7 +4,7 @@
  * works offline (data lives in localStorage). Navigations are network-first
  * (fresh on every online visit); same-origin assets are stale-while-revalidate.
  */
-const CACHE = '24h-cache-v1';
+const CACHE = '24h-cache-v2';
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/favicon.svg', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -26,6 +26,11 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return; // skip ads / analytics / cross-origin
+
+  // Never intercept the API. /api/* must reach the network directly so the
+  // OAuth flow can follow its cross-origin 302 to Google, and so dynamic
+  // responses (/api/me, /api/sync) are never cached or served as the SPA shell.
+  if (url.pathname.startsWith('/api/')) return;
 
   // App navigations: network-first, fall back to the cached shell when offline.
   if (req.mode === 'navigate') {
