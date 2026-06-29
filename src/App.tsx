@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import './index.css';
-import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Plus, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Plus, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ import {
 import { resetAllData } from '@/lib/backup';
 import { CircleTimeline } from '@/components/CircleTimeline/CircleTimeline';
 import { ScheduleTable } from '@/components/ScheduleTable/ScheduleTable';
+import { DeviceTransferDialog } from '@/components/DeviceTransferDialog/DeviceTransferDialog';
 import { ThemeToggle } from '@/components/ThemeToggle/ThemeToggle';
 import { PresetGallery } from '@/components/PresetGallery/PresetGallery';
 import { SliceEditor } from '@/components/SliceEditor/SliceEditor';
@@ -127,6 +128,7 @@ function App() {
   const [exportOpen, setExportOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [homeOpen, setHomeOpen] = useState(false);
+  const [transferOpen, setTransferOpen] = useState(false);
   const [timeBlockOpen, setTimeBlockOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [diaryOpen, setDiaryOpen] = useState(false);
@@ -362,6 +364,10 @@ function App() {
                   <Smartphone className="h-4 w-4" />
                   {t('home.button')}
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setTransferOpen(true)} className="gap-2">
+                  <QrCodeIcon className="h-4 w-4" />
+                  {t('transfer.menu')}
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => setResetOpen(true)}
                   className="gap-2"
@@ -578,6 +584,9 @@ function App() {
         installPrompt={installPrompt}
         onConsumePrompt={() => setInstallPrompt(null)}
       />
+
+      {/* No-backend device transfer: QR of the current timetable (#p=…). */}
+      <DeviceTransferDialog open={transferOpen} onOpenChange={setTransferOpen} />
 
       {/* About / manual + Circloser brand (opened from the title) */}
       <AboutDialog open={aboutOpen} onOpenChange={setAboutOpen} />

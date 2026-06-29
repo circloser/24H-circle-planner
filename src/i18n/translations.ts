@@ -196,6 +196,10 @@ export type TKey =
   | 'welcome.startBlank'
   | 'empty.heroTitle'
   | 'empty.heroCta'
+  | 'transfer.menu'
+  | 'transfer.title'
+  | 'transfer.body'
+  | 'transfer.note'
   | 'sharelink.copy'
   | 'sharelink.copied'
   | 'sharelink.copyFail'
@@ -489,6 +493,10 @@ const ko: Dict = {
   'sharelink.copy': '링크 복사',
   'sharelink.copied': '시간표 링크가 복사되었어요',
   'sharelink.copyFail': '링크 복사에 실패했어요',
+  'transfer.menu': '다른 기기로 (QR)',
+  'transfer.title': '다른 기기로 보내기',
+  'transfer.body': '다른 기기의 카메라로 이 QR을 스캔하면 현재 시간표를 가져옵니다.',
+  'transfer.note': '여러 날짜·일기·메모 등 전체 데이터는 내보내기 → 백업을 이용하세요.',
   'sharelink.importTitle': '공유된 시간표 불러오기',
   'sharelink.importBody': '링크로 공유된 시간표를 불러올까요? 현재 시간표가 대체됩니다.',
   'sharelink.importConfirm': '불러오기',
@@ -780,6 +788,10 @@ const en: Dict = {
   'sharelink.copy': 'Copy link',
   'sharelink.copied': 'Schedule link copied',
   'sharelink.copyFail': 'Could not copy the link',
+  'transfer.menu': 'Send to device (QR)',
+  'transfer.title': 'Send to another device',
+  'transfer.body': "Scan this QR with another device's camera to import the current timetable.",
+  'transfer.note': 'For all data (multiple days, diary, memos), use Export → Backup.',
   'sharelink.importTitle': 'Open shared schedule',
   'sharelink.importBody': 'Open the schedule shared via this link? Your current one will be replaced.',
   'sharelink.importConfirm': 'Open',
