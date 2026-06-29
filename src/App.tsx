@@ -59,6 +59,7 @@ import { AnalyticsDialog } from '@/components/Analytics/AnalyticsDialog';
 import { DiaryDialog } from '@/components/Diary/DiaryDialog';
 import { DiaryNotePanel } from '@/components/Diary/DiaryNotePanel';
 import { GoalsDialog } from '@/components/Goals/GoalsDialog';
+import { RecordView } from '@/components/Record/RecordView';
 import { PRESETS } from '@/data/presets';
 import type { Slot } from '@/types/slot';
 import type { Schedule } from '@/types/schedule';
@@ -467,9 +468,11 @@ function App() {
         }
       >
         {/* Multi-day switcher — pinned at the top in-flow on mobile, floating on desktop. */}
-        <DayBar />
+        {chartView !== 'record' && <DayBar />}
         <div className="flex w-full flex-col items-center gap-4">
-        {chartView === 'table' ? (
+        {chartView === 'record' ? (
+          <RecordView />
+        ) : chartView === 'table' ? (
           <ScheduleTable
             locked={locked}
             onEditLabel={(id) => { if (locked) { toast(t('diary.locked')); } else { setEditingSliceId(id); } }}
@@ -533,12 +536,12 @@ function App() {
         </div>
         )}
           {/* Day's free-form note, shown directly under the timetable. */}
-          <DiaryNotePanel />
+          {chartView !== 'record' && <DiaryNotePanel />}
         </div>
 
         {/* Mobile: stacked sections below the chart. Editing stays enabled (touch
             + long-press); only the desktop floating overlays are replaced. */}
-        {isMobile && (
+        {isMobile && chartView !== 'record' && (
           <>
             <div className="-mt-2 flex flex-col items-center gap-1.5">
               <Button

@@ -1,4 +1,4 @@
-import { Clock, Sun, Moon, Table as TableIcon } from 'lucide-react';
+import { Clock, Sun, Moon, Table as TableIcon, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
 import { CHART_VIEWS, type ChartView } from '@/lib/chart-view';
@@ -9,6 +9,7 @@ const ICON: Record<ChartView, typeof Clock> = {
   day: Sun,
   night: Moon,
   table: TableIcon,
+  record: Timer,
 };
 
 const LABEL_KEY: Record<ChartView, TKey> = {
@@ -16,6 +17,7 @@ const LABEL_KEY: Record<ChartView, TKey> = {
   day: 'view.day',
   night: 'view.night',
   table: 'view.table',
+  record: 'view.record',
 };
 
 /**

@@ -289,6 +289,21 @@ export type TKey =
   | 'view.night'
   | 'view.table'
   | 'view.cycle'
+  | 'view.record'
+  | 'record.labelPlaceholder'
+  | 'record.start'
+  | 'record.stop'
+  | 'record.cancel'
+  | 'record.recording'
+  | 'record.or'
+  | 'record.add'
+  | 'record.empty'
+  | 'record.delete'
+  | 'record.clear'
+  | 'record.minOnly'
+  | 'record.untitled'
+  | 'record.startTime'
+  | 'record.endTime'
   | 'table.csv'
   | 'table.image'
   | 'table.reorder'
@@ -615,7 +630,22 @@ const ko: Dict = {
   'view.day': '낮 6–18',
   'view.night': '밤 18–6',
   'view.table': '표',
-  'view.cycle': '시간표 보기 전환 (24시간 → 낮 → 밤 → 표)',
+  'view.cycle': '시간표 보기 전환 (24시간 → 낮 → 밤 → 표 → 기록)',
+  'view.record': '기록',
+  'record.labelPlaceholder': '무엇을 기록할까요? (예: 운동, 공부)',
+  'record.start': '시작',
+  'record.stop': '종료',
+  'record.cancel': '취소',
+  'record.recording': '기록 중',
+  'record.or': '또는',
+  'record.add': '추가',
+  'record.empty': '아직 기록이 없습니다. 시작을 눌러 실시간으로 기록하세요.',
+  'record.delete': '삭제',
+  'record.clear': '오늘 기록 모두 지우기',
+  'record.minOnly': '{m}분',
+  'record.untitled': '(이름 없음)',
+  'record.startTime': '시작 시간',
+  'record.endTime': '종료 시간',
   'table.csv': 'CSV',
   'table.image': '이미지',
   'table.reorder': '순서 변경',
@@ -943,7 +973,22 @@ const en: Dict = {
   'view.day': 'Day 6–18',
   'view.night': 'Night 18–6',
   'view.table': 'Table',
-  'view.cycle': 'Switch view (24h → Day → Night → Table)',
+  'view.cycle': 'Switch view (24h → Day → Night → Table → Record)',
+  'view.record': 'Record',
+  'record.labelPlaceholder': 'What are you tracking? (e.g. exercise, study)',
+  'record.start': 'Start',
+  'record.stop': 'Stop',
+  'record.cancel': 'Cancel',
+  'record.recording': 'Recording',
+  'record.or': 'or',
+  'record.add': 'Add',
+  'record.empty': 'No records yet. Press Start to track in real time.',
+  'record.delete': 'Delete',
+  'record.clear': 'Clear today',
+  'record.minOnly': '{m}m',
+  'record.untitled': '(untitled)',
+  'record.startTime': 'Start time',
+  'record.endTime': 'End time',
   'table.csv': 'CSV',
   'table.image': 'Image',
   'table.reorder': 'Reorder',

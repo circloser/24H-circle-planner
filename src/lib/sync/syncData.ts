@@ -17,6 +17,7 @@ export const SYNC_KEYS: readonly string[] = [
   'rimmemos',
   'user-presets',
   'goals',
+  'records',
 ].map((k) => PREFIX + k);
 
 export interface SyncEnvelope {

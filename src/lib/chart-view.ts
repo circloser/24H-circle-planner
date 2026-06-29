@@ -6,9 +6,9 @@
  *  - 'night': 18:00 → 06:00, the 18/06 seam at the BOTTOM, midnight at top.
  * Editing stays linked because angle↔time uses the same spec in both directions.
  */
-export type ChartView = 'full' | 'day' | 'night' | 'table';
+export type ChartView = 'full' | 'day' | 'night' | 'table' | 'record';
 
-export const CHART_VIEWS: ChartView[] = ['full', 'day', 'night', 'table'];
+export const CHART_VIEWS: ChartView[] = ['full', 'day', 'night', 'table', 'record'];
 
 export interface ViewSpec {
   view: ChartView;
