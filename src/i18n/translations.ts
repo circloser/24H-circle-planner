@@ -274,6 +274,7 @@ export type TKey =
   | 'diary.noteSkip'
   | 'diary.noteSaved'
   | 'diary.noteChars'
+  | 'diary.noteEditable'
   | 'analytics.scopeCurrent'
   | 'analytics.scopeAll'
   | 'analytics.scopeDiary'
@@ -616,6 +617,7 @@ const ko: Dict = {
   'diary.noteSkip': '건너뛰기',
   'diary.noteSaved': '노트가 저장되었습니다',
   'diary.noteChars': '{n}자',
+  'diary.noteEditable': '수정 가능',
   'analytics.scopeCurrent': '현재 시간표',
   'analytics.scopeAll': '전체 일정',
   'analytics.scopeDiary': '일기',
@@ -959,6 +961,7 @@ const en: Dict = {
   'diary.noteSkip': 'Skip',
   'diary.noteSaved': 'Note saved',
   'diary.noteChars': '{n} chars',
+  'diary.noteEditable': 'Editable',
   'analytics.scopeCurrent': 'Current',
   'analytics.scopeAll': 'All days',
   'analytics.scopeDiary': 'Diary',
