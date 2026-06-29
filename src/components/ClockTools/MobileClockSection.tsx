@@ -1,5 +1,5 @@
-import { Clock, Calendar, CloudSun, Check } from 'lucide-react';
-import { useTranslation } from '@/hooks/usePreferences';
+import { Clock, Calendar, CloudSun, Check, CircleDot } from 'lucide-react';
+import { useTranslation, usePreferences } from '@/hooks/usePreferences';
 import { useClockTools, type ToolKind } from './useClockTools';
 import { ClockWidget } from './ClockWidget';
 import { CalendarWidget } from './CalendarWidget';
@@ -18,6 +18,8 @@ const noMove = () => {};
 export function MobileClockSection() {
   const { state, toggle, setClock, setWeather } = useClockTools();
   const { t } = useTranslation();
+  const { prefs, setPreference } = usePreferences();
+  const isRecord = (prefs.chartView ?? 'full') === 'record';
 
   const chips: Array<[ToolKind, React.ReactNode, string]> = [
     ['clock', <Clock className="h-4 w-4" />, t('clock.clock')],
@@ -53,6 +55,22 @@ export function MobileClockSection() {
             </button>
           );
         })}
+        {/* Record mode entry (a separate mode, not a clock tool). */}
+        <button
+          type="button"
+          onClick={() => setPreference('chartView', isRecord ? 'full' : 'record')}
+          aria-pressed={isRecord}
+          className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors"
+          style={
+            isRecord
+              ? { backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', border: '1px solid hsl(var(--primary))' }
+              : { backgroundColor: 'hsl(var(--surface))', color: 'hsl(var(--foreground))', border: '1px solid hsl(var(--border))' }
+          }
+        >
+          <CircleDot className="h-4 w-4" />
+          {t('view.record')}
+          {isRecord && <Check className="h-3.5 w-3.5" />}
+        </button>
       </div>
 
       <FloatingInlineContext.Provider value={true}>

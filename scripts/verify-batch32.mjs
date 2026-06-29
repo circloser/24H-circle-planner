@@ -20,16 +20,13 @@ await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
 await page.keyboard.press('Escape').catch(() => {});
 await wait(400);
 
-// Cycle the view toggle to record mode.
-const toggle = page.locator('button[aria-label*="보기 전환"]').first();
-let inRecord = false;
-for (let i = 0; i < 6; i++) {
-  inRecord = await page.locator('svg[aria-label="record-ring"]').isVisible().catch(() => false);
-  if (inRecord) break;
-  await toggle.click();
-  await wait(220);
-}
-pass('reached record mode (ring shown)', inRecord);
+// Enter record mode via the bottom-left clock-tools menu (시계 도구 → 기록).
+await page.locator('button[aria-label="시계 도구"]').first().click();
+await wait(250);
+await page.locator('button:has-text("기록")').first().click();
+await wait(350);
+const inRecord = await page.locator('svg[aria-label="record-ring"]').isVisible().catch(() => false);
+pass('reached record mode via clock menu (ring shown)', inRecord);
 
 // Live: Start → banner → Cancel.
 await page.locator('input[placeholder*="무엇을 기록"]').first().fill('운동');

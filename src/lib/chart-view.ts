@@ -8,7 +8,10 @@
  */
 export type ChartView = 'full' | 'day' | 'night' | 'table' | 'record';
 
-export const CHART_VIEWS: ChartView[] = ['full', 'day', 'night', 'table', 'record'];
+// The top toggle only cycles the schedule views. 'record' is a separate mode
+// entered from the clock-tools menu (not part of the cycle), so it's excluded
+// here while remaining a valid ChartView.
+export const CHART_VIEWS: ChartView[] = ['full', 'day', 'night', 'table'];
 
 export interface ViewSpec {
   view: ChartView;

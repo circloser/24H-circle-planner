@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Clock, Timer, AlarmClock, Calendar, CloudSun, Check } from 'lucide-react';
+import { Clock, Timer, AlarmClock, Calendar, CloudSun, Check, CircleDot } from 'lucide-react';
 import { toast } from 'sonner';
-import { useTranslation } from '@/hooks/usePreferences';
+import { useTranslation, usePreferences } from '@/hooks/usePreferences';
 import { useClockTools, type ToolKind } from './useClockTools';
 import { playBeep } from './clock-utils';
 import { ClockWidget } from './ClockWidget';
@@ -18,6 +18,8 @@ import { WeatherWidget } from './WeatherWidget';
 export function ClockToolsLayer() {
   const { state, toggle, setClock, setTimer, setAlarm, setCalendar, setWeather } = useClockTools();
   const { t } = useTranslation();
+  const { prefs, setPreference } = usePreferences();
+  const isRecord = (prefs.chartView ?? 'full') === 'record';
   const [menuOpen, setMenuOpen] = useState(false);
 
   const ringTimer = () => {
@@ -102,6 +104,17 @@ export function ClockToolsLayer() {
           {menuRow('weather', <CloudSun className="h-4 w-4" />, t('clock.weather'))}
           {menuRow('timer', <Timer className="h-4 w-4" />, t('clock.timer'))}
           {menuRow('alarm', <AlarmClock className="h-4 w-4" />, t('clock.alarm'))}
+          {/* Record mode — a separate mode (not a clock-tool); toggles the view. */}
+          <button
+            type="button"
+            className={item}
+            style={itemStyle}
+            onClick={() => { setPreference('chartView', isRecord ? 'full' : 'record'); setMenuOpen(false); }}
+          >
+            <CircleDot className="h-4 w-4" />
+            <span className="flex-1 text-left">{t('view.record')}</span>
+            {isRecord && <Check className="h-4 w-4" style={{ color: 'hsl(var(--primary))' }} />}
+          </button>
         </div>
       )}
 
