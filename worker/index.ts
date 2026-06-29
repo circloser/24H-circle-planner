@@ -10,8 +10,8 @@
 export interface Env {
   /** Static assets binding (the built SPA in ./dist). */
   ASSETS: { fetch: (request: Request) => Promise<Response> };
-  // Added once the D1 database exists (see worker/README.md):
-  // DB: D1Database;
+  /** D1 database (Pro sync). Optional until the binding is live everywhere. */
+  DB?: D1Database;
 }
 
 function json(data: unknown, status = 200): Response {
@@ -28,7 +28,7 @@ export default {
     if (url.pathname.startsWith('/api/')) {
       // Liveness probe — confirms the Worker layer is deployed.
       if (url.pathname === '/api/health' && request.method === 'GET') {
-        return json({ ok: true, service: '24houring-api', ts: Date.now() });
+        return json({ ok: true, service: '24houring-api', db: Boolean(env.DB), ts: Date.now() });
       }
       // Auth / sync / billing routes arrive in later phases.
       return json({ error: 'not_implemented' }, 501);

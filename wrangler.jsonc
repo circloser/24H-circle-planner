@@ -16,10 +16,10 @@
     "html_handling": "auto-trailing-slash",
     // This is a single-page app: serve index.html for paths with no asset match.
     "not_found_handling": "single-page-application"
-  }
+  },
 
-  // D1 is added once the database exists (see worker/README.md):
-  // "d1_databases": [
-  //   { "binding": "DB", "database_name": "24houring", "database_id": "<id>", "migrations_dir": "worker/migrations" }
-  // ]
+  // The Worker's D1 database binding (env.DB). Schema: worker/migrations/.
+  "d1_databases": [
+    { "binding": "DB", "database_name": "24houring", "database_id": "a21e309c-9753-4fe1-91b0-9456ce4c3ec2", "migrations_dir": "worker/migrations" }
+  ]
 }
