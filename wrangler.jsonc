@@ -1,16 +1,25 @@
 {
-  // Static-site Worker: serves the Vite build output (./dist) as assets.
-  // No server code (no "main") — assets-only Workers are supported by Wrangler.
+  // Worker + static assets: the Worker (worker/index.ts) handles /api/* and falls
+  // through to the built SPA (./dist) via the ASSETS binding for everything else.
+  // Backend foundation for Pro sync — see worker/README.md + docs/pro-sync-design.md.
   // Deployed by Cloudflare Workers Builds via `npx wrangler deploy`.
   // Must match the Cloudflare Worker name (the connected project is "24houringp").
   "name": "24houringp",
+  "main": "worker/index.ts",
   "compatibility_date": "2025-06-01",
   "assets": {
     "directory": "./dist",
+    // Lets the Worker serve non-API requests via env.ASSETS.fetch(request).
+    "binding": "ASSETS",
     // Clean URLs for the static legal pages: /about → about.html, etc.
     // (auto-trailing-slash is the default; set explicitly so it's guaranteed.)
     "html_handling": "auto-trailing-slash",
     // This is a single-page app: serve index.html for paths with no asset match.
     "not_found_handling": "single-page-application"
   }
+
+  // D1 is added once the database exists (see worker/README.md):
+  // "d1_databases": [
+  //   { "binding": "DB", "database_name": "24houring", "database_id": "<id>", "migrations_dir": "worker/migrations" }
+  // ]
 }
