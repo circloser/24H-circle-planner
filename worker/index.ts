@@ -1,10 +1,10 @@
 /**
- * 24Houring API Worker — backend foundation (Pro sync, phase 1).
+ * 24Houring API Worker — Pro sync backend.
  *
- * Routing: `/api/*` is handled here; everything else falls through to the static
- * SPA via the ASSETS binding, so the app behaves exactly as before. Auth, sync
- * and billing routes are stubbed (501) until D1 + OAuth land in later phases
- * (see worker/README.md and docs/pro-sync-design.md).
+ * Phase 1: /api/health + ASSETS fallthrough.
+ * Phase 2: Google OAuth (code + PKCE) → opaque session cookie in D1; /api/me,
+ *          /api/logout. Sync + billing arrive in later phases.
+ * See docs/pro-sync-design.md.
  */
 
 export interface Env {
@@ -12,26 +12,222 @@ export interface Env {
   ASSETS: { fetch: (request: Request) => Promise<Response> };
   /** D1 database (Pro sync). Optional until the binding is live everywhere. */
   DB?: D1Database;
+  /** Google OAuth client (set as Worker secrets). */
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
 }
 
-function json(data: unknown, status = 200): Response {
+const SID_COOKIE = 'sid';
+const TX_COOKIE = 'oauth_tx';
+const SESSION_TTL_MS = 60 * 24 * 60 * 60 * 1000; // 60 days
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function json(data: unknown, status = 200, extra: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...extra },
   });
 }
+
+function b64urlFromBytes(bytes: Uint8Array): string {
+  let bin = '';
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function b64urlToString(s: string): string {
+  const bin = atob(s.replace(/-/g, '+').replace(/_/g, '/'));
+  return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
+}
+
+function randomToken(bytes = 32): string {
+  const a = new Uint8Array(bytes);
+  crypto.getRandomValues(a);
+  return b64urlFromBytes(a);
+}
+
+async function sha256b64url(input: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
+  return b64urlFromBytes(new Uint8Array(digest));
+}
+
+function parseCookies(header: string | null): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!header) return out;
+  for (const part of header.split(';')) {
+    const i = part.indexOf('=');
+    if (i < 0) continue;
+    const k = part.slice(0, i).trim();
+    if (k) out[k] = decodeURIComponent(part.slice(i + 1).trim());
+  }
+  return out;
+}
+
+function cookie(name: string, value: string, maxAge: number): string {
+  return `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`;
+}
+
+function decodeJwtPayload(jwt: string): Record<string, unknown> | null {
+  try {
+    const parts = jwt.split('.');
+    if (parts.length !== 3) return null;
+    return JSON.parse(b64urlToString(parts[1])) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function redirectHome(origin: string, setCookie: string, query: string): Response {
+  return new Response(null, { status: 302, headers: { location: `${origin}/${query}`, 'set-cookie': setCookie } });
+}
+
+// ─── D1 ──────────────────────────────────────────────────────────────────────
+
+interface UserRow { id: string; provider: string; provider_sub: string; email: string | null; created_at: number }
+
+async function upsertUser(db: D1Database, provider: string, sub: string, email: string | null): Promise<string> {
+  const found = await db.prepare('SELECT id FROM users WHERE provider=? AND provider_sub=?').bind(provider, sub).first<{ id: string }>();
+  if (found?.id) {
+    if (email) await db.prepare('UPDATE users SET email=? WHERE id=?').bind(email, found.id).run();
+    return found.id;
+  }
+  const id = crypto.randomUUID();
+  await db.prepare('INSERT INTO users (id, provider, provider_sub, email, created_at) VALUES (?,?,?,?,?)').bind(id, provider, sub, email, Date.now()).run();
+  return id;
+}
+
+async function createSession(db: D1Database, userId: string): Promise<string> {
+  const token = randomToken(32);
+  const now = Date.now();
+  await db.prepare('INSERT INTO sessions (token, user_id, created_at, expires_at) VALUES (?,?,?,?)').bind(token, userId, now, now + SESSION_TTL_MS).run();
+  return token;
+}
+
+async function sessionUser(db: D1Database, token: string): Promise<UserRow | null> {
+  return db.prepare('SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token=? AND s.expires_at > ?').bind(token, Date.now()).first<UserRow>();
+}
+
+// ─── OAuth (Google) ───────────────────────────────────────────────────────────
+
+function callbackUrl(request: Request): string {
+  return new URL(request.url).origin + '/api/auth/google/callback';
+}
+
+async function handleStart(request: Request, env: Env): Promise<Response> {
+  if (!env.GOOGLE_CLIENT_ID) return json({ error: 'oauth_not_configured' }, 503);
+  const state = randomToken(16);
+  const verifier = randomToken(32);
+  const challenge = await sha256b64url(verifier);
+  const params = new URLSearchParams({
+    client_id: env.GOOGLE_CLIENT_ID,
+    redirect_uri: callbackUrl(request),
+    response_type: 'code',
+    scope: 'openid email profile',
+    state,
+    code_challenge: challenge,
+    code_challenge_method: 'S256',
+    access_type: 'online',
+    prompt: 'select_account',
+  });
+  return new Response(null, {
+    status: 302,
+    headers: {
+      location: `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`,
+      'set-cookie': cookie(TX_COOKIE, JSON.stringify({ state, verifier }), 600),
+    },
+  });
+}
+
+async function handleCallback(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url);
+  const origin = url.origin;
+  const clearTx = cookie(TX_COOKIE, '', 0);
+  const code = url.searchParams.get('code');
+  const state = url.searchParams.get('state');
+
+  let tx: { state: string; verifier: string } | null = null;
+  try {
+    const raw = parseCookies(request.headers.get('cookie'))[TX_COOKIE];
+    const o = raw ? JSON.parse(raw) : null;
+    if (o && typeof o.state === 'string' && typeof o.verifier === 'string') tx = o;
+  } catch { /* ignore */ }
+
+  if (!code || !state || !tx || tx.state !== state) return redirectHome(origin, clearTx, '?login_error=state');
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET || !env.DB) return redirectHome(origin, clearTx, '?login_error=unconfigured');
+
+  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: env.GOOGLE_CLIENT_ID,
+      client_secret: env.GOOGLE_CLIENT_SECRET,
+      code,
+      grant_type: 'authorization_code',
+      redirect_uri: callbackUrl(request),
+      code_verifier: tx.verifier,
+    }).toString(),
+  });
+  if (!tokenRes.ok) return redirectHome(origin, clearTx, '?login_error=token');
+
+  const token = (await tokenRes.json()) as { id_token?: string };
+  const payload = token.id_token ? decodeJwtPayload(token.id_token) : null;
+  if (!payload) return redirectHome(origin, clearTx, '?login_error=idtoken');
+
+  const sub = String(payload.sub ?? '');
+  const aud = String(payload.aud ?? '');
+  const iss = String(payload.iss ?? '');
+  const exp = Number(payload.exp ?? 0);
+  const validIss = iss === 'https://accounts.google.com' || iss === 'accounts.google.com';
+  if (!sub || aud !== env.GOOGLE_CLIENT_ID || !validIss || exp * 1000 < Date.now()) {
+    return redirectHome(origin, clearTx, '?login_error=claims');
+  }
+
+  const email = typeof payload.email === 'string' ? payload.email : null;
+  const userId = await upsertUser(env.DB, 'google', sub, email);
+  const sid = await createSession(env.DB, userId);
+
+  const headers = new Headers();
+  headers.append('set-cookie', clearTx);
+  headers.append('set-cookie', cookie(SID_COOKIE, sid, Math.floor(SESSION_TTL_MS / 1000)));
+  headers.set('location', `${origin}/?login=ok`);
+  return new Response(null, { status: 302, headers });
+}
+
+async function handleMe(request: Request, env: Env): Promise<Response> {
+  if (!env.DB) return json({ user: null });
+  const sid = parseCookies(request.headers.get('cookie'))[SID_COOKIE];
+  if (!sid) return json({ user: null });
+  const user = await sessionUser(env.DB, sid);
+  if (!user) return json({ user: null });
+  const sub = await env.DB.prepare('SELECT status, current_period_end FROM subscriptions WHERE user_id=?').bind(user.id).first<{ status: string; current_period_end: number | null }>();
+  const active = !!sub && (sub.status === 'active' || sub.status === 'on_trial') && (sub.current_period_end == null || sub.current_period_end > Date.now());
+  return json({ user: { id: user.id, email: user.email, provider: user.provider }, plan: active ? 'pro' : 'free' });
+}
+
+async function handleLogout(request: Request, env: Env): Promise<Response> {
+  const sid = parseCookies(request.headers.get('cookie'))[SID_COOKIE];
+  if (sid && env.DB) await env.DB.prepare('DELETE FROM sessions WHERE token=?').bind(sid).run();
+  return json({ ok: true }, 200, { 'set-cookie': cookie(SID_COOKIE, '', 0) });
+}
+
+// ─── Router ──────────────────────────────────────────────────────────────────
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+    const p = url.pathname;
+    const m = request.method;
 
-    if (url.pathname.startsWith('/api/')) {
-      // Liveness probe — confirms the Worker layer is deployed.
-      if (url.pathname === '/api/health' && request.method === 'GET') {
-        return json({ ok: true, service: '24houring-api', db: Boolean(env.DB), ts: Date.now() });
+    if (p.startsWith('/api/')) {
+      if (p === '/api/health' && m === 'GET') {
+        return json({ ok: true, service: '24houring-api', db: Boolean(env.DB), auth: Boolean(env.GOOGLE_CLIENT_ID), ts: Date.now() });
       }
-      // Auth / sync / billing routes arrive in later phases.
-      return json({ error: 'not_implemented' }, 501);
+      if (p === '/api/auth/google/start' && m === 'GET') return handleStart(request, env);
+      if (p === '/api/auth/google/callback' && m === 'GET') return handleCallback(request, env);
+      if (p === '/api/me' && m === 'GET') return handleMe(request, env);
+      if (p === '/api/logout' && m === 'POST') return handleLogout(request, env);
+      return json({ error: 'not_found' }, 404);
     }
 
     // Non-API request → serve the SPA (unchanged behaviour).
