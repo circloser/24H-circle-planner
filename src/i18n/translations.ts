@@ -275,6 +275,9 @@ export type TKey =
   | 'diary.noteSaved'
   | 'diary.noteChars'
   | 'diary.noteEditable'
+  | 'diary.prevDay'
+  | 'diary.nextDay'
+  | 'diary.hasNote'
   | 'analytics.scopeCurrent'
   | 'analytics.scopeAll'
   | 'analytics.scopeDiary'
@@ -618,6 +621,9 @@ const ko: Dict = {
   'diary.noteSaved': '노트가 저장되었습니다',
   'diary.noteChars': '{n}자',
   'diary.noteEditable': '수정 가능',
+  'diary.prevDay': '이전 일기',
+  'diary.nextDay': '다음 일기',
+  'diary.hasNote': '노트 있음',
   'analytics.scopeCurrent': '현재 시간표',
   'analytics.scopeAll': '전체 일정',
   'analytics.scopeDiary': '일기',
@@ -962,6 +968,9 @@ const en: Dict = {
   'diary.noteSaved': 'Note saved',
   'diary.noteChars': '{n} chars',
   'diary.noteEditable': 'Editable',
+  'diary.prevDay': 'Previous diary',
+  'diary.nextDay': 'Next diary',
+  'diary.hasNote': 'Has note',
   'analytics.scopeCurrent': 'Current',
   'analytics.scopeAll': 'All days',
   'analytics.scopeDiary': 'Diary',

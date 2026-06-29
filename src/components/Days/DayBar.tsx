@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Plus, X, Copy, FileText, LayoutGrid, Lock, Unlock, CalendarDays } from 'lucide-react';
+import { Plus, X, Copy, FileText, LayoutGrid, Lock, Unlock, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { v4 as uuid } from 'uuid';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -13,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { PresetGallery } from '@/components/PresetGallery/PresetGallery';
 import { slicePath } from '@/lib/svg-geometry';
 import { useDays, MAX_DAYS } from '@/hooks/useDays';
+import { useDiary } from '@/hooks/useDiary';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useCoarsePointer } from '@/hooks/useCoarsePointer';
@@ -61,6 +63,34 @@ export function DayBar() {
   const diaryDate = useStoreSelector((s) => s.diaryDate);
   const locked = useStoreSelector((s) => s.locked);
   const dispatch = useStoreDispatch();
+  const { entries: diaryEntries } = useDiary();
+
+  // Saved diary dates in chronological order (YYYY-MM-DD sorts lexicographically),
+  // for prev/next navigation while a diary is loaded.
+  const diaryDates = Object.keys(diaryEntries).sort();
+  const curDiaryIdx = diaryDate ? diaryDates.indexOf(diaryDate) : -1;
+  const prevDiaryDate = curDiaryIdx > 0 ? diaryDates[curDiaryIdx - 1] : null;
+  const nextDiaryDate = curDiaryIdx >= 0 && curDiaryIdx < diaryDates.length - 1 ? diaryDates[curDiaryIdx + 1] : null;
+
+  function loadDiaryByDate(dKey: string | null) {
+    if (!dKey) return;
+    const e = diaryEntries[dKey];
+    if (!e) return;
+    dispatch({
+      type: 'LOAD_DIARY',
+      date: e.date,
+      schedule: {
+        id: uuid(),
+        version: 1,
+        name: e.name || '내 시간표',
+        presetSource: null,
+        updatedAt: new Date().toISOString(),
+        slices: e.slices.map((s) => ({ ...s, id: uuid() })),
+      },
+    });
+    toast.success(t('diary.loaded'));
+  }
+
   const [addOpen, setAddOpen] = useState(false);
   const [presetOpen, setPresetOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
@@ -190,10 +220,32 @@ export function DayBar() {
             WebkitBackdropFilter: 'blur(8px)',
           }}
         >
-          <span className="flex items-center gap-1">
-            <CalendarDays className="h-3.5 w-3.5" style={{ color: 'hsl(var(--text-muted))' }} />
-            {formatDiaryDate(diaryDate, lang)}
-          </span>
+          <div className="flex items-center gap-0.5">
+            <button
+              type="button"
+              onClick={() => loadDiaryByDate(prevDiaryDate)}
+              disabled={!prevDiaryDate}
+              aria-label={t('diary.prevDay')}
+              title={t('diary.prevDay')}
+              className="grid h-5 w-5 place-items-center rounded-full transition-colors hover:bg-black/10 disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className="flex items-center gap-1 px-0.5">
+              <CalendarDays className="h-3.5 w-3.5" style={{ color: 'hsl(var(--text-muted))' }} />
+              {formatDiaryDate(diaryDate, lang)}
+            </span>
+            <button
+              type="button"
+              onClick={() => loadDiaryByDate(nextDiaryDate)}
+              disabled={!nextDiaryDate}
+              aria-label={t('diary.nextDay')}
+              title={t('diary.nextDay')}
+              className="grid h-5 w-5 place-items-center rounded-full transition-colors hover:bg-black/10 disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
           <span className="h-3.5 w-px" style={{ backgroundColor: 'hsl(var(--border))' }} />
           <button
             type="button"

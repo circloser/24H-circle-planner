@@ -179,6 +179,14 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
                     >
                       <X className="h-2.5 w-2.5" style={{ color: 'hsl(var(--text-muted))' }} />
                     </span>
+                    {entry.note?.trim() && (
+                      <span
+                        className="absolute bottom-0.5 right-0.5 h-2 w-2 rounded-full"
+                        style={{ backgroundColor: 'hsl(var(--primary))', border: '1px solid hsl(var(--surface))' }}
+                        title={t('diary.hasNote')}
+                        aria-label={t('diary.hasNote')}
+                      />
+                    )}
                   </>
                 ) : (
                   <span className="text-xs" style={{ color: 'hsl(var(--text-muted) / 0.85)' }}>{day}</span>
