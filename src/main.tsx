@@ -32,9 +32,26 @@ const root = createRoot(document.getElementById('root')!);
 
 // PWA: register the service worker for offline + installability. Production only
 // (https) — skips the Vite dev server (http://localhost) and the file:// build.
+//
+// Self-healing update: check for a new sw.js on every load and, when a freshly
+// activated worker takes control of an ALREADY-controlled page, reload once so
+// the page runs against the new worker + assets. Without this, a stale worker
+// (e.g. one that wrongly cached a route) can survive ordinary reloads.
 if (!isSpike && 'serviceWorker' in navigator && window.location.protocol === 'https:') {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
+    const hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker
+      .register('/sw.js')
+      .then((reg) => reg.update().catch(() => {}))
+      .catch(() => {});
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      // First-install claim (no prior controller) → don't reload. An update to an
+      // already-controlled page → reload once to adopt the new worker.
+      if (reloaded || !hadController) return;
+      reloaded = true;
+      window.location.reload();
+    });
   });
 }
 
