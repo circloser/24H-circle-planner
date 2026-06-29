@@ -211,6 +211,20 @@ export type TKey =
   | 'sync.error'
   | 'sync.appliedFromCloud'
   | 'sync.undo'
+  | 'goals.open'
+  | 'goals.title'
+  | 'goals.empty'
+  | 'goals.add'
+  | 'goals.labelPlaceholder'
+  | 'goals.periodDay'
+  | 'goals.periodWeek'
+  | 'goals.hUnit'
+  | 'goals.mUnit'
+  | 'goals.hm'
+  | 'goals.delete'
+  | 'goals.untitled'
+  | 'goals.hoursLabel'
+  | 'goals.minutesLabel'
   | 'sharelink.copy'
   | 'sharelink.copied'
   | 'sharelink.copyFail'
@@ -527,6 +541,20 @@ const ko: Dict = {
   'sync.error': '동기화 오류',
   'sync.appliedFromCloud': '클라우드에서 동기화되었습니다',
   'sync.undo': '되돌리기',
+  'goals.open': '목표/미션',
+  'goals.title': '목표 · 미션',
+  'goals.empty': '아직 목표가 없습니다. 운동·공부처럼 시간 목표를 추가해 보세요.',
+  'goals.add': '목표 추가',
+  'goals.labelPlaceholder': '항목명 (예: 운동, 공부)',
+  'goals.periodDay': '하루',
+  'goals.periodWeek': '주간',
+  'goals.hUnit': '시간',
+  'goals.mUnit': '분',
+  'goals.hm': '{h}시간 {m}분',
+  'goals.delete': '삭제',
+  'goals.untitled': '(이름 없음)',
+  'goals.hoursLabel': '시간',
+  'goals.minutesLabel': '분',
   'sharelink.importTitle': '공유된 시간표 불러오기',
   'sharelink.importBody': '링크로 공유된 시간표를 불러올까요? 현재 시간표가 대체됩니다.',
   'sharelink.importConfirm': '불러오기',
@@ -841,6 +869,20 @@ const en: Dict = {
   'sync.error': 'Sync error',
   'sync.appliedFromCloud': 'Synced from the cloud',
   'sync.undo': 'Undo',
+  'goals.open': 'Goals',
+  'goals.title': 'Goals & Missions',
+  'goals.empty': 'No goals yet. Add a time goal like exercise or study.',
+  'goals.add': 'Add goal',
+  'goals.labelPlaceholder': 'Activity (e.g. exercise, study)',
+  'goals.periodDay': 'Daily',
+  'goals.periodWeek': 'Weekly',
+  'goals.hUnit': 'h',
+  'goals.mUnit': 'm',
+  'goals.hm': '{h}h {m}m',
+  'goals.delete': 'Delete',
+  'goals.untitled': '(untitled)',
+  'goals.hoursLabel': 'Hours',
+  'goals.minutesLabel': 'Minutes',
   'sharelink.importTitle': 'Open shared schedule',
   'sharelink.importBody': 'Open the schedule shared via this link? Your current one will be replaced.',
   'sharelink.importConfirm': 'Open',

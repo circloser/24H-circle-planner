@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import './index.css';
-import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Plus, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Plus, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target } from 'lucide-react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { Button } from '@/components/ui/button';
@@ -58,6 +58,7 @@ import { buildShareUrl, readSharedFromHash, clearShareHash, copyToClipboard } fr
 import { AnalyticsDialog } from '@/components/Analytics/AnalyticsDialog';
 import { DiaryDialog } from '@/components/Diary/DiaryDialog';
 import { DiaryNotePanel } from '@/components/Diary/DiaryNotePanel';
+import { GoalsDialog } from '@/components/Goals/GoalsDialog';
 import { PRESETS } from '@/data/presets';
 import type { Slot } from '@/types/slot';
 import type { Schedule } from '@/types/schedule';
@@ -136,6 +137,7 @@ function App() {
   const [timeBlockOpen, setTimeBlockOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [diaryOpen, setDiaryOpen] = useState(false);
+  const [goalsOpen, setGoalsOpen] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [editingSliceId, setEditingSliceId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -316,6 +318,10 @@ function App() {
                 <DropdownMenuItem onClick={() => setAnalyticsOpen(true)} className="gap-2">
                   <BarChart3 className="h-4 w-4" />
                   {t('analytics.open')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setGoalsOpen(true)} className="gap-2">
+                  <Target className="h-4 w-4" />
+                  {t('goals.open')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -673,6 +679,9 @@ function App() {
 
       {/* Diary — month calendar of saved days, each shown as a mini timetable. */}
       <DiaryDialog open={diaryOpen} onOpenChange={setDiaryOpen} />
+
+      {/* Time-accumulation goals (운동/공부 등) with progress bars. */}
+      <GoalsDialog open={goalsOpen} onOpenChange={setGoalsOpen} />
 
       {/* One-time first-visit welcome over the seeded demo schedule. */}
       <WelcomeOverlay

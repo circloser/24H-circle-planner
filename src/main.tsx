@@ -11,6 +11,7 @@ import { MemoProvider } from './hooks/useMemos.tsx'
 import { UserPresetsProvider } from './hooks/useUserPresets.tsx'
 import { DaysProvider } from './hooks/useDays.tsx'
 import { DiaryProvider } from './hooks/useDiary.tsx'
+import { GoalsProvider } from './hooks/useGoals.tsx'
 import { SpikeRunner } from './components/SpikeRunner.tsx'
 
 // Single-file build: inject base64 fonts at runtime so they work on file://.
@@ -79,7 +80,9 @@ if (isSpike) {
                 <UserPresetsProvider>
                   <MemoProvider>
                     <DiaryProvider>
-                      <App />
+                      <GoalsProvider>
+                        <App />
+                      </GoalsProvider>
                     </DiaryProvider>
                   </MemoProvider>
                 </UserPresetsProvider>
