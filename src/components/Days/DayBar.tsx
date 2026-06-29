@@ -181,7 +181,7 @@ export function DayBar() {
           priority; otherwise the "Day M of N" counter (2+ days only). */}
       {diaryDate ? (
         <div
-          className="fixed bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full py-1.5 pl-3 pr-1.5 text-xs font-medium shadow"
+          className="fixed bottom-20 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full py-1.5 pl-3 pr-1.5 text-xs font-medium shadow"
           style={{
             backgroundColor: 'hsl(var(--surface) / 0.94)',
             border: '1px solid hsl(var(--border))',
@@ -217,7 +217,7 @@ export function DayBar() {
         </div>
       ) : multi && activeIndex >= 0 ? (
         <div
-          className="fixed bottom-5 left-1/2 z-20 -translate-x-1/2 rounded-full px-3 py-1 text-xs font-medium shadow"
+          className="fixed bottom-20 left-1/2 z-20 -translate-x-1/2 rounded-full px-3 py-1 text-xs font-medium shadow"
           style={{
             backgroundColor: 'hsl(var(--surface) / 0.92)',
             border: '1px solid hsl(var(--border))',
