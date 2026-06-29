@@ -15,7 +15,13 @@
     // (auto-trailing-slash is the default; set explicitly so it's guaranteed.)
     "html_handling": "auto-trailing-slash",
     // This is a single-page app: serve index.html for paths with no asset match.
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "single-page-application",
+    // CRITICAL: without this, the SPA fallback above intercepts *browser document
+    // navigations* to /api/* (Accept: text/html) and serves index.html before the
+    // Worker runs — which silently broke the OAuth login redirect (curl worked, the
+    // browser didn't). Run the Worker first for /api/* so it owns those routes;
+    // everything else stays asset-first with the SPA fallback.
+    "run_worker_first": ["/api/*"]
   },
 
   // The Worker's D1 database binding (env.DB). Schema: worker/migrations/.
