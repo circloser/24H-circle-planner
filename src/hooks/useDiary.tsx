@@ -18,6 +18,8 @@ export interface DiaryEntry {
   /** Rim memos belonging to this date (optional — entries saved before this
    *  feature have none). Restored when the record is loaded. */
   rimMemos?: RimMemo[];
+  /** Free-form long-text note for the day (optional). Shown under the chart. */
+  note?: string;
   savedAt: number; // epoch ms
 }
 
@@ -57,8 +59,11 @@ function saveMap(entries: DiaryMap): void {
 
 interface DiaryApi {
   entries: DiaryMap;
-  /** Snapshot a schedule under a date (defaults to today). Overwrites that date. */
+  /** Snapshot a schedule under a date (defaults to today). Overwrites that date,
+   *  but preserves any existing note for the date. */
   saveEntry: (schedule: Schedule, date?: string) => void;
+  /** Set/replace the free-form note for an existing dated entry. */
+  setEntryNote: (date: string, note: string) => void;
   removeEntry: (date: string) => void;
 }
 
@@ -82,10 +87,21 @@ export function DiaryProvider({ children }: { children: React.ReactNode }) {
         slices: schedule.slices.map((s) => ({ ...s })),
         // Snapshot the current day's rim memos so they belong to this date.
         rimMemos: readRimMemos(activeId).map((m) => ({ ...m })),
+        // Keep any note already written for this date (the timetable save and
+        // the note step are separate actions).
+        note: prev[key]?.note,
         savedAt: Date.now(),
       },
     }));
   }, [activeId]);
+
+  const setEntryNote = useCallback((date: string, note: string) => {
+    setEntries((prev) => {
+      const entry = prev[date];
+      if (!entry) return prev;
+      return { ...prev, [date]: { ...entry, note, savedAt: Date.now() } };
+    });
+  }, []);
 
   const removeEntry = useCallback((date: string) => {
     setEntries((prev) => {
@@ -97,7 +113,7 @@ export function DiaryProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <DiaryContext.Provider value={{ entries, saveEntry, removeEntry }}>
+    <DiaryContext.Provider value={{ entries, saveEntry, setEntryNote, removeEntry }}>
       {children}
     </DiaryContext.Provider>
   );
@@ -107,7 +123,7 @@ export function useDiary(): DiaryApi {
   const ctx = useContext(DiaryContext);
   if (!ctx) {
     // Inert fallback (e.g. tests/previews without the provider).
-    return { entries: {}, saveEntry: () => {}, removeEntry: () => {} };
+    return { entries: {}, saveEntry: () => {}, setEntryNote: () => {}, removeEntry: () => {} };
   }
   return ctx;
 }

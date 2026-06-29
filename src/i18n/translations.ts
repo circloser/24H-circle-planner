@@ -252,6 +252,14 @@ export type TKey =
   | 'diary.confirmLoad'
   | 'diary.confirmLoadBody'
   | 'diary.confirmLoadCta'
+  | 'diary.note'
+  | 'diary.addNoteTitle'
+  | 'diary.addNotePrompt'
+  | 'diary.notePlaceholder'
+  | 'diary.noteSave'
+  | 'diary.noteSkip'
+  | 'diary.noteSaved'
+  | 'diary.noteChars'
   | 'analytics.scopeCurrent'
   | 'analytics.scopeAll'
   | 'analytics.scopeDiary'
@@ -557,6 +565,14 @@ const ko: Dict = {
   'diary.confirmLoad': '일기를 불러오시겠습니까?',
   'diary.confirmLoadBody': '현재 시간표가 {date} 기록으로 바뀌고 잠깁니다.',
   'diary.confirmLoadCta': '불러오기',
+  'diary.note': '노트',
+  'diary.addNoteTitle': '노트 추가',
+  'diary.addNotePrompt': '{date}에 텍스트(노트)를 추가하시겠습니까?',
+  'diary.notePlaceholder': '오늘 하루를 자유롭게 기록하세요…',
+  'diary.noteSave': '노트 저장',
+  'diary.noteSkip': '건너뛰기',
+  'diary.noteSaved': '노트가 저장되었습니다',
+  'diary.noteChars': '{n}자',
   'analytics.scopeCurrent': '현재 시간표',
   'analytics.scopeAll': '전체 일정',
   'analytics.scopeDiary': '일기',
@@ -863,6 +879,14 @@ const en: Dict = {
   'diary.confirmLoad': 'Load this diary?',
   'diary.confirmLoadBody': 'Your current timetable will be replaced by the {date} record and locked.',
   'diary.confirmLoadCta': 'Load',
+  'diary.note': 'Note',
+  'diary.addNoteTitle': 'Add a note',
+  'diary.addNotePrompt': 'Add a text note to {date}?',
+  'diary.notePlaceholder': 'Write freely about your day…',
+  'diary.noteSave': 'Save note',
+  'diary.noteSkip': 'Skip',
+  'diary.noteSaved': 'Note saved',
+  'diary.noteChars': '{n} chars',
   'analytics.scopeCurrent': 'Current',
   'analytics.scopeAll': 'All days',
   'analytics.scopeDiary': 'Diary',

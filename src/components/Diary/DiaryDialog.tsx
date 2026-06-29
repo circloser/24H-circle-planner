@@ -33,7 +33,7 @@ const pad2 = (n: number) => String(n).padStart(2, '0');
 export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
   const present = useStoreSelector((s) => s.history.present);
   const dispatch = useStoreDispatch();
-  const { entries, saveEntry, removeEntry } = useDiary();
+  const { entries, saveEntry, setEntryNote, removeEntry } = useDiary();
   const { t, lang } = useTranslation();
 
   const today = new Date();
@@ -81,6 +81,9 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
   // current timetable; saving can overwrite an existing entry).
   type Pending = { kind: 'save'; key: string } | { kind: 'load'; entry: DiaryEntry };
   const [pending, setPending] = useState<Pending | null>(null);
+  // After a timetable is saved we offer a free-form note step for that date.
+  const [noteStep, setNoteStep] = useState<{ key: string; draft: string } | null>(null);
+  const NOTE_MAX = 20000; // ~A4 2 pages
 
   const fmtDate = (key: string) => {
     const [y, m, d] = key.split('-').map(Number);
@@ -90,9 +93,23 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
 
   function confirmPending() {
     if (!pending) return;
-    if (pending.kind === 'save') saveToDate(pending.key);
-    else loadEntry(pending.entry);
+    if (pending.kind === 'save') {
+      const key = pending.key;
+      saveToDate(key);
+      setPending(null);
+      // Save the timetable first, then offer to add a note for that date.
+      setNoteStep({ key, draft: entries[key]?.note ?? '' });
+      return;
+    }
+    loadEntry(pending.entry);
     setPending(null);
+  }
+
+  function saveNote() {
+    if (!noteStep) return;
+    setEntryNote(noteStep.key, noteStep.draft);
+    setNoteStep(null);
+    toast.success(t('diary.noteSaved'));
   }
 
   const cells: Array<number | null> = [
@@ -199,6 +216,36 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
             style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
           >
             {pending?.kind === 'load' ? t('diary.confirmLoadCta') : t('diary.confirmSaveCta')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {/* Note step — offered right after the timetable is saved (A4 ~2 pages). */}
+    <Dialog open={noteStep !== null} onOpenChange={(o) => { if (!o) setNoteStep(null); }}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{t('diary.addNoteTitle')}</DialogTitle>
+          <DialogDescription>
+            {noteStep ? t('diary.addNotePrompt', { date: fmtDate(noteStep.key) }) : ''}
+          </DialogDescription>
+        </DialogHeader>
+        <textarea
+          autoFocus
+          value={noteStep?.draft ?? ''}
+          maxLength={NOTE_MAX}
+          onChange={(e) => setNoteStep((s) => (s ? { ...s, draft: e.target.value } : s))}
+          placeholder={t('diary.notePlaceholder')}
+          className="min-h-[40vh] w-full resize-y rounded-md p-3 text-sm leading-relaxed outline-none"
+          style={{ backgroundColor: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))', color: 'hsl(var(--foreground))' }}
+        />
+        <div className="text-right text-[11px]" style={{ color: 'hsl(var(--text-muted))' }}>
+          {t('diary.noteChars', { n: String(noteStep?.draft.length ?? 0) })}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setNoteStep(null)}>{t('diary.noteSkip')}</Button>
+          <Button onClick={saveNote} style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}>
+            {t('diary.noteSave')}
           </Button>
         </DialogFooter>
       </DialogContent>
