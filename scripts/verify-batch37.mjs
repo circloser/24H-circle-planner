@@ -1,8 +1,8 @@
 /**
- * Batch 37 (offline, dist-single): diary can't be saved for future dates.
- *  - Next month (all future): cells are dimmed; clicking one shows a toast and
- *    does NOT open the save-confirm.
- *  - Back on the current month, "오늘 저장" still opens the save-confirm.
+ * Batch 37 (offline, dist-single): a diary can be saved for ANY date, including
+ * future ones (24Houring is also a planner — a future date = a pre-plan).
+ *  - Next month (all future): cells are NOT dimmed; clicking one opens the
+ *    save-confirm (savable).
  */
 import { chromium } from 'playwright';
 
@@ -31,23 +31,13 @@ await page.locator('[role="dialog"] button[aria-label="next"]').first().click();
 await wait(300);
 
 const dimmed = await page.locator('[role="dialog"] .grid button[class*="opacity-35"]').count();
-pass('future-month cells are dimmed', dimmed >= 20, `dimmed=${dimmed}`);
+pass('future-month cells are NOT dimmed', dimmed === 0, `dimmed=${dimmed}`);
 
-// Click a future day → toast, no save-confirm.
+// Click a future day → the save-confirm opens (future is savable).
 await page.locator('[role="dialog"] .grid button:has-text("15")').first().click();
 await wait(300);
-const toast = await page.locator('text=미래 날짜').first().isVisible().catch(() => false);
-pass('clicking a future date shows the "no future" toast', toast);
-const confirmAfterFuture = await page.getByRole('button', { name: '저장', exact: true }).count();
-pass('future date does NOT open the save-confirm', confirmAfterFuture === 0, `confirmBtns=${confirmAfterFuture}`);
-
-// Back to current month → 오늘 저장 still works.
-await page.locator('[role="dialog"] button[aria-label="prev"]').first().click();
-await wait(300);
-await page.locator('button:has-text("오늘 저장")').first().click();
-await wait(300);
-const confirmToday = await page.getByRole('button', { name: '저장', exact: true }).count();
-pass('today still opens the save-confirm', confirmToday >= 1, `confirmBtns=${confirmToday}`);
+const confirm = await page.getByRole('button', { name: '저장', exact: true }).count();
+pass('future date opens the save-confirm (savable)', confirm >= 1, `confirmBtns=${confirm}`);
 
 pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
 
