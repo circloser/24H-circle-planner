@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { BookOpen, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { useStoreSelector } from '@/hooks/useScheduleStore';
-import { useDiary, dateKey } from '@/hooks/useDiary';
+import { useDiary } from '@/hooks/useDiary';
 import { useTranslation } from '@/hooks/usePreferences';
 
 const NOTE_MAX = 20000; // ~A4 2 pages
@@ -47,11 +47,15 @@ export function DiaryNotePanel() {
   const { entries, setEntryNote } = useDiary();
   const { t } = useTranslation();
 
-  const target = diaryDate ?? dateKey();
-  const note = entries[target]?.note ?? '';
-  const editable = !!diaryDate && !locked;
+  // Notes belong to a LOADED diary only. In normal timetable editing (no diary
+  // loaded, incl. after "일기 나가기") nothing shows — even if today's saved
+  // entry has a note.
+  if (!diaryDate) return null;
 
-  // Read-only with no note → nothing to show.
+  const note = entries[diaryDate]?.note ?? '';
+  const editable = !locked;
+
+  // Locked diary with no note → nothing to show.
   if (!editable && !note.trim()) return null;
 
   return (
@@ -77,7 +81,7 @@ export function DiaryNotePanel() {
       </div>
 
       {editable ? (
-        <NoteEditor key={target} initial={note} onSave={(value) => setEntryNote(target, value)} />
+        <NoteEditor key={diaryDate} initial={note} onSave={(value) => setEntryNote(diaryDate, value)} />
       ) : (
         <div
           className="max-h-[40vh] overflow-y-auto whitespace-pre-wrap break-words text-sm leading-relaxed"

@@ -1,7 +1,8 @@
 /**
  * Batch 30 (offline, dist-single): diary long-form note.
  *  - Save today's diary → the note step appears → write a note → save.
- *  - The note then shows in the panel under the chart (read-only).
+ *  - In edit mode the note panel stays hidden; it's persisted to the entry and
+ *    only shows when that diary is loaded (see batch34).
  */
 import { chromium } from 'playwright';
 
@@ -45,25 +46,22 @@ await wait(400);
 await page.keyboard.press('Escape').catch(() => {});
 await wait(500);
 
-// The note panel under the chart shows the note (multi-line preserved).
-const panel = await page.evaluate((needle) => {
+// In normal edit mode (no diary loaded) the note panel must NOT appear.
+const shownInEdit = await page.evaluate((needle) => {
   const els = [...document.querySelectorAll('div')];
-  const el = els.find((e) => (e.className || '').includes('whitespace-pre-wrap') && (e.textContent || '').includes(needle.split('\n')[0]));
-  return el ? { found: true, hasSecondLine: (el.textContent || '').includes('둘째 줄') } : { found: false, hasSecondLine: false };
+  return !!els.find((e) => (e.className || '').includes('whitespace-pre-wrap') && (e.textContent || '').includes(needle.split('\n')[0]));
 }, NOTE);
-pass('note shown in panel under the chart', panel.found);
-pass('multi-line note preserved', panel.hasSecondLine);
+pass('note NOT shown in edit mode (only in a loaded diary)', shownInEdit === false);
 
-// Persisted into the diary entry.
-const persisted = await page.evaluate(() => {
+// Persisted into the diary entry (+ multi-line preserved), verified via storage.
+const stored = await page.evaluate(() => {
   try {
-    const raw = JSON.parse(localStorage.getItem('24h-circle-planner.diary'));
-    const entries = raw.entries || {};
-    const e = Object.values(entries)[0];
-    return e && typeof e.note === 'string' && e.note.includes('A4 두 장');
-  } catch { return false; }
+    const e = Object.values(JSON.parse(localStorage.getItem('24h-circle-planner.diary')).entries)[0];
+    return e && typeof e.note === 'string' ? e.note : '';
+  } catch { return ''; }
 });
-pass('note persisted in diary entry', persisted);
+pass('note persisted in diary entry', stored.includes('A4 두 장'));
+pass('multi-line note preserved', stored.includes('둘째 줄'));
 
 pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
 
