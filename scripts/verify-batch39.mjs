@@ -34,9 +34,14 @@ pass('found a seeded label to target', !!label, `label=${label}`);
 const before = await page.locator('button[aria-label="목표/미션"]').count();
 pass('no goals → no goals FAB', before === 0, `fab=${before}`);
 
-// Seed one goal (target 1 min → should read as achieved), reload.
+// Seed one goal (target 1 min) AND today's diary containing that label — goals
+// count SAVED diaries only, so the diary is required for a non-zero reading.
 await page.evaluate((lbl) => {
   localStorage.setItem('24h-circle-planner.goals', JSON.stringify({ version: 1, goals: [{ id: 'g1', label: lbl, targetMinutes: 1, period: 'day' }] }));
+  const days = JSON.parse(localStorage.getItem('24h-circle-planner.days')).days;
+  const now = new Date();
+  const key = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  localStorage.setItem('24h-circle-planner.diary', JSON.stringify({ version: 1, entries: { [key]: { date: key, name: '', slices: days[0].schedule.slices, savedAt: 1 } } }));
 }, label);
 await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
 await page.waitForSelector('svg[role="img"]', { timeout: 15000 });

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Target, X, Check } from 'lucide-react';
-import { useStoreSelector } from '@/hooks/useScheduleStore';
 import { useDiary } from '@/hooks/useDiary';
 import { useGoals } from '@/hooks/useGoals';
 import { useTranslation } from '@/hooks/usePreferences';
@@ -13,7 +12,6 @@ import { accumulatedMinutes } from '@/lib/goals';
  */
 export function GoalsWidget() {
   const { goals } = useGoals();
-  const present = useStoreSelector((s) => s.history.present);
   const { entries } = useDiary();
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -44,7 +42,7 @@ export function GoalsWidget() {
           </div>
           <ul className="flex flex-col gap-2.5">
             {goals.map((g) => {
-              const acc = accumulatedMinutes(g.label, g.period, present.slices, entries);
+              const acc = accumulatedMinutes(g.label, g.period, entries);
               const pct = g.targetMinutes > 0 ? Math.min(100, Math.round((acc / g.targetMinutes) * 100)) : 0;
               const done = acc >= g.targetMinutes;
               return (

@@ -61,7 +61,7 @@ export function GoalsDialog({ open, onOpenChange }: GoalsDialogProps) {
         ) : (
           <ul className="flex flex-col gap-3">
             {goals.map((g) => {
-              const acc = accumulatedMinutes(g.label, g.period, present.slices, entries);
+              const acc = accumulatedMinutes(g.label, g.period, entries);
               const pct = g.targetMinutes > 0 ? Math.min(100, Math.round((acc / g.targetMinutes) * 100)) : 0;
               const done = acc >= g.targetMinutes;
               return (

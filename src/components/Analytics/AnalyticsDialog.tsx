@@ -6,8 +6,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { AdSlot } from '@/components/Ads/AdSlot';
-import { useStoreSelector } from '@/hooks/useScheduleStore';
-import { useDays } from '@/hooks/useDays';
 import { useDiary, dateKey } from '@/hooks/useDiary';
 import { useTranslation } from '@/hooks/usePreferences';
 import { analyzeDays } from '@/lib/analytics';
@@ -18,28 +16,22 @@ interface AnalyticsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type Scope = 'current' | 'all' | 'diary';
 type Range = 'all' | 'month' | 'week';
 
 /**
- * Time analysis across three sources — the current timetable, all days, or the
- * diary (all / last month / last week). Every distinct label entered into the
- * timetable is its own line (raw, no bucketing), shown with the slice's own
- * colour and icon, as a daily-average split plus a per-day timeline strip.
+ * Time analysis over SAVED DIARY entries ONLY (all / last month / last week).
+ * The working/unsaved timetable is never analysed, so these numbers stay
+ * consistent with the goals view. Every distinct label is its own line (raw, no
+ * bucketing) with the slice's colour + icon — a daily-average split plus a
+ * per-day timeline strip.
  */
 export function AnalyticsDialog({ open, onOpenChange }: AnalyticsDialogProps) {
-  const present = useStoreSelector((s) => s.history.present);
-  const { days } = useDays();
   const { entries } = useDiary();
   const { t, lang } = useTranslation();
-  const [scope, setScope] = useState<Scope>('current');
   const [range, setRange] = useState<Range>('all');
 
-  // Build the labelled day-sources for the chosen scope.
+  // Saved diary entries within the chosen range, oldest → newest.
   const sources = useMemo<Array<{ label: string; slices: TimeSlice[] }>>(() => {
-    if (scope === 'current') return [{ label: t('day.thumb', { m: '1' }), slices: present.slices }];
-    if (scope === 'all') return days.map((d, i) => ({ label: t('day.thumb', { m: String(i + 1) }), slices: d.schedule.slices }));
-    // diary
     let list = Object.values(entries).sort((a, b) => a.date.localeCompare(b.date));
     if (range !== 'all') {
       const cutoff = new Date();
@@ -48,7 +40,7 @@ export function AnalyticsDialog({ open, onOpenChange }: AnalyticsDialogProps) {
       list = list.filter((e) => e.date >= cutKey);
     }
     return list.map((e) => ({ label: e.date.slice(5).replace('-', '/'), slices: e.slices }));
-  }, [scope, range, present, days, entries, t]);
+  }, [range, entries]);
 
   const a = useMemo(() => analyzeDays(sources.map((s) => ({ schedule: { slices: s.slices } }))), [sources]);
   const totalMin = a.dayCount * 1440 || 1;
@@ -76,24 +68,14 @@ export function AnalyticsDialog({ open, onOpenChange }: AnalyticsDialogProps) {
           <DialogTitle>{t('analytics.title')}</DialogTitle>
         </DialogHeader>
 
-        {/* Scope selector */}
+        {/* Range selector — analysis uses SAVED DIARIES only. */}
         <div className="flex flex-wrap gap-1.5">
-          {(['current', 'all', 'diary'] as Scope[]).map((s) => (
-            <button key={s} type="button" className={segCls} style={seg(scope === s)} aria-pressed={scope === s} onClick={() => setScope(s)}>
-              {t(s === 'current' ? 'analytics.scopeCurrent' : s === 'all' ? 'analytics.scopeAll' : 'analytics.scopeDiary')}
+          {(['all', 'month', 'week'] as Range[]).map((r) => (
+            <button key={r} type="button" className={segCls} style={seg(range === r)} aria-pressed={range === r} onClick={() => setRange(r)}>
+              {t(r === 'all' ? 'analytics.rangeAll' : r === 'month' ? 'analytics.rangeMonth' : 'analytics.rangeWeek')}
             </button>
           ))}
         </div>
-        {/* Diary range sub-selector */}
-        {scope === 'diary' && (
-          <div className="flex flex-wrap gap-1.5">
-            {(['all', 'month', 'week'] as Range[]).map((r) => (
-              <button key={r} type="button" className={segCls} style={seg(range === r)} aria-pressed={range === r} onClick={() => setRange(r)}>
-                {t(r === 'all' ? 'analytics.rangeAll' : r === 'month' ? 'analytics.rangeMonth' : 'analytics.rangeWeek')}
-              </button>
-            ))}
-          </div>
-        )}
 
         {a.dayCount === 0 || a.byLabel.length === 0 ? (
           <p className="py-4 text-sm" style={{ color: 'hsl(var(--text-muted))' }}>{t('analytics.empty')}</p>

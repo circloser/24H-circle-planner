@@ -43,13 +43,14 @@ await wait(400);
 
 const state = await page.evaluate(() => {
   const li = document.querySelector('[role="dialog"] li');
-  if (!li) return { rows: 0 };
+  if (!li) return { rows: 0, hasBar: false, width: -1 };
   const bar = li.querySelector('div[style*="width"]');
-  const w = bar ? parseFloat((bar.getAttribute('style').match(/width:\s*([\d.]+)%/) || [])[1] || '0') : 0;
-  return { rows: document.querySelectorAll('[role="dialog"] li').length, width: w, text: li.textContent };
+  const w = bar ? parseFloat((bar.getAttribute('style').match(/width:\s*([\d.]+)%/) || [])[1] || '0') : -1;
+  return { rows: document.querySelectorAll('[role="dialog"] li').length, hasBar: !!bar, width: w };
 });
-pass('goal row added with a progress bar', state.rows >= 1 && state.width > 0, `rows=${state.rows} width=${state.width}`);
-pass('progress accumulated (>=100% for a 1-min target)', state.width >= 100, `width=${state.width}`);
+pass('goal row added with a progress bar', state.rows >= 1 && state.hasBar, `rows=${state.rows} hasBar=${state.hasBar}`);
+// Goals count SAVED DIARIES only — with no diary yet, progress is 0% (diary-only).
+pass('progress 0% without a saved diary (diary-only)', state.width === 0, `width=${state.width}`);
 
 const persisted = await page.evaluate(() => {
   try {
