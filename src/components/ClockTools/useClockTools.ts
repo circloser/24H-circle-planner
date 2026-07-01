@@ -49,12 +49,14 @@ const STORAGE_KEY = '24h-circle-planner.clocktools';
 
 const clampY = (y: number) => Math.max(76, y);
 
-/** Default stacked positions above the bottom-left FAB. */
+/** Default stacked positions above the bottom-left FAB. The clock + calendar
+ *  start ON (floating on the LEFT) so a first-time visitor lands on a live
+ *  dashboard; every other tool stays off until opened. */
 function defaultState(): ClockToolsState {
   const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
   return {
-    clock: { on: false, mode: 'analog', pos: { x: 20, y: clampY(vh - 600) } },
-    calendar: { on: false, pos: { x: 206, y: clampY(vh - 600) } },
+    clock: { on: true, mode: 'analog', pos: { x: 20, y: clampY(vh - 600) } },
+    calendar: { on: true, pos: { x: 206, y: clampY(vh - 600) } },
     timer: { on: false, pos: { x: 20, y: clampY(vh - 360) }, setSec: 300, remainingSec: 300, running: false, endAt: null },
     weather: { on: false, pos: { x: 206, y: clampY(vh - 360) }, place: null },
     alarm: { on: false, pos: { x: 20, y: clampY(vh - 200) }, time: '07:00', enabled: false },

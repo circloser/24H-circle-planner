@@ -61,10 +61,10 @@ export function SliceLabel({ slice, onEdit, spec = FULL_SPEC }: SliceLabelProps)
       : undefined;
   const widthMin = sliceWidthMinutes(slice);
   // Labels sit on ONE clean circle (no radial staggering). To keep adjacent
-  // labels from colliding we instead FIT each label within its own wedge's
-  // tangential arc: the font shrinks and the text truncates so it can't spill
-  // into its neighbours. Only when a wedge is too small even for the minimum
-  // font do we pull the label OUTSIDE with a leader line.
+  // labels from colliding we FIT each inside label within its own wedge's
+  // tangential arc by SHRINKING the font — the text itself is NEVER abbreviated
+  // (no "…"). Only when a wedge is too small even for the minimum font do we
+  // pull the label OUTSIDE with a leader line.
   const AUTO_OUTSIDE = 16; // wedge width (min) below which the label goes outside
   const forceOutside = textPosition === 'inside' && widthMin < AUTO_OUTSIDE;
   const isInside = textPosition === 'inside' && !forceOutside;
@@ -78,7 +78,7 @@ export function SliceLabel({ slice, onEdit, spec = FULL_SPEC }: SliceLabelProps)
   // Tangential space available at the label radius. labelAnchorInside places the
   // text at midR = innerR + band*0.55 ≈ 298; the wedge's arc length there is
   // proportional to its minute-width. Shrink the font until the whole name fits
-  // that arc, then truncate to whatever still fits — so neighbours don't overlap.
+  // that arc — never truncate.
   const LABEL_R = 298;
   const BASE_FONT = 22;
   const MIN_FONT = 12;
@@ -96,10 +96,14 @@ export function SliceLabel({ slice, onEdit, spec = FULL_SPEC }: SliceLabelProps)
     if (fullW > arc) textPx = Math.max(MIN_FONT, Math.round((BASE_FONT * arc) / fullW));
   }
   const narrow = isInside && textPx < BASE_FONT;
-  const iconPx = narrow ? Math.max(22, Math.round((38 * textPx) / BASE_FONT)) : 38;
-  // Character budget from the shrunk font, so the truncated text still fits the arc.
-  const maxChars = isInside ? Math.max(3, Math.floor(arc / (textPx * 0.98))) : 12;
-  const truncated = truncateLabel(localized, maxChars, maxChars * 2);
+  // "크기가 작아지면 아이콘 숨김": a wedge too narrow for a 38px icon to sit in
+  // drops the icon so the NAME owns the whole wedge. Icons return once the wedge
+  // is wide again.
+  const SMALL_MIN = 30; // below ~30 min the 38px icon exceeds the wedge arc
+  const showIcon = !!icon && widthMin >= SMALL_MIN;
+  // Outside callouts (tiny slices) keep a hard cap so the page text stays short;
+  // inside labels are shown in FULL (only the font shrinks, per the request).
+  const outsideText = truncateLabel(localized, 12, 24);
 
   // Per-slice text styling over readable defaults. Inside labels auto-pick
   // black/white from the slice's luminance; outside labels keep the dark tone.
@@ -114,8 +118,8 @@ export function SliceLabel({ slice, onEdit, spec = FULL_SPEC }: SliceLabelProps)
     // when the slice is empty. The slice body OUTSIDE it keeps the scissors cut
     // cursor. Smaller on narrow wedges so it doesn't bleed into neighbours.
     const hitR = narrow ? 24 : 38;
-    const iconY = narrow ? -12 : -20;
-    const textY = icon ? (narrow ? 12 : 14) : 0;
+    const iconY = -20;
+    const textY = showIcon ? 14 : 0;
 
     // Positioned via `transform` (children at relative offsets) so the boundary
     // drag engine can re-anchor the whole label by updating one attribute —
@@ -130,19 +134,19 @@ export function SliceLabel({ slice, onEdit, spec = FULL_SPEC }: SliceLabelProps)
         onDoubleClick={onLabelClick}
       >
         <circle cx={0} cy={0} r={hitR} fill="transparent" />
-        {icon ? (
+        {showIcon ? (
           <text
             x={0}
             y={iconY}
             textAnchor="middle"
             dominantBaseline="central"
-            fontSize={iconPx}
+            fontSize={38}
             fontFamily={fontFamily}
           >
             {icon}
           </text>
         ) : null}
-        {truncated ? (
+        {localized ? (
           <text
             x={0}
             y={textY}
@@ -154,7 +158,7 @@ export function SliceLabel({ slice, onEdit, spec = FULL_SPEC }: SliceLabelProps)
             fill={insideFill}
             style={labelFontSize(textPx)}
           >
-            {truncated}
+            {localized}
           </text>
         ) : null}
       </g>
@@ -180,7 +184,7 @@ export function SliceLabel({ slice, onEdit, spec = FULL_SPEC }: SliceLabelProps)
         stroke="hsl(var(--text-muted) / 0.7)"
         strokeWidth={1}
       />
-      {icon ? (
+      {showIcon ? (
         <text
           x={leaderEnd.x}
           y={leaderEnd.y}
@@ -192,7 +196,7 @@ export function SliceLabel({ slice, onEdit, spec = FULL_SPEC }: SliceLabelProps)
           {icon}
         </text>
       ) : null}
-      {truncated ? (
+      {outsideText ? (
         <text
           x={x}
           y={y}
@@ -204,7 +208,7 @@ export function SliceLabel({ slice, onEdit, spec = FULL_SPEC }: SliceLabelProps)
           fill={outsideFill}
           style={labelFontSize(20)}
         >
-          {truncated}
+          {outsideText}
         </text>
       ) : null}
     </g>

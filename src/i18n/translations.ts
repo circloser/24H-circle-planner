@@ -186,6 +186,7 @@ export type TKey =
   | 'circle.ariaTimeline'
   | 'app.loaded'
   | 'memo.add'
+  | 'memo.placeholderHint'
   | 'memo.title'
   | 'mobile.editHint'
   | 'block.add'
@@ -549,6 +550,7 @@ const ko: Dict = {
   'circle.ariaTimeline': '24시간 원형 타임라인',
   'app.loaded': '{name}을(를) 불러왔습니다',
   'memo.add': '메모 추가',
+  'memo.placeholderHint': '메모를 추가할 수 있습니다',
   'memo.title': '메모',
   'mobile.editHint': '항목을 탭하면 편집 · 아래 + 버튼으로 시간 추가',
   'block.add': '일정 추가',
@@ -913,6 +915,7 @@ const en: Dict = {
   'circle.ariaTimeline': '24-hour circular timeline',
   'app.loaded': '{name} loaded',
   'memo.add': 'Add memo',
+  'memo.placeholderHint': 'You can add memos here',
   'memo.title': 'Memos',
   'mobile.editHint': 'Tap an item to edit · use the + button below to add a time block',
   'block.add': 'Add item',
