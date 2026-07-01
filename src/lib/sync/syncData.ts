@@ -1,9 +1,10 @@
 /**
  * Pro cross-device sync — payload shaping (design §4-1).
  *
- * Only *content* keys travel between devices. Device-local settings (theme,
- * prefs like font/background/timelines, the onboarded flag) are intentionally
- * NOT synced in v1 — they can legitimately differ per device.
+ * Content keys AND user *preferences* (`prefs`: font, background, timelines,
+ * show-icons, language, …) travel between devices so a setting changed on one
+ * device is unified on the others. Theme (light/dark) and the onboarded flag
+ * remain device-local — those can legitimately differ per device.
  */
 
 const PREFIX = '24h-circle-planner.';
@@ -18,6 +19,7 @@ export const SYNC_KEYS: readonly string[] = [
   'user-presets',
   'goals',
   'records',
+  'prefs',
 ].map((k) => PREFIX + k);
 
 export interface SyncEnvelope {

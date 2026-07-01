@@ -31,7 +31,7 @@ function MobileMemoCard({
 
   return (
     <div
-      className="relative flex flex-col rounded-lg p-3 shadow-sm"
+      className="relative flex flex-col items-center justify-center rounded-lg p-3 shadow-sm"
       style={{ backgroundColor: MEMO_YELLOW, minHeight: 200 }}
     >
       <button

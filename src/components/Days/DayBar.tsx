@@ -140,6 +140,13 @@ export function DayBar() {
     WebkitBackdropFilter: 'blur(8px)',
   } as React.CSSProperties;
 
+  // Bottom indicator (loaded-diary pill / edit-mode badge): a floating overlay
+  // under the chart on desktop, but IN-FLOW on mobile so it can't cover the
+  // stacked content below (memos/clock). Wraps as whole units, never mid-word.
+  const bottomWrap = isMobile
+    ? 'z-20 mt-1 flex max-w-[92vw] flex-wrap items-center justify-center gap-2 rounded-full text-xs font-medium shadow'
+    : 'fixed bottom-20 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full text-xs font-medium shadow';
+
   function choose(mode: 'empty' | 'duplicate') {
     addDay(mode);
     setAddOpen(false);
@@ -220,7 +227,7 @@ export function DayBar() {
           priority; otherwise the "Day M of N" counter (2+ days only). */}
       {diaryDate ? (
         <div
-          className="fixed bottom-20 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full py-1.5 pl-3 pr-1.5 text-xs font-medium shadow"
+          className={`${bottomWrap} py-1.5 pl-3 pr-1.5`}
           style={{
             backgroundColor: 'hsl(var(--surface) / 0.94)',
             border: '1px solid hsl(var(--border))',
@@ -240,7 +247,7 @@ export function DayBar() {
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <span className="flex items-center gap-1 px-0.5">
+            <span className="flex items-center gap-1 whitespace-nowrap px-0.5">
               <CalendarDays className="h-3.5 w-3.5" style={{ color: 'hsl(var(--text-muted))' }} />
               {formatDiaryDate(diaryDate, lang)}
             </span>
@@ -265,7 +272,7 @@ export function DayBar() {
             }}
             aria-pressed={locked}
             title={locked ? t('diary.unlock') : t('diary.lock')}
-            className="flex items-center gap-1 rounded-full px-2 py-1 font-semibold transition-colors"
+            className="flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-1 font-semibold transition-colors"
             style={
               locked
                 ? { backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }
@@ -279,7 +286,7 @@ export function DayBar() {
             type="button"
             onClick={exitDiaryMode}
             title={t('diary.exit')}
-            className="flex items-center gap-1 rounded-full px-2 py-1 font-semibold transition-colors hover:bg-black/10"
+            className="flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-1 font-semibold transition-colors hover:bg-black/10"
             style={{ border: '1px solid hsl(var(--border))', color: 'hsl(var(--foreground))' }}
           >
             <LogOut className="h-3 w-3" />
@@ -291,7 +298,7 @@ export function DayBar() {
         // mode" badge (appears e.g. right after "일기 나가기"), plus the day
         // counter when there are multiple days.
         <div
-          className="fixed bottom-20 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full px-3 py-1 text-xs font-medium shadow"
+          className={`${bottomWrap} px-3 py-1`}
           style={{
             backgroundColor: 'hsl(var(--surface) / 0.92)',
             border: '1px solid hsl(var(--border))',
