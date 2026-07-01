@@ -55,6 +55,7 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
     });
 
   function saveToDate(key: string) {
+    if (key > todayKey) { toast(t('diary.noFuture')); return; } // future dates aren't loggable
     saveEntry(present, key);
     toast.success(t('diary.saved'));
   }
@@ -157,12 +158,17 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
             const key = keyOf(day);
             const entry = entries[key];
             const isToday = key === todayKey;
+            const isFuture = key > todayKey; // YYYY-MM-DD compares chronologically
             return (
               <button
                 key={key}
                 type="button"
-                onClick={() => setPending(entry ? { kind: 'load', entry } : { kind: 'save', key })}
-                className="group relative grid aspect-square place-items-center rounded-md p-0.5 transition-colors hover:bg-black/5"
+                onClick={() => {
+                  if (entry) { setPending({ kind: 'load', entry }); return; }
+                  if (isFuture) { toast(t('diary.noFuture')); return; } // can't log a day that hasn't happened
+                  setPending({ kind: 'save', key });
+                }}
+                className={`group relative grid aspect-square place-items-center rounded-md p-0.5 transition-colors ${isFuture && !entry ? 'cursor-not-allowed opacity-35' : 'hover:bg-black/5'}`}
                 style={isToday ? { outline: '2px solid hsl(var(--primary))', outlineOffset: '-2px' } : undefined}
                 title={key}
               >
