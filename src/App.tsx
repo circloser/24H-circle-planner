@@ -59,6 +59,7 @@ import { AnalyticsDialog } from '@/components/Analytics/AnalyticsDialog';
 import { DiaryDialog } from '@/components/Diary/DiaryDialog';
 import { DiaryNotePanel } from '@/components/Diary/DiaryNotePanel';
 import { GoalsDialog } from '@/components/Goals/GoalsDialog';
+import { GoalsWidget } from '@/components/Goals/GoalsWidget';
 import { RecordView } from '@/components/Record/RecordView';
 import { PRESETS } from '@/data/presets';
 import type { Slot } from '@/types/slot';
@@ -730,6 +731,7 @@ function App() {
           (bottom-left). On mobile these move into the stacked sections under the
           chart (MobileMemoSection / MobileClockSection inside <main>). */}
       {!isMobile && <MemoLayer />}
+      {!isMobile && <GoalsWidget />}
       {!isMobile && <ClockToolsLayer />}
     </div>
   );
