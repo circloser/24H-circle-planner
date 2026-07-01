@@ -49,6 +49,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://24houring.com/faq</loc>
+    <lastmod>2026-07-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://24houring.com/about</loc>
     <lastmod>2026-06-26</lastmod>
     <changefreq>yearly</changefreq>
