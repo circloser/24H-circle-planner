@@ -52,14 +52,24 @@ const readEdge = () => card.evaluate((el) => {
   const cs = getComputedStyle(el);
   return { border: cs.borderTopColor, shadow: cs.boxShadow };
 });
+const closeBtn = card.locator('button').first();
+const readClose = () => closeBtn.evaluate((el) => getComputedStyle(el).opacity);
+
 const rest = await readEdge();
+const restBg = await card.evaluate((el) => getComputedStyle(el).backgroundColor);
+const restClose = await readClose();
 const isTransparent = (c) => c === 'rgba(0, 0, 0, 0)' || c === 'transparent';
 pass('boundary hidden at rest', isTransparent(rest.border) && rest.shadow === 'none', JSON.stringify(rest));
+pass('X mark hidden at rest', restClose === '0', `opacity=${restClose}`);
 
 await card.hover();
-await wait(150);
+await wait(180);
 const hov = await readEdge();
+const hovBg = await card.evaluate((el) => getComputedStyle(el).backgroundColor);
+const hovClose = await readClose();
 pass('boundary appears on hover (border + shadow)', !isTransparent(hov.border) && hov.shadow !== 'none', JSON.stringify(hov));
+pass('window brightens on hover (surface tint)', !isTransparent(hovBg) && hovBg !== restBg, `rest=${restBg} hover=${hovBg}`);
+pass('X mark appears on hover', hovClose === '1', `opacity=${hovClose}`);
 
 // Drag the card from its title area (avoids the close button) to a new spot.
 const box0 = await card.boundingBox();

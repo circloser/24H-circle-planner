@@ -83,10 +83,12 @@ export function GoalsWidget() {
             left: pos.x,
             top: pos.y,
             // Transparent at rest; on hover reveal the same boundary as the
-            // clock/calendar floating cards (1px border + shadow) for a unified feel.
-            backgroundColor: 'transparent',
+            // clock/calendar floating cards (1px border + shadow) and lift the
+            // surface slightly so the whole card brightens under the pointer.
+            backgroundColor: hover ? 'hsl(var(--surface) / 0.6)' : 'transparent',
             border: `1px solid ${hover ? 'hsl(var(--border))' : 'transparent'}`,
             boxShadow: hover ? '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)' : 'none',
+            transition: 'background-color 120ms ease',
           }}
         >
           <div className="mb-2 flex items-center gap-1.5">
@@ -97,7 +99,8 @@ export function GoalsWidget() {
               data-no-drag
               aria-label={t('common.cancel')}
               onClick={() => setOpen(false)}
-              className="grid h-6 w-6 place-items-center rounded transition-colors hover:bg-black/10"
+              className="grid h-6 w-6 place-items-center rounded transition-[background-color,opacity] hover:bg-black/10"
+              style={{ opacity: hover ? 1 : 0, pointerEvents: hover ? 'auto' : 'none' }}
             >
               <X className="h-4 w-4" style={{ color: 'hsl(var(--text-muted))' }} />
             </button>
