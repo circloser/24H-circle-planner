@@ -237,6 +237,9 @@ export type TKey =
   | 'goals.untitled'
   | 'goals.hoursLabel'
   | 'goals.minutesLabel'
+  | 'goals.pickLabel'
+  | 'goals.noLabels'
+  | 'goals.saveDiaryHint'
   | 'sharelink.copy'
   | 'sharelink.copied'
   | 'sharelink.copyFail'
@@ -600,6 +603,9 @@ const ko: Dict = {
   'goals.untitled': '(이름 없음)',
   'goals.hoursLabel': '시간',
   'goals.minutesLabel': '분',
+  'goals.pickLabel': '시간표 항목 선택',
+  'goals.noLabels': '먼저 시간표에 항목(라벨)을 입력해 주세요.',
+  'goals.saveDiaryHint': '오늘 일기를 저장하면 하루 목표에 반영돼요.',
   'sharelink.importTitle': '공유된 시간표 불러오기',
   'sharelink.importBody': '링크로 공유된 시간표를 불러올까요? 현재 시간표가 대체됩니다.',
   'sharelink.importConfirm': '불러오기',
@@ -961,6 +967,9 @@ const en: Dict = {
   'goals.untitled': '(untitled)',
   'goals.hoursLabel': 'Hours',
   'goals.minutesLabel': 'Minutes',
+  'goals.pickLabel': 'Pick a timetable item',
+  'goals.noLabels': 'Add items (labels) to your timetable first.',
+  'goals.saveDiaryHint': "Save today's diary to update daily goals.",
   'sharelink.importTitle': 'Open shared schedule',
   'sharelink.importBody': 'Open the schedule shared via this link? Your current one will be replaced.',
   'sharelink.importConfirm': 'Open',

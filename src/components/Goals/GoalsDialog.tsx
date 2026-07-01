@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { AdSlot } from '@/components/Ads/AdSlot';
 import { useStoreSelector } from '@/hooks/useScheduleStore';
-import { useDiary } from '@/hooks/useDiary';
+import { useDiary, dateKey } from '@/hooks/useDiary';
 import { useGoals } from '@/hooks/useGoals';
 import { useTranslation } from '@/hooks/usePreferences';
 import { accumulatedMinutes, knownLabels } from '@/lib/goals';
@@ -42,6 +42,7 @@ export function GoalsDialog({ open, onOpenChange }: GoalsDialogProps) {
   }
 
   const labelOptions = knownLabels(present.slices, entries);
+  const todaySaved = !!entries[dateKey()];
   const numCls = 'w-14 rounded-md px-2 py-1 text-center tabular-nums outline-none';
   const numStyle = { backgroundColor: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))', color: 'hsl(var(--foreground))' } as const;
 
@@ -103,19 +104,29 @@ export function GoalsDialog({ open, onOpenChange }: GoalsDialogProps) {
           </ul>
         )}
 
+        {/* Goals count SAVED diaries — nudge to save today when it isn't yet. */}
+        {goals.length > 0 && !todaySaved && (
+          <p className="text-xs" style={{ color: 'hsl(var(--primary))' }}>{t('goals.saveDiaryHint')}</p>
+        )}
+
         {/* Add a goal. */}
         <div className="mt-1 flex flex-col gap-2 rounded-lg p-3" style={{ backgroundColor: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))' }}>
-          <input
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            list="goal-labels"
-            placeholder={t('goals.labelPlaceholder')}
-            className="w-full rounded-md px-2 py-1.5 text-sm outline-none"
-            style={numStyle}
-          />
-          <datalist id="goal-labels">
-            {labelOptions.map((l) => <option key={l} value={l} />)}
-          </datalist>
+          {/* Pick from labels that actually exist (timetable + diary) so a goal
+              can't miss its item due to a name typo. */}
+          {labelOptions.length === 0 ? (
+            <p className="text-xs" style={{ color: 'hsl(var(--text-muted))' }}>{t('goals.noLabels')}</p>
+          ) : (
+            <select
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              aria-label={t('goals.pickLabel')}
+              className="w-full rounded-md px-2 py-1.5 text-sm outline-none"
+              style={numStyle}
+            >
+              <option value="">{t('goals.pickLabel')}</option>
+              {labelOptions.map((l) => <option key={l} value={l}>{l}</option>)}
+            </select>
+          )}
           <div className="flex flex-wrap items-center gap-2 text-sm" style={{ color: 'hsl(var(--foreground))' }}>
             <input type="number" min="0" max="24" value={hours} onChange={(e) => setHours(e.target.value)} className={numCls} style={numStyle} aria-label={t('goals.hoursLabel')} />
             <span>{t('goals.hUnit')}</span>

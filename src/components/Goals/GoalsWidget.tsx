@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Target, X, Check } from 'lucide-react';
-import { useDiary } from '@/hooks/useDiary';
+import { useDiary, dateKey } from '@/hooks/useDiary';
 import { useGoals } from '@/hooks/useGoals';
 import { useTranslation } from '@/hooks/usePreferences';
 import { accumulatedMinutes } from '@/lib/goals';
@@ -20,6 +20,7 @@ export function GoalsWidget() {
   if (goals.length === 0) return null;
 
   const fmt = (m: number) => t('goals.hm', { h: String(Math.floor(m / 60)), m: String(m % 60) });
+  const todaySaved = !!entries[dateKey()];
 
   return (
     <>
@@ -66,6 +67,9 @@ export function GoalsWidget() {
               );
             })}
           </ul>
+          {!todaySaved && (
+            <p className="mt-2 text-[11px] leading-snug" style={{ color: 'hsl(var(--primary))' }}>{t('goals.saveDiaryHint')}</p>
+          )}
         </div>
       )}
 

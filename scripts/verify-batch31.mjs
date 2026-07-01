@@ -28,14 +28,14 @@ await wait(400);
 const dialogVisible = await page.locator('[role="dialog"]:has-text("목표")').first().isVisible().catch(() => false);
 pass('goals dialog opens', dialogVisible);
 
-// Pick a label that exists in the seeded schedule (from the datalist).
+// Pick a label from the select of known timetable/diary items.
 const label = await page.evaluate(() => {
-  const opt = document.querySelector('#goal-labels option');
+  const opt = [...document.querySelectorAll('[role="dialog"] select option')].find((o) => o.value);
   return opt ? opt.value : '';
 });
 pass('seeded labels available for goals', !!label, `label=${label}`);
 
-await page.locator('input[list="goal-labels"]').first().fill(label);
+await page.locator('[role="dialog"] select').first().selectOption(label);
 await page.locator('[role="dialog"] input[type="number"]').nth(0).fill('0'); // hours
 await page.locator('[role="dialog"] input[type="number"]').nth(1).fill('1'); // minutes
 await page.locator('button:has-text("목표 추가")').first().click();
