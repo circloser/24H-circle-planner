@@ -4,7 +4,6 @@ import {
   labelAnchorInside,
   labelAnchorOutside,
   truncateLabel,
-  labelRadialOffset,
 } from '@/lib/svg-geometry';
 import { FULL_SPEC, type ViewSpec } from '@/lib/chart-view';
 import { idealTextColor, DARK_TEXT } from '@/lib/contrast';
@@ -18,7 +17,7 @@ interface SliceLabelProps {
   onEdit?: (id: string) => void;
   /** Active view window — positions the label under the 12h clock remap. */
   spec?: ViewSpec;
-  /** Position among the rendered labels — drives radial staggering of narrow slices. */
+  /** Kept for caller compatibility; labels no longer stagger (they sit on one ring). */
   index?: number;
 }
 
@@ -36,7 +35,7 @@ const LABEL_TEXT_DEFAULT = DARK_TEXT;
  * - Skips rendering for slices < 30 min when textPosition === 'inside'
  *   (too narrow); falls back to icon-only.
  */
-export function SliceLabel({ slice, onEdit, spec = FULL_SPEC, index = 0 }: SliceLabelProps) {
+export function SliceLabel({ slice, onEdit, spec = FULL_SPEC }: SliceLabelProps) {
   const { textPosition, label, icon: rawIcon } = slice;
   // Global "show icons" toggle — when off, every icon below renders as empty so
   // the chart shows text-only labels (and narrow icon-only slices show nothing).
@@ -61,28 +60,46 @@ export function SliceLabel({ slice, onEdit, spec = FULL_SPEC, index = 0 }: Slice
         }
       : undefined;
   const widthMin = sliceWidthMinutes(slice);
-  // Adaptive label sizing so narrow slices stay READABLE instead of hiding text:
-  //  - width ≥ NARROW            → full-size inside label
-  //  - AUTO_OUTSIDE ≤ w < NARROW → inside, but font + icon shrink to fit
-  //  - width < AUTO_OUTSIDE      → too small to fit inside → pull the text OUT
-  //                                with a leader line (even if it's an inside label)
-  const NARROW = 40;
-  const AUTO_OUTSIDE = 18;
+  // Labels sit on ONE clean circle (no radial staggering). To keep adjacent
+  // labels from colliding we instead FIT each label within its own wedge's
+  // tangential arc: the font shrinks and the text truncates so it can't spill
+  // into its neighbours. Only when a wedge is too small even for the minimum
+  // font do we pull the label OUTSIDE with a leader line.
+  const AUTO_OUTSIDE = 16; // wedge width (min) below which the label goes outside
   const forceOutside = textPosition === 'inside' && widthMin < AUTO_OUTSIDE;
   const isInside = textPosition === 'inside' && !forceOutside;
-  const narrow = isInside && widthMin < NARROW;
-  // 0 at AUTO_OUTSIDE → 1 at NARROW, driving how much to shrink.
-  const shrinkT = Math.max(0, Math.min(1, (widthMin - AUTO_OUTSIDE) / (NARROW - AUTO_OUTSIDE)));
-  const textPx = narrow ? Math.round(13 + shrinkT * (22 - 13)) : 22;
-  const iconPx = narrow ? Math.round(24 + shrinkT * (38 - 24)) : 38;
 
   // Inherit the user-selected font from the SVG root; scale label text size by
   // the font-scale preference (icons stay fixed-size emoji).
   const fontFamily = 'inherit';
   const labelFontSize = (px: number) => ({ fontSize: `calc(var(--app-font-scale, 1) * ${px}px)` });
   const { lang } = useTranslation();
-  // Narrow inside labels get fewer characters so the shrunk text still fits.
-  const truncated = truncateLabel(translateLabel(label, lang), narrow ? 6 : 12, narrow ? 12 : 24);
+  const localized = translateLabel(label, lang);
+  // Tangential space available at the label radius. labelAnchorInside places the
+  // text at midR = innerR + band*0.55 ≈ 298; the wedge's arc length there is
+  // proportional to its minute-width. Shrink the font until the whole name fits
+  // that arc, then truncate to whatever still fits — so neighbours don't overlap.
+  const LABEL_R = 298;
+  const BASE_FONT = 22;
+  const MIN_FONT = 12;
+  const isCjk = (ch: string) =>
+    /[ᄀ-ᇿ㄰-㆏가-힣぀-ヿ一-鿿]/.test(ch);
+  const estWidth = (text: string, font: number) => {
+    let w = 0;
+    for (const ch of text) w += (isCjk(ch) ? 0.98 : 0.55) * font;
+    return w;
+  };
+  const arc = (2 * Math.PI * LABEL_R * widthMin) / 1440;
+  let textPx = BASE_FONT;
+  if (isInside) {
+    const fullW = estWidth(localized, BASE_FONT);
+    if (fullW > arc) textPx = Math.max(MIN_FONT, Math.round((BASE_FONT * arc) / fullW));
+  }
+  const narrow = isInside && textPx < BASE_FONT;
+  const iconPx = narrow ? Math.max(22, Math.round((38 * textPx) / BASE_FONT)) : 38;
+  // Character budget from the shrunk font, so the truncated text still fits the arc.
+  const maxChars = isInside ? Math.max(3, Math.floor(arc / (textPx * 0.98))) : 12;
+  const truncated = truncateLabel(localized, maxChars, maxChars * 2);
 
   // Per-slice text styling over readable defaults. Inside labels auto-pick
   // black/white from the slice's luminance; outside labels keep the dark tone.
@@ -92,7 +109,7 @@ export function SliceLabel({ slice, onEdit, spec = FULL_SPEC, index = 0 }: Slice
   const fontStyle = slice.italic ? 'italic' : 'normal';
 
   if (isInside) {
-    const { x, y } = labelAnchorInside(slice, undefined, spec, labelRadialOffset(slice, index));
+    const { x, y } = labelAnchorInside(slice, undefined, spec);
     // Centre edit zone: a single click here opens the editor (text cursor), even
     // when the slice is empty. The slice body OUTSIDE it keeps the scissors cut
     // cursor. Smaller on narrow wedges so it doesn't bleed into neighbours.

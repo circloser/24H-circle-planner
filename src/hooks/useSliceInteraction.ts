@@ -1,7 +1,7 @@
 import { useRef, useCallback, useEffect } from 'react';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { sliceWidthMinutes, snapMinutes, minutesToHhmm, hhmmToMinutes } from '@/lib/time-utils';
-import { slicePath, RING, polarToCartesian, labelAnchorInside, labelRadialOffset } from '@/lib/svg-geometry';
+import { slicePath, RING, polarToCartesian, labelAnchorInside } from '@/lib/svg-geometry';
 import { useChartView } from '@/hooks/usePreferences';
 import { viewSpec, minForAngle, angleForMin, visibleSegments, FULL_SPEC, type ViewSpec } from '@/lib/chart-view';
 import type { TimeSlice } from '@/types/time-slice';
@@ -167,17 +167,6 @@ function largestVisibleSegment(slice: TimeSlice, spec: ViewSpec): TimeSlice | nu
   return { ...slice, startTime: minutesToHhmm(largest.startMin), endTime: minutesToHhmm(largest.endMin) };
 }
 
-/** Index of a slice among the rendered labels (slices that have a visible
- *  segment), so the radial-stagger parity matches CircleTimeline's labelSlices. */
-function labelIndexInView(slices: TimeSlice[], sliceId: string, spec: ViewSpec): number {
-  let idx = 0;
-  for (const s of slices) {
-    if (s.id === sliceId) return idx;
-    if (visibleSegments(hhmmToMinutes(s.startTime), sliceWidthMinutes(s), spec).length > 0) idx++;
-  }
-  return idx;
-}
-
 /** Rewrite a clipped slice's visible-segment path(s) to its modified geometry.
  *  Clipped segments of one slice share data-slice-id; surplus paths are blanked. */
 function updateClippedSlicePaths(svg: SVGSVGElement, slice: TimeSlice, spec: ViewSpec): void {
@@ -219,11 +208,12 @@ function update12hClippedPreview(
 
   const ccwLabel = largestVisibleSegment(ccwMod, spec);
   const cwLabel = largestVisibleSegment(cwMod, spec);
+  // radialOffset 0 → labels stay on the single clean ring (no staggering), matching the render.
   if (ccwLabel) {
-    moveSliceLabelImperative(svg, ccwLabel, labelRadialOffset(ccwLabel, labelIndexInView(snapshotSlices, ccwSlice.id, spec)), spec);
+    moveSliceLabelImperative(svg, ccwLabel, 0, spec);
   }
   if (cwLabel) {
-    moveSliceLabelImperative(svg, cwLabel, labelRadialOffset(cwLabel, labelIndexInView(snapshotSlices, cwSlice.id, spec)), spec);
+    moveSliceLabelImperative(svg, cwLabel, 0, spec);
   }
 }
 
@@ -317,8 +307,8 @@ export function useSliceInteraction(opts: {
               }
             });
           }
-          moveSliceLabelImperative(svgEl, ccwSlice, labelRadialOffset(ccwSlice, dragRef.boundaryIndex));
-          moveSliceLabelImperative(svgEl, cwSlice, labelRadialOffset(cwSlice, (dragRef.boundaryIndex + 1) % len));
+          moveSliceLabelImperative(svgEl, ccwSlice, 0);
+          moveSliceLabelImperative(svgEl, cwSlice, 0);
         }
       }
       dispatch({ type: 'SET_DRAG_REF', value: null });
@@ -431,8 +421,8 @@ export function useSliceInteraction(opts: {
         const ccwModified: TimeSlice = { ...ccwSlice, endTime: hhmm };
         const cwModified: TimeSlice = { ...cwSlice, startTime: hhmm };
         if (sliceWidthMinutes(ccwModified) > 0 && sliceWidthMinutes(cwModified) > 0) {
-          moveSliceLabelImperative(svgEl, ccwModified, labelRadialOffset(ccwModified, dragRef.boundaryIndex));
-          moveSliceLabelImperative(svgEl, cwModified, labelRadialOffset(cwModified, cwIdx));
+          moveSliceLabelImperative(svgEl, ccwModified, 0);
+          moveSliceLabelImperative(svgEl, cwModified, 0);
         }
       }
     };
