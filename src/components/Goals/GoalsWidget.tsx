@@ -1,20 +1,64 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Target, X, Check } from 'lucide-react';
 import { useDiary, dateKey } from '@/hooks/useDiary';
 import { useGoals } from '@/hooks/useGoals';
 import { useTranslation } from '@/hooks/usePreferences';
 import { accumulatedMinutes } from '@/lib/goals';
+import { makeDragStart, type Pos } from '@/components/ClockTools/clock-utils';
+
+const POS_KEY = '24h-circle-planner.goalswidget';
+const CARD_W = 300;
+
+/** Default spot: floating just above the bottom-right FAB. */
+function defaultPos(): Pos {
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+  return { x: Math.max(12, vw - CARD_W - 20), y: Math.max(76, vh - 420) };
+}
+
+/** Keep a stored position on-screen after a resize / smaller window. */
+function clampPos(p: Pos): Pos {
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+  return {
+    x: Math.min(Math.max(0, p.x), Math.max(0, vw - 60)),
+    y: Math.min(Math.max(0, p.y), Math.max(0, vh - 60)),
+  };
+}
+
+function loadPos(): Pos {
+  try {
+    const raw = localStorage.getItem(POS_KEY);
+    if (raw) {
+      const p = JSON.parse(raw) as Partial<Pos>;
+      if (p && typeof p.x === 'number' && typeof p.y === 'number') return clampPos({ x: p.x, y: p.y });
+    }
+  } catch {
+    // ignore corrupt/unavailable storage
+  }
+  return defaultPos();
+}
 
 /**
  * Bottom-right floating goals viewer (next to the memo FAB). Appears only once
  * goals exist; the FAB toggles a small card showing each goal's live progress
- * (accumulated vs target), updating as the timetable is edited.
+ * (accumulated vs target). The card floats with a TRANSPARENT background and can
+ * be dragged anywhere (grab cursor on hover); its position persists.
  */
 export function GoalsWidget() {
   const { goals } = useGoals();
   const { entries } = useDiary();
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<Pos>(loadPos);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(POS_KEY, JSON.stringify(pos));
+    } catch {
+      // storage unavailable — position simply won't persist
+    }
+  }, [pos]);
 
   // The feature only shows up once the user has set a goal/mission.
   if (goals.length === 0) return null;
@@ -26,14 +70,17 @@ export function GoalsWidget() {
     <>
       {open && (
         <div
-          className="fixed bottom-[76px] right-5 z-30 max-h-[60vh] w-[300px] overflow-y-auto rounded-xl p-3 shadow-lg"
-          style={{ backgroundColor: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))' }}
+          data-goals-card="1"
+          onPointerDown={makeDragStart(pos, setPos)}
+          className="fixed z-30 max-h-[60vh] w-[300px] cursor-grab touch-none overflow-y-auto rounded-xl p-3 active:cursor-grabbing"
+          style={{ left: pos.x, top: pos.y, backgroundColor: 'transparent' }}
         >
           <div className="mb-2 flex items-center gap-1.5">
             <Target className="h-4 w-4" style={{ color: 'hsl(var(--foreground))' }} />
             <span className="flex-1 text-sm font-semibold" style={{ color: 'hsl(var(--foreground))' }}>{t('goals.title')}</span>
             <button
               type="button"
+              data-no-drag
               aria-label={t('common.cancel')}
               onClick={() => setOpen(false)}
               className="grid h-6 w-6 place-items-center rounded transition-colors hover:bg-black/10"
