@@ -341,6 +341,36 @@ describe('mergeSlices', () => {
     expect(merged.label).toBe('A'); // wider (earlier) side wins
     expect(merged.color).toBe('#aaaaaa');
   });
+
+  it('deletes the UNLABELED side and keeps the labeled one even if it is narrower', () => {
+    const a = makeSlice('00:00', '08:00', { label: '', color: '#aaaaaa' }); // 8h, EMPTY (wider)
+    const b = makeSlice('08:00', '12:00', { label: 'B', color: '#bbbbbb' }); // 4h, labeled
+    const c = makeSlice('12:00', '00:00', { label: 'C' });
+    const result = mergeSlices(makeSchedule([a, b, c]), b.id, a.id);
+    const merged = result.slices.find((s) => s.startTime === '00:00' && s.endTime === '12:00')!;
+    expect(merged.label).toBe('B'); // labeled side survives despite being narrower
+    expect(merged.color).toBe('#bbbbbb');
+    expect(merged.id).toBe(b.id);
+  });
+
+  it('deletes the UNLABELED clockwise side and keeps the labeled CCW block', () => {
+    const a = makeSlice('00:00', '04:00', { label: 'A', color: '#aaaaaa' }); // 4h, labeled
+    const b = makeSlice('04:00', '12:00', { label: '', color: '#bbbbbb' }); // 8h, EMPTY (wider)
+    const c = makeSlice('12:00', '00:00', { label: 'C' });
+    const result = mergeSlices(makeSchedule([a, b, c]), b.id, a.id);
+    const merged = result.slices.find((s) => s.startTime === '00:00' && s.endTime === '12:00')!;
+    expect(merged.label).toBe('A'); // labeled side survives
+    expect(merged.color).toBe('#aaaaaa');
+  });
+
+  it('falls back to the wider side when BOTH sides are unlabeled', () => {
+    const a = makeSlice('00:00', '04:00', { label: '', color: '#aaaaaa' }); // 4h, EMPTY
+    const b = makeSlice('04:00', '12:00', { label: '', color: '#bbbbbb' }); // 8h, EMPTY (wider)
+    const c = makeSlice('12:00', '00:00', { label: 'C' });
+    const result = mergeSlices(makeSchedule([a, b, c]), b.id, a.id);
+    const merged = result.slices.find((s) => s.startTime === '00:00' && s.endTime === '12:00')!;
+    expect(merged.color).toBe('#bbbbbb'); // wider side wins when neither is labeled
+  });
 });
 
 // ─── resizeBoundary ──────────────────────────────────────────────────────────

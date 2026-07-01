@@ -394,8 +394,11 @@ export function setBlock(
 /**
  * Merge two adjacent slices into one.
  * `idCw` is the clockwise (later) slice; `idCcw` is the counter-clockwise (earlier) slice.
- * The merged slice keeps the content (name/icon/colour/styling) of whichever side
- * is WIDER; ties keep the earlier (CCW) side. It always spans CCW.start → CW.end.
+ * The merged slice keeps the content (name/icon/colour/styling) of the SURVIVING
+ * side and always spans CCW.start → CW.end. Survivor priority:
+ *   1. If exactly one side is UNLABELED, delete that empty side and keep the
+ *      labeled one — deleting a divider should preserve the named block.
+ *   2. Otherwise (both labeled, or both empty) keep the WIDER side; ties → CCW.
  */
 export function mergeSlices(schedule: Schedule, idCw: string, idCcw: string): Schedule {
   const action = 'mergeSlices';
@@ -416,8 +419,16 @@ export function mergeSlices(schedule: Schedule, idCw: string, idCcw: string): Sc
     throw new ContiguityError(action, `Slices are not adjacent: ${idCcw}.endTime=${ccwSlice.endTime} !== ${idCw}.startTime=${cwSlice.startTime}`);
   }
 
-  // Keep the wider side's content (name/icon/colour/styling + id); ties → CCW.
-  const survivor = sliceWidthMinutes(cwSlice) > sliceWidthMinutes(ccwSlice) ? cwSlice : ccwSlice;
+  // Prefer to delete the side WITHOUT a label so the named block survives; if
+  // both are labeled (or both empty) fall back to the wider side, ties → CCW.
+  const ccwLabeled = (ccwSlice.label ?? '').trim() !== '';
+  const cwLabeled = (cwSlice.label ?? '').trim() !== '';
+  let survivor: TimeSlice;
+  if (ccwLabeled !== cwLabeled) {
+    survivor = ccwLabeled ? ccwSlice : cwSlice;
+  } else {
+    survivor = sliceWidthMinutes(cwSlice) > sliceWidthMinutes(ccwSlice) ? cwSlice : ccwSlice;
+  }
   const merged: TimeSlice = {
     ...survivor,
     startTime: ccwSlice.startTime,
