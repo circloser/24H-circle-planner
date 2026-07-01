@@ -13,6 +13,8 @@ import { slug, formatDateYYYYMMDD } from '@/lib/export/_internal';
 import { buildExportPreviewDataUrl } from '@/lib/export/previewSvg';
 import { exportAllData, importAllData } from '@/lib/backup';
 import { exportTableCsv, exportTablePng, buildTableSvg } from '@/lib/export/tableExport';
+import { exportRangePng, exportRangeCsv, type RangeDay } from '@/lib/export/rangeExport';
+import { useDiary, dateKey } from '@/hooks/useDiary';
 import { useTranslation, useChartView, useShowIcons } from '@/hooks/usePreferences';
 import type { Schedule } from '@/types/schedule';
 import type { TimeSlice } from '@/types/time-slice';
@@ -531,6 +533,117 @@ function TablePreview({ schedule, showIcons }: { schedule: Schedule; showIcons: 
 
 // ─── ExportDialog ─────────────────────────────────────────────────────────────
 
+/**
+ * Date-range export: pick a start/end date, choose circle or table, and export
+ * every saved diary in the range as ONE image (or a multi-day CSV).
+ */
+function RangeTab({ showIcons }: { showIcons: boolean }) {
+  const { t, lang } = useTranslation();
+  const { entries } = useDiary();
+  const today = dateKey();
+  const [start, setStart] = useState(today);
+  const [end, setEnd] = useState(today);
+  const [format, setFormat] = useState<'circle' | 'table'>('circle');
+  const [busy, setBusy] = useState(false);
+
+  const inputStyle: React.CSSProperties = {
+    backgroundColor: 'hsl(var(--surface))',
+    border: '1px solid hsl(var(--border))',
+    color: 'hsl(var(--foreground))',
+  };
+
+  function fmtDay(key: string): string {
+    const [y, m, d] = key.split('-').map(Number);
+    if (!y || !m || !d) return key;
+    return new Date(y, m - 1, d).toLocaleDateString(lang, { month: 'long', day: 'numeric', weekday: 'short' });
+  }
+
+  function collect(): RangeDay[] {
+    if (!start || !end || start > end) return [];
+    const [sy, sm, sd] = start.split('-').map(Number);
+    const [ey, em, ed] = end.split('-').map(Number);
+    if (!sy || !ey) return [];
+    const cur = new Date(sy, sm - 1, sd);
+    const endD = new Date(ey, em - 1, ed);
+    const days: RangeDay[] = [];
+    let guard = 0;
+    while (cur <= endD && guard < 400) {
+      const key = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`;
+      const e = entries[key];
+      if (e) {
+        const nm = (e.name || '').trim();
+        days.push({ date: key, label: fmtDay(key) + (nm ? ` · ${nm}` : ''), slices: e.slices });
+      }
+      cur.setDate(cur.getDate() + 1);
+      guard += 1;
+    }
+    return days;
+  }
+
+  const count = collect().length;
+  const title = `${fmtDay(start)} ~ ${fmtDay(end)}`;
+
+  async function doImage() {
+    const days = collect();
+    if (days.length === 0) { toast(t('export.rangeEmpty')); return; }
+    setBusy(true);
+    try {
+      await exportRangePng(days, title, format, { showIcons });
+      toast.success(t('export.rangeSaved', { n: String(days.length) }));
+    } catch {
+      toast.error(t('export.rangeFailed'));
+    } finally {
+      setBusy(false);
+    }
+  }
+  function doCsv() {
+    const days = collect();
+    if (days.length === 0) { toast(t('export.rangeEmpty')); return; }
+    exportRangeCsv(days, title);
+    toast.success(t('export.rangeSaved', { n: String(days.length) }));
+  }
+
+  return (
+    <div className="flex flex-col gap-3 pt-1">
+      <div className="flex flex-wrap items-center gap-2 text-sm" style={{ color: 'hsl(var(--foreground))' }}>
+        <input type="date" value={start} max={end || undefined} onChange={(e) => setStart(e.target.value)} className="rounded-md px-2 py-1.5 outline-none" style={inputStyle} aria-label={t('export.rangeStart')} />
+        <span>~</span>
+        <input type="date" value={end} min={start || undefined} onChange={(e) => setEnd(e.target.value)} className="rounded-md px-2 py-1.5 outline-none" style={inputStyle} aria-label={t('export.rangeEnd')} />
+      </div>
+
+      <div className="flex self-start overflow-hidden rounded-md" style={{ border: '1px solid hsl(var(--border))' }}>
+        {(['circle', 'table'] as const).map((f) => (
+          <button
+            key={f}
+            type="button"
+            onClick={() => setFormat(f)}
+            className="px-3 py-1.5 text-sm transition-colors"
+            style={format === f ? { backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' } : { color: 'hsl(var(--text-muted))' }}
+          >
+            {f === 'circle' ? t('export.rangeCircle') : t('export.rangeTable')}
+          </button>
+        ))}
+      </div>
+
+      <p className="text-xs" style={{ color: 'hsl(var(--text-muted))' }}>{t('export.rangeCount', { n: String(count) })}</p>
+
+      <Button onClick={doImage} disabled={busy || count === 0} className="w-full gap-2" style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}>
+        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+        {t('export.rangeImage')}
+      </Button>
+      <button
+        type="button"
+        onClick={doCsv}
+        disabled={count === 0}
+        className="self-center text-xs underline disabled:opacity-40"
+        style={{ color: 'hsl(var(--text-muted))' }}
+      >
+        {t('export.rangeCsv')}
+      </button>
+    </div>
+  );
+}
+
 export function ExportDialog({
   open,
   onOpenChange,
@@ -568,6 +681,7 @@ export function ExportDialog({
                 <TabsTrigger value="pdf" className="flex-1">PDF</TabsTrigger>
               </>
             )}
+            <TabsTrigger value="range" className="flex-1">{t('export.range')}</TabsTrigger>
             <TabsTrigger value="json" className="flex-1">JSON</TabsTrigger>
             <TabsTrigger value="backup" className="flex-1">{t('export.backup')}</TabsTrigger>
           </TabsList>
@@ -591,6 +705,10 @@ export function ExportDialog({
               </TabsContent>
             </>
           )}
+
+          <TabsContent value="range">
+            <RangeTab showIcons={showIcons} />
+          </TabsContent>
 
           <TabsContent value="json">
             <JsonTab

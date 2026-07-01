@@ -130,6 +130,17 @@ export type TKey =
   | 'app.saved'
   | 'app.saving'
   | 'export.backup'
+  | 'export.range'
+  | 'export.rangeStart'
+  | 'export.rangeEnd'
+  | 'export.rangeCircle'
+  | 'export.rangeTable'
+  | 'export.rangeImage'
+  | 'export.rangeCsv'
+  | 'export.rangeCount'
+  | 'export.rangeEmpty'
+  | 'export.rangeSaved'
+  | 'export.rangeFailed'
   | 'export.backupNote'
   | 'export.backupExport'
   | 'export.backupRestore'
@@ -479,6 +490,17 @@ const ko: Dict = {
   'app.saved': '저장됨',
   'app.saving': '저장 중…',
   'export.backup': '백업',
+  'export.range': '기간',
+  'export.rangeStart': '시작 날짜',
+  'export.rangeEnd': '종료 날짜',
+  'export.rangeCircle': '원형',
+  'export.rangeTable': '표',
+  'export.rangeImage': '이미지로 저장',
+  'export.rangeCsv': 'CSV로 저장',
+  'export.rangeCount': '이 기간에 저장된 일기 {n}개',
+  'export.rangeEmpty': '선택한 기간에 저장된 일기가 없어요',
+  'export.rangeSaved': '{n}일 분량을 저장했어요',
+  'export.rangeFailed': '내보내기에 실패했어요',
   'export.backupNote': '데이터는 이 브라우저에만 저장됩니다. 백업 파일로 저장해 두면 다른 기기로 옮기거나 복구할 수 있어요.',
   'export.backupExport': '전체 백업 내보내기',
   'export.backupRestore': '백업에서 복원',
@@ -829,6 +851,17 @@ const en: Dict = {
   'app.saved': 'Saved',
   'app.saving': 'Saving…',
   'export.backup': 'Backup',
+  'export.range': 'Range',
+  'export.rangeStart': 'Start date',
+  'export.rangeEnd': 'End date',
+  'export.rangeCircle': 'Circle',
+  'export.rangeTable': 'Table',
+  'export.rangeImage': 'Save image',
+  'export.rangeCsv': 'Save as CSV',
+  'export.rangeCount': '{n} saved diaries in range',
+  'export.rangeEmpty': 'No saved diaries in the selected range',
+  'export.rangeSaved': 'Exported {n} day(s)',
+  'export.rangeFailed': 'Export failed',
   'export.backupNote': 'Your data lives only in this browser. Save a backup file to move it to another device or recover it later.',
   'export.backupExport': 'Export full backup',
   'export.backupRestore': 'Restore from backup',
