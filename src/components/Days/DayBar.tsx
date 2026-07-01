@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, X, Copy, FileText, LayoutGrid, Lock, Unlock, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, X, Copy, FileText, LayoutGrid, Lock, Unlock, CalendarDays, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import { toast } from 'sonner';
 import {
@@ -89,6 +89,15 @@ export function DayBar() {
       },
     });
     toast.success(t('diary.loaded'));
+  }
+
+  // Leave diary-view mode: restore the working day's timetable (LOAD_SCHEDULE
+  // also clears diaryDate + locked) so editing resumes where it left off.
+  function exitDiaryMode() {
+    const active = activeId ? days.find((d) => d.id === activeId) : null;
+    if (!active) return;
+    dispatch({ type: 'LOAD_SCHEDULE', schedule: active.schedule });
+    toast(t('diary.exited'));
   }
 
   const [addOpen, setAddOpen] = useState(false);
@@ -265,6 +274,16 @@ export function DayBar() {
           >
             {locked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
             {locked ? t('diary.unlock') : t('diary.lock')}
+          </button>
+          <button
+            type="button"
+            onClick={exitDiaryMode}
+            title={t('diary.exit')}
+            className="flex items-center gap-1 rounded-full px-2 py-1 font-semibold transition-colors hover:bg-black/10"
+            style={{ border: '1px solid hsl(var(--border))', color: 'hsl(var(--foreground))' }}
+          >
+            <LogOut className="h-3 w-3" />
+            {t('diary.exit')}
           </button>
         </div>
       ) : multi && activeIndex >= 0 ? (

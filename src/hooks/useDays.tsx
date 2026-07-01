@@ -219,6 +219,7 @@ export function DaysProvider({ children }: { children: React.ReactNode }) {
  */
 function DayStoreBridge() {
   const present = useStoreSelector((s) => s.history.present);
+  const diaryDate = useStoreSelector((s) => s.diaryDate);
   const dispatch = useStoreDispatch();
   const ctx = useContext(DaysContext);
 
@@ -233,10 +234,12 @@ function DayStoreBridge() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Writeback live edits into the active day.
+  // Writeback live edits into the active day — but NOT while a diary record is
+  // loaded: that would overwrite the working day the diary temporarily replaced.
   useEffect(() => {
+    if (diaryDate) return;
     ctx?.syncActive(present);
-  }, [present, ctx]);
+  }, [present, diaryDate, ctx]);
 
   return null;
 }
