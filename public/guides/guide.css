@@ -31,6 +31,15 @@ footer.site { margin-top:44px; padding-top:18px; border-top:1px solid #e3e6ec; f
 footer.site nav a { color:#6b7280; text-decoration:none; margin-right:14px; }
 footer.site nav a:hover { color:#d83a3a; text-decoration:underline; }
 .copy { margin:10px 0 0; }
+/* Language toggle — Korean by default; English when <html class="show-en">.
+   display:revert keeps block/inline defaults (works for <div> and <span>). */
+.lang-en { display:none; }
+html.show-en .lang-ko { display:none; }
+html.show-en .lang-en { display:revert; }
+.langswitch { font-size:13px; margin-left:14px; white-space:nowrap; }
+.langswitch a { color:#9aa3b2; text-decoration:none; cursor:pointer; }
+.langswitch a:hover { color:#d83a3a; }
+.langswitch .sep { color:#c9ced8; margin:0 5px; }
 @media (max-width:560px){ .grid { grid-template-columns:1fr; } }
 @media (prefers-color-scheme: dark) {
   body { background:#15171c; color:#e5e7eb; }

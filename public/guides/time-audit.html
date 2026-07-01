@@ -15,15 +15,24 @@
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="stylesheet" href="/guides/guide.css" />
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6947130056543786" crossorigin="anonymous"></script>
+<script>
+(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');}}catch(e){}})();
+function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');}
+</script>
 </head>
 <body>
 <div class="wrap">
   <header class="site">
     <a class="logo" href="/">24Hour<b>ing</b></a>
-    <nav class="site-nav"><a href="/guides/">가이드</a><a href="/">홈</a></nav>
+    <nav class="site-nav">
+      <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
+      <a href="/guides/"><span class="lang-ko">가이드</span><span class="lang-en">Guides</span></a>
+      <a href="/"><span class="lang-ko">홈</span><span class="lang-en">Home</span></a>
+    </nav>
   </header>
   <main class="article">
-    <p class="crumb"><a href="/guides/">← 가이드 목록</a></p>
+    <p class="crumb"><a href="/guides/"><span class="lang-ko">← 가이드 목록</span><span class="lang-en">← All guides</span></a></p>
+    <div class="lang-ko">
     <h1>시간 가계부 쓰는 법 <span class="en">/ Time Audit</span></h1>
     <p class="lead">돈을 관리하려면 가계부를 쓰듯, 시간을 관리하려면 먼저 '어디에 썼는지'를 알아야 합니다. 며칠만 기록해도 하루의 진짜 모습이 드러납니다.</p>
 
@@ -132,20 +141,137 @@
       <li>카테고리 합계, 계획 대비 실제, 시간 도둑(스크롤·회의·잦은 전환)을 찾아 한 번에 하나씩 바꾸세요.</li>
       <li>주간 15분 리뷰로 감각을 다듬으면 계획과 현실의 간극이 좁혀집니다.</li>
     </ul>
+    </div>
+    <div class="lang-en">
+    <h1>How to Keep a Time Budget <span class="en">/ Time Audit</span></h1>
+    <p class="lead">Just as managing money starts with keeping a budget, managing time starts with knowing "where it went." A few days of tracking is enough to reveal what your day really looks like.</p>
 
+    <h2>Why "Recording" Beats "Guessing"</h2>
+    <p>Most people think they know their own day pretty well. But ask "How much did you look at your phone today?" and it's common for people to answer at about half the real figure. That's because memory keeps only the striking moments and erases, wholesale, the five-minute checking habits and the awkward gaps between meetings. A time budget (a time audit) is precisely the work of stripping away this distortion of memory.</p>
+    <p>The first thing someone trying to save money does is not to cut spending but to "write it down." Just as you only grasp how much your monthly coffee costs after spreading out your card statement, you only see where time leaks once you record it. This order — measuring reality before making a plan — is the crux. A plan built without measurement is usually a plan for an "ideal me," so it collapses within a few days.</p>
+    <p>One more important point: the purpose of a time budget is not "self-blame." If you sink into guilt when you discover time lost to scrolling, you'll quit the recording itself. This work is not about judging yourself; it's closer to accounting — calmly examining how the budget of a single day is actually spent. Only when you can look at the numbers without judgment does room for improvement become visible.</p>
+
+    <h2>Two Ways to Record</h2>
+    <p>There are broadly two ways to record time. Each has clear pros and cons, so choose the one that fits your temperament and situation, or mix them.</p>
+
+    <h3>1) Real-time logging</h3>
+    <p>You write it down on the spot every time you start and finish an activity. This has the highest accuracy.</p>
+    <ul>
+      <li>Pro: It doesn't rely on memory, so there's less error, and you don't end up with gaps like "What did I just do for the last 15 minutes?"</li>
+      <li>Con: You have to stop and write every time, which is a hassle, and the recording itself can break your flow.</li>
+    </ul>
+    <p>To reduce this hassle, it's good to get help from a tool. For example, 24Houring (<a href="/">Home</a>) supports a real-time logging mode, so you can drop what you're doing right now straight onto a circular timetable. Start and end are stamped with a single button press, so there's far less friction than jotting it in a notebook by hand.</p>
+
+    <h3>2) End-of-day reconstruction</h3>
+    <p>After your day is done, you retrace it hour by hour and fill it in.</p>
+    <ul>
+      <li>Pro: You're not interrupted during the day, and you only need to invest ten minutes in the evening. The starting threshold is low, so it's easy to keep up.</li>
+      <li>Con: It's easy to miss small activities, and ambiguous stretches get smudged into "it was probably something like this." Wasted time tends to be logged as less than it really was.</li>
+    </ul>
+    <p>Here's the recommendation. For the first two days, use real-time logging to get a feel and raise the "resolution" of your day; after that, continue with end-of-day reconstruction, which carries less burden. This is the compromise. Once you've learned the rhythm of your day through real-time logging, you'll have a baseline like "this time slot is usually like this" when you reconstruct later, letting you fill the blanks far more accurately.</p>
+    <p>Whichever method you use, don't fixate on a "perfect record." It's fine if there's a stretch of about 30 minutes you missed. The value of a time budget lies not in precision down to the decimal, but in grasping where the big chunks go. Even at 90 percent filled, the outline of your day emerges clearly enough.</p>
+
+    <h2>How Many Days Should You Record</h2>
+    <p>Record just one day and you're at the mercy of chance. If that happened to be the day of a company dinner or you were sick in bed, you'll get a picture completely different from usual. Conversely, if you resolve to record for a month, most people give up on the third day. A realistic balance point is <strong>3 to 7 days</strong>.</p>
+    <ul>
+      <li>At least 3 days: include two weekdays plus one weekend day to check your "rhythm."</li>
+      <li>Ideally 7 days: capturing a whole week reveals day-to-day variation and even recurring patterns.</li>
+    </ul>
+    <p>Weekdays and weekends use time completely differently, so be sure to include both. Record only weekdays and you'll miss the half-truth that is "weekend you."</p>
+
+    <h2>What to Record</h2>
+    <p>If there are too many things to log, it becomes a burden and you won't last long. The following four are enough.</p>
+    <ol>
+      <li><strong>Activity</strong>: what you did (e.g., clearing email, watching YouTube, lunch).</li>
+      <li><strong>Start and end times</strong>: from what hour and minute to what minute. You can round to 5–15 minute units.</li>
+      <li><strong>Classification (category/label)</strong>: the large bundle you'll total later (see below).</li>
+      <li><strong>Energy</strong>: whether you were focused at the time (high/medium/low). This one column is decisive later for deciding "when to schedule what work."</li>
+    </ol>
+
+    <h3>Dividing Into Categories</h3>
+    <p>Keep the classification simple, at 5–8 categories. Divide too finely and it actually gets confusing when you total things up. The basic skeleton is as follows.</p>
+    <ul>
+      <li>Sleep — sleep, naps</li>
+      <li>Work/Study — work, learning, tasks that require immersion</li>
+      <li>Commute/Travel — commuting, time spent going back and forth</li>
+      <li>Meals — preparing, eating, cleaning up</li>
+      <li>Leisure — exercise, hobbies, meeting people, and other "intended" rest</li>
+      <li>Waste — infinite scrolling, videos turned on with no purpose, and other "unintended" time</li>
+    </ul>
+    <p>The criterion that separates "leisure" from "waste" here is not the type of activity but <strong>intent</strong>. A 30-minute drama you set out to enjoy is leisure, but 40 minutes of scrolling you let slip because your hand just went there is waste. Even with the same YouTube, a lecture you turned on to learn is "study," while the 30 minutes you drifted into the next video absentmindedly is "waste." If this distinction is fuzzy, only the feeling remains and no improvement point comes into view.</p>
+    <p>You can change the category names to fit your own life. If childcare takes up a lot of time, it's useful to keep "care" as a separate label; if you do creative work, "writing" or "practice." What matters is not someone else's standard, but bundling things into units so that, when you look at the totals later, they carry meaning — "ah, I spent this much."</p>
+
+    <h2>Analyzing the Results</h2>
+    <p>The record is only raw material; the insight comes from the analysis. Examine it along three axes.</p>
+    <h3>① Totals by category</h3>
+    <p>First, add up all the time by classification. Once you can see at a glance how the fixed budget of 24 hours was split, a vague "busyness" turns into concrete numbers. If totaling by hand is a hassle, using a tool that supports automatic tallying by label finishes this process almost automatically.</p>
+    <h3>② Plan versus actual</h3>
+    <p>If you had a plan set that morning, place it side by side with the actual record and compare. If you said "I'll spend the morning on focused work" but in reality half of that time was replies and responding to notifications, that gap is exactly the improvement point. The difference between plan and actual comes not from a lack of ability but usually from "unexpected interruptions." If you can name which interruptions recur, you can build that buffer time into your next plan in advance.</p>
+    <p>Conversely, pay attention to the stretches where the actual ran better than the plan. If there's a record that "I was unusually focused during this time slot," that time is a golden window to protect for your most important work. As much as reducing waste, noticing and protecting the times that go well is also a harvest of the time budget.</p>
+    <h3>③ Finding the culprit that leaks your time</h3>
+    <p>More often than the items that look like they'd total high, the "small, repetitive" items are the real thieves. Three representative culprits:</p>
+    <ul>
+      <li><strong>Infinite scrolling</strong>: it's only 5 minutes at a time, so it looks light, but 20 times a day is 100 minutes.</li>
+      <li><strong>Purposeless meetings</strong>: sessions that drag on with no agenda, or seats you didn't need to attend.</li>
+      <li><strong>Frequent switching</strong>: keep switching tasks and each time you pay the "cost of re-immersing." If your record repeatedly shows "energy low right after a switch," that's the signal.</li>
+    </ul>
+
+    <h2>A Small Example: Seeing It in Numbers</h2>
+    <p>An office worker recorded three days and took the daily average.</p>
+    <blockquote>
+      <p>Sleep 6h50m · Work 8h20m · Commute 1h10m · Meals 1h30m · Leisure 2h20m · <strong>Phone (waste) 2h10m</strong> · Other 1h40m</p>
+    </blockquote>
+    <p>He believed he looked at his phone "about 30 minutes a day," but the reality was <strong>2 hours 10 minutes</strong>. Most of it was the result of 5–10 minute scrolls between meetings piling up. At this point, the resolution to "quit the phone" usually fails. Instead, change it like this.</p>
+    <ul>
+      <li>In the gaps between meetings, place a "2-minute stretch" instead of the phone (fill the gap with another behavior).</li>
+      <li>Bundle notifications and check only 3 times a day (reduce the number of switches).</li>
+      <li>Move the scrolling app to the second page of the home screen (increase the friction of your hand reaching for it).</li>
+    </ul>
+    <p>The goal is not to turn 2h10m into zero, but to convert it into "an intended 40 minutes of leisure" and recover the remaining 90 minutes. Realistic reallocation lasts longer than perfect abstinence. It's good to decide in advance where the recovered 90 minutes will go, too. "Leftover time" hates a vacuum, so if you don't plan for it, another bout of scrolling quickly fills that spot. Designate a destination — 30 minutes of exercise, 30 minutes of reading — and the recovered time actually stays.</p>
+
+    <h2>Turning Discovery Into Change</h2>
+    <p>Move the insight from your analysis into a single-sentence "experiment." Something like: "Starting tomorrow, for the first 90 minutes of the morning I turn off notifications and do only the one most important thing." Change just one thing at a time so you can tell what worked. Then record the following few days again to verify that experiment. Reading the <a href="/guides/24-hour-circle-method">how to use the circular timetable</a> guide alongside this helps you design where in the day to newly place the recovered time.</p>
+
+    <h2>The Weekly Review Ritual</h2>
+    <p>A time budget shows its power when it's a recurring habit, not a one-and-done event. Set aside just 15 minutes on the weekend and answer these three questions.</p>
+    <ol>
+      <li>What item swallowed the most time this week? Was it worth it?</li>
+      <li>When was the time slot that diverged most from the plan?</li>
+      <li>If you changed just one thing next week, what would it be?</li>
+    </ol>
+    <p>Repeat this short review every week and your sense of time gradually sharpens, and the gap between plan and actual narrows. The first week is the most unfamiliar, and it gets lighter from there. Once a few weeks of records accumulate, flows beyond the weekly level begin to show, like "leisure was unusually down this month." If you leave tallies by label with a tool like 24Houring, you can check these long-term trends without having to calculate by hand again.</p>
+    <p>And you don't need to redo the full recording every time. After you've properly audited the first week, it's enough to "reset the budget" by recording just 3 days once a quarter. Habits tend to creep back and sprawl over time, so this regular checkup keeps your sense from dulling. When you want to redesign the basic frame of your day from scratch, this 3-day recheck also makes a good starting point.</p>
+
+    <h2>Key Takeaways</h2>
+    <ul>
+      <li>Guesses are wrong — record first. A time budget reveals what your day really looks like.</li>
+      <li>Real-time logging is accurate, and end-of-day reconstruction is easy to sustain. Mix the two.</li>
+      <li>Record for 3–7 days including weekdays and weekends, and logging just four things — activity, start/end, classification, energy — is enough.</li>
+      <li>"Leisure" and "waste" are divided not by activity but by intent.</li>
+      <li>Find your category totals, plan versus actual, and time thieves (scrolling, meetings, frequent switching), and change one thing at a time.</li>
+      <li>Sharpen your sense with a 15-minute weekly review and the gap between plan and reality narrows.</li>
+    </ul>
+    </div>
     <div class="cta card">
-      <p style="margin:0 0 4px"><strong>지금 바로 해보기</strong></p>
-      <p style="margin:0">24Houring에서 하루를 원형 시간표로 그려보세요. 설치·회원가입 없이 무료로 시작할 수 있습니다.</p>
-      <p style="margin:8px 0 0"><a class="btn" href="/">24Houring 열기 →</a></p>
+      <div class="lang-ko">
+        <p style="margin:0 0 4px"><strong>지금 바로 해보기</strong></p>
+        <p style="margin:0">24Houring에서 하루를 원형 시간표로 그려보세요. 설치·회원가입 없이 무료로 시작할 수 있습니다.</p>
+        <p style="margin:8px 0 0"><a class="btn" href="/">24Houring 열기 →</a></p>
+      </div>
+      <div class="lang-en">
+        <p style="margin:0 0 4px"><strong>Try it now</strong></p>
+        <p style="margin:0">Sketch your day as a 24-hour circle on 24Houring — free, with no sign-up or install.</p>
+        <p style="margin:8px 0 0"><a class="btn" href="/">Open 24Houring →</a></p>
+      </div>
     </div>
   </main>
   <footer class="site">
     <nav>
-      <a href="/">홈 Home</a>
-      <a href="/guides/">가이드 Guides</a>
-      <a href="/about">소개 About</a>
-      <a href="/privacy">개인정보처리방침 Privacy</a>
-      <a href="/contact">문의 Contact</a>
+      <a href="/"><span class="lang-ko">홈 Home</span><span class="lang-en">Home</span></a>
+      <a href="/guides/"><span class="lang-ko">가이드 Guides</span><span class="lang-en">Guides</span></a>
+      <a href="/about"><span class="lang-ko">소개 About</span><span class="lang-en">About</span></a>
+      <a href="/privacy"><span class="lang-ko">개인정보처리방침 Privacy</span><span class="lang-en">Privacy</span></a>
+      <a href="/contact"><span class="lang-ko">문의 Contact</span><span class="lang-en">Contact</span></a>
     </nav>
     <p class="copy">© 2026 Circloser · 24houring.com</p>
   </footer>

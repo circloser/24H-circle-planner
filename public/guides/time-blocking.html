@@ -15,15 +15,24 @@
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="stylesheet" href="/guides/guide.css" />
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6947130056543786" crossorigin="anonymous"></script>
+<script>
+(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');}}catch(e){}})();
+function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');}
+</script>
 </head>
 <body>
 <div class="wrap">
   <header class="site">
     <a class="logo" href="/">24Hour<b>ing</b></a>
-    <nav class="site-nav"><a href="/guides/">가이드</a><a href="/">홈</a></nav>
+    <nav class="site-nav">
+      <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
+      <a href="/guides/"><span class="lang-ko">가이드</span><span class="lang-en">Guides</span></a>
+      <a href="/"><span class="lang-ko">홈</span><span class="lang-en">Home</span></a>
+    </nav>
   </header>
   <main class="article">
-    <p class="crumb"><a href="/guides/">← 가이드 목록</a></p>
+    <p class="crumb"><a href="/guides/"><span class="lang-ko">← 가이드 목록</span><span class="lang-en">← All guides</span></a></p>
+    <div class="lang-ko">
     <h1>타임블로킹 완벽 가이드 <span class="en">/ Time Blocking</span></h1>
     <p class="lead">할 일 목록만으로는 하루가 잘 굴러가지 않습니다. 타임블로킹은 "무엇을"에 "언제·얼마나"를 붙여, 하루를 실제로 움직이게 만드는 방법입니다.</p>
 
@@ -108,20 +117,113 @@
       <li>과밀 편성과 버퍼 부재는 가장 흔한 실패 원인이니, 근무 시간의 60~70%만 계획하고 나머지는 비워 둔다.</li>
       <li>원형 24시간 플래너에 블록을 그리면 하루의 균형과 쏠림을 한눈에 확인할 수 있다.</li>
     </ul>
+    </div>
+    <div class="lang-en">
+    <h1>The Complete Guide to Time Blocking <span class="en">/ Time Blocking</span></h1>
+    <p class="lead">A to-do list alone rarely keeps a day running smoothly. Time blocking attaches "when" and "how long" to the "what," turning your day into something that actually moves.</p>
 
+    <h2>What is time blocking?</h2>
+    <p>Time blocking is a planning method that divides your day into several time "blocks" and assigns one predetermined task to each block. The key is to pin a start time and a duration to every task: "9:00 to 11:00 AM — write the report," "2:00 to 2:30 PM — reply to email." Just as you would schedule a meeting on your calendar, you schedule appointments with yourself in exactly the same way.</p>
+    <p>Many people manage their day with a to-do list. A list tells you "what needs to be done," but it stays silent on "when and for how long." So the longer the list grows, the more we reach first for whatever looks most urgent or easiest, while the truly important work gets pushed to the end of the day. Time blocking adds the coordinate of time, turning that list into an actionable map of the day.</p>
+    <blockquote>A to-do list is an "inventory of things to do," while time blocking is a "schedule that decides when to spend that inventory." The two are not rivals — they are a pair.</blockquote>
+
+    <h2>Why it beats a plain to-do list</h2>
+    <p>There are clear reasons why time blocking is stronger than a simple list. First, it lets you see the finiteness of time with your own eyes. A day is only 24 slots, and once you subtract sleep, meals, and commuting, the blocks you can actually use are fewer than you think. Sketching it out in blocks makes you realize immediately that "I'll get all of this done today" was physically impossible from the start.</p>
+    <p>Second, it reduces decision fatigue. Instead of scanning the list to choose what to do next every single time, the block already tells you "right now, it's this task." Third, it becomes easier to focus on one thing at a time. Because you have promised to do only that task within the block, you have a justification to defer other notifications and temptations. The concrete methods for securing this kind of immersion are covered in more detail in the <a href="/guides/deep-work-focus">Securing Focus Time</a> guide.</p>
+
+    <h2>Five practical steps</h2>
+    <p>If you follow these five steps, you can start time blocking without trouble even on your first attempt.</p>
+    <ol>
+      <li><strong>Brain dump:</strong> Write down every task in your head in one place, whether on paper or in an app. Big tasks, small tasks, and personal errands alike — get them all out. The goal of this step is not organization, but preventing anything from slipping through the cracks.</li>
+      <li><strong>Estimate durations:</strong> Next to each item, write down how long you expect it to take. Be specific: "report draft — 90 minutes," "email — 30 minutes." If an estimate is hard to make, allow more time than usual. Most people underestimate how long their own work takes.</li>
+      <li><strong>Place the blocks:</strong> Lay the estimated tasks onto your daily schedule. The key here is to place the hardest task in your highest-energy time slot. Since the morning is usually better for concentration, put work that requires deep thinking in the morning and simple tasks in the late afternoon.</li>
+      <li><strong>Add buffers:</strong> Insert 10–15 minutes of empty time between blocks. When a meeting runs long or an urgent matter cuts in, this cushion keeps the entire day from collapsing.</li>
+      <li><strong>End-of-day review:</strong> In the evening, look back at how the day actually unfolded. Check what took longer than expected and which blocks weren't kept, then feed that into tomorrow's plan.</li>
+    </ol>
+    <p>When you draw these five steps onto a circular 24-hour schedule, the balance of your day comes into view at a glance. A circular planner like <a href="/">24Houring</a> intuitively shows what proportion of the circle sleep, focus, rest, and commuting each occupy, so you can quickly notice if your blocks are all clustered on one side.</p>
+
+    <h3>If you're just starting out, begin like this</h3>
+    <p>Many people burn out and give up trying to follow all five steps perfectly. At first, don't try to fill your entire day with blocks — just choose the single most important deep-work block and keep it. Simply pinning two morning hours as "during this time, only this task" and turning off notifications will noticeably change the density of your day. Once that one block settles in reliably, add a second block after lunch, then bundle in a shallow-work block, expanding the scope from there.</p>
+    <p>When you plan also matters. Rather than scrambling to piece it together in the morning, it's far better to sketch the next day's blocks in advance — during the last 5 minutes before leaving work the evening before, or as you wrap up your day. Your mind sorts things out overnight, so in the morning you can dive straight into the first block without any deliberation.</p>
+
+    <h2>Types of blocks</h2>
+    <p>Not all blocks have the same character. Distinguishing between blocks of different types makes it much easier to design the rhythm of your day.</p>
+    <ul>
+      <li><strong>Deep-work block:</strong> Time to immerse yourself in a single difficult task without interruption. 60–120 minutes is usually appropriate, and the rule is to keep notifications off.</li>
+      <li><strong>Shallow-work / administrative block:</strong> Time to batch together tasks that don't require much mental effort — email, replies, approvals, and miscellaneous chores. Batching scattered odd jobs together lowers switching costs.</li>
+      <li><strong>Rest block:</strong> Time for recovery, such as lunch, a walk, a nap, or coffee. Rest, too, needs to be explicitly placed on the schedule so that you can relax without guilt.</li>
+      <li><strong>Buffer block:</strong> Slack time with nothing planned in it. It serves as a safety net that absorbs delays and lets you respond to the unexpected.</li>
+      <li><strong>Themed days:</strong> An approach that sets the character of a period not by the day but by the day of the week. For example, assigning Monday to planning, Tuesday and Wednesday to execution, and Friday to cleanup and reflection stabilizes the flow of the week.</li>
+    </ul>
+
+    <h2>A sample daily schedule</h2>
+    <p>If you sketch an ordinary day of knowledge work in blocks, it looks something like this.</p>
+    <ul>
+      <li><strong>07:00–08:00</strong> Wake up and morning routine (stretching, breakfast)</li>
+      <li><strong>08:00–09:00</strong> Commute and review the day's plan</li>
+      <li><strong>09:00–11:00</strong> Deep work — the most important task (today's top priority)</li>
+      <li><strong>11:00–11:15</strong> Buffer / rest</li>
+      <li><strong>11:15–12:00</strong> Shallow work — batch-process email and messenger replies</li>
+      <li><strong>12:00–13:00</strong> Lunch / walk</li>
+      <li><strong>13:00–14:30</strong> Deep work — the second focus task</li>
+      <li><strong>14:30–15:00</strong> Meeting</li>
+      <li><strong>15:00–15:20</strong> Buffer (wrap up the meeting, prepare for what's next)</li>
+      <li><strong>15:20–16:30</strong> Shallow work / collaboration (reviews, feedback, tidying documents)</li>
+      <li><strong>16:30–17:00</strong> End-of-day review and tomorrow's plan</li>
+      <li><strong>17:00 onward</strong> Leave work / personal time</li>
+    </ul>
+    <p>What's worth noticing in this schedule is that deep work appears only twice a day, with buffers tucked densely in between. Concentration doesn't last indefinitely, so limiting immersion blocks to two or three a day and filling the rest with recovery and chores actually yields better results.</p>
+
+    <h2>Handling interruptions and overruns</h2>
+    <p>Plans will inevitably go off script. What matters is deciding your response rules in advance for when they do.</p>
+    <p>When an urgent contact or a sudden request cuts in, don't react instantly — take a beat to judge, "Is this something to handle now, or something to push to the next shallow-work block?" Most requests are perfectly fine to handle 30 minutes later. Interrupt your current block only for what is truly urgent, and return to the original block once you're done.</p>
+    <p>When a block runs longer than expected, you have two options: burn through your buffer and continue, or stop at the set time and move on to the next block. To avoid falling into perfectionism, it's best to make the latter your default. The boundary of "up to here" actually creates focus. You can carry the remaining portion over to the next block or the next day.</p>
+    <p>Even on a day when your plan half-collapses, don't give up on the whole day. If the entire morning is gone, just re-block the afternoon you have left. Time blocking is not a tool for building a perfect day — it's a tool for quickly reorienting yourself the moment things go off track. Rather than feeling guilty about blocks you failed to keep, the secret to lasting long is to switch the question to "from this moment on, how will I use the time I have left?"</p>
+
+    <h2>Common mistakes</h2>
+    <p>There are a few traps that people who start time blocking often fall into.</p>
+    <ul>
+      <li><strong>Overpacking:</strong> Filling your day without a gap is a shortcut to failure. Assume the time you can actually plan is only about 60–70% of your working hours, and leave the rest empty.</li>
+      <li><strong>No buffers:</strong> If you place blocks back to back, a single delay topples them like dominoes. Buffers are not a luxury — they are essential structural support.</li>
+      <li><strong>Ignoring your energy rhythm:</strong> If you place your hardest task in the sluggish 3 PM slump, your efficiency won't hold up. Observe your own concentration curve and place difficult work in your high-energy hours.</li>
+      <li><strong>Optimistic estimates:</strong> "This should only take 30 minutes" often turns into an hour in reality. Getting into the habit of multiplying your estimates by 1.5 makes your plans far more realistic.</li>
+    </ul>
+
+    <h2>How to do an end-of-day review</h2>
+    <p>The real power of time blocking comes from repetition. When the day ends, invest just 5 minutes to check three things. First, of the blocks you planned, how many were actually kept? Second, for the blocks that went off track, why did they (an estimation error, an interruption, or procrastination)? Third, what will you change tomorrow?</p>
+    <p>Stacking up this short reflection over just a few days gives you data about your own work pace and concentration patterns. Then your estimates gradually become more accurate, and the gap between plan and reality shrinks. If the fundamentals of planning your day from scratch feel shaky, we recommend reading <a href="/guides/daily-planning-basics">The Basics of Daily Planning</a> alongside this.</p>
+    <p>Don't let the review end as mere self-reproach — always connect it to tomorrow's plan. For example, if you confirmed that "writing the report took an actual 150 minutes against an estimated 90," then from tomorrow you allocate two hours to that type of task. If interruptions cluster in a certain time slot, place a shallow-work block there instead of deep work. Once this cycle takes hold — yesterday's data changing today's placement — time blocking becomes more than a mere scheduling technique; it becomes a tool for understanding your own rhythm. Overlaying several days on a circular schedule makes recurring patterns stand out more clearly, making it easier to decide what to fix in place and what to leave flexible.</p>
+
+    <h2>Key takeaways</h2>
+    <ul>
+      <li>Time blocking attaches "when and how long" to your tasks, turning a list into an actionable map of your day.</li>
+      <li>The practical order is five steps: brain dump → estimate durations → place blocks → add buffers → end-of-day review.</li>
+      <li>Dividing blocks into deep work, shallow work, rest, buffer, and themed days makes it easy to design your daily rhythm.</li>
+      <li>Placing hard work in high-energy time slots and limiting deep work to two or three sessions a day yields better results.</li>
+      <li>Overpacking and a lack of buffers are the most common causes of failure, so plan only 60–70% of your working hours and leave the rest empty.</li>
+      <li>Drawing your blocks on a circular 24-hour planner lets you check the balance and skew of your day at a glance.</li>
+    </ul>
+    </div>
     <div class="cta card">
-      <p style="margin:0 0 4px"><strong>지금 바로 해보기</strong></p>
-      <p style="margin:0">24Houring에서 하루를 원형 시간표로 그려보세요. 설치·회원가입 없이 무료로 시작할 수 있습니다.</p>
-      <p style="margin:8px 0 0"><a class="btn" href="/">24Houring 열기 →</a></p>
+      <div class="lang-ko">
+        <p style="margin:0 0 4px"><strong>지금 바로 해보기</strong></p>
+        <p style="margin:0">24Houring에서 하루를 원형 시간표로 그려보세요. 설치·회원가입 없이 무료로 시작할 수 있습니다.</p>
+        <p style="margin:8px 0 0"><a class="btn" href="/">24Houring 열기 →</a></p>
+      </div>
+      <div class="lang-en">
+        <p style="margin:0 0 4px"><strong>Try it now</strong></p>
+        <p style="margin:0">Sketch your day as a 24-hour circle on 24Houring — free, with no sign-up or install.</p>
+        <p style="margin:8px 0 0"><a class="btn" href="/">Open 24Houring →</a></p>
+      </div>
     </div>
   </main>
   <footer class="site">
     <nav>
-      <a href="/">홈 Home</a>
-      <a href="/guides/">가이드 Guides</a>
-      <a href="/about">소개 About</a>
-      <a href="/privacy">개인정보처리방침 Privacy</a>
-      <a href="/contact">문의 Contact</a>
+      <a href="/"><span class="lang-ko">홈 Home</span><span class="lang-en">Home</span></a>
+      <a href="/guides/"><span class="lang-ko">가이드 Guides</span><span class="lang-en">Guides</span></a>
+      <a href="/about"><span class="lang-ko">소개 About</span><span class="lang-en">About</span></a>
+      <a href="/privacy"><span class="lang-ko">개인정보처리방침 Privacy</span><span class="lang-en">Privacy</span></a>
+      <a href="/contact"><span class="lang-ko">문의 Contact</span><span class="lang-en">Contact</span></a>
     </nav>
     <p class="copy">© 2026 Circloser · 24houring.com</p>
   </footer>
