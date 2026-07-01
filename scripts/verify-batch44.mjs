@@ -46,6 +46,21 @@ const style = await card.evaluate((el) => {
 pass('window background is transparent', style.bg === 'rgba(0, 0, 0, 0)' || style.bg === 'transparent', `bg=${style.bg}`);
 pass('window shows a grab cursor (movable on hover)', style.cursor === 'grab', `cursor=${style.cursor}`);
 
+// Boundary: hidden at rest (mouse is on the FAB, away from the card), revealed on
+// hover — matching the clock/calendar floating cards.
+const readEdge = () => card.evaluate((el) => {
+  const cs = getComputedStyle(el);
+  return { border: cs.borderTopColor, shadow: cs.boxShadow };
+});
+const rest = await readEdge();
+const isTransparent = (c) => c === 'rgba(0, 0, 0, 0)' || c === 'transparent';
+pass('boundary hidden at rest', isTransparent(rest.border) && rest.shadow === 'none', JSON.stringify(rest));
+
+await card.hover();
+await wait(150);
+const hov = await readEdge();
+pass('boundary appears on hover (border + shadow)', !isTransparent(hov.border) && hov.shadow !== 'none', JSON.stringify(hov));
+
 // Drag the card from its title area (avoids the close button) to a new spot.
 const box0 = await card.boundingBox();
 await page.mouse.move(box0.x + 40, box0.y + 12);

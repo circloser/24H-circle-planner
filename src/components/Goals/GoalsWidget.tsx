@@ -51,6 +51,9 @@ export function GoalsWidget() {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<Pos>(loadPos);
+  // Boundary only appears on hover — transparent + frameless at rest, but framed
+  // like the clock/calendar widgets while pointed at (a consistent "movable" cue).
+  const [hover, setHover] = useState(false);
 
   useEffect(() => {
     try {
@@ -71,9 +74,20 @@ export function GoalsWidget() {
       {open && (
         <div
           data-goals-card="1"
+          data-hover={hover ? '1' : '0'}
           onPointerDown={makeDragStart(pos, setPos)}
-          className="fixed z-30 max-h-[60vh] w-[300px] cursor-grab touch-none overflow-y-auto rounded-xl p-3 active:cursor-grabbing"
-          style={{ left: pos.x, top: pos.y, backgroundColor: 'transparent' }}
+          onPointerEnter={() => setHover(true)}
+          onPointerLeave={() => setHover(false)}
+          className="fixed z-30 max-h-[60vh] w-[300px] cursor-grab touch-none overflow-y-auto rounded-xl p-3 transition-shadow active:cursor-grabbing"
+          style={{
+            left: pos.x,
+            top: pos.y,
+            // Transparent at rest; on hover reveal the same boundary as the
+            // clock/calendar floating cards (1px border + shadow) for a unified feel.
+            backgroundColor: 'transparent',
+            border: `1px solid ${hover ? 'hsl(var(--border))' : 'transparent'}`,
+            boxShadow: hover ? '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)' : 'none',
+          }}
         >
           <div className="mb-2 flex items-center gap-1.5">
             <Target className="h-4 w-4" style={{ color: 'hsl(var(--foreground))' }} />
