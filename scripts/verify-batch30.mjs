@@ -1,8 +1,8 @@
 /**
  * Batch 30 (offline, dist-single): diary long-form note.
  *  - Save today's diary → the note step appears → write a note → save.
- *  - In edit mode the note panel stays hidden; it's persisted to the entry and
- *    only shows when that diary is loaded (see batch34).
+ *  - Saving auto-loads that diary, so its note shows immediately; exiting the
+ *    diary returns to edit mode where the note panel is hidden. Persisted to entry.
  */
 import { chromium } from 'playwright';
 
@@ -40,18 +40,21 @@ pass('note step appears after saving', noteStepVisible);
 await page.locator('[role="dialog"] textarea').first().fill(NOTE);
 await wait(150);
 await page.locator('button:has-text("노트 저장")').first().click();
-await wait(400);
+await wait(600);
 
-// Close the diary dialog.
-await page.keyboard.press('Escape').catch(() => {});
-await wait(500);
-
-// In normal edit mode (no diary loaded) the note panel must NOT appear.
-const shownInEdit = await page.evaluate((needle) => {
+// Whether the read-only note panel currently renders the note's first line.
+const noteShown = () => page.evaluate((needle) => {
   const els = [...document.querySelectorAll('div')];
   return !!els.find((e) => (e.className || '').includes('whitespace-pre-wrap') && (e.textContent || '').includes(needle.split('\n')[0]));
 }, NOTE);
-pass('note NOT shown in edit mode (only in a loaded diary)', shownInEdit === false);
+
+// Saving auto-loads that diary, so its note is shown right away.
+pass('note shown right after saving (diary auto-loaded)', (await noteShown()) === true);
+
+// Leave the diary → edit mode → the note panel must disappear.
+await page.locator('text=일기 나가기').first().click();
+await wait(500);
+pass('note NOT shown in edit mode (only in a loaded diary)', (await noteShown()) === false);
 
 // Persisted into the diary entry (+ multi-line preserved), verified via storage.
 const stored = await page.evaluate(() => {

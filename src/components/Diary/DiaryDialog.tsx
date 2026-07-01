@@ -77,6 +77,24 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
     onOpenChange(false);
   }
 
+  // After saving, immediately display that day's diary (locked view) so the user
+  // sees exactly what was recorded instead of being left on the calendar.
+  function enterSavedDiary(key: string) {
+    dispatch({
+      type: 'LOAD_DIARY',
+      date: key,
+      schedule: {
+        id: uuid(),
+        version: 1,
+        name: present.name || '내 시간표',
+        presetSource: null,
+        updatedAt: new Date().toISOString(),
+        slices: present.slices.map((s) => ({ ...s, id: uuid() })),
+      },
+    });
+    onOpenChange(false);
+  }
+
   // A confirmation step gates saving, loading AND deleting (loading replaces the
   // current timetable; saving can overwrite an existing entry; deleting is
   // irreversible — so the X on a saved day asks first instead of wiping instantly).
@@ -117,9 +135,11 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
 
   function saveNote() {
     if (!noteStep) return;
-    setEntryNote(noteStep.key, noteStep.draft);
+    const key = noteStep.key;
+    setEntryNote(key, noteStep.draft);
     setNoteStep(null);
     toast.success(t('diary.noteSaved'));
+    enterSavedDiary(key);
   }
 
   const cells: Array<number | null> = [
@@ -279,7 +299,7 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
           {t('diary.noteChars', { n: String(noteStep?.draft.length ?? 0) })}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setNoteStep(null)}>{t('diary.noteSkip')}</Button>
+          <Button variant="outline" onClick={() => { const k = noteStep?.key; setNoteStep(null); if (k) enterSavedDiary(k); }}>{t('diary.noteSkip')}</Button>
           <Button onClick={saveNote} style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}>
             {t('diary.noteSave')}
           </Button>

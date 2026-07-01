@@ -302,6 +302,7 @@ export type TKey =
   | 'diary.hasNote'
   | 'diary.exit'
   | 'diary.exited'
+  | 'diary.editMode'
   | 'analytics.scopeCurrent'
   | 'analytics.scopeAll'
   | 'analytics.scopeDiary'
@@ -672,6 +673,7 @@ const ko: Dict = {
   'diary.hasNote': '노트 있음',
   'diary.exit': '일기 나가기',
   'diary.exited': '시간표 편집 모드로 돌아왔어요',
+  'diary.editMode': '편집 모드',
   'analytics.scopeCurrent': '현재 시간표',
   'analytics.scopeAll': '전체 일정',
   'analytics.scopeDiary': '일기',
@@ -1043,6 +1045,7 @@ const en: Dict = {
   'diary.hasNote': 'Has note',
   'diary.exit': 'Exit diary',
   'diary.exited': 'Back to timetable editing',
+  'diary.editMode': 'Edit mode',
   'analytics.scopeCurrent': 'Current',
   'analytics.scopeAll': 'All days',
   'analytics.scopeDiary': 'Diary',

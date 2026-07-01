@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { TimeSlice } from '@/types/time-slice';
 import { boundaryHandlePosition, RING, polarToCartesian } from '@/lib/svg-geometry';
-import { sliceWidthMinutes, minutesToHhmm, hhmmToMinutes } from '@/lib/time-utils';
+import { hhmmToMinutes } from '@/lib/time-utils';
 import { FULL_SPEC, isInWindow, type ViewSpec } from '@/lib/chart-view';
 import { useStoreDispatch, useStoreSelector } from '@/hooks/useScheduleStore';
 import { useCoarsePointer } from '@/hooks/useCoarsePointer';
@@ -11,20 +11,6 @@ interface BoundaryHandlesProps {
   onPointerDownHandle: (e: React.PointerEvent<SVGElement>, boundaryIndex: number) => void;
   /** Active view window — positions handles + hides out-of-window boundaries. */
   spec?: ViewSpec;
-}
-
-// ─── +/− affordance helpers ───────────────────────────────────────────────────
-
-/**
- * Compute mid-point HH:mm of a slice (handles midnight wrap).
- * Snapped to nearest 10-min boundary.
- */
-function sliceMidpointHhmm(slice: TimeSlice): string {
-  const startMin = hhmmToMinutes(slice.startTime);
-  const widthMin = sliceWidthMinutes(slice);
-  const midMin = (startMin + Math.floor(widthMin / 2)) % 1440;
-  const snapped = (Math.round(midMin / 10) * 10) % 1440;
-  return minutesToHhmm(snapped);
 }
 
 // "+" buttons sit this many degrees to each side of the boundary line, along
@@ -221,19 +207,7 @@ function BoundaryHandle({ slice, slices, index, spec, onPointerDownHandle }: Bou
   // "−" is always available when ≥2 slices (merging down to 1 is fine)
   const canMinus = len >= 2;
 
-  // Each "+" splits its own adjacent slice; needs that slice ≥ 20 min.
-  const ccwWidth = sliceWidthMinutes(ccwSlice);
-  const cwWidth = sliceWidthMinutes(cwSlice);
-  const canLeftPlus = ccwWidth >= 20;
-  const canRightPlus = cwWidth >= 20;
-
-  const {
-    minus: minusPos,
-    leftPlus: leftPlusPos,
-    rightPlus: rightPlusPos,
-    handle,
-    time: timePos,
-  } = affordancePositions(angleDeg);
+  const { minus: minusPos, handle, time: timePos } = affordancePositions(angleDeg);
 
   // The boundary's time (= end of the CCW slice). "24:00" shows as "00:00".
   const boundaryTime = slice.endTime === '24:00' ? '00:00' : slice.endTime;
@@ -242,25 +216,6 @@ function BoundaryHandle({ slice, slices, index, spec, onPointerDownHandle }: Bou
     e.stopPropagation();
     if (!canMinus) return;
     dispatch({ type: 'MERGE', idCw: cwSlice.id, idCcw: ccwSlice.id });
-  };
-
-  // Left "+" → new empty cell on the CCW side, adjacent to this boundary. The
-  // CCW slice keeps its content in its earlier half ('after' = later half is the
-  // new empty slot, which sits next to the boundary), pushing content away.
-  const handleLeftPlus = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!canLeftPlus) return;
-    dispatch({ type: 'SPLIT', hhmm: sliceMidpointHhmm(ccwSlice), newSlotSide: 'after' });
-  };
-
-  // Right "+" → new empty cell on the CW side, adjacent to this boundary. The CW
-  // slice keeps its content in its later half ('before' = earlier half is the
-  // new empty slot, which sits next to the boundary), pushing content away — the
-  // mirror image of the left "+".
-  const handleRightPlus = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!canRightPlus) return;
-    dispatch({ type: 'SPLIT', hhmm: sliceMidpointHhmm(cwSlice), newSlotSide: 'before' });
   };
 
   // Touch: a tap (not a drag) on the boundary toggles its affordances on/off.
@@ -305,10 +260,10 @@ function BoundaryHandle({ slice, slices, index, spec, onPointerDownHandle }: Bou
           aria-hidden="false"
         >
           {/* Transparent hover zone — a circle centered on the handle covering
-              the "−" (inward) and both "+" (left/right) buttons, so moving the
-              pointer from the handle to any button keeps it over this <g> and
-              the affordances don't vanish (no hover gap). Rendered first
-              (bottom) so the buttons stay clickable on top. Inert. */}
+              the "−" (inward) button, so moving the pointer from the handle to
+              the button keeps it over this <g> and the affordances don't vanish
+              (no hover gap). Rendered first (bottom) so the button stays
+              clickable on top. Inert. */}
           <circle
             cx={handle.x}
             cy={handle.y}
@@ -328,24 +283,6 @@ function BoundaryHandle({ slice, slices, index, spec, onPointerDownHandle }: Bou
             disabled={!canMinus}
             r={coarse ? 18 : 13}
             onClick={handleMinus}
-          />
-          <AffordanceBtn
-            x={leftPlusPos.x}
-            y={leftPlusPos.y}
-            label="+"
-            ariaLabel="왼쪽 칸에 일정 추가"
-            disabled={!canLeftPlus}
-            r={coarse ? 18 : 13}
-            onClick={handleLeftPlus}
-          />
-          <AffordanceBtn
-            x={rightPlusPos.x}
-            y={rightPlusPos.y}
-            label="+"
-            ariaLabel="오른쪽 칸에 일정 추가"
-            disabled={!canRightPlus}
-            r={coarse ? 18 : 13}
-            onClick={handleRightPlus}
           />
         </g>
       )}

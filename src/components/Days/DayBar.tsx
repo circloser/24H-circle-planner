@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, X, Copy, FileText, LayoutGrid, Lock, Unlock, CalendarDays, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
+import { Plus, X, Copy, FileText, LayoutGrid, Lock, Unlock, CalendarDays, ChevronLeft, ChevronRight, LogOut, Pencil } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import { toast } from 'sonner';
 import {
@@ -286,9 +286,12 @@ export function DayBar() {
             {t('diary.exit')}
           </button>
         </div>
-      ) : multi && activeIndex >= 0 ? (
+      ) : (
+        // No diary loaded → editable working schedule. Show an explicit "edit
+        // mode" badge (appears e.g. right after "일기 나가기"), plus the day
+        // counter when there are multiple days.
         <div
-          className="fixed bottom-20 left-1/2 z-20 -translate-x-1/2 rounded-full px-3 py-1 text-xs font-medium shadow"
+          className="fixed bottom-20 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full px-3 py-1 text-xs font-medium shadow"
           style={{
             backgroundColor: 'hsl(var(--surface) / 0.92)',
             border: '1px solid hsl(var(--border))',
@@ -297,9 +300,18 @@ export function DayBar() {
             WebkitBackdropFilter: 'blur(8px)',
           }}
         >
-          {t('day.indicator', { m: String(activeIndex + 1), n: String(days.length) })}
+          <span className="flex items-center gap-1" style={{ color: 'hsl(var(--text-muted))' }}>
+            <Pencil className="h-3 w-3" />
+            {t('diary.editMode')}
+          </span>
+          {multi && activeIndex >= 0 && (
+            <>
+              <span className="h-3 w-px" style={{ backgroundColor: 'hsl(var(--border))' }} />
+              <span>{t('day.indicator', { m: String(activeIndex + 1), n: String(days.length) })}</span>
+            </>
+          )}
         </div>
-      ) : null}
+      )}
 
       {/* Add-day choice: duplicate current schedule or start empty. */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
