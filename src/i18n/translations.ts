@@ -282,6 +282,10 @@ export type TKey =
   | 'diary.confirmLoad'
   | 'diary.confirmLoadBody'
   | 'diary.confirmLoadCta'
+  | 'diary.confirmDeleteTitle'
+  | 'diary.confirmDelete'
+  | 'diary.confirmDeleteBody'
+  | 'diary.confirmDeleteCta'
   | 'diary.note'
   | 'diary.addNoteTitle'
   | 'diary.addNotePrompt'
@@ -646,6 +650,10 @@ const ko: Dict = {
   'diary.confirmLoad': '일기를 불러오시겠습니까?',
   'diary.confirmLoadBody': '현재 시간표가 {date} 기록으로 바뀌고 잠깁니다.',
   'diary.confirmLoadCta': '불러오기',
+  'diary.confirmDeleteTitle': '일기 삭제',
+  'diary.confirmDelete': '저장된 일기를 삭제합니다.',
+  'diary.confirmDeleteBody': '{date}의 일기를 삭제할까요? 삭제하면 되돌릴 수 없습니다.',
+  'diary.confirmDeleteCta': '삭제',
   'diary.note': '노트',
   'diary.addNoteTitle': '노트 추가',
   'diary.addNotePrompt': '{date}에 텍스트(노트)를 추가하시겠습니까?',
@@ -1011,6 +1019,10 @@ const en: Dict = {
   'diary.confirmLoad': 'Load this diary?',
   'diary.confirmLoadBody': 'Your current timetable will be replaced by the {date} record and locked.',
   'diary.confirmLoadCta': 'Load',
+  'diary.confirmDeleteTitle': 'Delete diary',
+  'diary.confirmDelete': 'This removes the saved diary.',
+  'diary.confirmDeleteBody': "Delete the diary for {date}? This can't be undone.",
+  'diary.confirmDeleteCta': 'Delete',
   'diary.note': 'Note',
   'diary.addNoteTitle': 'Add a note',
   'diary.addNotePrompt': 'Add a text note to {date}?',

@@ -77,9 +77,13 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
     onOpenChange(false);
   }
 
-  // A confirmation step gates both saving and loading (loading replaces the
-  // current timetable; saving can overwrite an existing entry).
-  type Pending = { kind: 'save'; key: string } | { kind: 'load'; entry: DiaryEntry };
+  // A confirmation step gates saving, loading AND deleting (loading replaces the
+  // current timetable; saving can overwrite an existing entry; deleting is
+  // irreversible — so the X on a saved day asks first instead of wiping instantly).
+  type Pending =
+    | { kind: 'save'; key: string }
+    | { kind: 'load'; entry: DiaryEntry }
+    | { kind: 'delete'; key: string };
   const [pending, setPending] = useState<Pending | null>(null);
   // After a timetable is saved we offer a free-form note step for that date.
   const [noteStep, setNoteStep] = useState<{ key: string; draft: string } | null>(null);
@@ -99,6 +103,12 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
       setPending(null);
       // Save the timetable first, then offer to add a note for that date.
       setNoteStep({ key, draft: entries[key]?.note ?? '' });
+      return;
+    }
+    if (pending.kind === 'delete') {
+      removeEntry(pending.key);
+      toast(t('diary.deleted'));
+      setPending(null);
       return;
     }
     loadEntry(pending.entry);
@@ -173,7 +183,7 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
                     <span
                       role="button"
                       aria-label={t('diary.delete')}
-                      onClick={(e) => { e.stopPropagation(); removeEntry(key); toast(t('diary.deleted')); }}
+                      onClick={(e) => { e.stopPropagation(); setPending({ kind: 'delete', key }); }}
                       className="absolute right-0 top-0 hidden h-4 w-4 place-items-center rounded-full group-hover:grid"
                       style={{ backgroundColor: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))' }}
                     >
@@ -205,25 +215,43 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
     <Dialog open={pending !== null} onOpenChange={(o) => { if (!o) setPending(null); }}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>{pending?.kind === 'load' ? t('diary.confirmLoadTitle') : t('diary.confirmSaveTitle')}</DialogTitle>
+          <DialogTitle>
+            {pending?.kind === 'load'
+              ? t('diary.confirmLoadTitle')
+              : pending?.kind === 'delete'
+                ? t('diary.confirmDeleteTitle')
+                : t('diary.confirmSaveTitle')}
+          </DialogTitle>
           <DialogDescription>
-            {pending?.kind === 'load' ? t('diary.confirmLoad') : t('diary.confirmSave')}
+            {pending?.kind === 'load'
+              ? t('diary.confirmLoad')
+              : pending?.kind === 'delete'
+                ? t('diary.confirmDelete')
+                : t('diary.confirmSave')}
           </DialogDescription>
         </DialogHeader>
         <p className="text-xs" style={{ color: 'hsl(var(--text-muted))' }}>
           {pending?.kind === 'load'
             ? t('diary.confirmLoadBody', { date: fmtDate(pending.entry.date) })
-            : pending
-              ? t(entries[pending.key] ? 'diary.confirmOverwriteBody' : 'diary.confirmSaveBody', { date: fmtDate(pending.key) })
-              : ''}
+            : pending?.kind === 'delete'
+              ? t('diary.confirmDeleteBody', { date: fmtDate(pending.key) })
+              : pending
+                ? t(entries[pending.key] ? 'diary.confirmOverwriteBody' : 'diary.confirmSaveBody', { date: fmtDate(pending.key) })
+                : ''}
         </p>
         <DialogFooter>
           <Button variant="outline" onClick={() => setPending(null)}>{t('common.cancel')}</Button>
           <Button
             onClick={confirmPending}
-            style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+            style={pending?.kind === 'delete'
+              ? { backgroundColor: 'hsl(var(--destructive))', color: 'hsl(var(--destructive-foreground))' }
+              : { backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
           >
-            {pending?.kind === 'load' ? t('diary.confirmLoadCta') : t('diary.confirmSaveCta')}
+            {pending?.kind === 'load'
+              ? t('diary.confirmLoadCta')
+              : pending?.kind === 'delete'
+                ? t('diary.confirmDeleteCta')
+                : t('diary.confirmSaveCta')}
           </Button>
         </DialogFooter>
       </DialogContent>
