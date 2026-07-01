@@ -128,10 +128,10 @@
       }
     </script>
 
-    <!-- Google AdSense — site-level loader (Auto ads). Enable ad formats in the
-         AdSense dashboard; placement is then automatic. -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6947130056543786"
-         crossorigin="anonymous"></script>
+    <!-- Google AdSense is intentionally NOT loaded on the app itself: the planner
+         is a tool with no article content, and serving ads on such screens breaks
+         AdSense policy ("Google-served ads on screens without publisher content").
+         Ads run only on the content pages under /guides/*, which host the loader. -->
 
     <!-- Google tag (gtag.js) — loaded only on the deployed http(s) site, so
          local dev and the offline single-file build (file://) don't pollute
