@@ -28,6 +28,7 @@ export type TKey =
   | 'header.settings'
   | 'header.design'
   | 'footer.guides'
+  | 'footer.stories'
   | 'footer.faq'
   | 'footer.about'
   | 'footer.privacy'
@@ -397,6 +398,7 @@ const ko: Dict = {
   'header.settings': '설정',
   'header.design': '디자인',
   'footer.guides': '가이드',
+  'footer.stories': '스토리',
   'footer.faq': 'FAQ',
   'footer.about': '소개',
   'footer.privacy': '개인정보처리방침',
@@ -765,6 +767,7 @@ const en: Dict = {
   'header.settings': 'Settings',
   'header.design': 'Design',
   'footer.guides': 'Guides',
+  'footer.stories': 'Stories',
   'footer.faq': 'FAQ',
   'footer.about': 'About',
   'footer.privacy': 'Privacy Policy',

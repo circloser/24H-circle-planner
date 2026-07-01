@@ -577,6 +577,8 @@ function App() {
         <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
           <a href="/guides/" className="hover:underline">{t('footer.guides')}</a>
           <span aria-hidden style={{ opacity: 0.4 }}>·</span>
+          <a href="/stories/" className="hover:underline">{t('footer.stories')}</a>
+          <span aria-hidden style={{ opacity: 0.4 }}>·</span>
           <a href="/faq" className="hover:underline">{t('footer.faq')}</a>
           <span aria-hidden style={{ opacity: 0.4 }}>·</span>
           <a href="/about" className="hover:underline">{t('footer.about')}</a>
