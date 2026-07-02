@@ -5,11 +5,8 @@ export function AppFooter() {
   const { t } = useTranslation();
   return (
     <footer
-      className="relative z-30 mt-auto border-t px-4 py-4 text-center text-xs"
+      className="relative z-30 mt-auto border-t px-4 py-4 text-center text-xs border-border text-muted-foreground bg-background/90"
       style={{
-        borderColor: 'hsl(var(--border))',
-        color: 'hsl(var(--text-muted))',
-        backgroundColor: 'hsl(var(--background) / 0.9)',
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
       }}
@@ -29,7 +26,7 @@ export function AppFooter() {
         <span aria-hidden style={{ opacity: 0.4 }}>·</span>
         <a href="/contact" className="hover:underline">{t('footer.contact')}</a>
       </nav>
-      <p className="mt-1.5" style={{ color: 'hsl(var(--text-muted) / 0.8)' }}>© 2026 Circloser · 24houring.com</p>
+      <p className="mt-1.5 text-muted-foreground/80">© 2026 Circloser · 24houring.com</p>
     </footer>
   );
 }

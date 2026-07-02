@@ -307,16 +307,14 @@ function App() {
           {isEmptyState && !welcomeOpen && (
             <div className="pointer-events-none absolute inset-0 flex items-end justify-center pb-[14%]">
               <div
-                className="pointer-events-auto flex flex-col items-center gap-2 rounded-xl px-4 py-3 text-center shadow-lg"
-                style={{ backgroundColor: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))' }}
+                className="pointer-events-auto flex flex-col items-center gap-2 rounded-xl border border-border bg-surface px-4 py-3 text-center shadow-lg"
               >
-                <p className="text-sm font-semibold" style={{ color: 'hsl(var(--foreground))' }}>
+                <p className="text-sm font-semibold text-foreground">
                   {t('empty.heroTitle')}
                 </p>
                 <Button
                   onClick={() => setPresetOpen(true)}
-                  className="gap-1.5"
-                  style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+                  className="gap-1.5 bg-primary text-primary-foreground"
                 >
                   <Sparkles className="h-4 w-4" />
                   {t('empty.heroCta')}
@@ -337,13 +335,12 @@ function App() {
             <div className="-mt-2 flex flex-col items-center gap-1.5">
               <Button
                 onClick={() => (locked ? toast(t('diary.locked')) : setTimeBlockOpen(true))}
-                className="gap-1.5"
-                style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+                className="gap-1.5 bg-primary text-primary-foreground"
               >
                 <Plus className="h-4 w-4" />
                 {t('block.add')}
               </Button>
-              <p className="text-center text-xs" style={{ color: 'hsl(var(--text-muted) / 0.85)' }}>
+              <p className="text-center text-xs text-muted-foreground/85">
                 {t('mobile.editHint')}
               </p>
             </div>

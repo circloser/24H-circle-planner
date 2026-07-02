@@ -119,10 +119,10 @@ function PngTab({
           }}
         >
           <span
-            className={`pointer-events-none block h-5 w-5 rounded-full shadow-md transition-transform ${
+            className={`pointer-events-none block h-5 w-5 rounded-full border border-muted-foreground/30 shadow-md transition-transform ${
               transparent ? 'translate-x-5' : 'translate-x-0.5'
             }`}
-            style={{ backgroundColor: '#ffffff', border: '1px solid hsl(var(--text-muted) / 0.3)' }}
+            style={{ backgroundColor: '#ffffff' }}
           />
         </button>
         <span className="text-sm">{t('export.transparentBg')}</span>
@@ -425,8 +425,7 @@ function BackupTab({ onOpenChange }: { onOpenChange: (open: boolean) => void }) 
       <Button
         onClick={handleExport}
         disabled={exportLoading}
-        className="w-full gap-2"
-        style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+        className="w-full gap-2 bg-primary text-primary-foreground"
       >
         {exportLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
         {t('export.backupExport')}
@@ -442,10 +441,9 @@ function BackupTab({ onOpenChange }: { onOpenChange: (open: boolean) => void }) 
         />
         <Button
           variant="outline"
-          className="w-full gap-2"
+          className="w-full gap-2 bg-surface text-foreground border border-border"
           disabled={restoreLoading}
           onClick={() => fileInputRef.current?.click()}
-          style={{ backgroundColor: 'hsl(var(--surface))', color: 'hsl(var(--foreground))', border: '1px solid hsl(var(--border))' }}
         >
           {restoreLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
           {t('export.backupRestore')}
@@ -467,7 +465,7 @@ function BackupTab({ onOpenChange }: { onOpenChange: (open: boolean) => void }) 
               <Button
                 onClick={handleConfirmRestore}
                 disabled={restoreLoading}
-                style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+                className="bg-primary text-primary-foreground"
               >
                 {t('export.restoreConfirm')}
               </Button>
@@ -550,12 +548,6 @@ function RangeTab({ showIcons }: { showIcons: boolean }) {
   const [format, setFormat] = useState<'circle' | 'table'>('circle');
   const [busy, setBusy] = useState(false);
 
-  const inputStyle: React.CSSProperties = {
-    backgroundColor: 'hsl(var(--surface))',
-    border: '1px solid hsl(var(--border))',
-    color: 'hsl(var(--foreground))',
-  };
-
   function fmtDay(key: string): string {
     const [y, m, d] = key.split('-').map(Number);
     if (!y || !m || !d) return key;
@@ -609,13 +601,13 @@ function RangeTab({ showIcons }: { showIcons: boolean }) {
 
   return (
     <div className="flex flex-col gap-3 pt-1">
-      <div className="flex flex-wrap items-center gap-2 text-sm" style={{ color: 'hsl(var(--foreground))' }}>
-        <input type="date" value={start} max={end || undefined} onChange={(e) => setStart(e.target.value)} className="rounded-md px-2 py-1.5 outline-none" style={inputStyle} aria-label={t('export.rangeStart')} />
+      <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
+        <input type="date" value={start} max={end || undefined} onChange={(e) => setStart(e.target.value)} className="rounded-md px-2 py-1.5 outline-none bg-surface border border-border text-foreground" aria-label={t('export.rangeStart')} />
         <span>~</span>
-        <input type="date" value={end} min={start || undefined} onChange={(e) => setEnd(e.target.value)} className="rounded-md px-2 py-1.5 outline-none" style={inputStyle} aria-label={t('export.rangeEnd')} />
+        <input type="date" value={end} min={start || undefined} onChange={(e) => setEnd(e.target.value)} className="rounded-md px-2 py-1.5 outline-none bg-surface border border-border text-foreground" aria-label={t('export.rangeEnd')} />
       </div>
 
-      <div className="flex self-start overflow-hidden rounded-md" style={{ border: '1px solid hsl(var(--border))' }}>
+      <div className="flex self-start overflow-hidden rounded-md border border-border">
         {(['circle', 'table'] as const).map((f) => (
           <button
             key={f}
@@ -629,9 +621,9 @@ function RangeTab({ showIcons }: { showIcons: boolean }) {
         ))}
       </div>
 
-      <p className="text-xs" style={{ color: 'hsl(var(--text-muted))' }}>{t('export.rangeCount', { n: String(count) })}</p>
+      <p className="text-xs text-muted-foreground">{t('export.rangeCount', { n: String(count) })}</p>
 
-      <Button onClick={doImage} disabled={busy || count === 0} className="w-full gap-2" style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}>
+      <Button onClick={doImage} disabled={busy || count === 0} className="w-full gap-2 bg-primary text-primary-foreground">
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
         {t('export.rangeImage')}
       </Button>
@@ -639,8 +631,7 @@ function RangeTab({ showIcons }: { showIcons: boolean }) {
         type="button"
         onClick={doCsv}
         disabled={count === 0}
-        className="self-center text-xs underline disabled:opacity-40"
-        style={{ color: 'hsl(var(--text-muted))' }}
+        className="self-center text-xs underline disabled:opacity-40 text-muted-foreground"
       >
         {t('export.rangeCsv')}
       </button>

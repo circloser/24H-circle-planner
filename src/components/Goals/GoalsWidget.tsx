@@ -91,8 +91,8 @@ export function GoalsWidget() {
           }}
         >
           <div className="mb-2 flex items-center gap-1.5">
-            <Target className="h-4 w-4" style={{ color: 'hsl(var(--foreground))' }} />
-            <span className="flex-1 text-sm font-semibold" style={{ color: 'hsl(var(--foreground))' }}>{t('goals.title')}</span>
+            <Target className="h-4 w-4 text-foreground" />
+            <span className="flex-1 text-sm font-semibold text-foreground">{t('goals.title')}</span>
             <button
               type="button"
               data-no-drag
@@ -101,7 +101,7 @@ export function GoalsWidget() {
               className="grid h-6 w-6 place-items-center rounded transition-[background-color,opacity] hover:bg-black/10"
               style={{ opacity: hover ? 1 : 0, pointerEvents: hover ? 'auto' : 'none' }}
             >
-              <X className="h-4 w-4" style={{ color: 'hsl(var(--text-muted))' }} />
+              <X className="h-4 w-4 text-muted-foreground" />
             </button>
           </div>
           <ul className="flex flex-col gap-2.5">
@@ -112,18 +112,18 @@ export function GoalsWidget() {
               return (
                 <li key={g.id}>
                   <div className="mb-1 flex items-center gap-1.5">
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium" style={{ color: 'hsl(var(--foreground))' }}>
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
                       {g.label || t('goals.untitled')}
                     </span>
-                    <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px]" style={{ backgroundColor: 'hsl(var(--muted) / 0.4)', color: 'hsl(var(--text-muted))' }}>
+                    <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] bg-muted/40 text-muted-foreground">
                       {g.period === 'day' ? t('goals.periodDay') : t('goals.periodWeek')}
                     </span>
                     {done && <Check className="h-3.5 w-3.5 shrink-0" style={{ color: '#16a34a' }} />}
                   </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full" style={{ backgroundColor: 'hsl(var(--muted) / 0.35)' }}>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted/35">
                     <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: done ? '#16a34a' : 'hsl(var(--primary))' }} />
                   </div>
-                  <div className="mt-0.5 text-right text-[11px] tabular-nums" style={{ color: 'hsl(var(--text-muted))' }}>
+                  <div className="mt-0.5 text-right text-[11px] tabular-nums text-muted-foreground">
                     {fmt(acc)} / {fmt(g.targetMinutes)} · {pct}%
                   </div>
                 </li>
@@ -139,8 +139,7 @@ export function GoalsWidget() {
         aria-label={t('goals.open')}
         aria-expanded={open}
         title={t('goals.open')}
-        className="fixed bottom-5 right-[74px] z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105"
-        style={{ backgroundColor: 'hsl(var(--surface))', color: 'hsl(var(--text-muted))', border: '1px solid hsl(var(--border))' }}
+        className="fixed bottom-5 right-[74px] z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 bg-surface text-muted-foreground border border-border"
       >
         <Target className="h-5 w-5" />
       </button>

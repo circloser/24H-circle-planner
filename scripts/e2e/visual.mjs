@@ -89,6 +89,52 @@ const STATES = [
       await wait(500);
     },
   },
+  {
+    name: 'settings-menu',
+    async setup(page) {
+      await gotoApp(page);
+      await seedBasicData(page);
+      await page.locator('button[aria-label="설정"]').first().click();
+      await wait(400);
+    },
+  },
+  {
+    name: 'diary-dialog',
+    async setup(page) {
+      await gotoApp(page);
+      await seedBasicData(page);
+      await page.locator('button[aria-label="내 시간표"]').first().click();
+      await wait(200);
+      await page.locator('[role="menuitem"]:has-text("일기")').first().click();
+      await wait(500);
+    },
+  },
+  {
+    name: 'preset-gallery',
+    async setup(page) {
+      await gotoApp(page);
+      await seedBasicData(page);
+      await page.locator('button[aria-label="디자인"]').first().click();
+      await wait(200);
+      await page.locator('[role="menuitem"]:has-text("프리셋")').first().click();
+      await wait(500);
+    },
+  },
+  {
+    name: 'goals-card',
+    async setup(page) {
+      await gotoApp(page);
+      await seedBasicData(page);
+      await page.evaluate(() => {
+        localStorage.setItem('24h-circle-planner.goals', JSON.stringify({ version: 1, goals: [{ id: 'g1', label: '수면', targetMinutes: 60, period: 'day' }] }));
+      });
+      await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+      await page.keyboard.press('Escape').catch(() => {});
+      await wait(400);
+      await page.locator('button[aria-label="목표"]').first().click();
+      await wait(400);
+    },
+  },
 ];
 
 mkdirSync(isBaseline ? BASELINE : CURRENT, { recursive: true });

@@ -233,7 +233,7 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
               <div className="flex items-center gap-3">
                 <span className="w-16 shrink-0 text-xs text-muted-foreground">{t('settings.lineColor')}</span>
                 <label className="opt-pick inline-flex w-fit cursor-pointer items-center gap-2 rounded-md px-2 py-1.5">
-                  <span className="h-6 w-6 rounded border" style={{ backgroundColor: prefs.nowLineColor, borderColor: 'hsl(var(--border))' }} />
+                  <span className="h-6 w-6 rounded border border-border" style={{ backgroundColor: prefs.nowLineColor }} />
                   <span className="text-sm tabular-nums">{prefs.nowLineColor}</span>
                   <input type="color" value={prefs.nowLineColor} onChange={(e) => setPreference('nowLineColor', e.target.value)} className="sr-only" aria-label={t('settings.lineColor')} />
                 </label>
@@ -267,13 +267,12 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
                       <span className="h-5 w-5 rounded-full border border-black/15" style={{ backgroundColor: w.color }} />
                       <input type="color" value={w.color} onChange={(e) => updateWorldClock(w.id, { color: e.target.value })} className="sr-only" aria-label={w.label} />
                     </label>
-                    <span className="flex-1 text-sm" style={{ color: 'hsl(var(--foreground))' }}>{w.label}</span>
+                    <span className="flex-1 text-sm text-foreground">{w.label}</span>
                     <button
                       type="button"
                       onClick={() => removeWorldClock(w.id)}
                       aria-label={t('settings.lineRemove')}
-                      className="grid h-7 w-7 place-items-center rounded hover:bg-muted"
-                      style={{ color: 'hsl(var(--destructive))' }}
+                      className="grid h-7 w-7 place-items-center rounded hover:bg-muted text-destructive"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -284,8 +283,7 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
                     value={tzToAdd}
                     onChange={(e) => setTzToAdd(e.target.value)}
                     aria-label={t('settings.worldClocks')}
-                    className="flex-1 rounded-md px-2 py-1.5 text-sm"
-                    style={{ backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--foreground))', border: '1px solid hsl(var(--border))' }}
+                    className="flex-1 rounded-md px-2 py-1.5 text-sm bg-background text-foreground border border-border"
                   >
                     {TIMEZONES.map((z) => (
                       <option key={z.tz} value={z.tz}>{lang === 'ko' ? z.ko : z.en}</option>
@@ -294,8 +292,7 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
                   <button
                     type="button"
                     onClick={addWorldClock}
-                    className="flex items-center gap-1 rounded-md px-3 py-1.5 text-sm"
-                    style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+                    className="flex items-center gap-1 rounded-md px-3 py-1.5 text-sm bg-primary text-primary-foreground"
                   >
                     <Plus className="h-4 w-4" />
                     {t('settings.addLine')}
@@ -378,8 +375,8 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
                     ([stop, key]) => (
                       <label key={stop} className="inline-flex cursor-pointer items-center gap-1.5">
                         <span
-                          className="h-6 w-6 rounded border"
-                          style={{ backgroundColor: prefs.gradient[stop], borderColor: 'hsl(var(--border))' }}
+                          className="h-6 w-6 rounded border border-border"
+                          style={{ backgroundColor: prefs.gradient[stop] }}
                         />
                         <span className="text-xs text-muted-foreground">{t(key)}</span>
                         <input

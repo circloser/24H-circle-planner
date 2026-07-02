@@ -67,12 +67,10 @@ export function AppHeader({
 
   return (
     <header
-      className="sticky top-0 z-30 border-b"
+      className="sticky top-0 z-30 border-b bg-surface/85 border-border/70"
       style={{
-        backgroundColor: 'hsl(var(--surface) / 0.85)',
         backdropFilter: 'blur(10px)',
         WebkitBackdropFilter: 'blur(10px)',
-        borderColor: 'hsl(var(--border) / 0.7)',
         boxShadow: '0 1px 3px hsl(220 30% 15% / 0.08), 0 1px 2px hsl(220 30% 15% / 0.04)',
       }}
     >
@@ -191,13 +189,12 @@ export function AppHeader({
                     <>
                       <DropdownMenuLabel className="flex items-center gap-2 font-normal">
                         <UserRound className="h-4 w-4 shrink-0" />
-                        <span className="truncate text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                        <span className="truncate text-xs text-muted-foreground">
                           {user.email ?? user.provider}
                         </span>
                       </DropdownMenuLabel>
                       <div
-                        className="flex items-center gap-1.5 px-2 pb-1.5 text-xs"
-                        style={{ color: 'hsl(var(--muted-foreground))' }}
+                        className="flex items-center gap-1.5 px-2 pb-1.5 text-xs text-muted-foreground"
                       >
                         {sync.status === 'syncing' ? (
                           <RefreshCw className="h-3 w-3 animate-spin" />
@@ -253,8 +250,7 @@ export function AppHeader({
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={onOpenReset}
-                className="gap-2"
-                style={{ color: 'hsl(var(--destructive))' }}
+                className="gap-2 text-destructive"
               >
                 <RotateCcw className="h-4 w-4" />
                 {t('settings.reset')}

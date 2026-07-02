@@ -25,7 +25,7 @@ export function ResetDialog({ open, onOpenChange }: { open: boolean; onOpenChang
             {t('common.cancel')}
           </Button>
           <Button
-            style={{ backgroundColor: 'hsl(var(--destructive))', color: 'hsl(var(--destructive-foreground))' }}
+            className="bg-destructive text-destructive-foreground"
             onClick={() => {
               resetAllData();
               onOpenChange(false);

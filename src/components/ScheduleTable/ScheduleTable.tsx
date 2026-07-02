@@ -59,8 +59,8 @@ function TimeCell({
         if (e.key === 'Enter') e.currentTarget.blur();
         else if (e.key === 'Escape') { setText(display); e.currentTarget.blur(); }
       }}
-      className="w-[4em] rounded px-1 py-0.5 text-center tabular-nums outline-none transition-colors focus:bg-black/10 disabled:opacity-60"
-      style={{ ...INHERIT_FONT, color: 'hsl(var(--text-muted))', background: 'transparent' }}
+      className="w-[4em] rounded px-1 py-0.5 text-center tabular-nums outline-none transition-colors focus:bg-black/10 disabled:opacity-60 text-muted-foreground"
+      style={{ ...INHERIT_FONT, background: 'transparent' }}
     />
   );
 }
@@ -195,8 +195,7 @@ export function ScheduleTable({ locked = false, onEditLabel, onAddRow }: Schedul
                 onPointerDown={(e) => startReorder(i, e)}
                 onPointerMove={moveReorder}
                 onPointerUp={endReorder}
-                className="grid h-7 w-5 shrink-0 cursor-grab place-items-center rounded touch-none active:cursor-grabbing disabled:cursor-default disabled:opacity-30"
-                style={{ color: 'hsl(var(--text-muted))' }}
+                className="grid h-7 w-5 shrink-0 cursor-grab place-items-center rounded touch-none active:cursor-grabbing disabled:cursor-default disabled:opacity-30 text-muted-foreground"
               >
                 <GripVertical className="h-4 w-4" />
               </button>
@@ -204,15 +203,15 @@ export function ScheduleTable({ locked = false, onEditLabel, onAddRow }: Schedul
               <span className="h-3.5 w-3.5 shrink-0 rounded-full" style={{ backgroundColor: s.color }} />
               <div className="flex shrink-0 items-center gap-0.5">
                 <TimeCell value={s.startTime} disabled={locked} label={t('block.start')} onCommit={(hhmm) => resize((i - 1 + len) % len, hhmm)} />
-                <span style={{ color: 'hsl(var(--text-muted) / 0.7)' }}>~</span>
+                <span className="text-muted-foreground/70">~</span>
                 <TimeCell value={s.endTime} disabled={locked} label={t('block.end')} onCommit={(hhmm) => resize(i, hhmm)} />
               </div>
 
               <button
                 type="button"
                 onClick={() => onEditLabel(s.id)}
-                className="flex min-w-0 flex-1 items-center gap-1.5 rounded px-2 py-1 text-left transition-colors hover:bg-black/5"
-                style={{ ...INHERIT_FONT, color: 'hsl(var(--foreground))' }}
+                className="flex min-w-0 flex-1 items-center gap-1.5 rounded px-2 py-1 text-left transition-colors hover:bg-black/5 text-foreground"
+                style={{ ...INHERIT_FONT }}
               >
                 {showIcons && s.icon && <span aria-hidden className="shrink-0">{s.icon}</span>}
                 <span className="truncate">{s.label.trim() || t('analytics.untitled')}</span>
@@ -224,8 +223,7 @@ export function ScheduleTable({ locked = false, onEditLabel, onAddRow }: Schedul
                 title={t('diary.delete')}
                 disabled={locked || len <= 1}
                 onClick={() => dispatch({ type: 'DELETE_SLICE', id: s.id })}
-                className="grid h-7 w-7 shrink-0 place-items-center rounded transition-colors hover:bg-black/10 disabled:opacity-30"
-                style={{ color: 'hsl(var(--text-muted))' }}
+                className="grid h-7 w-7 shrink-0 place-items-center rounded transition-colors hover:bg-black/10 disabled:opacity-30 text-muted-foreground"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -239,8 +237,8 @@ export function ScheduleTable({ locked = false, onEditLabel, onAddRow }: Schedul
         type="button"
         onClick={onAddRow}
         disabled={locked}
-        className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg py-2 font-medium transition-colors disabled:opacity-50"
-        style={{ ...INHERIT_FONT, border: '1px dashed hsl(var(--border))', color: 'hsl(var(--text-muted))' }}
+        className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg py-2 font-medium transition-colors disabled:opacity-50 text-muted-foreground"
+        style={{ ...INHERIT_FONT, border: '1px dashed hsl(var(--border))' }}
       >
         <Plus className="h-4 w-4" /> {t('block.add')}
       </button>

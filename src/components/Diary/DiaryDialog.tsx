@@ -158,23 +158,23 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-0.5">
             <button type="button" aria-label="prev" onClick={() => shift(-1)} className="grid h-7 w-7 place-items-center rounded transition-colors hover:bg-black/10">
-              <ChevronLeft className="h-4 w-4" style={{ color: 'hsl(var(--foreground))' }} />
+              <ChevronLeft className="h-4 w-4 text-foreground" />
             </button>
             <button type="button" aria-label="next" onClick={() => shift(1)} className="grid h-7 w-7 place-items-center rounded transition-colors hover:bg-black/10">
-              <ChevronRight className="h-4 w-4" style={{ color: 'hsl(var(--foreground))' }} />
+              <ChevronRight className="h-4 w-4 text-foreground" />
             </button>
-            <span className="ml-1 text-sm font-semibold" style={{ color: 'hsl(var(--foreground))' }}>{monthLabel}</span>
+            <span className="ml-1 text-sm font-semibold text-foreground">{monthLabel}</span>
           </div>
           <Button
             size="sm"
             onClick={() => setPending({ kind: 'save', key: todayKey })}
-            style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+            className="bg-primary text-primary-foreground"
           >
             {t('diary.saveToday')}
           </Button>
         </div>
 
-        <p className="text-xs" style={{ color: 'hsl(var(--text-muted) / 0.85)' }}>{t('diary.empty')}</p>
+        <p className="text-xs text-muted-foreground/85">{t('diary.empty')}</p>
 
         <div className="grid grid-cols-7 gap-1 text-center">
           {weekdays.map((w, i) => (
@@ -199,27 +199,25 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
                 {entry ? (
                   <>
                     <MiniChart slices={entry.slices} />
-                    <span className="absolute left-0.5 top-0 text-[10px] font-bold" style={{ color: 'hsl(var(--foreground))' }}>{day}</span>
+                    <span className="absolute left-0.5 top-0 text-[10px] font-bold text-foreground">{day}</span>
                     <span
                       role="button"
                       aria-label={t('diary.delete')}
                       onClick={(e) => { e.stopPropagation(); setPending({ kind: 'delete', key }); }}
-                      className="absolute right-0 top-0 hidden h-4 w-4 place-items-center rounded-full group-hover:grid"
-                      style={{ backgroundColor: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))' }}
+                      className="absolute right-0 top-0 hidden h-4 w-4 place-items-center rounded-full group-hover:grid bg-surface border border-border"
                     >
-                      <X className="h-2.5 w-2.5" style={{ color: 'hsl(var(--text-muted))' }} />
+                      <X className="h-2.5 w-2.5 text-muted-foreground" />
                     </span>
                     {entry.note?.trim() && (
                       <span
-                        className="absolute bottom-0.5 right-0.5 h-2 w-2 rounded-full"
-                        style={{ backgroundColor: 'hsl(var(--primary))', border: '1px solid hsl(var(--surface))' }}
+                        className="absolute bottom-0.5 right-0.5 h-2 w-2 rounded-full bg-primary border border-surface"
                         title={t('diary.hasNote')}
                         aria-label={t('diary.hasNote')}
                       />
                     )}
                   </>
                 ) : (
-                  <span className="text-xs" style={{ color: 'hsl(var(--text-muted) / 0.85)' }}>{day}</span>
+                  <span className="text-xs text-muted-foreground/85">{day}</span>
                 )}
               </button>
             );
@@ -250,7 +248,7 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
                 : t('diary.confirmSave')}
           </DialogDescription>
         </DialogHeader>
-        <p className="text-xs" style={{ color: 'hsl(var(--text-muted))' }}>
+        <p className="text-xs text-muted-foreground">
           {pending?.kind === 'load'
             ? t('diary.confirmLoadBody', { date: fmtDate(pending.entry.date) })
             : pending?.kind === 'delete'
@@ -292,15 +290,14 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
           maxLength={NOTE_MAX}
           onChange={(e) => setNoteStep((s) => (s ? { ...s, draft: e.target.value } : s))}
           placeholder={t('diary.notePlaceholder')}
-          className="min-h-[40vh] w-full resize-y rounded-md p-3 text-sm leading-relaxed outline-none"
-          style={{ backgroundColor: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))', color: 'hsl(var(--foreground))' }}
+          className="min-h-[40vh] w-full resize-y rounded-md p-3 text-sm leading-relaxed outline-none bg-surface border border-border text-foreground"
         />
-        <div className="text-right text-[11px]" style={{ color: 'hsl(var(--text-muted))' }}>
+        <div className="text-right text-[11px] text-muted-foreground">
           {t('diary.noteChars', { n: String(noteStep?.draft.length ?? 0) })}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => { const k = noteStep?.key; setNoteStep(null); if (k) enterSavedDiary(k); }}>{t('diary.noteSkip')}</Button>
-          <Button onClick={saveNote} style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}>
+          <Button onClick={saveNote} className="bg-primary text-primary-foreground">
             {t('diary.noteSave')}
           </Button>
         </DialogFooter>

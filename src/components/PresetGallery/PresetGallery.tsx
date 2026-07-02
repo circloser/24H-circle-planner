@@ -142,8 +142,7 @@ export function PresetGallery({ open, onOpenChange, onConfirm, onLoadUserPreset,
                       aria-label={t('preset.deletePreset')}
                       title={t('preset.deletePreset')}
                       onClick={(e) => { e.stopPropagation(); removePreset(up.id); }}
-                      className="absolute right-2 top-2 z-10 grid h-7 w-7 place-items-center rounded-full"
-                      style={{ backgroundColor: 'hsl(var(--surface))', color: 'hsl(var(--foreground))', border: '1px solid hsl(var(--border))' }}
+                      className="absolute right-2 top-2 z-10 grid h-7 w-7 place-items-center rounded-full bg-surface text-foreground border border-border"
                     >
                       <X className="h-4 w-4" />
                     </button>

@@ -32,18 +32,13 @@ export function ClockToolsLayer() {
   };
 
   const item =
-    'flex w-40 items-center gap-2 rounded-full px-3 py-2 text-sm shadow-md transition-transform hover:scale-105';
-  const itemStyle: React.CSSProperties = {
-    backgroundColor: 'hsl(var(--surface))',
-    color: 'hsl(var(--foreground))',
-    border: '1px solid hsl(var(--border))',
-  };
+    'flex w-40 items-center gap-2 rounded-full px-3 py-2 text-sm shadow-md transition-transform hover:scale-105 bg-surface text-foreground border border-border';
 
   const menuRow = (kind: ToolKind, icon: React.ReactNode, label: string) => (
-    <button type="button" className={item} style={itemStyle} onClick={() => toggle(kind)}>
+    <button type="button" className={item} onClick={() => toggle(kind)}>
       {icon}
       <span className="flex-1 text-left">{label}</span>
-      {state[kind].on && <Check className="h-4 w-4" style={{ color: 'hsl(var(--primary))' }} />}
+      {state[kind].on && <Check className="h-4 w-4 text-primary" />}
     </button>
   );
 
@@ -108,12 +103,11 @@ export function ClockToolsLayer() {
           <button
             type="button"
             className={item}
-            style={itemStyle}
             onClick={() => { setPreference('chartView', isRecord ? 'full' : 'record'); setMenuOpen(false); }}
           >
             <CircleDot className="h-4 w-4" />
             <span className="flex-1 text-left">{t('view.record')}</span>
-            {isRecord && <Check className="h-4 w-4" style={{ color: 'hsl(var(--primary))' }} />}
+            {isRecord && <Check className="h-4 w-4 text-primary" />}
           </button>
         </div>
       )}
@@ -125,8 +119,7 @@ export function ClockToolsLayer() {
         aria-label={t('clock.tools')}
         aria-expanded={menuOpen}
         title={t('clock.tools')}
-        className="fixed bottom-5 left-5 z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105"
-        style={{ backgroundColor: 'hsl(var(--surface))', color: 'hsl(var(--text-muted))', border: '1px solid hsl(var(--border))' }}
+        className="fixed bottom-5 left-5 z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 bg-surface text-muted-foreground border border-border"
       >
         <Clock className="h-5 w-5" />
       </button>

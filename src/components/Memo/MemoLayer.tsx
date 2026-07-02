@@ -26,12 +26,7 @@ export function MemoLayer() {
   const [listOpen, setListOpen] = useState(false);
 
   const item =
-    'flex items-center gap-2 rounded-full px-3 py-2 text-sm shadow-md transition-transform hover:scale-105';
-  const itemStyle = {
-    backgroundColor: 'hsl(var(--surface))',
-    color: 'hsl(var(--foreground))',
-    border: '1px solid hsl(var(--border))',
-  } as React.CSSProperties;
+    'flex items-center gap-2 rounded-full px-3 py-2 text-sm shadow-md transition-transform hover:scale-105 bg-surface text-foreground border border-border';
 
   return (
     <>
@@ -48,7 +43,6 @@ export function MemoLayer() {
           <button
             type="button"
             className={item}
-            style={itemStyle}
             onClick={() => { addMemo(); setMenuOpen(false); }}
           >
             <Plus className="h-4 w-4" />
@@ -57,7 +51,6 @@ export function MemoLayer() {
           <button
             type="button"
             className={item}
-            style={itemStyle}
             onClick={() => { setMenuOpen(false); setListOpen(true); }}
           >
             <List className="h-4 w-4" />
@@ -66,7 +59,6 @@ export function MemoLayer() {
           <button
             type="button"
             className={item}
-            style={itemStyle}
             onClick={() => { toggleVisible(); setMenuOpen(false); }}
           >
             {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -75,7 +67,6 @@ export function MemoLayer() {
           <button
             type="button"
             className={item}
-            style={itemStyle}
             disabled={memos.length === 0}
             onClick={() => { setMenuOpen(false); setClearOpen(true); }}
           >
@@ -92,8 +83,7 @@ export function MemoLayer() {
         aria-label={t('memo.add')}
         aria-expanded={menuOpen}
         title={t('memo.add')}
-        className="fixed bottom-5 right-5 z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105"
-        style={{ backgroundColor: 'hsl(var(--surface))', color: 'hsl(var(--text-muted))', border: '1px solid hsl(var(--border))' }}
+        className="fixed bottom-5 right-5 z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 bg-surface text-muted-foreground border border-border"
       >
         <StickyNote className="h-5 w-5" />
       </button>
@@ -111,7 +101,7 @@ export function MemoLayer() {
             </Button>
             <Button
               onClick={() => { clearMemos(); setClearOpen(false); }}
-              style={{ backgroundColor: 'hsl(var(--destructive))', color: 'hsl(var(--destructive-foreground))' }}
+              className="bg-destructive text-destructive-foreground"
             >
               {t('memo.clearConfirm')}
             </Button>

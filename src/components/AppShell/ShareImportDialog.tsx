@@ -36,7 +36,7 @@ export function ShareImportDialog({ schedule, onClose, onImport }: ShareImportDi
               if (schedule) onImport(schedule);
               onClose();
             }}
-            style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+            className="bg-primary text-primary-foreground"
           >
             {t('sharelink.importConfirm')}
           </Button>

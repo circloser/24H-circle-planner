@@ -186,14 +186,9 @@ export function DayBar() {
                     }}
                     aria-label={t('day.delete')}
                     title={t('day.delete')}
-                    className={`absolute -right-1 -top-1 z-10 grid h-[18px] w-[18px] place-items-center rounded-full transition-opacity ${
+                    className={`absolute -right-1 -top-1 z-10 grid h-[18px] w-[18px] place-items-center rounded-full transition-opacity bg-surface text-foreground border border-border ${
                       coarse ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
                     }`}
-                    style={{
-                      backgroundColor: 'hsl(var(--surface))',
-                      color: 'hsl(var(--foreground))',
-                      border: '1px solid hsl(var(--border))',
-                    }}
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -208,12 +203,10 @@ export function DayBar() {
             disabled={atMax}
             aria-label={t('day.add')}
             title={atMax ? t('day.max') : t('day.add')}
-            className="grid place-items-center rounded-full shrink-0 transition-transform hover:scale-105 disabled:cursor-not-allowed"
+            className="grid place-items-center rounded-full shrink-0 transition-transform hover:scale-105 disabled:cursor-not-allowed bg-muted/60 text-foreground"
             style={{
               width: THUMB,
               height: THUMB,
-              backgroundColor: 'hsl(var(--muted) / 0.6)',
-              color: 'hsl(var(--foreground))',
               border: '1px dashed hsl(var(--border))',
               opacity: atMax ? 0.3 : multi ? 1 : 0.5,
             }}
@@ -227,11 +220,8 @@ export function DayBar() {
           priority; otherwise the "Day M of N" counter (2+ days only). */}
       {diaryDate ? (
         <div
-          className={`${bottomWrap} py-1.5 pl-3 pr-1.5`}
+          className={`${bottomWrap} py-1.5 pl-3 pr-1.5 bg-surface/94 border border-border text-foreground`}
           style={{
-            backgroundColor: 'hsl(var(--surface) / 0.94)',
-            border: '1px solid hsl(var(--border))',
-            color: 'hsl(var(--foreground))',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
           }}
@@ -248,7 +238,7 @@ export function DayBar() {
               <ChevronLeft className="h-4 w-4" />
             </button>
             <span className="flex items-center gap-1 whitespace-nowrap px-0.5">
-              <CalendarDays className="h-3.5 w-3.5" style={{ color: 'hsl(var(--text-muted))' }} />
+              <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
               {formatDiaryDate(diaryDate, lang)}
             </span>
             <button
@@ -262,7 +252,7 @@ export function DayBar() {
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
-          <span className="h-3.5 w-px" style={{ backgroundColor: 'hsl(var(--border))' }} />
+          <span className="h-3.5 w-px bg-border" />
           <button
             type="button"
             onClick={() => {
@@ -286,8 +276,7 @@ export function DayBar() {
             type="button"
             onClick={exitDiaryMode}
             title={t('diary.exit')}
-            className="flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-1 font-semibold transition-colors hover:bg-black/10"
-            style={{ border: '1px solid hsl(var(--border))', color: 'hsl(var(--foreground))' }}
+            className="flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-1 font-semibold transition-colors hover:bg-black/10 border border-border text-foreground"
           >
             <LogOut className="h-3 w-3" />
             {t('diary.exit')}
@@ -298,22 +287,19 @@ export function DayBar() {
         // mode" badge (appears e.g. right after "일기 나가기"), plus the day
         // counter when there are multiple days.
         <div
-          className={`${bottomWrap} px-3 py-1`}
+          className={`${bottomWrap} px-3 py-1 bg-surface/92 border border-border text-foreground`}
           style={{
-            backgroundColor: 'hsl(var(--surface) / 0.92)',
-            border: '1px solid hsl(var(--border))',
-            color: 'hsl(var(--foreground))',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
           }}
         >
-          <span className="flex items-center gap-1" style={{ color: 'hsl(var(--text-muted))' }}>
+          <span className="flex items-center gap-1 text-muted-foreground">
             <Pencil className="h-3 w-3" />
             {t('diary.editMode')}
           </span>
           {multi && activeIndex >= 0 && (
             <>
-              <span className="h-3 w-px" style={{ backgroundColor: 'hsl(var(--border))' }} />
+              <span className="h-3 w-px bg-border" />
               <span>{t('day.indicator', { m: String(activeIndex + 1), n: String(days.length) })}</span>
             </>
           )}
@@ -330,8 +316,7 @@ export function DayBar() {
           <div className="flex flex-col gap-2 pt-1">
             <Button
               variant="default"
-              className="w-full justify-start gap-2"
-              style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+              className="w-full justify-start gap-2 bg-primary text-primary-foreground"
               onClick={() => choose('duplicate')}
             >
               <Copy className="h-4 w-4" />
@@ -339,8 +324,7 @@ export function DayBar() {
             </Button>
             <Button
               variant="outline"
-              className="w-full justify-start gap-2"
-              style={{ backgroundColor: 'hsl(var(--surface))', color: 'hsl(var(--foreground))', border: '1px solid hsl(var(--border))' }}
+              className="w-full justify-start gap-2 bg-surface text-foreground border border-border"
               onClick={() => choose('empty')}
             >
               <FileText className="h-4 w-4" />
@@ -348,8 +332,7 @@ export function DayBar() {
             </Button>
             <Button
               variant="outline"
-              className="w-full justify-start gap-2"
-              style={{ backgroundColor: 'hsl(var(--surface))', color: 'hsl(var(--foreground))', border: '1px solid hsl(var(--border))' }}
+              className="w-full justify-start gap-2 bg-surface text-foreground border border-border"
               onClick={() => { setAddOpen(false); setPresetOpen(true); }}
             >
               <LayoutGrid className="h-4 w-4" />
@@ -381,7 +364,7 @@ export function DayBar() {
             </Button>
             <Button
               onClick={confirmDelete}
-              style={{ backgroundColor: 'hsl(var(--destructive))', color: 'hsl(var(--destructive-foreground))' }}
+              className="bg-destructive text-destructive-foreground"
             >
               {t('day.deleteConfirm')}
             </Button>
