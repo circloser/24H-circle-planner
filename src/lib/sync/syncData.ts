@@ -11,13 +11,19 @@
  *     reordered) is NOT seen as a change.
  *  2. Adopting a remote change that touches ONLY prefs is applied live (see
  *     useSync) via PREFS_SYNC_EVENT instead of reloading the page.
+ *
+ * The legacy single-`schedule` key is intentionally NOT synced. `days` is
+ * authoritative (the store skips its own restore whenever a days envelope
+ * exists), while `schedule` merely mirrors the transient `present` — which
+ * becomes a LOADED DIARY's schedule. Syncing it made loading a diary on one
+ * device oscillate against `days` on another, looping apply→reload forever.
+ * Loading a diary is a view state, not a data change, so it now syncs nothing.
  */
 
 const PREFIX = '24h-circle-planner.';
 
 /** localStorage keys included in the synced blob. */
 export const SYNC_KEYS: readonly string[] = [
-  'schedule',
   'days',
   'diary',
   'memos',

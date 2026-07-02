@@ -5,11 +5,21 @@ const K = (s: string) => `24h-circle-planner.${s}`;
 
 describe('sync payload keys', () => {
   it('syncs content keys AND prefs, but never device-local theme', () => {
-    for (const k of ['schedule', 'days', 'diary', 'memos', 'goals', 'records', 'prefs']) {
+    for (const k of ['days', 'diary', 'memos', 'goals', 'records', 'prefs']) {
       expect(SYNC_KEYS).toContain(K(k));
     }
     expect(SYNC_KEYS).not.toContain(K('theme'));
     expect(PREFS_KEY).toBe(K('prefs'));
+  });
+
+  it('does NOT sync the legacy `schedule` key (days is authoritative; it mirrors transient present → diary-load loop)', () => {
+    expect(SYNC_KEYS).not.toContain(K('schedule'));
+  });
+
+  it('a changed `schedule` value does not affect the fingerprint (loading a diary syncs nothing)', () => {
+    const base = { [K('days')]: '{"activeId":"d1"}', [K('diary')]: '{}' };
+    const withDiarySchedule = { ...base, [K('schedule')]: '{"version":1,"schedule":{"id":"x","slices":[1,2]}}' };
+    expect(dataFingerprint(withDiarySchedule)).toBe(dataFingerprint(base));
   });
 });
 
