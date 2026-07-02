@@ -1,30 +1,16 @@
 import { useState, useEffect } from 'react';
 import './index.css';
-import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Plus, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target } from 'lucide-react';
+import { Sparkles, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { resetAllData } from '@/lib/backup';
+import { AppHeader } from '@/components/AppShell/AppHeader';
+import { AppFooter } from '@/components/AppShell/AppFooter';
+import { ResetDialog } from '@/components/AppShell/ResetDialog';
+import { ShareImportDialog } from '@/components/AppShell/ShareImportDialog';
 import { CircleTimeline } from '@/components/CircleTimeline/CircleTimeline';
 import { ScheduleTable } from '@/components/ScheduleTable/ScheduleTable';
 import { DeviceTransferDialog } from '@/components/DeviceTransferDialog/DeviceTransferDialog';
-import { ThemeToggle } from '@/components/ThemeToggle/ThemeToggle';
 import { PresetGallery } from '@/components/PresetGallery/PresetGallery';
 import { SliceEditor } from '@/components/SliceEditor/SliceEditor';
 import { HubTitleEditor } from '@/components/HubTitleEditor/HubTitleEditor';
@@ -40,22 +26,17 @@ import { MobileClockSection } from '@/components/ClockTools/MobileClockSection';
 import { TimeBlockDialog } from '@/components/TimeBlock/TimeBlockDialog';
 import { RimMemoLayer } from '@/components/RimMemo/RimMemoLayer';
 import { DayBar } from '@/components/Days/DayBar';
-import { SaveIndicator } from '@/components/SaveIndicator/SaveIndicator';
-import { ChartViewToggle } from '@/components/ChartViewToggle/ChartViewToggle';
 import { AddToHomeDialog, type BeforeInstallPromptEvent } from '@/components/AddToHomeDialog/AddToHomeDialog';
 import { AboutDialog } from '@/components/About/AboutDialog';
-import { shareChartImage } from '@/lib/share';
 import { requestPersistentStorage } from '@/lib/persistent-storage';
 import { useTranslation, useChartView } from '@/hooks/usePreferences';
-import { useAuth } from '@/hooks/useAuth';
-import { useSyncStatus } from '@/hooks/useSync';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useSliceInteraction } from '@/hooks/useSliceInteraction';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useShareActions } from '@/hooks/useShareActions';
 import { WelcomeOverlay } from '@/components/Onboarding/WelcomeOverlay';
-import { buildViewUrl, readSharedFromHash, clearShareHash, copyToClipboard } from '@/lib/share-link';
-import { useDiary, dateKey } from '@/hooks/useDiary';
+import { readSharedFromHash, clearShareHash } from '@/lib/share-link';
 import { AnalyticsDialog } from '@/components/Analytics/AnalyticsDialog';
 import { DiaryDialog } from '@/components/Diary/DiaryDialog';
 import { DiaryNotePanel } from '@/components/Diary/DiaryNotePanel';
@@ -93,7 +74,6 @@ function App() {
   const present = useStoreSelector((s) => s.history.present);
   const locked = useStoreSelector((s) => s.locked);
   const diaryDate = useStoreSelector((s) => s.diaryDate);
-  const { entries } = useDiary();
   const dispatch = useStoreDispatch();
 
   const [presetOpen, setPresetOpen] = useState(false);
@@ -162,8 +142,6 @@ function App() {
   })();
   const isMobile = useIsMobile();
   const chartView = useChartView();
-  const { user, login, logout, loading: authLoading } = useAuth();
-  const sync = useSyncStatus();
 
   // One-time toast for the OAuth round-trip result: the Worker lands us back on
   // /?login=ok (or /?login_error=…). Show feedback, then strip the param so a
@@ -179,10 +157,6 @@ function App() {
     window.history.replaceState({}, '', window.location.pathname + (qs ? `?${qs}` : '') + window.location.hash);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const handleLogout = () => {
-    void logout().then(() => toast.success(t('auth.signedOut')));
-  };
 
   /**
    * Called when user confirms loading a slot from SlotSheet.
@@ -222,6 +196,9 @@ function App() {
   // T4: keyboard shortcuts (undo/redo + drag-cancel)
   useKeyboardShortcuts({ liveDragGroupRef });
 
+  // Share actions (PNG via native sheet / read-only /s#d= link incl. the note).
+  const { shareImage, copyLink } = useShareActions(svgRef);
+
   // Ask the browser to keep our localStorage from being auto-evicted, so a
   // user's schedule/memos/backups survive storage-pressure cleanups. Best-effort.
   useEffect(() => {
@@ -234,16 +211,6 @@ function App() {
     if (shareImport) clearShareHash();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Copy a read-only share link (/s#d=…) for the shown day — the schedule PLUS
-  // its note (the diary note for the current/viewed day, if any). Opens the
-  // standalone viewer for the recipient; nothing touches their own data.
-  async function handleCopyLink() {
-    const note = entries[diaryDate ?? dateKey()]?.note ?? '';
-    const ok = await copyToClipboard(buildViewUrl(present, note));
-    if (ok) toast.success(t('sharelink.copied'));
-    else toast.error(t('sharelink.copyFail'));
-  }
 
   // Capture the browser's install prompt (Chrome/Edge/Android) so the "add to
   // home screen" dialog can offer a one-tap install. Clear it once installed.
@@ -261,223 +228,25 @@ function App() {
     };
   }, []);
 
-  // Share the current timetable as an image (native share sheet on mobile →
-  // Instagram etc.; image download as the desktop fallback).
-  async function handleShare() {
-    if (!svgRef.current) {
-      toast.error(t('share.noChart'));
-      return;
-    }
-    try {
-      const outcome = await shareChartImage(svgRef.current, present.name, t('share.text'));
-      if (outcome === 'downloaded') toast.success(t('share.saved'));
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return; // user cancelled
-      toast.error(`${t('share.fail')}: ${err instanceof Error ? err.message : String(err)}`);
-    }
-  }
-
   return (
     <div className="min-h-screen flex flex-col">
-      <header
-        className="sticky top-0 z-30 border-b"
-        style={{
-          backgroundColor: 'hsl(var(--surface) / 0.85)',
-          backdropFilter: 'blur(10px)',
-          WebkitBackdropFilter: 'blur(10px)',
-          borderColor: 'hsl(var(--border) / 0.7)',
-          boxShadow: '0 1px 3px hsl(220 30% 15% / 0.08), 0 1px 2px hsl(220 30% 15% / 0.04)',
-        }}
-      >
-        <div className="container mx-auto grid h-14 grid-cols-[1fr_auto_1fr] items-center gap-1.5 px-3 sm:gap-2 sm:px-4">
-          <div className="flex min-w-0 items-center gap-2">
-            <h1 className="min-w-0 shrink truncate font-semibold text-sm sm:text-base">
-              <button
-                type="button"
-                onClick={() => setAboutOpen(true)}
-                title={t('about.open')}
-                aria-label={t('about.open')}
-                className="rounded transition-opacity hover:opacity-70"
-              >
-                24Hou<span style={{ color: '#FF4D4D' }}>ring</span>
-              </button>
-            </h1>
-            <SaveIndicator />
-          </div>
-          {/* Centred view toggle — independent, page-centred between the side groups */}
-          <div className="flex items-center justify-center">
-            <ChartViewToggle />
-          </div>
-          <div className="flex min-w-0 shrink items-center justify-end gap-1 sm:gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="px-2 sm:px-3" aria-label={t('header.mySchedules')}>
-                  <FolderOpen className="h-4 w-4 sm:hidden" />
-                  <span className="hidden sm:inline">{t('header.mySchedules')}</span>
-                  <ChevronDown className="ml-1 hidden h-4 w-4 sm:inline" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setSlotSheetOpen(true)} className="gap-2">
-                  <List className="h-4 w-4" />
-                  {t('header.viewSlots')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSaveAsOpen(true)} className="gap-2">
-                  <Save className="h-4 w-4" />
-                  {t('header.saveAs')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSavePresetOpen(true)} className="gap-2">
-                  <BookmarkPlus className="h-4 w-4" />
-                  {t('header.savePreset')}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setDiaryOpen(true)} className="gap-2">
-                  <BookOpen className="h-4 w-4" />
-                  {t('diary.open')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setAnalyticsOpen(true)} className="gap-2">
-                  <BarChart3 className="h-4 w-4" />
-                  {t('analytics.open')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setGoalsOpen(true)} className="gap-2">
-                  <Target className="h-4 w-4" />
-                  {t('goals.open')}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="px-2 sm:px-3" aria-label={t('header.design')}>
-                  <Palette className="h-4 w-4 sm:hidden" />
-                  <span className="hidden sm:inline">{t('header.design')}</span>
-                  <ChevronDown className="ml-1 hidden h-4 w-4 sm:inline" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-[12rem]">
-                <DropdownMenuItem onClick={() => setPresetOpen(true)} className="gap-2">
-                  <Sparkles className="h-4 w-4" />
-                  {t('header.presets')}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setSettingsSection('font')} className="gap-2">
-                  <Type className="h-4 w-4" />
-                  {t('settings.font')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSettingsSection('icons')} className="gap-2">
-                  <Smile className="h-4 w-4" />
-                  {t('settings.icons')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSettingsSection('timeline')} className="gap-2">
-                  <Ruler className="h-4 w-4" />
-                  {t('settings.timeline')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSettingsSection('background')} className="gap-2">
-                  <ImageIcon className="h-4 w-4" />
-                  {t('settings.background')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSettingsSection('theme')} className="gap-2">
-                  <Palette className="h-4 w-4" />
-                  {t('settings.colorTheme')}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="px-2 sm:px-3"
-              onClick={() => setExportOpen(true)}
-              aria-label={t('header.export')}
-            >
-              <Download className="h-4 w-4 sm:hidden" />
-              <span className="hidden sm:inline">{t('header.export')}</span>
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label={t('header.settings')}>
-                  <SettingsIcon className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-[12rem]">
-                {!authLoading && (
-                  <>
-                    {user ? (
-                      <>
-                        <DropdownMenuLabel className="flex items-center gap-2 font-normal">
-                          <UserRound className="h-4 w-4 shrink-0" />
-                          <span className="truncate text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>
-                            {user.email ?? user.provider}
-                          </span>
-                        </DropdownMenuLabel>
-                        <div
-                          className="flex items-center gap-1.5 px-2 pb-1.5 text-xs"
-                          style={{ color: 'hsl(var(--muted-foreground))' }}
-                        >
-                          {sync.status === 'syncing' ? (
-                            <RefreshCw className="h-3 w-3 animate-spin" />
-                          ) : sync.status === 'offline' || sync.status === 'error' ? (
-                            <CloudOff className="h-3 w-3" />
-                          ) : (
-                            <Cloud className="h-3 w-3" />
-                          )}
-                          <span>
-                            {sync.status === 'syncing'
-                              ? t('sync.syncing')
-                              : sync.status === 'offline'
-                                ? t('sync.offline')
-                                : sync.status === 'error'
-                                  ? t('sync.error')
-                                  : t('sync.synced')}
-                          </span>
-                        </div>
-                        <DropdownMenuItem onClick={handleLogout} className="gap-2">
-                          <LogOut className="h-4 w-4" />
-                          {t('auth.logout')}
-                        </DropdownMenuItem>
-                      </>
-                    ) : (
-                      <DropdownMenuItem onClick={login} className="gap-2">
-                        <LogIn className="h-4 w-4" />
-                        {t('auth.login')}
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuSeparator />
-                  </>
-                )}
-                <DropdownMenuItem onClick={() => setSettingsSection('language')} className="gap-2">
-                  <Languages className="h-4 w-4" />
-                  {t('settings.language')}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleShare} className="gap-2">
-                  <Share2 className="h-4 w-4" />
-                  {t('share.button')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleCopyLink} className="gap-2">
-                  <Link2 className="h-4 w-4" />
-                  {t('sharelink.copy')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setHomeOpen(true)} className="gap-2">
-                  <Smartphone className="h-4 w-4" />
-                  {t('home.button')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTransferOpen(true)} className="gap-2">
-                  <QrCodeIcon className="h-4 w-4" />
-                  {t('transfer.menu')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setResetOpen(true)}
-                  className="gap-2"
-                  style={{ color: 'hsl(var(--destructive))' }}
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  {t('settings.reset')}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        onOpenAbout={() => setAboutOpen(true)}
+        onOpenSlots={() => setSlotSheetOpen(true)}
+        onOpenSaveAs={() => setSaveAsOpen(true)}
+        onOpenSavePreset={() => setSavePresetOpen(true)}
+        onOpenDiary={() => setDiaryOpen(true)}
+        onOpenAnalytics={() => setAnalyticsOpen(true)}
+        onOpenGoals={() => setGoalsOpen(true)}
+        onOpenPresets={() => setPresetOpen(true)}
+        onOpenSettings={setSettingsSection}
+        onOpenExport={() => setExportOpen(true)}
+        onShareImage={shareImage}
+        onCopyLink={copyLink}
+        onOpenHome={() => setHomeOpen(true)}
+        onOpenTransfer={() => setTransferOpen(true)}
+        onOpenReset={() => setResetOpen(true)}
+      />
 
       <main
         className={
@@ -584,34 +353,7 @@ function App() {
         )}
       </main>
 
-      {/* Site footer — required legal/info pages (also crawlable static pages). */}
-      <footer
-        className="relative z-30 mt-auto border-t px-4 py-4 text-center text-xs"
-        style={{
-          borderColor: 'hsl(var(--border))',
-          color: 'hsl(var(--text-muted))',
-          backgroundColor: 'hsl(var(--background) / 0.9)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-        }}
-      >
-        <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-          <a href="/guides/" className="hover:underline">{t('footer.guides')}</a>
-          <span aria-hidden style={{ opacity: 0.4 }}>·</span>
-          <a href="/stories/" className="hover:underline">{t('footer.stories')}</a>
-          <span aria-hidden style={{ opacity: 0.4 }}>·</span>
-          <a href="/health/" className="hover:underline">{t('footer.health')}</a>
-          <span aria-hidden style={{ opacity: 0.4 }}>·</span>
-          <a href="/faq" className="hover:underline">{t('footer.faq')}</a>
-          <span aria-hidden style={{ opacity: 0.4 }}>·</span>
-          <a href="/about" className="hover:underline">{t('footer.about')}</a>
-          <span aria-hidden style={{ opacity: 0.4 }}>·</span>
-          <a href="/privacy" className="hover:underline">{t('footer.privacy')}</a>
-          <span aria-hidden style={{ opacity: 0.4 }}>·</span>
-          <a href="/contact" className="hover:underline">{t('footer.contact')}</a>
-        </nav>
-        <p className="mt-1.5" style={{ color: 'hsl(var(--text-muted) / 0.8)' }}>© 2026 Circloser · 24houring.com</p>
-      </footer>
+      <AppFooter />
 
       <PresetGallery
         open={presetOpen}
@@ -643,30 +385,7 @@ function App() {
       />
 
       {/* Full reset — wipes all app data, then reloads to a fresh state. */}
-      <Dialog open={resetOpen} onOpenChange={setResetOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{t('settings.reset')}</DialogTitle>
-            <DialogDescription>{t('settings.resetBody')}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setResetOpen(false)}>
-              {t('common.cancel')}
-            </Button>
-            <Button
-              style={{ backgroundColor: 'hsl(var(--destructive))', color: 'hsl(var(--destructive-foreground))' }}
-              onClick={() => {
-                resetAllData();
-                setResetOpen(false);
-                // Reload so every provider re-initialises to first-launch defaults.
-                setTimeout(() => window.location.reload(), 100);
-              }}
-            >
-              {t('settings.resetConfirm')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ResetDialog open={resetOpen} onOpenChange={setResetOpen} />
 
       {/* T5: Slice editor portal */}
       <SliceEditor
@@ -731,28 +450,11 @@ function App() {
       />
 
       {/* Incoming share link (#p=…) → confirm before replacing the schedule. */}
-      <Dialog open={shareImport !== null} onOpenChange={(o) => { if (!o) setShareImport(null); }}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{t('sharelink.importTitle')}</DialogTitle>
-            <DialogDescription>{t('sharelink.importBody')}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShareImport(null)}>
-              {t('common.cancel')}
-            </Button>
-            <Button
-              onClick={() => {
-                if (shareImport) dispatch({ type: 'LOAD_SCHEDULE', schedule: shareImport });
-                setShareImport(null);
-              }}
-              style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
-            >
-              {t('sharelink.importConfirm')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ShareImportDialog
+        schedule={shareImport}
+        onClose={() => setShareImport(null)}
+        onImport={(s) => dispatch({ type: 'LOAD_SCHEDULE', schedule: s })}
+      />
 
       {/* Desktop only: floating post-it memos (bottom-right) + clock tools
           (bottom-left). On mobile these move into the stacked sections under the
