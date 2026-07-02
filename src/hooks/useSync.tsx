@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/hooks/usePreferences';
-import { collectSyncData, applySyncData, dataFingerprint, changedSyncKeys, PREFS_KEY, PREFS_SYNC_EVENT, type SyncEnvelope } from '@/lib/sync/syncData';
+import { collectSyncData, applySyncData, dataFingerprint, changedSyncKeys, LIVE_APPLY_KEYS, PREFS_KEY, PREFS_SYNC_EVENT, VIEW_KEY, VIEW_SYNC_EVENT, type SyncEnvelope } from '@/lib/sync/syncData';
 import { pullRemote, pushRemote, deviceLabel } from '@/lib/sync/syncClient';
 
 export type SyncStatus = 'disabled' | 'syncing' | 'synced' | 'offline' | 'error';
@@ -129,16 +129,20 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         stat('synced');
         return;
       }
-      // A change touching ONLY prefs is applied live; anything else
-      // (schedule/days/diary/…) still needs a reload to re-hydrate the stores.
-      if (changed.every((k) => k === PREFS_KEY)) {
-        window.dispatchEvent(new Event(PREFS_SYNC_EVENT)); // preferences re-read live
+      // A change touching ONLY live-appliable keys (prefs, diary view) is applied
+      // in place; anything else (days/diary/…) still reloads to re-hydrate stores.
+      if (changed.every((k) => LIVE_APPLY_KEYS.includes(k))) {
+        if (changed.includes(PREFS_KEY)) window.dispatchEvent(new Event(PREFS_SYNC_EVENT));
+        if (changed.includes(VIEW_KEY)) window.dispatchEvent(new Event(VIEW_SYNC_EVENT));
         setLastSyncedAt(Date.now());
         stat('synced');
-        toast.success(tRef.current('sync.appliedFromCloud'), {
-          action: { label: tRef.current('sync.undo'), onClick: () => restorePrevious() },
-          duration: 8000,
-        });
+        // Toast only for a settings change; a diary-view follow is self-evident.
+        if (changed.includes(PREFS_KEY)) {
+          toast.success(tRef.current('sync.appliedFromCloud'), {
+            action: { label: tRef.current('sync.undo'), onClick: () => restorePrevious() },
+            duration: 8000,
+          });
+        }
         return;
       }
       try {

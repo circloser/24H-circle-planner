@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SYNC_KEYS, PREFS_KEY, dataFingerprint, canonicalValue, changedSyncKeys } from '../syncData';
+import { SYNC_KEYS, PREFS_KEY, VIEW_KEY, LIVE_APPLY_KEYS, dataFingerprint, canonicalValue, changedSyncKeys } from '../syncData';
 
 const K = (s: string) => `24h-circle-planner.${s}`;
 
@@ -75,5 +75,28 @@ describe('changedSyncKeys', () => {
     const a = { [K('days')]: 'x' };
     const b = { [K('days')]: 'y' };
     expect(changedSyncKeys(a, b)).toEqual([K('days')]);
+  });
+});
+
+describe('diary view sync', () => {
+  it('syncs the view cursor and marks it live-appliable (with prefs)', () => {
+    expect(SYNC_KEYS).toContain(K('view'));
+    expect(VIEW_KEY).toBe(K('view'));
+    expect(LIVE_APPLY_KEYS).toContain(K('view'));
+    expect(LIVE_APPLY_KEYS).toContain(K('prefs'));
+  });
+
+  it('a view-only change is live-appliable → no reload', () => {
+    const a = { [K('days')]: '{"activeId":"d1"}', [K('view')]: '{"diaryDate":null}' };
+    const b = { [K('days')]: '{"activeId":"d1"}', [K('view')]: '{"diaryDate":"2026-07-15"}' };
+    const changed = changedSyncKeys(a, b);
+    expect(changed).toEqual([K('view')]);
+    expect(changed.every((k) => LIVE_APPLY_KEYS.includes(k))).toBe(true);
+  });
+
+  it('a content change alongside a view change is NOT live-only → reload path', () => {
+    const a = { [K('days')]: '{"activeId":"d1"}', [K('view')]: '{"diaryDate":null}' };
+    const b = { [K('days')]: '{"activeId":"d2"}', [K('view')]: '{"diaryDate":"2026-07-15"}' };
+    expect(changedSyncKeys(a, b).every((k) => LIVE_APPLY_KEYS.includes(k))).toBe(false);
   });
 });

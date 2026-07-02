@@ -9,8 +9,13 @@
  *  1. Fingerprints compare a CANONICAL (order-independent) form of each value, so
  *     the prefs envelope being re-serialized on load (defaults merged in, keys
  *     reordered) is NOT seen as a change.
- *  2. Adopting a remote change that touches ONLY prefs is applied live (see
- *     useSync) via PREFS_SYNC_EVENT instead of reloading the page.
+ *  2. Adopting a remote change that touches ONLY live-appliable keys (prefs, and
+ *     the diary `view` cursor) is applied live (see useSync) via a *_SYNC_EVENT
+ *     instead of reloading the page.
+ *
+ * The `view` key is a tiny {diaryDate} cursor so entering/leaving a diary on one
+ * device follows live on the others. Loading a diary changes no synced *content*
+ * (see the schedule note below), so only this signal travels — no reload, no loop.
  *
  * The legacy single-`schedule` key is intentionally NOT synced. `days` is
  * authoritative (the store skips its own restore whenever a days envelope
@@ -32,14 +37,23 @@ export const SYNC_KEYS: readonly string[] = [
   'goals',
   'records',
   'prefs',
+  'view',
 ].map((k) => PREFIX + k);
 
 /** The synced preferences key — applied live (no reload) when it alone changes. */
 export const PREFS_KEY = PREFIX + 'prefs';
 
-/** Window event the sync engine fires after applying a prefs-only cloud change,
- *  so the preferences layer can re-read them without a full page reload. */
+/** The synced diary-view cursor ({diaryDate}) — applied live (no reload). */
+export const VIEW_KEY = PREFIX + 'view';
+
+/** localStorage keys the sync engine applies LIVE (via events) instead of reloading. */
+export const LIVE_APPLY_KEYS: readonly string[] = [PREFS_KEY, VIEW_KEY];
+
+/** Window event fired after applying a prefs-only cloud change (re-read live). */
 export const PREFS_SYNC_EVENT = '24h:prefs-synced';
+
+/** Window event fired after applying a diary-view change (enter/leave live). */
+export const VIEW_SYNC_EVENT = '24h:view-synced';
 
 export interface SyncEnvelope {
   v: 1;

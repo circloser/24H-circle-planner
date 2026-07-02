@@ -312,6 +312,9 @@ svg text {
   cursor: text;
   word-break: break-word;
 }
+/* When the note isn't being edited (not focused), the whole paper — text included —
+   reads as draggable; the text caret only appears once you click in to edit. */
+.memo-note:not(:focus-within) .memo-text { cursor: grab; }
 .memo-text:empty::before {
   content: attr(data-placeholder);
   color: rgba(0, 0, 0, 0.32);

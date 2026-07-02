@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Target, X, Check } from 'lucide-react';
-import { useDiary, dateKey } from '@/hooks/useDiary';
+import { useDiary } from '@/hooks/useDiary';
 import { useGoals } from '@/hooks/useGoals';
 import { useTranslation } from '@/hooks/usePreferences';
 import { accumulatedMinutes } from '@/lib/goals';
@@ -67,7 +67,6 @@ export function GoalsWidget() {
   if (goals.length === 0) return null;
 
   const fmt = (m: number) => t('goals.hm', { h: String(Math.floor(m / 60)), m: String(m % 60) });
-  const todaySaved = !!entries[dateKey()];
 
   return (
     <>
@@ -76,7 +75,7 @@ export function GoalsWidget() {
           data-goals-card="1"
           data-hover={hover ? '1' : '0'}
           onPointerDown={makeDragStart(pos, setPos)}
-          onPointerEnter={() => setHover(true)}
+          onPointerMove={() => { if (!hover) setHover(true); }}
           onPointerLeave={() => setHover(false)}
           className="fixed z-30 max-h-[60vh] w-[300px] cursor-grab touch-none overflow-y-auto rounded-xl p-3 transition-shadow active:cursor-grabbing"
           style={{
@@ -131,9 +130,6 @@ export function GoalsWidget() {
               );
             })}
           </ul>
-          {!todaySaved && (
-            <p className="mt-2 text-[11px] leading-snug" style={{ color: 'hsl(var(--primary))' }}>{t('goals.saveDiaryHint')}</p>
-          )}
         </div>
       )}
 

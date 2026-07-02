@@ -42,31 +42,43 @@ export function MemoNote({ memo }: { memo: Memo }) {
   const fontCss = resolveFontCss(memo.fontFamily);
   const align = memo.align === 'left' ? 'left' : 'center';
 
-  // Drag the note from anywhere on the paper EXCEPT the editable text / delete
-  // button (so editing and deleting still work). Pointer capture tracks reliably.
+  // Drag the note from ANYWHERE on the paper (incl. the text) when it isn't being
+  // edited. A press that doesn't move is treated as a click → focus the text to
+  // edit; a press that moves → reposition. While the text IS focused (editing),
+  // pointer-downs pass through so the caret/selection work normally.
   function onPaperPointerDown(e: ReactPointerEvent<HTMLDivElement>) {
     const target = e.target as Element;
-    if (target.closest('.memo-text') || target.closest('.memo-del')) return;
-    e.preventDefault();
+    if (target.closest('.memo-del')) return; // delete button handles itself
     const el = e.currentTarget;
-    el.setPointerCapture(e.pointerId);
+    const textEl = el.querySelector('.memo-text') as HTMLElement | null;
+    if (textEl && document.activeElement === textEl) return; // editing → don't hijack
+    e.preventDefault(); // stop the paper/text from grabbing focus on a would-be drag
     const startX = e.clientX;
     const startY = e.clientY;
     const origX = memo.x;
     const origY = memo.y;
+    let moved = false;
+    // Window-level listeners (not pointer-capture): capture on the paper isn't
+    // reliably delivered when the press starts over the contentEditable text.
     const onMove = (ev: PointerEvent) => {
+      if (!moved && Math.hypot(ev.clientX - startX, ev.clientY - startY) < 4) return;
+      moved = true;
       updateMemo(memo.id, {
         x: Math.max(0, origX + (ev.clientX - startX)),
         y: Math.max(0, origY + (ev.clientY - startY)),
       });
     };
     const onUp = () => {
-      el.releasePointerCapture(e.pointerId);
-      el.removeEventListener('pointermove', onMove);
-      el.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      // A tap/click that didn't move → enter edit mode.
+      if (!moved && textEl) {
+        textEl.focus();
+        placeCaretAtEnd(textEl);
+      }
     };
-    el.addEventListener('pointermove', onMove);
-    el.addEventListener('pointerup', onUp);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
   }
 
   // Bottom-right corner is cut diagonally; the fold flap fills the cut.

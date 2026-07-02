@@ -60,6 +60,7 @@ import { DiaryDialog } from '@/components/Diary/DiaryDialog';
 import { DiaryNotePanel } from '@/components/Diary/DiaryNotePanel';
 import { GoalsDialog } from '@/components/Goals/GoalsDialog';
 import { GoalsWidget } from '@/components/Goals/GoalsWidget';
+import { DiaryViewSync } from '@/components/DiaryViewSync';
 import { RecordView } from '@/components/Record/RecordView';
 import { PRESETS } from '@/data/presets';
 import type { Slot } from '@/types/slot';
@@ -748,6 +749,7 @@ function App() {
       {/* Desktop only: floating post-it memos (bottom-right) + clock tools
           (bottom-left). On mobile these move into the stacked sections under the
           chart (MobileMemoSection / MobileClockSection inside <main>). */}
+      <DiaryViewSync />
       {!isMobile && <MemoLayer />}
       {!isMobile && <GoalsWidget />}
       {!isMobile && <ClockToolsLayer />}
