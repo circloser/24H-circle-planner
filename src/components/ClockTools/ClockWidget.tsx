@@ -42,6 +42,7 @@ export function ClockWidget({ clock, onMove, onClose, onToggleMode }: ClockWidge
   return (
     <div
       className={inline ? 'group relative w-full' : 'group'}
+      data-clock-widget // stable hook — the visual-regression harness hides ticking clocks
       style={inline ? undefined : { position: 'fixed', left: clock.pos.x, top: clock.pos.y, width: 168, zIndex: 25 }}
     >
       {/* Box — fades in only on hover (clean clock by default); always shown inline. */}

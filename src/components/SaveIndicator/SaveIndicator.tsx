@@ -42,6 +42,7 @@ export function SaveIndicator() {
   return (
     <div
       className="inline-flex shrink-0 items-center gap-1 text-xs"
+      data-save-indicator // stable hook — the visual harness hides this transient chip
       style={{ color: 'hsl(var(--text-muted))' }}
       aria-live="polite"
       title={saving ? t('app.saving') : t('app.saved')}

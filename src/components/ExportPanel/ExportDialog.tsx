@@ -88,9 +88,8 @@ function PngTab({
               type="button"
               onClick={() => setSize(s)}
               aria-pressed={size === s}
-              // Inline hsl(var(--…)) — this Tailwind v4 setup has no @theme, so
-              // bg-primary/bg-background/border-border generate no CSS and the
-              // selected resolution had no visible highlight.
+              // Inline hsl(var(--…)) — written before the @theme mapping made
+              // bg-primary etc. real; safe to migrate to utilities later.
               className="px-3 py-1.5 rounded text-sm border transition-colors"
               style={{
                 backgroundColor: size === s ? 'hsl(var(--primary))' : 'hsl(var(--surface))',

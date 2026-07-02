@@ -177,6 +177,7 @@ export function ScheduleTable({ locked = false, onEditLabel, onAddRow }: Schedul
                 <div
                   key={`mk${k}`}
                   aria-hidden
+                  className="table-time-mark" // stable hook — visual harness hides these (they move by the minute)
                   style={{ position: 'absolute', left: 0, right: 0, top: `${mk.frac * 100}%`, transform: 'translateY(-50%)', borderTop: `${lineW}px solid ${mk.color}`, pointerEvents: 'none', zIndex: 4 }}
                 >
                   <span

@@ -57,8 +57,7 @@ const BG_LABEL: Record<Background, TKey> = {
   memo: 'bg.memo',
 };
 
-// Selection highlight is driven by aria-pressed via the `.opt-chip` CSS (raw
-// vars, since Tailwind semantic color utilities aren't generated here).
+// Selection highlight is driven by aria-pressed via the shared `.opt-chip` CSS.
 const OPT_CHIP = 'opt-chip px-3 py-1.5 rounded-md text-sm';
 
 export function SettingsDialog({ section, onClose }: SettingsDialogProps) {

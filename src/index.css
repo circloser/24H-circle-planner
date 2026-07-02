@@ -105,6 +105,38 @@
   color-scheme: dark;
 }
 
+/* ─── Tailwind v4 theme mapping ───────────────────────────────────────────── */
+/* Registers the CSS vars above as Tailwind color tokens so the semantic
+   utilities (bg-primary, text-muted-foreground, border-border, …) generate real
+   CSS. `inline` keeps the var() reference in the emitted utility, so light/dark
+   swaps via [data-theme] keep working. Before this block those utilities were
+   silently dead — which is why older code styles with inline hsl(var(--…)). */
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-surface: hsl(var(--surface));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  /* shadcn's "accent" token is the SOFT hover surface (menu/ghost-button hover),
+     not this app's vivid --accent indigo — map it to muted so hovers stay quiet.
+     The vivid accent stays available to raw CSS via hsl(var(--accent)). */
+  --color-accent: hsl(var(--muted));
+  --color-accent-foreground: hsl(var(--foreground));
+}
+
 body {
   margin: 0;
   /* background-color (not the `background` shorthand) so pattern/image rules
@@ -197,9 +229,8 @@ svg text {
 }
 
 /* ─── Settings option chips / swatches ──────────────────────────────────────── */
-/* Tailwind's semantic color utilities (bg-primary, border-input, bg-muted…) are
-   NOT generated in this v4 setup (no @theme mapping), so selection highlight was
-   invisible. Style it with raw CSS vars, which always resolve. Selected state is
+/* Predates the @theme mapping above (when bg-primary etc. generated no CSS).
+   Kept as shared classes — many call sites rely on them; selected state is
    driven by aria-pressed (buttons) / data-selected (swatches). */
 .opt-chip {
   border: 1px solid hsl(var(--border));
