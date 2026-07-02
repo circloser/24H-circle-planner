@@ -44,6 +44,10 @@ export type TKey =
   | 'settings.bgPattern'
   | 'settings.bgColor'
   | 'settings.bgImage'
+  | 'settings.bgGradient'
+  | 'settings.gradStart'
+  | 'settings.gradMid'
+  | 'settings.gradEnd'
   | 'settings.uploadImage'
   | 'settings.removeImage'
   | 'settings.icons'
@@ -416,6 +420,10 @@ const ko: Dict = {
   'settings.bgPattern': '패턴',
   'settings.bgColor': '단색',
   'settings.bgImage': '이미지',
+  'settings.bgGradient': '그라데이션',
+  'settings.gradStart': '시작',
+  'settings.gradMid': '중간',
+  'settings.gradEnd': '끝',
   'settings.uploadImage': '이미지 업로드',
   'settings.removeImage': '제거',
   'settings.icons': '아이콘',
@@ -787,6 +795,10 @@ const en: Dict = {
   'settings.bgPattern': 'Pattern',
   'settings.bgColor': 'Solid color',
   'settings.bgImage': 'Image',
+  'settings.bgGradient': 'Gradient',
+  'settings.gradStart': 'Start',
+  'settings.gradMid': 'Middle',
+  'settings.gradEnd': 'End',
   'settings.uploadImage': 'Upload image',
   'settings.removeImage': 'Remove',
   'settings.icons': 'Icons',

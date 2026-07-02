@@ -56,7 +56,7 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
         <DialogHeader>
           <DialogTitle>
             <span style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.5px' }}>
-              24Hour<span style={{ color: '#FF4D4D' }}>ing</span>
+              24Hou<span style={{ color: '#FF4D4D' }}>ring</span>
             </span>
           </DialogTitle>
         </DialogHeader>

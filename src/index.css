@@ -80,7 +80,9 @@
   --surface:       220 22% 13%;
   --surface-glass: 220 22% 15%;
   --text-primary:  220 15% 92%;
-  --text-muted:    220 10% 55%;
+  /* Brighter muted tone on the dark background — the old 55% grey failed contrast
+     against the ~8% background for secondary text. */
+  --text-muted:    220 14% 70%;
   --border:        220 18% 25%;
   --accent:        234 89% 68%;
 
@@ -135,6 +137,13 @@ svg text {
   background-position: center center;
   background-repeat: no-repeat;
   background-attachment: fixed;
+}
+/* Custom multi-stop gradient (start · middle · end), configured in Settings.
+   The full linear-gradient string is set on --app-bg-gradient by applyPrefs. */
+[data-bg='gradient-fill'] body {
+  background-image: var(--app-bg-gradient, none);
+  background-attachment: fixed;
+  background-size: cover;
 }
 [data-bg='dots'] body {
   background-image: radial-gradient(hsl(var(--text-muted) / 0.18) 1.5px, transparent 1.5px);

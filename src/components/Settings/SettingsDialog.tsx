@@ -16,6 +16,7 @@ import {
   FONT_SCALE_MAX,
   FONT_SCALE_STEP,
   BACKGROUNDS,
+  GRADIENT_PRESETS,
   NOW_LINE_DEFAULT_COLOR,
   type Background,
   type WorldClock,
@@ -88,6 +89,15 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
   const selectColor = (hex: string) => {
     setPreference('bgColor', hex);
     setPreference('bgType', 'color');
+  };
+
+  const selectGradientPreset = (p: (typeof GRADIENT_PRESETS)[number]) => {
+    setPreference('gradient', { from: p.from, via: p.via, to: p.to, angle: p.angle });
+    setPreference('bgType', 'gradient');
+  };
+  const setGradientStop = (stop: 'from' | 'via' | 'to', hex: string) => {
+    setPreference('gradient', { ...prefs.gradient, [stop]: hex });
+    setPreference('bgType', 'gradient');
   };
 
   const onImagePick = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -329,6 +339,53 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
                     className="sr-only"
                   />
                 </label>
+              </div>
+
+              {/* Gradient — start · middle · end (+ presets) */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs text-muted-foreground">{t('settings.bgGradient')}</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {GRADIENT_PRESETS.map((p) => {
+                    const css = `linear-gradient(${p.angle}deg, ${p.from}, ${p.via}, ${p.to})`;
+                    const selected =
+                      prefs.bgType === 'gradient' &&
+                      prefs.gradient.from === p.from &&
+                      prefs.gradient.via === p.via &&
+                      prefs.gradient.to === p.to;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => selectGradientPreset(p)}
+                        data-selected={selected}
+                        aria-label={lang === 'ko' ? p.ko : p.en}
+                        title={lang === 'ko' ? p.ko : p.en}
+                        className="opt-pick h-8 w-12 rounded-md"
+                        style={{ backgroundImage: css }}
+                      />
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-4 pt-0.5">
+                  {([['from', 'settings.gradStart'], ['via', 'settings.gradMid'], ['to', 'settings.gradEnd']] as const).map(
+                    ([stop, key]) => (
+                      <label key={stop} className="inline-flex cursor-pointer items-center gap-1.5">
+                        <span
+                          className="h-6 w-6 rounded border"
+                          style={{ backgroundColor: prefs.gradient[stop], borderColor: 'hsl(var(--border))' }}
+                        />
+                        <span className="text-xs text-muted-foreground">{t(key)}</span>
+                        <input
+                          type="color"
+                          value={prefs.gradient[stop]}
+                          onChange={(e) => setGradientStop(stop, e.target.value)}
+                          aria-label={t(key)}
+                          className="sr-only"
+                        />
+                      </label>
+                    ),
+                  )}
+                </div>
               </div>
 
               {/* Image upload */}

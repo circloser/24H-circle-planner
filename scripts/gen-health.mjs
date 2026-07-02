@@ -104,7 +104,7 @@ ${HEAD_SCRIPTS}
 <body>
 <div class="wrap">
   <header class="site">
-    <a class="logo" href="/">24Hour<b>ing</b></a>
+    <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
       <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
       <a href="/health/"><span class="lang-ko">건강</span><span class="lang-en">Health</span></a>
@@ -174,7 +174,7 @@ ${HEAD_SCRIPTS}
 <body>
 <div class="wrap">
   <header class="site">
-    <a class="logo" href="/">24Hour<b>ing</b></a>
+    <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
       <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
       <a href="/guides/"><span class="lang-ko">가이드</span><span class="lang-en">Guides</span></a>

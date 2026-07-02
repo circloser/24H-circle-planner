@@ -90,6 +90,7 @@ function markOnboarded(): void {
 function App() {
   const present = useStoreSelector((s) => s.history.present);
   const locked = useStoreSelector((s) => s.locked);
+  const diaryDate = useStoreSelector((s) => s.diaryDate);
   const dispatch = useStoreDispatch();
 
   const [presetOpen, setPresetOpen] = useState(false);
@@ -144,7 +145,18 @@ function App() {
   const [editingSliceId, setEditingSliceId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
   const [settingsSection, setSettingsSection] = useState<SettingsSection | null>(null);
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  // In plain edit mode (no diary loaded), an untitled schedule shows today's date
+  // as its hub title — e.g. "7.2.(목)" / "Jul 2 (Thu)".
+  const displayTitle = (() => {
+    const nm = present.name?.trim() ?? '';
+    if (diaryDate || (nm !== '' && nm !== '내 시간표' && nm !== '내 하루')) return present.name;
+    const d = new Date();
+    const dow = d.toLocaleDateString(lang, { weekday: 'short' });
+    return lang === 'ko'
+      ? `${d.getMonth() + 1}.${d.getDate()}.(${dow})`
+      : `${d.toLocaleDateString(lang, { month: 'short', day: 'numeric' })} (${dow})`;
+  })();
   const isMobile = useIsMobile();
   const chartView = useChartView();
   const { user, login, logout, loading: authLoading } = useAuth();
@@ -281,7 +293,7 @@ function App() {
                 aria-label={t('about.open')}
                 className="rounded transition-opacity hover:opacity-70"
               >
-                24Houring
+                24Hou<span style={{ color: '#FF4D4D' }}>ring</span>
               </button>
             </h1>
             <SaveIndicator />
@@ -499,7 +511,7 @@ function App() {
             onSliceSplit={locked ? undefined : handlers.onSliceSplit}
             showEmptyHint={false}
             selectedSliceId={editingSliceId}
-            title={present.name}
+            title={displayTitle}
             onHubClick={() => {
               if (locked) {
                 toast(t('diary.locked'));
@@ -658,7 +670,7 @@ function App() {
       <HubTitleEditor
         open={editingTitle}
         svgRef={svgRef}
-        currentName={present.name}
+        currentName={displayTitle}
         onClose={() => setEditingTitle(false)}
       />
 

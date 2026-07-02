@@ -28,7 +28,24 @@ export const BACKGROUNDS = [
 export type Background = (typeof BACKGROUNDS)[number];
 
 /** Which background mode is active (mutually exclusive). */
-export type BgType = 'pattern' | 'color' | 'image';
+export type BgType = 'pattern' | 'color' | 'image' | 'gradient';
+
+/** Custom multi-stop background gradient (start · middle · end + angle°). */
+export interface GradientBg {
+  from: string;
+  via: string;
+  to: string;
+  angle: number;
+}
+
+/** Ready-made soft gradients — kept light so chart labels stay readable over them. */
+export const GRADIENT_PRESETS: { id: string; ko: string; en: string; from: string; via: string; to: string; angle: number }[] = [
+  { id: 'dawn', ko: '새벽', en: 'Dawn', from: '#a1c4fd', via: '#c2e9fb', to: '#fbc2eb', angle: 135 },
+  { id: 'sunset', ko: '노을', en: 'Sunset', from: '#ff9a9e', via: '#fad0c4', to: '#fbc2eb', angle: 135 },
+  { id: 'ocean', ko: '바다', en: 'Ocean', from: '#89f7fe', via: '#93c5fd', to: '#a5b4fc', angle: 135 },
+  { id: 'forest', ko: '숲', en: 'Forest', from: '#d4fc79', via: '#96e6a1', to: '#c1f4d0', angle: 135 },
+  { id: 'grape', ko: '포도', en: 'Grape', from: '#e0c3fc', via: '#d0b8fb', to: '#8ec5fc', angle: 135 },
+];
 
 /** An extra current-time line for another timezone (world clock). */
 export interface WorldClock {
@@ -49,6 +66,7 @@ export interface Preferences {
   bgType: BgType;
   bgColor: string; // hex, used when bgType === 'color'
   bgImage: string | null; // data URL, used when bgType === 'image'
+  gradient: GradientBg; // start/middle/end + angle, used when bgType === 'gradient'
   showIcons: boolean; // global toggle for slice icons in the chart
   showNowLine: boolean; // current-time indicator line
   nowLineColor: string; // colour of the current-time line
@@ -71,6 +89,7 @@ const DEFAULT_PREFS: Preferences = {
   bgType: 'pattern',
   bgColor: '#f4f5f7',
   bgImage: null,
+  gradient: { from: '#a1c4fd', via: '#c2e9fb', to: '#fbc2eb', angle: 135 },
 };
 
 const STORAGE_KEY = '24h-circle-planner.prefs';
@@ -138,6 +157,12 @@ function applyPrefs(prefs: Preferences): void {
     root.setAttribute('data-bg', 'image');
     root.style.setProperty('--app-bg-image', `url("${prefs.bgImage}")`);
     root.style.removeProperty('--app-bg-color');
+  } else if (prefs.bgType === 'gradient') {
+    const g = prefs.gradient;
+    root.setAttribute('data-bg', 'gradient-fill');
+    root.style.setProperty('--app-bg-gradient', `linear-gradient(${g.angle}deg, ${g.from}, ${g.via}, ${g.to})`);
+    root.style.removeProperty('--app-bg-color');
+    root.style.removeProperty('--app-bg-image');
   } else {
     // pattern (incl. 'none')
     root.setAttribute('data-bg', prefs.background);

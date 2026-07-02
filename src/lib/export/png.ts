@@ -54,9 +54,18 @@ export async function exportPng(
   // 2b. Stamp the brand wordmark into the bottom margin (viral loop; free tier).
   addWatermark(clone);
 
-  // 3. Set explicit width/height for rasterization at target resolution
+  // 3. Set explicit width/height for rasterization at target resolution. The live
+  // chart carries an inline style of width/height:100% (+ max-width / aspect-ratio)
+  // which, as CSS, OVERRIDES the width/height *attributes* when the SVG is loaded
+  // as an <img> — so the raster came out at a fixed default size and every
+  // "resolution" was just a blurry upscale. Force an explicit pixel size in the
+  // inline style too so the <img> intrinsic size actually becomes `size`.
   clone.setAttribute('width', String(size));
   clone.setAttribute('height', String(size));
+  clone.style.setProperty('width', `${size}px`);
+  clone.style.setProperty('height', `${size}px`);
+  clone.style.removeProperty('max-width');
+  clone.style.removeProperty('aspect-ratio');
 
   // 4. Serialize, create Blob, object URL
   const serializer = new XMLSerializer();

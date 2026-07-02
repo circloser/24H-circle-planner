@@ -37,6 +37,7 @@ const FOOTER = `  <footer class="site">
       <a href="/"><span class="lang-ko">홈 Home</span><span class="lang-en">Home</span></a>
       <a href="/guides/"><span class="lang-ko">가이드 Guides</span><span class="lang-en">Guides</span></a>
       <a href="/stories/"><span class="lang-ko">스토리 Stories</span><span class="lang-en">Stories</span></a>
+      <a href="/health/"><span class="lang-ko">건강 Health</span><span class="lang-en">Health</span></a>
       <a href="/faq"><span class="lang-ko">자주 묻는 질문 FAQ</span><span class="lang-en">FAQ</span></a>
       <a href="/about"><span class="lang-ko">소개 About</span><span class="lang-en">About</span></a>
       <a href="/privacy"><span class="lang-ko">개인정보처리방침 Privacy</span><span class="lang-en">Privacy</span></a>
@@ -97,7 +98,7 @@ ${HEAD_SCRIPTS}
 <body>
 <div class="wrap">
   <header class="site">
-    <a class="logo" href="/">24Hour<b>ing</b></a>
+    <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
       <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
       <a href="/stories/"><span class="lang-ko">스토리</span><span class="lang-en">Stories</span></a>
@@ -166,7 +167,7 @@ ${HEAD_SCRIPTS}
 <body>
 <div class="wrap">
   <header class="site">
-    <a class="logo" href="/">24Hour<b>ing</b></a>
+    <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
       <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
       <a href="/guides/"><span class="lang-ko">가이드</span><span class="lang-en">Guides</span></a>
