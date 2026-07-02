@@ -526,6 +526,9 @@ function App() {
               setEditingTitle(true);
             }}
             mobileNoChartDrag={isMobile || locked}
+            // Viewing a loaded diary = a past saved day → hide the live now-line
+            // (and world-clock lines); "current time" is meaningless there.
+            hideLiveMarkers={!!diaryDate}
           />
           {/* Rim annotation memos (hover near the edge → leader line + note). */}
           <RimMemoLayer />
