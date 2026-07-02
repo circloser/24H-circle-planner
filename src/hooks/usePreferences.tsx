@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import type { Lang, TKey } from '@/i18n/translations';
 import { translate } from '@/i18n/translations';
 import type { ChartView } from '@/lib/chart-view';
+import { PREFS_SYNC_EVENT } from '@/lib/sync/syncData';
 
 // ─── Options ──────────────────────────────────────────────────────────────────
 
@@ -162,6 +163,14 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     applyPrefs(prefs);
     savePrefs(prefs);
   }, [prefs]);
+
+  // Cross-device sync can adopt a prefs-only cloud change without reloading; when
+  // it does, re-read the freshly written prefs so the change shows up live.
+  useEffect(() => {
+    const onSynced = () => setPrefs(loadPrefs());
+    window.addEventListener(PREFS_SYNC_EVENT, onSynced);
+    return () => window.removeEventListener(PREFS_SYNC_EVENT, onSynced);
+  }, []);
 
   const setPreference = useCallback(
     <K extends keyof Preferences>(key: K, value: Preferences[K]) => {

@@ -1,13 +1,16 @@
 /**
  * Pro cross-device sync — payload shaping (design §4-1).
  *
- * Only *content* keys travel between devices. Device-local settings (theme,
- * `prefs`, the onboarded flag) are intentionally NOT synced. In particular the
- * prefs envelope is re-normalized (defaults merged in) on every load, so its
- * serialized string isn't byte-stable — syncing it caused an apply→reload loop
- * after each cloud adopt. The fingerprint below is scoped to SYNC_KEYS so a
- * leftover non-synced key on the server (e.g. a prefs blob written by an earlier
- * build) can't cause a perpetual mismatch either.
+ * Content keys AND user `prefs` travel between devices so settings (show-icons,
+ * font, background, language, …) stay unified. Theme (light/dark) and the
+ * onboarded flag stay device-local.
+ *
+ * Two rules keep prefs from re-introducing the old apply→reload loop:
+ *  1. Fingerprints compare a CANONICAL (order-independent) form of each value, so
+ *     the prefs envelope being re-serialized on load (defaults merged in, keys
+ *     reordered) is NOT seen as a change.
+ *  2. Adopting a remote change that touches ONLY prefs is applied live (see
+ *     useSync) via PREFS_SYNC_EVENT instead of reloading the page.
  */
 
 const PREFIX = '24h-circle-planner.';
@@ -22,7 +25,15 @@ export const SYNC_KEYS: readonly string[] = [
   'user-presets',
   'goals',
   'records',
+  'prefs',
 ].map((k) => PREFIX + k);
+
+/** The synced preferences key — applied live (no reload) when it alone changes. */
+export const PREFS_KEY = PREFIX + 'prefs';
+
+/** Window event the sync engine fires after applying a prefs-only cloud change,
+ *  so the preferences layer can re-read them without a full page reload. */
+export const PREFS_SYNC_EVENT = '24h:prefs-synced';
 
 export interface SyncEnvelope {
   v: 1;
@@ -54,13 +65,41 @@ export function applySyncData(data: Record<string, string>): void {
   }
 }
 
-/** Stable fingerprint over the SYNCED keys only (sorted) for change detection.
- *  Scoping to SYNC_KEYS means any extra key in `data` (e.g. a stale prefs blob a
- *  previous build wrote to the server) is ignored, so it can't create a diff that
- *  never resolves — which otherwise loops applyRemote→reload forever. */
+/** Order-independent serialization of a JSON value: objects get sorted keys
+ *  (recursively); arrays keep their order (order is meaningful for slices/days).
+ *  Non-JSON strings pass through unchanged. */
+function stableStringify(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map(stableStringify).join(',')}]`;
+  if (v && typeof v === 'object') {
+    const o = v as Record<string, unknown>;
+    return `{${Object.keys(o).sort().map((k) => `${JSON.stringify(k)}:${stableStringify(o[k])}`).join(',')}}`;
+  }
+  return JSON.stringify(v);
+}
+
+/** Canonical (semantic) form of a stored value, so re-serializing the same data
+ *  with a different key order — as the prefs envelope does on every load — is not
+ *  seen as a change. This is what stops prefs sync from looping applyRemote→reload. */
+export function canonicalValue(raw: string | null | undefined): string {
+  if (raw == null) return '';
+  try {
+    return stableStringify(JSON.parse(raw));
+  } catch {
+    return raw;
+  }
+}
+
+/** Fingerprint over the SYNCED keys only, using each value's CANONICAL form.
+ *  Scoped to SYNC_KEYS so any extra key on the server is ignored; canonical so
+ *  byte-level re-serialization never registers as a diff. */
 export function dataFingerprint(data: Record<string, string>): string {
   const keys = [...SYNC_KEYS].sort();
-  return JSON.stringify(keys.filter((k) => typeof data[k] === 'string').map((k) => [k, data[k]]));
+  return JSON.stringify(keys.filter((k) => typeof data[k] === 'string').map((k) => [k, canonicalValue(data[k])]));
+}
+
+/** Synced keys whose canonical value differs between two snapshots. */
+export function changedSyncKeys(a: Record<string, string>, b: Record<string, string>): string[] {
+  return SYNC_KEYS.filter((k) => canonicalValue(a[k]) !== canonicalValue(b[k]));
 }
 
 /** Validate + normalise a stored blob string into an envelope (or null). */

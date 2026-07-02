@@ -1,9 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/hooks/usePreferences';
-import { collectSyncData, applySyncData, dataFingerprint, type SyncEnvelope } from '@/lib/sync/syncData';
+import { collectSyncData, applySyncData, dataFingerprint, changedSyncKeys, PREFS_KEY, PREFS_SYNC_EVENT, type SyncEnvelope } from '@/lib/sync/syncData';
 import { pullRemote, pushRemote, deviceLabel } from '@/lib/sync/syncClient';
 
 export type SyncStatus = 'disabled' | 'syncing' | 'synced' | 'offline' | 'error';
@@ -74,6 +74,10 @@ function restorePrevious(): void {
 export function SyncProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const { t } = useTranslation();
+  // Latest translator, read from inside the long-lived [user] sync effect without
+  // making that effect depend on (and re-subscribe on) every language change.
+  const tRef = useRef(t);
+  useEffect(() => { tRef.current = t; }, [t]);
   const [status, setStatus] = useState<SyncStatus>('disabled');
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
 
@@ -109,13 +113,34 @@ export function SyncProvider({ children }: { children: ReactNode }) {
 
     // Adopt the cloud snapshot: stash local for undo, write content, reload.
     const applyRemote = (env: SyncEnvelope, version: number) => {
+      const before = collectSyncData();
+      const changed = changedSyncKeys(before, env.data);
       try {
-        localStorage.setItem(PREV_KEY, JSON.stringify(collectSyncData()));
+        localStorage.setItem(PREV_KEY, JSON.stringify(before));
       } catch {
         /* ignore */
       }
       applySyncData(env.data);
       setMeta({ version, baseFp: dataFingerprint(env.data), modifiedAt: env.modifiedAt });
+
+      // Nothing actually differs (canonically) → just mark synced, never reload.
+      if (changed.length === 0) {
+        setLastSyncedAt(Date.now());
+        stat('synced');
+        return;
+      }
+      // A change touching ONLY prefs is applied live; anything else
+      // (schedule/days/diary/…) still needs a reload to re-hydrate the stores.
+      if (changed.every((k) => k === PREFS_KEY)) {
+        window.dispatchEvent(new Event(PREFS_SYNC_EVENT)); // preferences re-read live
+        setLastSyncedAt(Date.now());
+        stat('synced');
+        toast.success(tRef.current('sync.appliedFromCloud'), {
+          action: { label: tRef.current('sync.undo'), onClick: () => restorePrevious() },
+          duration: 8000,
+        });
+        return;
+      }
       try {
         localStorage.setItem(APPLIED_KEY, '1');
       } catch {
