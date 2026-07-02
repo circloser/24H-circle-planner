@@ -29,7 +29,7 @@ export function MobileClockSection() {
 
   return (
     <section className="w-full">
-      <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(var(--text-muted))' }}>
+      <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {t('clock.tools')}
       </h2>
 

@@ -33,7 +33,7 @@ export function MemoListDialog({ open, onOpenChange }: MemoListDialogProps) {
         </DialogHeader>
 
         {sorted.length === 0 ? (
-          <p className="py-8 text-center text-sm" style={{ color: 'hsl(var(--text-muted))' }}>
+          <p className="py-8 text-center text-sm text-muted-foreground">
             {t('memo.listEmpty')}
           </p>
         ) : (
@@ -41,8 +41,8 @@ export function MemoListDialog({ open, onOpenChange }: MemoListDialogProps) {
             {sorted.map((m) => (
               <div
                 key={m.id}
-                className="flex items-center gap-2 rounded-lg p-2"
-                style={{ border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--surface))', opacity: m.onScreen ? 1 : 0.7 }}
+                className="flex items-center gap-2 rounded-lg border border-border bg-surface p-2"
+                style={{ opacity: m.onScreen ? 1 : 0.7 }}
               >
                 <span
                   className="h-3 w-3 shrink-0 rounded-full border border-black/15"
@@ -50,10 +50,10 @@ export function MemoListDialog({ open, onOpenChange }: MemoListDialogProps) {
                   aria-hidden="true"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm" style={{ color: 'hsl(var(--foreground))' }}>
+                  <p className="truncate text-sm text-foreground">
                     {m.text.trim() || t('memo.placeholder')}
                   </p>
-                  <p className="text-[11px]" style={{ color: 'hsl(var(--text-muted))' }}>
+                  <p className="text-[11px] text-muted-foreground">
                     {new Date(m.createdAt).toLocaleString()}
                   </p>
                 </div>
@@ -62,8 +62,7 @@ export function MemoListDialog({ open, onOpenChange }: MemoListDialogProps) {
                   aria-label={m.onScreen ? t('memo.hideFromScreen') : t('memo.restore')}
                   title={m.onScreen ? t('memo.hideFromScreen') : t('memo.restore')}
                   onClick={() => (m.onScreen ? archiveMemo(m.id) : restoreMemo(m.id))}
-                  className="grid h-7 w-7 shrink-0 place-items-center rounded transition-colors hover:bg-black/10"
-                  style={{ color: 'hsl(var(--foreground))' }}
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded text-foreground transition-colors hover:bg-black/10"
                 >
                   {m.onScreen ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" style={{ opacity: 0.6 }} />}
                 </button>
@@ -72,8 +71,7 @@ export function MemoListDialog({ open, onOpenChange }: MemoListDialogProps) {
                   aria-label={t('memo.deleteForever')}
                   title={t('memo.deleteForever')}
                   onClick={() => deleteMemo(m.id)}
-                  className="grid h-7 w-7 shrink-0 place-items-center rounded transition-colors hover:bg-black/10"
-                  style={{ color: 'hsl(var(--destructive))' }}
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded text-destructive transition-colors hover:bg-black/10"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>

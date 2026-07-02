@@ -51,8 +51,7 @@ export function WelcomeOverlay({ open, onOpenChange, onPickPreset, isMobile }: W
       <div
         role="dialog"
         aria-label={t('welcome.title')}
-        className="pointer-events-auto relative w-full max-w-md rounded-xl border p-5 shadow-2xl"
-        style={{ backgroundColor: 'hsl(var(--surface))', borderColor: 'hsl(var(--border))' }}
+        className="pointer-events-auto relative w-full max-w-md rounded-xl border border-border bg-surface p-5 shadow-2xl"
       >
         <button
           type="button"
@@ -60,26 +59,25 @@ export function WelcomeOverlay({ open, onOpenChange, onPickPreset, isMobile }: W
           aria-label={t('common.cancel')}
           className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full transition-colors hover:bg-black/10"
         >
-          <X className="h-4 w-4" style={{ color: 'hsl(var(--text-muted))' }} />
+          <X className="h-4 w-4 text-muted-foreground" />
         </button>
 
-        <h2 style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.3px', color: 'hsl(var(--foreground))' }}>
+        <h2 className="text-foreground" style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.3px' }}>
           {t('welcome.title')}
         </h2>
-        <p className="mt-1 text-sm" style={{ color: 'hsl(var(--text-muted))' }}>
+        <p className="mt-1 text-sm text-muted-foreground">
           {t('welcome.subtitle')}
         </p>
 
-        <section className="mt-3 rounded-lg p-3" style={{ backgroundColor: 'hsl(var(--text-muted) / 0.07)' }}>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(var(--text-muted))' }}>
+        <section className="mt-3 rounded-lg bg-muted-foreground/7 p-3">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {t('welcome.howto')}
           </h3>
           <ul className="flex flex-col gap-2">
             {gestures.map(([icon, label], i) => (
-              <li key={i} className="flex items-center gap-2.5 text-sm" style={{ color: 'hsl(var(--foreground))' }}>
+              <li key={i} className="flex items-center gap-2.5 text-sm text-foreground">
                 <span
-                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full"
-                  style={{ backgroundColor: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))', color: 'hsl(var(--text-muted))' }}
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-border bg-surface text-muted-foreground"
                 >
                   {icon}
                 </span>
@@ -92,8 +90,7 @@ export function WelcomeOverlay({ open, onOpenChange, onPickPreset, isMobile }: W
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
           <Button
             onClick={() => { onOpenChange(false); onPickPreset(); }}
-            className="flex-1 gap-1.5"
-            style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+            className="flex-1 gap-1.5 bg-primary text-primary-foreground"
           >
             <Sparkles className="h-4 w-4" />
             {t('welcome.startPreset')}

@@ -89,9 +89,8 @@ export function MemoNote({ memo }: { memo: Memo }) {
       aria-label={label}
       aria-pressed={align === a}
       onClick={() => updateMemo(memo.id, { align: a })}
-      className="grid h-5 w-5 place-items-center rounded"
+      className="grid h-5 w-5 place-items-center rounded text-foreground"
       style={{
-        color: 'hsl(var(--foreground))',
         backgroundColor: align === a ? 'hsl(var(--accent) / 0.2)' : 'transparent',
       }}
     >

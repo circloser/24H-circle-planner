@@ -205,7 +205,7 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
         >
           I
         </button>
-        <span className="w-px h-5 mx-0.5" style={{ backgroundColor: 'hsl(var(--border))' }} />
+        <span className="w-px h-5 mx-0.5 bg-border" />
         <div className="flex items-center gap-1">
           {TEXT_COLORS.map((c) => (
             <button

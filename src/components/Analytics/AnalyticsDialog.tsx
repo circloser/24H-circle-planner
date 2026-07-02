@@ -78,10 +78,10 @@ export function AnalyticsDialog({ open, onOpenChange }: AnalyticsDialogProps) {
         </div>
 
         {a.dayCount === 0 || a.byLabel.length === 0 ? (
-          <p className="py-4 text-sm" style={{ color: 'hsl(var(--text-muted))' }}>{t('analytics.empty')}</p>
+          <p className="py-4 text-sm text-muted-foreground">{t('analytics.empty')}</p>
         ) : (
           <>
-            <p className="text-xs" style={{ color: 'hsl(var(--text-muted))' }}>
+            <p className="text-xs text-muted-foreground">
               {t('analytics.subtitle', { n: String(a.dayCount) })}
             </p>
 
@@ -90,16 +90,16 @@ export function AnalyticsDialog({ open, onOpenChange }: AnalyticsDialogProps) {
               {a.byLabel.map((it, idx) => (
                 <div key={idx}>
                   <div className="mb-1 flex items-center justify-between gap-2 text-sm">
-                    <span className="flex min-w-0 items-center gap-1.5" style={{ color: 'hsl(var(--foreground))' }}>
+                    <span className="flex min-w-0 items-center gap-1.5 text-foreground">
                       <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: it.color }} />
                       {it.icon && <span aria-hidden className="shrink-0">{it.icon}</span>}
                       <span className="truncate">{it.label.trim() || t('analytics.untitled')}</span>
                     </span>
-                    <span className="shrink-0 whitespace-nowrap" style={{ color: 'hsl(var(--text-muted))' }}>
+                    <span className="shrink-0 whitespace-nowrap text-muted-foreground">
                       {fmtAvg(it.minutes)} · {pct(it.minutes)}%
                     </span>
                   </div>
-                  <div className="h-2.5 w-full overflow-hidden rounded-full" style={{ backgroundColor: 'hsl(var(--text-muted) / 0.12)' }}>
+                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted-foreground/12">
                     <div className="h-full rounded-full" style={{ width: `${pct(it.minutes)}%`, backgroundColor: it.color }} />
                   </div>
                 </div>
@@ -109,16 +109,16 @@ export function AnalyticsDialog({ open, onOpenChange }: AnalyticsDialogProps) {
             {/* Per-day timeline strip (when 2+ days) — each day's slices in order. */}
             {a.dayCount > 1 && (
               <section className="mt-4">
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(var(--text-muted))' }}>
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {t('analytics.trend')}
                 </h3>
                 <div className="flex flex-col gap-1.5">
                   {a.perDay.map((d, i) => (
                     <div key={i} className="flex items-center gap-2">
-                      <span className="w-12 shrink-0 text-xs" style={{ color: 'hsl(var(--text-muted))' }}>
+                      <span className="w-12 shrink-0 text-xs text-muted-foreground">
                         {sources[i]?.label}
                       </span>
-                      <div className="flex h-3 w-full overflow-hidden rounded" style={{ border: '1px solid hsl(var(--border))' }}>
+                      <div className="flex h-3 w-full overflow-hidden rounded border border-border">
                         {d.segments.map((s, j) => (
                           <div key={j} title={s.label} style={{ width: `${(s.minutes / 1440) * 100}%`, backgroundColor: s.color }} />
                         ))}

@@ -135,6 +135,99 @@ const STATES = [
       await wait(400);
     },
   },
+  {
+    name: 'about-dialog',
+    async setup(page) {
+      await gotoApp(page);
+      await seedBasicData(page);
+      await page.locator('header h1 button').first().click();
+      await wait(500);
+    },
+  },
+  {
+    name: 'analytics-dialog',
+    async setup(page) {
+      await gotoApp(page);
+      await seedBasicData(page);
+      await page.locator('button[aria-label="내 시간표"]').first().click();
+      await wait(200);
+      await page.locator('[role="menuitem"]:has-text("시간 분석")').first().click();
+      await wait(500);
+    },
+  },
+  {
+    name: 'goals-dialog',
+    async setup(page) {
+      await gotoApp(page);
+      await seedBasicData(page);
+      await page.locator('button[aria-label="내 시간표"]').first().click();
+      await wait(200);
+      await page.locator('[role="menuitem"]:has-text("목표")').first().click();
+      await wait(500);
+    },
+  },
+  {
+    name: 'timeblock-dialog',
+    async setup(page) {
+      await gotoApp(page);
+      await seedBasicData(page);
+      await page.evaluate(() => {
+        const raw = JSON.parse(localStorage.getItem('24h-circle-planner.prefs'));
+        raw.prefs.chartView = 'table';
+        localStorage.setItem('24h-circle-planner.prefs', JSON.stringify(raw));
+      });
+      await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+      await page.keyboard.press('Escape').catch(() => {});
+      await wait(400);
+      await page.locator('button:has-text("일정 추가")').first().click();
+      await wait(500);
+    },
+  },
+  {
+    name: 'transfer-dialog',
+    async setup(page) {
+      await gotoApp(page);
+      await seedBasicData(page);
+      await page.locator('button[aria-label="설정"]').first().click();
+      await wait(200);
+      await page.locator('[role="menuitem"]:has-text("다른 기기로")').first().click();
+      await wait(500);
+    },
+  },
+  {
+    name: 'welcome-overlay',
+    async setup(page) {
+      await gotoApp(page);
+      // Seed data but REMOVE the onboarded flag so the first-visit welcome shows.
+      await seedBasicData(page);
+      await page.evaluate(() => localStorage.removeItem('24h-circle-planner.onboarded'));
+      await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+      await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
+      await wait(600); // welcome overlay entrance
+    },
+  },
+  {
+    name: 'memo-note',
+    async setup(page) {
+      await gotoApp(page);
+      await seedBasicData(page);
+      await page.evaluate(() => {
+        const memo = { id: 'm1', text: '픽셀 테스트', x: 1000, y: 120, color: '#fef08a', fontFamily: 'Pretendard', align: 'center', createdAt: 1, onScreen: true };
+        localStorage.setItem('24h-circle-planner.memos', JSON.stringify({ version: 1, memos: [memo], visible: true }));
+      });
+      await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+      await page.keyboard.press('Escape').catch(() => {});
+      await wait(400);
+    },
+  },
+  {
+    name: 'mobile-main',
+    viewport: { width: 375, height: 812 },
+    async setup(page) {
+      await gotoApp(page);
+      await seedBasicData(page);
+    },
+  },
 ];
 
 mkdirSync(isBaseline ? BASELINE : CURRENT, { recursive: true });
@@ -142,7 +235,7 @@ if (!isBaseline) mkdirSync(DIFF, { recursive: true });
 
 const results = [];
 for (const state of STATES) {
-  const { browser, page } = await launchPage();
+  const { browser, page } = await launchPage(state.viewport ? { viewport: state.viewport } : {});
   try {
     await state.setup(page);
     await stabilise(page);

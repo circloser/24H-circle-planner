@@ -61,7 +61,7 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
           </DialogTitle>
         </DialogHeader>
 
-        <p className="text-sm" style={{ color: 'hsl(var(--text-muted))' }}>
+        <p className="text-sm text-muted-foreground">
           {ko
             ? '하루 24시간을 원형 시계처럼 그리는 무료 시간표 플래너입니다. 드래그로 편집하고, 저장·내보내기·공유까지 한곳에서.'
             : 'A free day planner that draws your 24 hours as a clock. Edit by dragging, then save, export and share — all in one place.'}
@@ -69,26 +69,26 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
 
         {/* Manual — features */}
         <section className="mt-1 flex flex-col gap-2.5">
-          <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(var(--text-muted))' }}>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {ko ? '주요 기능' : 'Features'}
           </h3>
           {features.map((f) => (
             <div key={f.title} className="flex items-start gap-2.5">
               <span className="shrink-0 text-lg leading-6" aria-hidden="true">{f.emoji}</span>
               <div className="min-w-0">
-                <div className="text-sm font-semibold" style={{ color: 'hsl(var(--foreground))' }}>{f.title}</div>
-                <div className="text-xs leading-relaxed" style={{ color: 'hsl(var(--text-muted))' }}>{f.desc}</div>
+                <div className="text-sm font-semibold text-foreground">{f.title}</div>
+                <div className="text-xs leading-relaxed text-muted-foreground">{f.desc}</div>
               </div>
             </div>
           ))}
         </section>
 
         {/* Quick start */}
-        <section className="mt-3 rounded-lg p-3" style={{ backgroundColor: 'hsl(var(--text-muted) / 0.07)' }}>
-          <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(var(--text-muted))' }}>
+        <section className="mt-3 rounded-lg bg-muted-foreground/7 p-3">
+          <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {ko ? '시작하기' : 'Quick start'}
           </h3>
-          <ol className="ml-4 list-decimal text-xs leading-relaxed" style={{ color: 'hsl(var(--foreground))' }}>
+          <ol className="ml-4 list-decimal text-xs leading-relaxed text-foreground">
             {(ko
               ? ['프리셋을 고르거나 빈 하루에서 시작합니다.', '원을 클릭해 시간대를 나누고 이름·색·아이콘을 지정한 뒤, 경계를 드래그해 시간을 맞춥니다.', '내보내기 또는 공유로 시간표를 저장합니다.']
               : ['Pick a preset or start from an empty day.', 'Click the ring to split blocks, set a name/color/icon, then drag boundaries to fit your times.', 'Save your timetable via export or share.']
@@ -99,20 +99,19 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
         </section>
 
         {/* Brand — Circloser */}
-        <section className="mt-3 rounded-lg border p-3" style={{ borderColor: 'hsl(var(--border))' }}>
-          <h3 className="text-sm font-bold" style={{ color: 'hsl(var(--foreground))' }}>Circloser</h3>
-          <p className="mt-1 text-xs leading-relaxed" style={{ color: 'hsl(var(--text-muted))' }}>
+        <section className="mt-3 rounded-lg border border-border p-3">
+          <h3 className="text-sm font-bold text-foreground">Circloser</h3>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
             {ko
               ? 'Circloser는 1인 창업 기업입니다. 원(circle)에 한 걸음 더 가까이(closer) — 일상을 더 단순하고 아름답게 만드는 작은 도구를 직접 설계하고 만듭니다. 24Houring은 Circloser가 선보이는 제품입니다.'
               : 'Circloser is a one-person (indie) startup. A step closer to the circle — we design and build small tools that make everyday life simpler and more beautiful. 24Houring is a product by Circloser.'}
           </p>
           {/* Public contact for feedback / questions. */}
-          <p className="mt-2 text-xs" style={{ color: 'hsl(var(--text-muted))' }}>
+          <p className="mt-2 text-xs text-muted-foreground">
             {ko ? '문의 · 피드백' : 'Contact · feedback'}:{' '}
             <a
               href={`mailto:${CONTACT_EMAIL}`}
-              className="font-medium underline underline-offset-2"
-              style={{ color: 'hsl(var(--foreground))' }}
+              className="font-medium text-foreground underline underline-offset-2"
             >
               {CONTACT_EMAIL}
             </a>
@@ -122,7 +121,7 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
         {/* Reserved ad space (consistent with the other dialogs). */}
         <AdSlot slot="about" className="mt-3" />
 
-        <p className="mt-2 text-center text-[11px]" style={{ color: 'hsl(var(--text-muted) / 0.8)' }}>
+        <p className="mt-2 text-center text-[11px] text-muted-foreground/80">
           24houring.com · © Circloser
         </p>
       </DialogContent>

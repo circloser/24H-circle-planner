@@ -27,8 +27,7 @@ function NoteEditor({ initial, onSave }: { initial: string; onSave: (value: stri
       onChange={(e) => setDraft(e.target.value)}
       onBlur={commit}
       placeholder={t('diary.notePlaceholder')}
-      className="min-h-[30vh] w-full resize-y rounded-md p-3 text-sm leading-relaxed outline-none"
-      style={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', color: 'hsl(var(--foreground))' }}
+      className="min-h-[30vh] w-full resize-y rounded-md border border-border bg-background p-3 text-sm leading-relaxed text-foreground outline-none"
     />
   );
 }
@@ -60,19 +59,16 @@ export function DiaryNotePanel() {
 
   return (
     <div
-      className="w-full max-w-[720px] rounded-xl px-4 py-3"
-      style={{ backgroundColor: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))' }}
+      className="w-full max-w-[720px] rounded-xl border border-border bg-surface px-4 py-3"
     >
       <div
-        className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold"
-        style={{ color: 'hsl(var(--foreground))' }}
+        className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-foreground"
       >
         <BookOpen className="h-4 w-4 shrink-0" />
         {t('diary.note')}
         {editable && (
           <span
-            className="ml-1 flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium"
-            style={{ backgroundColor: 'hsl(var(--primary) / 0.15)', color: 'hsl(var(--primary))' }}
+            className="ml-1 flex items-center gap-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-primary"
           >
             <Pencil className="h-2.5 w-2.5" />
             {t('diary.noteEditable')}
@@ -84,8 +80,7 @@ export function DiaryNotePanel() {
         <NoteEditor key={diaryDate} initial={note} onSave={(value) => setEntryNote(diaryDate, value)} />
       ) : (
         <div
-          className="max-h-[40vh] overflow-y-auto whitespace-pre-wrap break-words text-sm leading-relaxed"
-          style={{ color: 'hsl(var(--foreground))' }}
+          className="max-h-[40vh] overflow-y-auto whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground"
         >
           {note}
         </div>

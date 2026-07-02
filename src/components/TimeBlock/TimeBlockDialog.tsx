@@ -23,12 +23,7 @@ interface TimeBlockDialogProps {
   onCreated?: (id: string) => void;
 }
 
-const timeInputCls = 'rounded-md border px-2 py-2 text-base';
-const timeInputStyle: React.CSSProperties = {
-  backgroundColor: 'hsl(var(--background))',
-  borderColor: 'hsl(var(--border))',
-  color: 'hsl(var(--foreground))',
-};
+const timeInputCls = 'rounded-md border border-border bg-background px-2 py-2 text-base text-foreground';
 
 /**
  * Mobile "add a time block" form — type a start time, end time and name, and a
@@ -64,7 +59,7 @@ export function TimeBlockDialog({ open, onOpenChange, onCreated }: TimeBlockDial
 
         <div className="flex flex-col gap-3 pt-1">
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-medium" style={{ color: 'hsl(var(--text-muted))' }}>{t('block.name')}</span>
+            <span className="text-xs font-medium text-muted-foreground">{t('block.name')}</span>
             <Input
               value={label}
               onChange={(e) => setLabel(e.target.value)}
@@ -74,17 +69,17 @@ export function TimeBlockDialog({ open, onOpenChange, onCreated }: TimeBlockDial
 
           <div className="flex gap-3">
             <label className="flex flex-1 flex-col gap-1">
-              <span className="text-xs font-medium" style={{ color: 'hsl(var(--text-muted))' }}>{t('block.start')}</span>
-              <input type="time" step={600} value={start} onChange={(e) => setStart(e.target.value)} className={timeInputCls} style={timeInputStyle} />
+              <span className="text-xs font-medium text-muted-foreground">{t('block.start')}</span>
+              <input type="time" step={600} value={start} onChange={(e) => setStart(e.target.value)} className={timeInputCls} />
             </label>
             <label className="flex flex-1 flex-col gap-1">
-              <span className="text-xs font-medium" style={{ color: 'hsl(var(--text-muted))' }}>{t('block.end')}</span>
-              <input type="time" step={600} value={end} onChange={(e) => setEnd(e.target.value)} className={timeInputCls} style={timeInputStyle} />
+              <span className="text-xs font-medium text-muted-foreground">{t('block.end')}</span>
+              <input type="time" step={600} value={end} onChange={(e) => setEnd(e.target.value)} className={timeInputCls} />
             </label>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium" style={{ color: 'hsl(var(--text-muted))' }}>{t('block.color')}</span>
+            <span className="text-xs font-medium text-muted-foreground">{t('block.color')}</span>
             <ColorSwatch selectedColor={color} onPick={setColor} />
           </div>
         </div>
@@ -93,7 +88,7 @@ export function TimeBlockDialog({ open, onOpenChange, onCreated }: TimeBlockDial
           <Button variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel')}</Button>
           <Button
             onClick={submit}
-            style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+            className="bg-primary text-primary-foreground"
           >
             {t('block.add')}
           </Button>

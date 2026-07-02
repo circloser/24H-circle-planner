@@ -43,8 +43,7 @@ export function GoalsDialog({ open, onOpenChange }: GoalsDialogProps) {
 
   const labelOptions = knownLabels(present.slices, entries);
   const todaySaved = !!entries[dateKey()];
-  const numCls = 'w-14 rounded-md px-2 py-1 text-center tabular-nums outline-none';
-  const numStyle = { backgroundColor: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))', color: 'hsl(var(--foreground))' } as const;
+  const numCls = 'w-14 rounded-md border border-border bg-surface px-2 py-1 text-center tabular-nums text-foreground outline-none';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -58,7 +57,7 @@ export function GoalsDialog({ open, onOpenChange }: GoalsDialogProps) {
 
         {/* Existing goals + progress. */}
         {goals.length === 0 ? (
-          <p className="py-2 text-sm" style={{ color: 'hsl(var(--text-muted))' }}>{t('goals.empty')}</p>
+          <p className="py-2 text-sm text-muted-foreground">{t('goals.empty')}</p>
         ) : (
           <ul className="flex flex-col gap-3">
             {goals.map((g) => {
@@ -69,12 +68,11 @@ export function GoalsDialog({ open, onOpenChange }: GoalsDialogProps) {
                 <li key={g.id}>
                   <div className="mb-1 flex items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-1.5">
-                      <span className="truncate text-sm font-semibold" style={{ color: 'hsl(var(--foreground))' }}>
+                      <span className="truncate text-sm font-semibold text-foreground">
                         {g.label || t('goals.untitled')}
                       </span>
                       <span
-                        className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px]"
-                        style={{ backgroundColor: 'hsl(var(--muted) / 0.4)', color: 'hsl(var(--text-muted))' }}
+                        className="shrink-0 rounded-full bg-muted/40 px-1.5 py-0.5 text-[10px] text-muted-foreground"
                       >
                         {g.period === 'day' ? t('goals.periodDay') : t('goals.periodWeek')}
                       </span>
@@ -86,16 +84,16 @@ export function GoalsDialog({ open, onOpenChange }: GoalsDialogProps) {
                       onClick={() => removeGoal(g.id)}
                       className="grid h-6 w-6 shrink-0 place-items-center rounded transition-colors hover:bg-black/10"
                     >
-                      <Trash2 className="h-3.5 w-3.5" style={{ color: 'hsl(var(--text-muted))' }} />
+                      <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
                     </button>
                   </div>
-                  <div className="h-2.5 w-full overflow-hidden rounded-full" style={{ backgroundColor: 'hsl(var(--muted) / 0.35)' }}>
+                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted/35">
                     <div
                       className="h-full rounded-full transition-all"
                       style={{ width: `${pct}%`, backgroundColor: done ? '#16a34a' : 'hsl(var(--primary))' }}
                     />
                   </div>
-                  <div className="mt-0.5 text-right text-[11px] tabular-nums" style={{ color: 'hsl(var(--text-muted))' }}>
+                  <div className="mt-0.5 text-right text-[11px] tabular-nums text-muted-foreground">
                     {fmt(acc)} / {fmt(g.targetMinutes)} · {pct}%
                   </div>
                 </li>
@@ -106,33 +104,32 @@ export function GoalsDialog({ open, onOpenChange }: GoalsDialogProps) {
 
         {/* Goals count SAVED diaries — nudge to save today when it isn't yet. */}
         {goals.length > 0 && !todaySaved && (
-          <p className="text-xs" style={{ color: 'hsl(var(--primary))' }}>{t('goals.saveDiaryHint')}</p>
+          <p className="text-xs text-primary">{t('goals.saveDiaryHint')}</p>
         )}
 
         {/* Add a goal. */}
-        <div className="mt-1 flex flex-col gap-2 rounded-lg p-3" style={{ backgroundColor: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))' }}>
+        <div className="mt-1 flex flex-col gap-2 rounded-lg border border-border bg-surface p-3">
           {/* Pick from labels that actually exist (timetable + diary) so a goal
               can't miss its item due to a name typo. */}
           {labelOptions.length === 0 ? (
-            <p className="text-xs" style={{ color: 'hsl(var(--text-muted))' }}>{t('goals.noLabels')}</p>
+            <p className="text-xs text-muted-foreground">{t('goals.noLabels')}</p>
           ) : (
             <select
               value={label}
               onChange={(e) => setLabel(e.target.value)}
               aria-label={t('goals.pickLabel')}
-              className="w-full rounded-md px-2 py-1.5 text-sm outline-none"
-              style={numStyle}
+              className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-sm text-foreground outline-none"
             >
               <option value="">{t('goals.pickLabel')}</option>
               {labelOptions.map((l) => <option key={l} value={l}>{l}</option>)}
             </select>
           )}
-          <div className="flex flex-wrap items-center gap-2 text-sm" style={{ color: 'hsl(var(--foreground))' }}>
-            <input type="number" min="0" max="24" value={hours} onChange={(e) => setHours(e.target.value)} className={numCls} style={numStyle} aria-label={t('goals.hoursLabel')} />
+          <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
+            <input type="number" min="0" max="24" value={hours} onChange={(e) => setHours(e.target.value)} className={numCls} aria-label={t('goals.hoursLabel')} />
             <span>{t('goals.hUnit')}</span>
-            <input type="number" min="0" max="59" value={minutes} onChange={(e) => setMinutes(e.target.value)} className={numCls} style={numStyle} aria-label={t('goals.minutesLabel')} />
+            <input type="number" min="0" max="59" value={minutes} onChange={(e) => setMinutes(e.target.value)} className={numCls} aria-label={t('goals.minutesLabel')} />
             <span>{t('goals.mUnit')}</span>
-            <div className="ml-auto flex overflow-hidden rounded-md" style={{ border: '1px solid hsl(var(--border))' }}>
+            <div className="ml-auto flex overflow-hidden rounded-md border border-border">
               {(['day', 'week'] as const).map((p) => (
                 <button
                   key={p}
@@ -148,7 +145,7 @@ export function GoalsDialog({ open, onOpenChange }: GoalsDialogProps) {
               ))}
             </div>
           </div>
-          <Button onClick={submit} className="gap-1.5" style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}>
+          <Button onClick={submit} className="gap-1.5 bg-primary text-primary-foreground">
             <Plus className="h-4 w-4" />
             {t('goals.add')}
           </Button>

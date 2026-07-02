@@ -69,7 +69,7 @@ export function AddToHomeDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <p className="text-sm leading-relaxed" style={{ color: 'hsl(var(--text-muted))' }}>
+        <p className="text-sm leading-relaxed text-muted-foreground">
           {t('home.body')}
         </p>
 
@@ -77,8 +77,7 @@ export function AddToHomeDialog({
           {installPrompt ? (
             <Button
               onClick={handleInstall}
-              className="w-full gap-2"
-              style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+              className="w-full gap-2 bg-primary text-primary-foreground"
             >
               <Download className="h-4 w-4" />
               {t('home.install')}
@@ -87,8 +86,7 @@ export function AddToHomeDialog({
           <Button
             variant="outline"
             onClick={handleCopy}
-            className="w-full gap-2"
-            style={{ backgroundColor: 'hsl(var(--surface))', color: 'hsl(var(--foreground))', border: '1px solid hsl(var(--border))' }}
+            className="w-full gap-2 border border-border bg-surface text-foreground"
           >
             <Copy className="h-4 w-4" />
             {t('home.copyLink')}

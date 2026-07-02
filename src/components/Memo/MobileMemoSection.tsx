@@ -66,25 +66,20 @@ export function MobileMemoSection() {
   const cards = memos.filter((m) => m.onScreen);
 
   const btn =
-    'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-transform active:scale-95';
-  const btnStyle = {
-    backgroundColor: 'hsl(var(--surface))',
-    color: 'hsl(var(--foreground))',
-    border: '1px solid hsl(var(--border))',
-  } as React.CSSProperties;
+    'flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-sm text-foreground transition-transform active:scale-95';
 
   return (
     <section className="w-full">
       <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(var(--text-muted))' }}>
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {t('memo.title')}
         </h2>
         <div className="flex items-center gap-2">
-          <button type="button" className={btn} style={btnStyle} onClick={() => setListOpen(true)}>
+          <button type="button" className={btn} onClick={() => setListOpen(true)}>
             <List className="h-4 w-4" />
             {t('memo.list')}
           </button>
-          <button type="button" className={btn} style={btnStyle} onClick={addMemo}>
+          <button type="button" className={btn} onClick={addMemo}>
             <Plus className="h-4 w-4" />
             {t('memo.add')}
           </button>
@@ -92,7 +87,7 @@ export function MobileMemoSection() {
       </div>
 
       {cards.length === 0 ? (
-        <p className="rounded-lg py-6 text-center text-sm" style={{ color: 'hsl(var(--text-muted) / 0.8)', border: '1px dashed hsl(var(--border))' }}>
+        <p className="rounded-lg border border-dashed border-border py-6 text-center text-sm text-muted-foreground/80">
           {t('memo.add')}
         </p>
       ) : (

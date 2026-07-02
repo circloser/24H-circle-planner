@@ -25,8 +25,7 @@ export function SharedView() {
   const brand = (
     <a
       href={HOME}
-      className="text-xl font-bold tracking-tight"
-      style={{ color: 'hsl(var(--foreground))' }}
+      className="text-xl font-bold tracking-tight text-foreground"
     >
       24Hou<span style={{ color: '#FF4D4D' }}>ring</span>
     </a>
@@ -35,8 +34,7 @@ export function SharedView() {
   const cta = (
     <a
       href={HOME}
-      className="inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold shadow-sm transition-transform hover:scale-105"
-      style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+      className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-transform hover:scale-105"
     >
       {t('shareview.cta')}
     </a>
@@ -48,12 +46,11 @@ export function SharedView() {
 
       {content ? (
         <main className="flex w-full max-w-lg flex-col items-center gap-5">
-          <p className="text-sm" style={{ color: 'hsl(var(--text-muted))' }}>
+          <p className="text-sm text-muted-foreground">
             {t('shareview.heading')}
           </p>
           <h1
-            className="text-center text-2xl font-bold"
-            style={{ color: 'hsl(var(--foreground))' }}
+            className="text-center text-2xl font-bold text-foreground"
           >
             {content.schedule.name || t('shareview.untitled')}
           </h1>
@@ -69,18 +66,15 @@ export function SharedView() {
 
           {content.note.trim() ? (
             <section
-              className="w-full rounded-xl p-4"
-              style={{ backgroundColor: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))' }}
+              className="w-full rounded-xl border border-border bg-surface p-4"
             >
               <h2
-                className="mb-2 text-xs font-semibold uppercase tracking-wide"
-                style={{ color: 'hsl(var(--text-muted))' }}
+                className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
               >
                 {t('shareview.note')}
               </h2>
               <p
-                className="whitespace-pre-wrap break-words text-sm leading-relaxed"
-                style={{ color: 'hsl(var(--foreground))' }}
+                className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground"
               >
                 {content.note}
               </p>
@@ -91,12 +85,12 @@ export function SharedView() {
         </main>
       ) : (
         <main className="flex flex-col items-center gap-4 pt-12">
-          <p style={{ color: 'hsl(var(--text-muted))' }}>{t('shareview.empty')}</p>
+          <p className="text-muted-foreground">{t('shareview.empty')}</p>
           {cta}
         </main>
       )}
 
-      <footer className="mt-10 text-xs" style={{ color: 'hsl(var(--text-muted))' }}>
+      <footer className="mt-10 text-xs text-muted-foreground">
         <a href={HOME}>{t('shareview.madeWith')}</a>
       </footer>
     </div>

@@ -48,9 +48,9 @@ export function DeviceTransferDialog({ open, onOpenChange }: DeviceTransferDialo
           <DialogTitle>{t('transfer.title')}</DialogTitle>
         </DialogHeader>
 
-        <p className="text-sm" style={{ color: 'hsl(var(--text-muted))' }}>{t('transfer.body')}</p>
+        <p className="text-sm text-muted-foreground">{t('transfer.body')}</p>
 
-        <div className="mx-auto rounded-xl bg-white p-3" style={{ border: '1px solid hsl(var(--border))' }}>
+        <div className="mx-auto rounded-xl border border-border bg-white p-3">
           <QrCode value={url} size={216} />
         </div>
 
@@ -59,17 +59,15 @@ export function DeviceTransferDialog({ open, onOpenChange }: DeviceTransferDialo
             readOnly
             value={url}
             onFocus={(e) => e.currentTarget.select()}
-            className="min-w-0 flex-1 rounded-md px-2 py-1.5 text-xs outline-none"
-            style={{ backgroundColor: 'hsl(var(--surface))', color: 'hsl(var(--text-muted))', border: '1px solid hsl(var(--border))' }}
+            className="min-w-0 flex-1 rounded-md border border-border bg-surface px-2 py-1.5 text-xs text-muted-foreground outline-none"
           />
-          <Button size="sm" onClick={copy} className="shrink-0 gap-1.5"
-            style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}>
+          <Button size="sm" onClick={copy} className="shrink-0 gap-1.5 bg-primary text-primary-foreground">
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             {t('sharelink.copy')}
           </Button>
         </div>
 
-        <p className="text-xs" style={{ color: 'hsl(var(--text-muted) / 0.85)' }}>{t('transfer.note')}</p>
+        <p className="text-xs text-muted-foreground/85">{t('transfer.note')}</p>
 
         <AdSlot slot="transfer" className="mt-1" />
       </DialogContent>
