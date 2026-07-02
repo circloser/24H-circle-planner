@@ -14,6 +14,7 @@ import { DiaryProvider } from './hooks/useDiary.tsx'
 import { GoalsProvider } from './hooks/useGoals.tsx'
 import { RecordsProvider } from './hooks/useRecords.tsx'
 import { SpikeRunner } from './components/SpikeRunner.tsx'
+import { SharedView } from './components/SharedView/SharedView.tsx'
 
 // Single-file build: inject base64 fonts at runtime so they work on file://.
 // import.meta.env.VITE_SINGLEFILE is statically 'false' in the normal web build,
@@ -32,6 +33,9 @@ if (import.meta.env.VITE_SINGLEFILE === 'true') {
 }
 
 const isSpike = new URLSearchParams(window.location.search).get('spike') === '1';
+// Read-only shared-day viewer (route: /s#d=…). Served via the SPA fallback in
+// wrangler.jsonc (not_found_handling: single-page-application).
+const isShareView = window.location.pathname === '/s' || window.location.pathname === '/s/';
 const root = createRoot(document.getElementById('root')!);
 
 // PWA: register the service worker for offline + installability. Production only
@@ -67,6 +71,17 @@ if (isSpike) {
           <SpikeRunner />
           <Toaster />
         </ScheduleStoreProvider>
+      </PreferencesProvider>
+    </StrictMode>,
+  );
+} else if (isShareView) {
+  // Read-only viewer — only PreferencesProvider (fonts/i18n); no editing stores,
+  // no sync/auth. The chart renders in static preview mode.
+  root.render(
+    <StrictMode>
+      <PreferencesProvider>
+        <SharedView />
+        <Toaster />
       </PreferencesProvider>
     </StrictMode>,
   );

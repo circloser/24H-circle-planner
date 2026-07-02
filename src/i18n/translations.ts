@@ -255,6 +255,12 @@ export type TKey =
   | 'sharelink.importTitle'
   | 'sharelink.importBody'
   | 'sharelink.importConfirm'
+  | 'shareview.heading'
+  | 'shareview.note'
+  | 'shareview.cta'
+  | 'shareview.empty'
+  | 'shareview.madeWith'
+  | 'shareview.untitled'
   | 'analytics.open'
   | 'analytics.title'
   | 'analytics.subtitle'
@@ -632,6 +638,12 @@ const ko: Dict = {
   'sharelink.importTitle': '공유된 시간표 불러오기',
   'sharelink.importBody': '링크로 공유된 시간표를 불러올까요? 현재 시간표가 대체됩니다.',
   'sharelink.importConfirm': '불러오기',
+  'shareview.heading': '누군가 하루를 공유했어요',
+  'shareview.note': '노트',
+  'shareview.cta': '나만의 하루 시간표 만들기',
+  'shareview.empty': '이 링크에서 시간표를 찾을 수 없어요.',
+  'shareview.madeWith': '24Houring으로 만들었어요',
+  'shareview.untitled': '내 하루',
   'analytics.open': '시간 분석',
   'analytics.title': '시간 분석',
   'analytics.subtitle': '{n}일 기준 · 하루 평균',
@@ -1010,6 +1022,12 @@ const en: Dict = {
   'sharelink.importTitle': 'Open shared schedule',
   'sharelink.importBody': 'Open the schedule shared via this link? Your current one will be replaced.',
   'sharelink.importConfirm': 'Open',
+  'shareview.heading': 'Someone shared their day',
+  'shareview.note': 'Note',
+  'shareview.cta': 'Make your own daily plan',
+  'shareview.empty': "This link doesn't contain a timetable.",
+  'shareview.madeWith': 'Made with 24Houring',
+  'shareview.untitled': 'My day',
   'analytics.open': 'Time analysis',
   'analytics.title': 'Time analysis',
   'analytics.subtitle': 'Across {n} day(s) · daily average',

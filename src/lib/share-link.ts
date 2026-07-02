@@ -30,14 +30,15 @@ interface SharePayload {
   v: 1;
   n: string;
   s: Array<[number, string, string, string]>; // [startMin, label, color, icon]
+  t?: string; // optional free-form note (read-only "view" links only)
 }
 
-/** Encode a schedule into a compact URL-fragment code. */
-export function encodeSchedule(schedule: Schedule): string {
+/** The compact `{v,n,s}` body shared by both the import (#p=) and view (#d=) codes. */
+function schedulePayload(schedule: Schedule): SharePayload {
   const slices = [...schedule.slices].sort(
     (a, b) => hhmmToMinutes(a.startTime) - hhmmToMinutes(b.startTime),
   );
-  const payload: SharePayload = {
+  return {
     v: 1,
     n: schedule.name ?? '',
     s: slices.map((sl) => [
@@ -47,12 +48,30 @@ export function encodeSchedule(schedule: Schedule): string {
       sl.icon ?? '',
     ]),
   };
+}
+
+/** Encode a schedule into a compact URL-fragment code (import links). */
+export function encodeSchedule(schedule: Schedule): string {
+  return b64urlEncode(JSON.stringify(schedulePayload(schedule)));
+}
+
+/** Encode a schedule + optional note into a compact code (read-only view links). */
+export function encodeShare(schedule: Schedule, note?: string): string {
+  const payload = schedulePayload(schedule);
+  if (note && note.trim()) payload.t = note;
   return b64urlEncode(JSON.stringify(payload));
 }
 
-/** A full share URL pointing at the production site (works from anywhere). */
+/** A full import URL (recipient's app offers to LOAD it, replacing their schedule). */
 export function buildShareUrl(schedule: Schedule): string {
   return `${PROD_ORIGIN}/#p=${encodeSchedule(schedule)}`;
+}
+
+/** A read-only share URL that opens the standalone viewer (/s). The schedule +
+ *  note live entirely in the fragment (after #), so they're never sent to any
+ *  server — the recipient just VIEWS the day, nothing touches their own data. */
+export function buildViewUrl(schedule: Schedule, note?: string): string {
+  return `${PROD_ORIGIN}/s#d=${encodeShare(schedule, note)}`;
 }
 
 /** Decode a fragment code back into a Schedule, or null if invalid. */
@@ -84,6 +103,38 @@ export function decodeSchedule(code: string): Schedule | null {
       updatedAt: new Date().toISOString(),
       slices,
     };
+  } catch {
+    return null;
+  }
+}
+
+/** A read-only shared day: the schedule plus its optional note. */
+export interface SharedContent {
+  schedule: Schedule;
+  note: string;
+}
+
+/** Decode a view-link code into a schedule + note, or null if invalid. */
+export function decodeShare(code: string): SharedContent | null {
+  const schedule = decodeSchedule(code);
+  if (!schedule) return null;
+  let note = '';
+  try {
+    const p = JSON.parse(b64urlDecode(code)) as SharePayload;
+    if (typeof p.t === 'string') note = p.t;
+  } catch {
+    // note stays empty
+  }
+  return { schedule, note };
+}
+
+/** Read a shared schedule + note from the current URL fragment (#d=…), if any.
+ *  Used by the standalone /s viewer (see SharedView). */
+export function readSharedView(): SharedContent | null {
+  try {
+    const m = /[#&]d=([^&]+)/.exec(window.location.hash);
+    if (!m) return null;
+    return decodeShare(m[1]);
   } catch {
     return null;
   }

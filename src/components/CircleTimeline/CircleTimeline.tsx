@@ -74,6 +74,9 @@ interface CircleTimelineProps {
   /** Mobile: hide the boundary drag handles (editing happens via the + time-block
    *  form instead of finger-dragging). Tap-to-edit and the view toggle stay. */
   mobileNoChartDrag?: boolean;
+  /** Read-only share view: suppress the live now-line and world-clock markers so
+   *  the shared chart shows only the schedule itself (not the viewer's clock). */
+  hideLiveMarkers?: boolean;
 }
 
 // ─── Center hub live clock (HTML overlay, excluded from SVG export) ──────────
@@ -455,6 +458,7 @@ export function CircleTimeline({
   title,
   onHubClick,
   mobileNoChartDrag = false,
+  hideLiveMarkers = false,
 }: CircleTimelineProps) {
   const { cx, cy, innerR, outerR } = RING;
   const { t, lang } = useTranslation();
@@ -724,13 +728,13 @@ export function CircleTimeline({
       {/* Now-indicator: solid red line at current time angle. Toggleable.
           Hidden in 12h when the current time falls outside the window.
           Tagged data-export-exclude="true" — stripped from PNG/PDF clone. */}
-      {showNowLine && (!is12h || isInWindow(hhmmToMinutes(clock.hhmm), spec)) ? (
+      {!hideLiveMarkers && showNowLine && (!is12h || isInWindow(hhmmToMinutes(clock.hhmm), spec)) ? (
         <NowIndicator hhmm={clock.hhmm} spec={spec} color={nowLineStyle.color} width={nowLineStyle.width} />
       ) : null}
 
       {/* World-clock lines: an extra time line per configured timezone (own colour).
           Re-renders each clock tick; export-excluded like the now-line. */}
-      {worldClocks.map((wc) => {
+      {(hideLiveMarkers ? [] : worldClocks).map((wc) => {
         const min = tzMinutes(wc.tz, new Date());
         if (min === null || (is12h && !isInWindow(min, spec))) return null;
         return (

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { encodeSchedule, decodeSchedule, buildShareUrl } from '../share-link';
+import { encodeSchedule, decodeSchedule, buildShareUrl, encodeShare, decodeShare, buildViewUrl, readSharedView } from '../share-link';
 import { isContiguous24h } from '../time-utils';
 import type { Schedule } from '@/types/schedule';
 import type { TimeSlice } from '@/types/time-slice';
@@ -58,5 +58,52 @@ describe('share-link encode/decode', () => {
 
   it('buildShareUrl points at the production origin', () => {
     expect(buildShareUrl(sched([slice('00:00', '24:00')]))).toMatch(/^https:\/\/24houring\.com\/#p=[A-Za-z0-9_-]+$/);
+  });
+});
+
+describe('share view (schedule + note)', () => {
+  it('round-trips a note alongside the schedule', () => {
+    const s = sched([
+      slice('00:00', '08:00', { label: '수면' }),
+      slice('08:00', '24:00', { label: '일' }),
+    ], '내 하루');
+    const note = '오늘은 잘 잤다.\n둘째 줄';
+    const out = decodeShare(encodeShare(s, note))!;
+    expect(out).not.toBeNull();
+    expect(out.note).toBe(note);
+    expect(out.schedule.name).toBe('내 하루');
+    expect(out.schedule.slices.length).toBe(2);
+  });
+
+  it('omits an empty/whitespace note (decodes to empty string)', () => {
+    const s = sched([slice('00:00', '24:00')]);
+    expect(decodeShare(encodeShare(s, '   '))!.note).toBe('');
+    expect(decodeShare(encodeShare(s))!.note).toBe('');
+  });
+
+  it('a schedule-only import code still decodes as a share (no note)', () => {
+    const s = sched([slice('00:00', '24:00', { label: 'x' })]);
+    const out = decodeShare(encodeSchedule(s))!;
+    expect(out.note).toBe('');
+    expect(out.schedule.slices.length).toBe(1);
+  });
+
+  it('buildViewUrl points at /s with a #d= fragment', () => {
+    expect(buildViewUrl(sched([slice('00:00', '24:00')]), 'hi')).toMatch(
+      /^https:\/\/24houring\.com\/s#d=[A-Za-z0-9_-]+$/,
+    );
+  });
+
+  it('decodeShare returns null for garbage', () => {
+    expect(decodeShare('!!!not-base64')).toBeNull();
+  });
+
+  it('readSharedView reads #d= from the location hash', () => {
+    const s = sched([slice('00:00', '24:00', { label: 'y' })]);
+    window.location.hash = '#d=' + encodeShare(s, 'note!');
+    const out = readSharedView()!;
+    expect(out).not.toBeNull();
+    expect(out.note).toBe('note!');
+    window.location.hash = '';
   });
 });

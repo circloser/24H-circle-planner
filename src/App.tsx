@@ -54,7 +54,8 @@ import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useSliceInteraction } from '@/hooks/useSliceInteraction';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { WelcomeOverlay } from '@/components/Onboarding/WelcomeOverlay';
-import { buildShareUrl, readSharedFromHash, clearShareHash, copyToClipboard } from '@/lib/share-link';
+import { buildViewUrl, readSharedFromHash, clearShareHash, copyToClipboard } from '@/lib/share-link';
+import { useDiary, dateKey } from '@/hooks/useDiary';
 import { AnalyticsDialog } from '@/components/Analytics/AnalyticsDialog';
 import { DiaryDialog } from '@/components/Diary/DiaryDialog';
 import { DiaryNotePanel } from '@/components/Diary/DiaryNotePanel';
@@ -92,6 +93,7 @@ function App() {
   const present = useStoreSelector((s) => s.history.present);
   const locked = useStoreSelector((s) => s.locked);
   const diaryDate = useStoreSelector((s) => s.diaryDate);
+  const { entries } = useDiary();
   const dispatch = useStoreDispatch();
 
   const [presetOpen, setPresetOpen] = useState(false);
@@ -233,9 +235,12 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Copy a shareable link encoding the current schedule (the "today's routine" link).
+  // Copy a read-only share link (/s#d=…) for the shown day — the schedule PLUS
+  // its note (the diary note for the current/viewed day, if any). Opens the
+  // standalone viewer for the recipient; nothing touches their own data.
   async function handleCopyLink() {
-    const ok = await copyToClipboard(buildShareUrl(present));
+    const note = entries[diaryDate ?? dateKey()]?.note ?? '';
+    const ok = await copyToClipboard(buildViewUrl(present, note));
     if (ok) toast.success(t('sharelink.copied'));
     else toast.error(t('sharelink.copyFail'));
   }
