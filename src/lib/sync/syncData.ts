@@ -1,10 +1,13 @@
 /**
  * Pro cross-device sync — payload shaping (design §4-1).
  *
- * Content keys AND user *preferences* (`prefs`: font, background, timelines,
- * show-icons, language, …) travel between devices so a setting changed on one
- * device is unified on the others. Theme (light/dark) and the onboarded flag
- * remain device-local — those can legitimately differ per device.
+ * Only *content* keys travel between devices. Device-local settings (theme,
+ * `prefs`, the onboarded flag) are intentionally NOT synced. In particular the
+ * prefs envelope is re-normalized (defaults merged in) on every load, so its
+ * serialized string isn't byte-stable — syncing it caused an apply→reload loop
+ * after each cloud adopt. The fingerprint below is scoped to SYNC_KEYS so a
+ * leftover non-synced key on the server (e.g. a prefs blob written by an earlier
+ * build) can't cause a perpetual mismatch either.
  */
 
 const PREFIX = '24h-circle-planner.';
@@ -19,7 +22,6 @@ export const SYNC_KEYS: readonly string[] = [
   'user-presets',
   'goals',
   'records',
-  'prefs',
 ].map((k) => PREFIX + k);
 
 export interface SyncEnvelope {
@@ -52,9 +54,13 @@ export function applySyncData(data: Record<string, string>): void {
   }
 }
 
-/** Stable fingerprint of a data map (sorted keys) for change detection. */
+/** Stable fingerprint over the SYNCED keys only (sorted) for change detection.
+ *  Scoping to SYNC_KEYS means any extra key in `data` (e.g. a stale prefs blob a
+ *  previous build wrote to the server) is ignored, so it can't create a diff that
+ *  never resolves — which otherwise loops applyRemote→reload forever. */
 export function dataFingerprint(data: Record<string, string>): string {
-  return JSON.stringify(Object.keys(data).sort().map((k) => [k, data[k]]));
+  const keys = [...SYNC_KEYS].sort();
+  return JSON.stringify(keys.filter((k) => typeof data[k] === 'string').map((k) => [k, data[k]]));
 }
 
 /** Validate + normalise a stored blob string into an envelope (or null). */
