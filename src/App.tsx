@@ -579,6 +579,8 @@ function App() {
           <span aria-hidden style={{ opacity: 0.4 }}>·</span>
           <a href="/stories/" className="hover:underline">{t('footer.stories')}</a>
           <span aria-hidden style={{ opacity: 0.4 }}>·</span>
+          <a href="/health/" className="hover:underline">{t('footer.health')}</a>
+          <span aria-hidden style={{ opacity: 0.4 }}>·</span>
           <a href="/faq" className="hover:underline">{t('footer.faq')}</a>
           <span aria-hidden style={{ opacity: 0.4 }}>·</span>
           <a href="/about" className="hover:underline">{t('footer.about')}</a>
