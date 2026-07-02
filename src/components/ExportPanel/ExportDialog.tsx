@@ -87,11 +87,16 @@ function PngTab({
               key={s}
               type="button"
               onClick={() => setSize(s)}
-              className={`px-3 py-1.5 rounded text-sm border transition-colors ${
-                size === s
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-background border-border hover:bg-muted'
-              }`}
+              aria-pressed={size === s}
+              // Inline hsl(var(--…)) — this Tailwind v4 setup has no @theme, so
+              // bg-primary/bg-background/border-border generate no CSS and the
+              // selected resolution had no visible highlight.
+              className="px-3 py-1.5 rounded text-sm border transition-colors"
+              style={{
+                backgroundColor: size === s ? 'hsl(var(--primary))' : 'hsl(var(--surface))',
+                color: size === s ? 'hsl(var(--primary-foreground))' : 'hsl(var(--foreground))',
+                borderColor: size === s ? 'hsl(var(--primary))' : 'hsl(var(--border))',
+              }}
             >
               {s === 1080 ? '1080px' : s === 2160 ? '2K (2160px)' : '4K (3840px)'}
             </button>

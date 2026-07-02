@@ -48,6 +48,7 @@ export type TKey =
   | 'settings.gradStart'
   | 'settings.gradMid'
   | 'settings.gradEnd'
+  | 'settings.gradDirection'
   | 'settings.uploadImage'
   | 'settings.removeImage'
   | 'settings.icons'
@@ -424,6 +425,7 @@ const ko: Dict = {
   'settings.gradStart': '시작',
   'settings.gradMid': '중간',
   'settings.gradEnd': '끝',
+  'settings.gradDirection': '방향',
   'settings.uploadImage': '이미지 업로드',
   'settings.removeImage': '제거',
   'settings.icons': '아이콘',
@@ -799,6 +801,7 @@ const en: Dict = {
   'settings.gradStart': 'Start',
   'settings.gradMid': 'Middle',
   'settings.gradEnd': 'End',
+  'settings.gradDirection': 'Direction',
   'settings.uploadImage': 'Upload image',
   'settings.removeImage': 'Remove',
   'settings.icons': 'Icons',

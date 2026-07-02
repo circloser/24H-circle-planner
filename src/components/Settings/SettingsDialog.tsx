@@ -51,7 +51,6 @@ const BG_LABEL: Record<Background, TKey> = {
   dots: 'bg.dots',
   grid: 'bg.grid',
   diagonal: 'bg.diagonal',
-  gradient: 'bg.gradient',
   paper: 'bg.paper',
   checker: 'bg.checker',
   waves: 'bg.waves',
@@ -99,6 +98,15 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
     setPreference('gradient', { ...prefs.gradient, [stop]: hex });
     setPreference('bgType', 'gradient');
   };
+  const setGradientAngle = (angle: number) => {
+    setPreference('gradient', { ...prefs.gradient, angle });
+    setPreference('bgType', 'gradient');
+  };
+  // CSS gradient angle: 0°=up, increasing clockwise. Arrow points toward the end colour.
+  const GRAD_DIRECTIONS = [
+    [0, '↑'], [45, '↗'], [90, '→'], [135, '↘'],
+    [180, '↓'], [225, '↙'], [270, '←'], [315, '↖'],
+  ] as const;
 
   const onImagePick = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -385,6 +393,24 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
                       </label>
                     ),
                   )}
+                </div>
+                {/* Direction */}
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="text-xs text-muted-foreground">{t('settings.gradDirection')}</span>
+                  <div className="flex flex-wrap gap-1">
+                    {GRAD_DIRECTIONS.map(([angle, arrow]) => (
+                      <button
+                        key={angle}
+                        type="button"
+                        onClick={() => setGradientAngle(angle)}
+                        aria-pressed={prefs.bgType === 'gradient' && prefs.gradient.angle === angle}
+                        aria-label={`${angle}°`}
+                        className="opt-chip grid h-7 w-7 place-items-center rounded-md text-sm leading-none"
+                      >
+                        {arrow}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 

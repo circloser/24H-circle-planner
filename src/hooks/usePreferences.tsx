@@ -22,8 +22,10 @@ export const FONT_SCALE_MIN = 0.8;
 export const FONT_SCALE_MAX = 1.6;
 export const FONT_SCALE_STEP = 0.05;
 
+// NB: no 'gradient' pattern here — gradients get their own dedicated section in
+// Settings (presets + custom stops + direction), so a pattern chip was redundant.
 export const BACKGROUNDS = [
-  'none', 'dots', 'grid', 'diagonal', 'gradient', 'paper', 'checker', 'waves', 'memo',
+  'none', 'dots', 'grid', 'diagonal', 'paper', 'checker', 'waves', 'memo',
 ] as const;
 export type Background = (typeof BACKGROUNDS)[number];
 
