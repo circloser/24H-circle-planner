@@ -14,7 +14,8 @@
     "test:dict-coverage": "vitest run src/scripts/dict-coverage.test.ts",
     "spike:export": "node scripts/run-export-spike.mjs",
     "spike": "node scripts/run-export-spike.mjs",
-    "build:single": "vite build --config vite.config.singlefile.ts"
+    "build:single": "vite build --config vite.config.singlefile.ts",
+    "e2e": "node scripts/e2e/run.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",
