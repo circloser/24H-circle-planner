@@ -1,8 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { createContext, useContext, useCallback } from 'react';
 import type { Schedule } from '@/types/schedule';
 import type { TimeSlice } from '@/types/time-slice';
 import { useDays } from '@/hooks/useDays';
+import { usePersistedState, type PersistedCodec } from '@/hooks/usePersistedState';
 import { readRimMemos, type RimMemo } from '@/components/RimMemo/useRimMemos';
 
 /**
@@ -34,28 +35,16 @@ export function dateKey(d: Date = new Date()): string {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
-function loadMap(): DiaryMap {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as { version?: number; entries?: DiaryMap };
-      if (parsed && parsed.version === 1 && parsed.entries && typeof parsed.entries === 'object') {
-        return parsed.entries;
-      }
-    }
-  } catch {
-    // ignore corrupt/unavailable storage
-  }
-  return {};
-}
-
-function saveMap(entries: DiaryMap): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, entries }));
-  } catch {
-    // storage unavailable — diary simply won't persist
-  }
-}
+/** Storage envelope `{version: 1, entries}` — byte-compat pinned by tests. */
+export const diaryCodec: PersistedCodec<DiaryMap> = {
+  decode: (parsed) => {
+    const p = parsed as { version?: number; entries?: DiaryMap } | null;
+    if (p && p.version === 1 && p.entries && typeof p.entries === 'object') return p.entries;
+    return null;
+  },
+  encode: (entries) => ({ version: 1, entries }),
+  fallback: () => ({}),
+};
 
 interface DiaryApi {
   entries: DiaryMap;
@@ -70,12 +59,8 @@ interface DiaryApi {
 const DiaryContext = createContext<DiaryApi | null>(null);
 
 export function DiaryProvider({ children }: { children: React.ReactNode }) {
-  const [entries, setEntries] = useState<DiaryMap>(loadMap);
+  const [entries, setEntries] = usePersistedState(STORAGE_KEY, diaryCodec);
   const { activeId } = useDays();
-
-  useEffect(() => {
-    saveMap(entries);
-  }, [entries]);
 
   const saveEntry = useCallback((schedule: Schedule, date?: string) => {
     const key = date ?? dateKey();
@@ -93,7 +78,7 @@ export function DiaryProvider({ children }: { children: React.ReactNode }) {
         savedAt: Date.now(),
       },
     }));
-  }, [activeId]);
+  }, [activeId, setEntries]);
 
   const setEntryNote = useCallback((date: string, note: string) => {
     setEntries((prev) => {
@@ -101,7 +86,7 @@ export function DiaryProvider({ children }: { children: React.ReactNode }) {
       if (!entry) return prev;
       return { ...prev, [date]: { ...entry, note, savedAt: Date.now() } };
     });
-  }, []);
+  }, [setEntries]);
 
   const removeEntry = useCallback((date: string) => {
     setEntries((prev) => {
@@ -110,7 +95,7 @@ export function DiaryProvider({ children }: { children: React.ReactNode }) {
       delete next[date];
       return next;
     });
-  }, []);
+  }, [setEntries]);
 
   return (
     <DiaryContext.Provider value={{ entries, saveEntry, setEntryNote, removeEntry }}>

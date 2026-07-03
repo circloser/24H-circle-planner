@@ -1,8 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import { createContext, useContext, useCallback, useEffect, useRef } from 'react';
 import { v4 as uuid } from 'uuid';
 import { randomQuote } from '@/data/quotes';
 import { useTranslation } from '@/hooks/usePreferences';
+import { usePersistedState, type PersistedCodec } from '@/hooks/usePersistedState';
 
 const MEMO_SIZE = 200;
 
@@ -35,39 +36,26 @@ interface MemoState {
   visible: boolean;
 }
 
-function loadState(): MemoState {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as MemoEnvelope;
-      if (parsed && parsed.version === 1 && Array.isArray(parsed.memos)) {
-        // Migrate older memos that predate createdAt/onScreen (keep array order
-        // as creation order; default to shown on screen).
-        const memos = (parsed.memos as Array<Partial<Memo> & Memo>).map((m, i) => ({
-          ...m,
-          align: (m.align === 'left' ? 'left' : 'center') as 'left' | 'center',
-          createdAt: typeof m.createdAt === 'number' ? m.createdAt : i,
-          onScreen: m.onScreen !== false,
-        }));
-        return { memos, visible: parsed.visible !== false };
-      }
+/** Storage envelope `{version: 1, memos, visible}` — byte-compat pinned by tests. */
+export const memosCodec: PersistedCodec<MemoState> = {
+  decode: (parsed) => {
+    const p = parsed as MemoEnvelope | null;
+    if (p && p.version === 1 && Array.isArray(p.memos)) {
+      // Migrate older memos that predate createdAt/onScreen (keep array order
+      // as creation order; default to shown on screen).
+      const memos = (p.memos as Array<Partial<Memo> & Memo>).map((m, i) => ({
+        ...m,
+        align: (m.align === 'left' ? 'left' : 'center') as 'left' | 'center',
+        createdAt: typeof m.createdAt === 'number' ? m.createdAt : i,
+        onScreen: m.onScreen !== false,
+      }));
+      return { memos, visible: p.visible !== false };
     }
-  } catch {
-    // ignore corrupt/unavailable storage
-  }
-  return { memos: [], visible: true };
-}
-
-function saveState(state: MemoState): void {
-  try {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ version: 1, memos: state.memos, visible: state.visible }),
-    );
-  } catch {
-    // storage unavailable — memos simply won't persist
-  }
-}
+    return null;
+  },
+  encode: (state) => ({ version: 1, memos: state.memos, visible: state.visible }),
+  fallback: () => ({ memos: [], visible: true }),
+};
 
 /**
  * Pick a spawn position that avoids the circular timetable. The chart is a
@@ -126,17 +114,14 @@ interface MemoContextValue {
 const MemoContext = createContext<MemoContextValue | null>(null);
 
 export function MemoProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<MemoState>(loadState);
-  const { memos, visible } = state;
-  const { lang, t } = useTranslation();
-  // Whether this is the visitor's very first load (no memo storage yet).
+  // Whether this is the visitor's very first load (no memo storage yet). Must be
+  // read BEFORE usePersistedState's save effect writes the initial envelope.
   const firstRunRef = useRef(
     typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEY) == null,
   );
-
-  useEffect(() => {
-    saveState(state);
-  }, [state]);
+  const [state, setState] = usePersistedState(STORAGE_KEY, memosCodec);
+  const { memos, visible } = state;
+  const { lang, t } = useTranslation();
 
   // First-ever visit: drop ONE starter post-it on the RIGHT so newcomers see how
   // memos look, with a hint (in their language) that they can add their own.
@@ -159,7 +144,7 @@ export function MemoProvider({ children }: { children: React.ReactNode }) {
       };
       return { memos: [memo], visible: true };
     });
-  }, [t]);
+  }, [t, setState]);
 
   const addMemo = useCallback(() => {
     const { x, y } = pickSpawn(MEMO_SIZE);
@@ -177,40 +162,40 @@ export function MemoProvider({ children }: { children: React.ReactNode }) {
     };
     // Adding a note implies the layer should be visible.
     setState((prev) => ({ memos: [...prev.memos, memo], visible: true }));
-  }, [lang]);
+  }, [lang, setState]);
 
   const updateMemo = useCallback((id: string, patch: Partial<Memo>) => {
     setState((prev) => ({
       ...prev,
       memos: prev.memos.map((m) => (m.id === id ? { ...m, ...patch } : m)),
     }));
-  }, []);
+  }, [setState]);
 
   const archiveMemo = useCallback((id: string) => {
     setState((prev) => ({
       ...prev,
       memos: prev.memos.map((m) => (m.id === id ? { ...m, onScreen: false } : m)),
     }));
-  }, []);
+  }, [setState]);
 
   const restoreMemo = useCallback((id: string) => {
     setState((prev) => ({
       visible: true,
       memos: prev.memos.map((m) => (m.id === id ? { ...m, onScreen: true } : m)),
     }));
-  }, []);
+  }, [setState]);
 
   const deleteMemo = useCallback((id: string) => {
     setState((prev) => ({ ...prev, memos: prev.memos.filter((m) => m.id !== id) }));
-  }, []);
+  }, [setState]);
 
   const clearMemos = useCallback(() => {
     setState((prev) => ({ ...prev, memos: [] }));
-  }, []);
+  }, [setState]);
 
   const toggleVisible = useCallback(() => {
     setState((prev) => ({ ...prev, visible: !prev.visible }));
-  }, []);
+  }, [setState]);
 
   return (
     <MemoContext.Provider

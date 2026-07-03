@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext } from 'react';
 import { v4 as uuid } from 'uuid';
+import { usePersistedState, type PersistedCodec } from '@/hooks/usePersistedState';
 
 /**
  * Time-accumulation goals (e.g. 운동 5시간/주, 공부 3시간/일). A goal targets a
@@ -27,26 +28,16 @@ function isGoal(g: unknown): g is Goal {
   );
 }
 
-function load(): Goal[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const p = JSON.parse(raw) as { version?: number; goals?: unknown };
-      if (p && p.version === 1 && Array.isArray(p.goals)) return p.goals.filter(isGoal);
-    }
-  } catch {
-    /* ignore corrupt/unavailable storage */
-  }
-  return [];
-}
-
-function persist(goals: Goal[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, goals }));
-  } catch {
-    /* storage unavailable */
-  }
-}
+/** Storage envelope `{version: 1, goals}` — byte-compat pinned by tests. */
+export const goalsCodec: PersistedCodec<Goal[]> = {
+  decode: (parsed) => {
+    const p = parsed as { version?: number; goals?: unknown } | null;
+    if (p && p.version === 1 && Array.isArray(p.goals)) return p.goals.filter(isGoal);
+    return null;
+  },
+  encode: (goals) => ({ version: 1, goals }),
+  fallback: () => [],
+};
 
 interface GoalsApi {
   goals: Goal[];
@@ -58,21 +49,17 @@ interface GoalsApi {
 const GoalsContext = createContext<GoalsApi | null>(null);
 
 export function GoalsProvider({ children }: { children: React.ReactNode }) {
-  const [goals, setGoals] = useState<Goal[]>(load);
-
-  useEffect(() => {
-    persist(goals);
-  }, [goals]);
+  const [goals, setGoals] = usePersistedState(STORAGE_KEY, goalsCodec);
 
   const addGoal = useCallback((g: Omit<Goal, 'id'>) => {
     setGoals((prev) => [...prev, { ...g, id: uuid() }]);
-  }, []);
+  }, [setGoals]);
   const updateGoal = useCallback((id: string, patch: Partial<Omit<Goal, 'id'>>) => {
     setGoals((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
-  }, []);
+  }, [setGoals]);
   const removeGoal = useCallback((id: string) => {
     setGoals((prev) => prev.filter((x) => x.id !== id));
-  }, []);
+  }, [setGoals]);
 
   return (
     <GoalsContext.Provider value={{ goals, addGoal, updateGoal, removeGoal }}>
