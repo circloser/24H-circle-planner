@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Clock, Timer, AlarmClock, Calendar, CloudSun, Check, CircleDot } from 'lucide-react';
+import { Clock, Timer, AlarmClock, Calendar, CloudSun, Check, CircleDot, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation, usePreferences } from '@/hooks/usePreferences';
-import { useClockTools, type ToolKind } from './useClockTools';
+import { useClockTools, MAX_WEATHERS, type ToolKind } from './useClockTools';
 import { playBeep } from './clock-utils';
 import { ClockWidget } from './ClockWidget';
 import { TimerWidget } from './TimerWidget';
@@ -16,7 +16,7 @@ import { WeatherWidget } from './WeatherWidget';
  * a countdown timer, and an alarm. State + positions persist to localStorage.
  */
 export function ClockToolsLayer() {
-  const { state, toggle, setClock, setTimer, setAlarm, setCalendar, setWeather } = useClockTools();
+  const { state, toggle, setClock, setTimer, setAlarm, setCalendar, addWeather, removeWeather, setWeather } = useClockTools();
   const { t } = useTranslation();
   const { prefs, setPreference } = usePreferences();
   const isRecord = (prefs.chartView ?? 'full') === 'record';
@@ -77,14 +77,16 @@ export function ClockToolsLayer() {
           onClose={() => toggle('calendar')}
         />
       )}
-      {state.weather.on && (
+      {/* Weather windows — one per city, each closable on its own. */}
+      {state.weathers.map((w) => (
         <WeatherWidget
-          weather={state.weather}
-          onChange={setWeather}
-          onMove={(pos) => setWeather({ pos })}
-          onClose={() => toggle('weather')}
+          key={w.id}
+          weather={w}
+          onChange={(patch) => setWeather(w.id, patch)}
+          onMove={(pos) => setWeather(w.id, { pos })}
+          onClose={() => removeWeather(w.id)}
         />
-      )}
+      ))}
 
       {/* Click-away backdrop for the popup menu. */}
       {menuOpen && (
@@ -96,7 +98,24 @@ export function ClockToolsLayer() {
         <div className="fixed bottom-[76px] left-5 z-30 flex flex-col items-start gap-2">
           {menuRow('clock', <Clock className="h-4 w-4" />, t('clock.clock'))}
           {menuRow('calendar', <Calendar className="h-4 w-4" />, t('clock.calendar'))}
-          {menuRow('weather', <CloudSun className="h-4 w-4" />, t('clock.weather'))}
+          {/* Weather ADDS a window per click (multi-city) instead of toggling. */}
+          <button
+            type="button"
+            className={item}
+            onClick={addWeather}
+            aria-label={t('clock.weatherAdd')}
+            disabled={state.weathers.length >= MAX_WEATHERS}
+            style={state.weathers.length >= MAX_WEATHERS ? { opacity: 0.5 } : undefined}
+          >
+            <CloudSun className="h-4 w-4" />
+            <span className="flex-1 text-left">{t('clock.weather')}</span>
+            {state.weathers.length > 0 && (
+              <span className="grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] font-bold text-primary-foreground">
+                {state.weathers.length}
+              </span>
+            )}
+            <Plus className="h-4 w-4 text-muted-foreground" />
+          </button>
           {menuRow('timer', <Timer className="h-4 w-4" />, t('clock.timer'))}
           {menuRow('alarm', <AlarmClock className="h-4 w-4" />, t('clock.alarm'))}
           {/* Record mode — a separate mode (not a clock-tool); toggles the view. */}

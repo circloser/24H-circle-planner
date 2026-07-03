@@ -368,6 +368,7 @@ export const en: Record<TKey, string> = {
   'clock.today': 'Today',
   'clock.weather': 'Weather',
   'clock.weatherSearch': 'Search city',
+  'clock.weatherAdd': 'Add weather window',
   'clock.weatherSet': 'Set region',
   'clock.weatherEmpty': 'Search to set your region.',
   'clock.weatherError': 'Could not load weather.',

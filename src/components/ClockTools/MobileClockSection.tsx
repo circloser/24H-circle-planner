@@ -1,6 +1,6 @@
-import { Clock, Calendar, CloudSun, Check, CircleDot } from 'lucide-react';
+import { Clock, Calendar, CloudSun, Check, CircleDot, Plus } from 'lucide-react';
 import { useTranslation, usePreferences } from '@/hooks/usePreferences';
-import { useClockTools, type ToolKind } from './useClockTools';
+import { useClockTools, MAX_WEATHERS, type ToolKind } from './useClockTools';
 import { ClockWidget } from './ClockWidget';
 import { CalendarWidget } from './CalendarWidget';
 import { WeatherWidget } from './WeatherWidget';
@@ -16,7 +16,7 @@ const noMove = () => {};
  * own clock app already covers those.
  */
 export function MobileClockSection() {
-  const { state, toggle, setClock, setWeather } = useClockTools();
+  const { state, toggle, setClock, addWeather, removeWeather, setWeather } = useClockTools();
   const { t } = useTranslation();
   const { prefs, setPreference } = usePreferences();
   const isRecord = (prefs.chartView ?? 'full') === 'record';
@@ -24,7 +24,6 @@ export function MobileClockSection() {
   const chips: Array<[ToolKind, React.ReactNode, string]> = [
     ['clock', <Clock className="h-4 w-4" />, t('clock.clock')],
     ['calendar', <Calendar className="h-4 w-4" />, t('clock.calendar')],
-    ['weather', <CloudSun className="h-4 w-4" />, t('clock.weather')],
   ];
 
   return (
@@ -55,6 +54,30 @@ export function MobileClockSection() {
             </button>
           );
         })}
+        {/* Weather ADDS a card per tap (multi-city, cap MAX_WEATHERS); each
+            inline card below closes itself via its ✕. */}
+        <button
+          type="button"
+          onClick={addWeather}
+          aria-label={t('clock.weatherAdd')}
+          disabled={state.weathers.length >= MAX_WEATHERS}
+          aria-pressed={state.weathers.length > 0}
+          className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors disabled:opacity-50"
+          style={
+            state.weathers.length > 0
+              ? { backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', border: '1px solid hsl(var(--primary))' }
+              : { backgroundColor: 'hsl(var(--surface))', color: 'hsl(var(--foreground))', border: '1px solid hsl(var(--border))' }
+          }
+        >
+          <CloudSun className="h-4 w-4" />
+          {t('clock.weather')}
+          {state.weathers.length > 0 && (
+            <span className="grid h-4 min-w-4 place-items-center rounded-full bg-primary-foreground/25 px-1 text-[10px] font-bold">
+              {state.weathers.length}
+            </span>
+          )}
+          <Plus className="h-3.5 w-3.5" />
+        </button>
         {/* Record mode entry (a separate mode, not a clock tool). */}
         <button
           type="button"
@@ -86,9 +109,15 @@ export function MobileClockSection() {
           {state.calendar.on && (
             <CalendarWidget calendar={state.calendar} onMove={noMove} onClose={() => toggle('calendar')} />
           )}
-          {state.weather.on && (
-            <WeatherWidget weather={state.weather} onChange={setWeather} onMove={noMove} onClose={() => toggle('weather')} />
-          )}
+          {state.weathers.map((w) => (
+            <WeatherWidget
+              key={w.id}
+              weather={w}
+              onChange={(patch) => setWeather(w.id, patch)}
+              onMove={noMove}
+              onClose={() => removeWeather(w.id)}
+            />
+          ))}
         </div>
       </FloatingInlineContext.Provider>
     </section>

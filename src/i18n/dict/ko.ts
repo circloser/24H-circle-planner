@@ -369,6 +369,7 @@ export const ko = {
   'clock.today': '오늘',
   'clock.weather': '날씨',
   'clock.weatherSearch': '도시 검색',
+  'clock.weatherAdd': '날씨 창 추가',
   'clock.weatherSet': '지역 설정',
   'clock.weatherEmpty': '지역을 검색해 설정하세요.',
   'clock.weatherError': '날씨를 불러오지 못했습니다.',

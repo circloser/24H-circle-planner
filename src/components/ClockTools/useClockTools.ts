@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
+import { v4 as uuid } from 'uuid';
 import type { Pos } from './clock-utils';
 
 export type ClockMode = 'analog' | 'digital';
-export type ToolKind = 'clock' | 'timer' | 'alarm' | 'calendar' | 'weather';
+// NB: weather is NOT a ToolKind — unlike the on/off singleton tools, weather
+// windows are a LIST (one per city); see addWeather/removeWeather below.
+export type ToolKind = 'clock' | 'timer' | 'alarm' | 'calendar';
 
 export interface ClockState {
   on: boolean;
@@ -18,11 +21,15 @@ export interface WeatherPlace {
   lat: number;
   lon: number;
 }
-export interface WeatherState {
-  on: boolean;
+/** One open weather window. Being in the list = open; closing removes it. */
+export interface WeatherItem {
+  id: string;
   pos: Pos;
   place: WeatherPlace | null;
 }
+
+/** More than this and the strip becomes soup; the add action no-ops at the cap. */
+export const MAX_WEATHERS = 5;
 export interface TimerState {
   on: boolean;
   pos: Pos;
@@ -42,12 +49,30 @@ export interface ClockToolsState {
   timer: TimerState;
   alarm: AlarmState;
   calendar: CalendarState;
-  weather: WeatherState;
+  weathers: WeatherItem[];
+}
+
+/** Pre-multi-window envelope: a single toggleable weather widget. */
+interface LegacyWeatherState {
+  on: boolean;
+  pos: Pos;
+  place: WeatherPlace | null;
 }
 
 const STORAGE_KEY = '24h-circle-planner.clocktools';
 
 const clampY = (y: number) => Math.max(76, y);
+
+/** Where a NEW weather window spawns: the old single-widget spot, cascaded
+ *  24px per already-open window so stacked windows stay individually grabbable. */
+export function weatherSpawnPos(count: number): Pos {
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+  return {
+    x: Math.min(206 + count * 24, Math.max(20, vw - 224)),
+    y: clampY(Math.min(vh - 360 + count * 24, vh - 160)),
+  };
+}
 
 /** Default stacked positions above the bottom-left FAB. The clock + calendar
  *  start ON (floating on the LEFT) so a first-time visitor lands on a live
@@ -58,9 +83,23 @@ function defaultState(): ClockToolsState {
     clock: { on: true, mode: 'analog', pos: { x: 20, y: clampY(vh - 600) } },
     calendar: { on: true, pos: { x: 206, y: clampY(vh - 600) } },
     timer: { on: false, pos: { x: 20, y: clampY(vh - 360) }, setSec: 300, remainingSec: 300, running: false, endAt: null },
-    weather: { on: false, pos: { x: 206, y: clampY(vh - 360) }, place: null },
+    weathers: [],
     alarm: { on: false, pos: { x: 20, y: clampY(vh - 200) }, time: '07:00', enabled: false },
   };
+}
+
+/** Accept both shapes: `weathers` (current) or the legacy single `weather`
+ *  (an ON widget becomes the first list item; OFF is simply no windows). */
+function migrateWeathers(s: Partial<ClockToolsState> & { weather?: Partial<LegacyWeatherState> }): WeatherItem[] {
+  if (Array.isArray(s.weathers)) {
+    return s.weathers
+      .filter((w) => w && typeof w === 'object' && w.pos)
+      .map((w) => ({ id: typeof w.id === 'string' ? w.id : uuid(), pos: w.pos, place: w.place ?? null }));
+  }
+  if (s.weather?.on) {
+    return [{ id: uuid(), pos: s.weather.pos ?? weatherSpawnPos(0), place: s.weather.place ?? null }];
+  }
+  return [];
 }
 
 function loadState(): ClockToolsState {
@@ -75,7 +114,7 @@ function loadState(): ClockToolsState {
           clock: { ...def.clock, ...s.clock, pos: { ...def.clock.pos, ...s.clock?.pos } },
           calendar: { ...def.calendar, ...s.calendar, pos: { ...def.calendar.pos, ...s.calendar?.pos } },
           timer: { ...def.timer, ...s.timer, pos: { ...def.timer.pos, ...s.timer?.pos } },
-          weather: { ...def.weather, ...s.weather, pos: { ...def.weather.pos, ...s.weather?.pos } },
+          weathers: migrateWeathers(s),
           alarm: { ...def.alarm, ...s.alarm, pos: { ...def.alarm.pos, ...s.alarm?.pos } },
         };
         // A timer that finished while the tab was closed: stop it silently.
@@ -106,7 +145,12 @@ export interface ClockToolsApi {
   setTimer: (patch: Partial<TimerState>) => void;
   setAlarm: (patch: Partial<AlarmState>) => void;
   setCalendar: (patch: Partial<CalendarState>) => void;
-  setWeather: (patch: Partial<WeatherState>) => void;
+  /** Open one more weather window (up to MAX_WEATHERS; no-ops at the cap). */
+  addWeather: () => void;
+  /** Close ONE weather window (the ✕ on that window). */
+  removeWeather: (id: string) => void;
+  /** Patch one weather window (its place, or its position while dragging). */
+  setWeather: (id: string, patch: Partial<Omit<WeatherItem, 'id'>>) => void;
 }
 
 /** Self-contained store for the floating clock tools (no provider needed). */
@@ -133,9 +177,20 @@ export function useClockTools(): ClockToolsApi {
   const setCalendar = useCallback((patch: Partial<CalendarState>) => {
     setState((s) => ({ ...s, calendar: { ...s.calendar, ...patch } }));
   }, []);
-  const setWeather = useCallback((patch: Partial<WeatherState>) => {
-    setState((s) => ({ ...s, weather: { ...s.weather, ...patch } }));
+
+  const addWeather = useCallback(() => {
+    setState((s) => {
+      if (s.weathers.length >= MAX_WEATHERS) return s;
+      const item: WeatherItem = { id: uuid(), pos: weatherSpawnPos(s.weathers.length), place: null };
+      return { ...s, weathers: [...s.weathers, item] };
+    });
+  }, []);
+  const removeWeather = useCallback((id: string) => {
+    setState((s) => ({ ...s, weathers: s.weathers.filter((w) => w.id !== id) }));
+  }, []);
+  const setWeather = useCallback((id: string, patch: Partial<Omit<WeatherItem, 'id'>>) => {
+    setState((s) => ({ ...s, weathers: s.weathers.map((w) => (w.id === id ? { ...w, ...patch } : w)) }));
   }, []);
 
-  return { state, toggle, setClock, setTimer, setAlarm, setCalendar, setWeather };
+  return { state, toggle, setClock, setTimer, setAlarm, setCalendar, addWeather, removeWeather, setWeather };
 }

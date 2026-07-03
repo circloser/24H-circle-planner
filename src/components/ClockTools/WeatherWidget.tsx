@@ -1,13 +1,14 @@
 import { useCallback, useContext, useEffect, useState } from 'react';
 import { Search, RefreshCw, MapPin, Loader2, X } from 'lucide-react';
 import { makeDragStart, type Pos } from './clock-utils';
-import type { WeatherState, WeatherPlace } from './useClockTools';
+import type { WeatherItem, WeatherPlace } from './useClockTools';
 import { useTranslation } from '@/hooks/usePreferences';
 import { FloatingInlineContext } from './floatingInline';
 
 interface WeatherWidgetProps {
-  weather: WeatherState;
-  onChange: (patch: Partial<WeatherState>) => void;
+  /** One of possibly several open weather windows (one per city). */
+  weather: WeatherItem;
+  onChange: (patch: Partial<Omit<WeatherItem, 'id'>>) => void;
   onMove: (p: Pos) => void;
   onClose: () => void;
 }
@@ -126,7 +127,10 @@ export function WeatherWidget({ weather, onChange, onMove, onClose }: WeatherWid
 
   return (
     <div
-      className={inline ? 'group relative w-full' : 'group'}
+      // hover:z-[26]: with several cascaded windows, the hovered one raises
+      // above its siblings so its controls (✕/refresh/search) stay reachable.
+      className={inline ? 'group relative w-full' : 'group hover:z-[26]'}
+      data-weather-widget // stable hook — e2e/visual harness selector (live data)
       style={inline ? undefined : { position: 'fixed', left: weather.pos.x, top: weather.pos.y, width: 204, zIndex: 25 }}
     >
       {/* Box — fades in only on hover (clean reading by default); always inline. */}
