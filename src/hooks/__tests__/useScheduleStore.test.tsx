@@ -5,6 +5,7 @@ import { ScheduleStoreProvider, useStoreSelector, useStoreDispatch, useSliceSele
 import type { Schedule } from '@/types/schedule';
 import type { TimeSlice } from '@/types/time-slice';
 import type { Preset } from '@/types/preset';
+import { HISTORY_DEPTH } from '@/types/history';
 import { v4 as uuid } from 'uuid';
 import { PRESETS } from '@/data/presets';
 
@@ -305,7 +306,7 @@ describe('ScheduleStoreProvider', () => {
       expect(result.current.past.length).toBeLessThanOrEqual(1);
     });
 
-    it('caps past entries at HISTORY_DEPTH (20)', () => {
+    it('caps past entries at HISTORY_DEPTH', () => {
       const { result } = renderHook(
         () => ({
           past: useStoreSelector((s) => s.history.past),
@@ -336,7 +337,7 @@ describe('ScheduleStoreProvider', () => {
         });
       }
 
-      expect(result.current.past.length).toBeLessThanOrEqual(20);
+      expect(result.current.past.length).toBeLessThanOrEqual(HISTORY_DEPTH);
     });
   });
 

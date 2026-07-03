@@ -90,10 +90,17 @@ export function SliceLabel({ slice, onEdit, spec = FULL_SPEC }: SliceLabelProps)
     return w;
   };
   const arc = (2 * Math.PI * LABEL_R * widthMin) / 1440;
+  // Let the text overflow its wedge's arc by 30% before shrinking — the arc is
+  // a conservative budget (neighbouring labels rarely both max out, and the
+  // char-width estimate errs high), so strict fitting shrank labels even with
+  // visible room to spare. Shrinking, when needed, also targets this relaxed
+  // budget, so the reduction ratio stays as small as possible.
+  const FIT_TOLERANCE = 1.3;
   let textPx = BASE_FONT;
   if (isInside) {
     const fullW = estWidth(localized, BASE_FONT);
-    if (fullW > arc) textPx = Math.max(MIN_FONT, Math.round((BASE_FONT * arc) / fullW));
+    const budget = arc * FIT_TOLERANCE;
+    if (fullW > budget) textPx = Math.max(MIN_FONT, Math.round((BASE_FONT * budget) / fullW));
   }
   const narrow = isInside && textPx < BASE_FONT;
   // "크기가 작아지면 아이콘 숨김": a wedge too narrow for a 38px icon to sit in

@@ -1,6 +1,6 @@
 import { Clock, Calendar, CloudSun, Check, CircleDot, Plus } from 'lucide-react';
 import { useTranslation, usePreferences } from '@/hooks/usePreferences';
-import { useClockTools, MAX_WEATHERS, type ToolKind } from './useClockTools';
+import { useClockTools, MAX_WEATHERS, MAX_CLOCKS, type ToolKind } from './useClockTools';
 import { ClockWidget } from './ClockWidget';
 import { CalendarWidget } from './CalendarWidget';
 import { WeatherWidget } from './WeatherWidget';
@@ -16,13 +16,12 @@ const noMove = () => {};
  * own clock app already covers those.
  */
 export function MobileClockSection() {
-  const { state, toggle, setClock, addWeather, removeWeather, setWeather } = useClockTools();
+  const { state, toggle, addClock, removeClock, setClock, addWeather, removeWeather, setWeather } = useClockTools();
   const { t } = useTranslation();
   const { prefs, setPreference } = usePreferences();
   const isRecord = (prefs.chartView ?? 'full') === 'record';
 
   const chips: Array<[ToolKind, React.ReactNode, string]> = [
-    ['clock', <Clock className="h-4 w-4" />, t('clock.clock')],
     ['calendar', <Calendar className="h-4 w-4" />, t('clock.calendar')],
   ];
 
@@ -54,6 +53,30 @@ export function MobileClockSection() {
             </button>
           );
         })}
+        {/* Clock ADDS a card per tap (multi-timezone, cap MAX_CLOCKS); each
+            inline card below closes itself via its ✕. */}
+        <button
+          type="button"
+          onClick={addClock}
+          aria-label={t('clock.clockAdd')}
+          disabled={state.clocks.length >= MAX_CLOCKS}
+          aria-pressed={state.clocks.length > 0}
+          className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors disabled:opacity-50"
+          style={
+            state.clocks.length > 0
+              ? { backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', border: '1px solid hsl(var(--primary))' }
+              : { backgroundColor: 'hsl(var(--surface))', color: 'hsl(var(--foreground))', border: '1px solid hsl(var(--border))' }
+          }
+        >
+          <Clock className="h-4 w-4" />
+          {t('clock.clock')}
+          {state.clocks.length > 0 && (
+            <span className="grid h-4 min-w-4 place-items-center rounded-full bg-primary-foreground/25 px-1 text-[10px] font-bold">
+              {state.clocks.length}
+            </span>
+          )}
+          <Plus className="h-3.5 w-3.5" />
+        </button>
         {/* Weather ADDS a card per tap (multi-city, cap MAX_WEATHERS); each
             inline card below closes itself via its ✕. */}
         <button
@@ -98,14 +121,15 @@ export function MobileClockSection() {
 
       <FloatingInlineContext.Provider value={true}>
         <div className="mt-3 flex flex-col gap-3">
-          {state.clock.on && (
+          {state.clocks.map((c) => (
             <ClockWidget
-              clock={state.clock}
+              key={c.id}
+              clock={c}
+              onChange={(patch) => setClock(c.id, patch)}
               onMove={noMove}
-              onClose={() => toggle('clock')}
-              onToggleMode={() => setClock({ mode: state.clock.mode === 'analog' ? 'digital' : 'analog' })}
+              onClose={() => removeClock(c.id)}
             />
-          )}
+          ))}
           {state.calendar.on && (
             <CalendarWidget calendar={state.calendar} onMove={noMove} onClose={() => toggle('calendar')} />
           )}

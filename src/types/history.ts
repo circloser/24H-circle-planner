@@ -6,4 +6,5 @@ export interface HistoryState {
   future: Schedule[];
 }
 
-export const HISTORY_DEPTH = 20;
+/** Undo steps kept (the header undo button + Ctrl+Z share this history). */
+export const HISTORY_DEPTH = 10;

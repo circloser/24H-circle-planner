@@ -231,18 +231,20 @@ function BoundaryHandle({ slice, slices, index, spec, onPointerDownHandle }: Bou
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={() => setHovered(false)}
     >
-      {/* Wide transparent strip along the WHOLE division line (hub edge → rim) —
-          so the affordances appear when the pointer is anywhere NEAR the
-          boundary, not only on the small center dot. Pressing it also grabs the
-          boundary for dragging. Rendered first (bottom) so the affordance
-          buttons + dot stay on top. (Transparent → invisible in exports.) */}
+      {/* Transparent strip along the WHOLE division line (hub edge → rim) — the
+          hover/drag hit-area. NARROW on fine pointers (8px): with slices ≤40min
+          the old 20px strips from both boundaries covered most of the wedge, so
+          hovering anywhere lit the boundary affordances and made the slice hard
+          to edit. Hover/drag now engages only right on the line; touch keeps
+          36px. Rendered first (bottom) so the affordance buttons + dot stay on
+          top. (Transparent → invisible in exports.) */}
       <line
         x1={innerPt.x}
         y1={innerPt.y}
         x2={outerPt.x}
         y2={outerPt.y}
         stroke="transparent"
-        strokeWidth={coarse ? 36 : 20}
+        strokeWidth={coarse ? 36 : 8}
         style={{ pointerEvents: 'stroke', cursor: 'ew-resize', touchAction: 'none' }}
         onPointerDown={(e) => onPointerDownHandle(e, index)}
         onClick={handleTap}

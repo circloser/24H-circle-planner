@@ -127,11 +127,12 @@ export function WeatherWidget({ weather, onChange, onMove, onClose }: WeatherWid
 
   return (
     <div
-      // hover:z-[26]: with several cascaded windows, the hovered one raises
-      // above its siblings so its controls (✕/refresh/search) stay reachable.
-      className={inline ? 'group relative w-full' : 'group hover:z-[26]'}
+      // Base z lives in the CLASS (z-[25]) — an inline zIndex would always beat
+      // hover:z-[26], so the hovered window could never raise above overlapping
+      // widgets and its controls (✕/refresh/search) would stay unclickable.
+      className={inline ? 'group relative w-full' : 'group z-[25] hover:z-[26]'}
       data-weather-widget // stable hook — e2e/visual harness selector (live data)
-      style={inline ? undefined : { position: 'fixed', left: weather.pos.x, top: weather.pos.y, width: 204, zIndex: 25 }}
+      style={inline ? undefined : { position: 'fixed', left: weather.pos.x, top: weather.pos.y, width: 204 }}
     >
       {/* Box — fades in only on hover (clean reading by default); always inline. */}
       <div

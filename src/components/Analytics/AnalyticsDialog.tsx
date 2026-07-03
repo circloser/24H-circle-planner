@@ -29,6 +29,9 @@ export function AnalyticsDialog({ open, onOpenChange }: AnalyticsDialogProps) {
   const { entries } = useDiary();
   const { t, lang } = useTranslation();
   const [range, setRange] = useState<Range>('all');
+  // Hover tooltip for the per-day trend segments (the native `title` was too
+  // slow/undiscoverable to tell which item a colour band is).
+  const [tip, setTip] = useState<{ x: number; y: number; label: string; color: string; minutes: number } | null>(null);
 
   // Saved diary entries within the chosen range, oldest → newest.
   const sources = useMemo<Array<{ label: string; slices: TimeSlice[] }>>(() => {
@@ -46,14 +49,15 @@ export function AnalyticsDialog({ open, onOpenChange }: AnalyticsDialogProps) {
   const totalMin = a.dayCount * 1440 || 1;
   const pct = (min: number) => Math.round((min / totalMin) * 100);
 
-  // Average minutes/day → "8시간 30분" / "8h 30m" (drops a zero part).
-  const fmtAvg = (min: number) => {
-    const v = Math.round(min / a.dayCount);
+  // "8시간 30분" / "8h 30m" (drops a zero part).
+  const fmtMin = (v: number) => {
     const h = Math.floor(v / 60);
     const m = v % 60;
     if (lang === 'ko') return h && m ? `${h}시간 ${m}분` : h ? `${h}시간` : `${m}분`;
     return h && m ? `${h}h ${m}m` : h ? `${h}h` : `${m}m`;
   };
+  // Average minutes/day.
+  const fmtAvg = (min: number) => fmtMin(Math.round(min / a.dayCount));
 
   const seg = (active: boolean): React.CSSProperties =>
     active
@@ -120,7 +124,12 @@ export function AnalyticsDialog({ open, onOpenChange }: AnalyticsDialogProps) {
                       </span>
                       <div className="flex h-3 w-full overflow-hidden rounded border border-border">
                         {d.segments.map((s, j) => (
-                          <div key={j} title={s.label} style={{ width: `${(s.minutes / 1440) * 100}%`, backgroundColor: s.color }} />
+                          <div
+                            key={j}
+                            onMouseMove={(e) => setTip({ x: e.clientX, y: e.clientY, label: s.label, color: s.color, minutes: s.minutes })}
+                            onMouseLeave={() => setTip(null)}
+                            style={{ width: `${(s.minutes / 1440) * 100}%`, backgroundColor: s.color }}
+                          />
                         ))}
                       </div>
                     </div>
@@ -133,6 +142,19 @@ export function AnalyticsDialog({ open, onOpenChange }: AnalyticsDialogProps) {
 
         {/* Reserved ad space (consistent with the other dialogs). */}
         <AdSlot slot="analytics" className="mt-3" />
+
+        {/* Trend hover tooltip — follows the cursor, above the dialog (z-50). */}
+        {tip && (
+          <div
+            className="pointer-events-none fixed z-[60] flex items-center gap-1.5 rounded-md border border-border bg-surface px-2 py-1 text-xs shadow-md"
+            style={{ left: tip.x + 12, top: tip.y - 34 }}
+            role="tooltip"
+          >
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: tip.color }} />
+            <span className="font-medium text-foreground">{tip.label.trim() || t('analytics.untitled')}</span>
+            <span className="text-muted-foreground">{fmtMin(tip.minutes)}</span>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

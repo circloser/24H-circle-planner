@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, X, Copy, FileText, LayoutGrid, Lock, Unlock, CalendarDays, ChevronLeft, ChevronRight, LogOut, Pencil } from 'lucide-react';
+import { Plus, X, Copy, FileText, LayoutGrid, Lock, Unlock, CalendarDays, ChevronLeft, ChevronRight, LogOut, Pencil, Undo2 } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import { toast } from 'sonner';
 import {
@@ -62,6 +62,7 @@ export function DayBar() {
   const isMobile = useIsMobile();
   const diaryDate = useStoreSelector((s) => s.diaryDate);
   const locked = useStoreSelector((s) => s.locked);
+  const canUndo = useStoreSelector((s) => s.history.past.length > 0);
   const dispatch = useStoreDispatch();
   const { entries: diaryEntries } = useDiary();
 
@@ -297,6 +298,20 @@ export function DayBar() {
             <Pencil className="h-3 w-3" />
             {t('diary.editMode')}
           </span>
+          {/* Undo — steps back through the edit history (shares Ctrl+Z's stack,
+              HISTORY_DEPTH steps). Disabled when there is nothing to undo. */}
+          <span className="h-3 w-px bg-border" />
+          <button
+            type="button"
+            onClick={() => dispatch({ type: 'UNDO' })}
+            disabled={!canUndo}
+            aria-label={t('edit.undo')}
+            title={t('edit.undo')}
+            className="flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-1 font-semibold transition-colors hover:bg-black/10 disabled:cursor-not-allowed disabled:opacity-35 text-foreground"
+          >
+            <Undo2 className="h-3 w-3" />
+            {t('edit.undo')}
+          </button>
           {multi && activeIndex >= 0 && (
             <>
               <span className="h-3 w-px bg-border" />

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useClockTools, MAX_WEATHERS } from '../useClockTools';
+import { useClockTools, MAX_WEATHERS, MAX_CLOCKS } from '../useClockTools';
 
 const KEY = '24h-circle-planner.clocktools';
 
@@ -50,6 +50,42 @@ describe('useClockTools — multi-window weather', () => {
     act(() => result.current.removeWeather(first.id));
     expect(result.current.state.weathers).toHaveLength(1);
     expect(result.current.state.weathers[0].id).toBe(second.id);
+  });
+
+  it('migrates a legacy ON clock into one list item (mode/pos preserved, tz local)', () => {
+    localStorage.setItem(KEY, JSON.stringify({
+      version: 1,
+      state: { clock: { on: true, mode: 'digital', pos: { x: 30, y: 40 } } },
+    }));
+    const { result } = renderHook(() => useClockTools());
+    expect(result.current.state.clocks).toHaveLength(1);
+    expect(result.current.state.clocks[0]).toMatchObject({ mode: 'digital', pos: { x: 30, y: 40 }, tz: null });
+  });
+
+  it('migrates a legacy OFF clock to no clocks; missing clock info → default local clock', () => {
+    localStorage.setItem(KEY, JSON.stringify({
+      version: 1,
+      state: { clock: { on: false, mode: 'analog', pos: { x: 1, y: 2 } } },
+    }));
+    expect(renderHook(() => useClockTools()).result.current.state.clocks).toEqual([]);
+    localStorage.setItem(KEY, JSON.stringify({ version: 1, state: {} }));
+    expect(renderHook(() => useClockTools()).result.current.state.clocks).toHaveLength(1);
+  });
+
+  it('addClock caps at MAX_CLOCKS; setClock patches ONE clock (timezone)', () => {
+    localStorage.setItem(KEY, JSON.stringify({ version: 1, state: { clock: { on: false, mode: 'analog', pos: { x: 0, y: 0 } } } }));
+    const { result } = renderHook(() => useClockTools());
+    for (let i = 0; i < MAX_CLOCKS + 2; i++) act(() => result.current.addClock());
+    expect(result.current.state.clocks).toHaveLength(MAX_CLOCKS);
+
+    const [first, second] = result.current.state.clocks;
+    act(() => result.current.setClock(second.id, { tz: 'Asia/Tokyo' }));
+    expect(result.current.state.clocks[0].tz).toBeNull();
+    expect(result.current.state.clocks[1].tz).toBe('Asia/Tokyo');
+
+    act(() => result.current.removeClock(first.id));
+    expect(result.current.state.clocks).toHaveLength(MAX_CLOCKS - 1);
+    expect(result.current.state.clocks[0].id).toBe(second.id);
   });
 
   it('persists the weathers list and restores it on the next mount', () => {
