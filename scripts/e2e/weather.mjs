@@ -86,6 +86,42 @@ export async function run() {
     }
   }
 
+  // ── Geocode + forecast flow (mocked): a Korean city search resolves via Photon
+  //    and shows a temperature. Guards the fix for the dead Nominatim fallback /
+  //    Open-Meteo not indexing Hangul names. ──
+  {
+    const { browser, page, errors } = await launchPage({ viewport: { width: 375, height: 812 }, locale: 'ko-KR' });
+    try {
+      // Photon: the Hangul-capable geocoder (primary for non-ASCII queries).
+      await page.route('**/photon.komoot.io/**', (route) => route.fulfill({
+        status: 200, contentType: 'application/json',
+        body: JSON.stringify({ features: [{ properties: { name: '서울특별시', country: '대한민국' }, geometry: { coordinates: [126.9783, 37.5667] } }] }),
+      }));
+      // Open-Meteo geocode (fallback for Hangul) — return nothing.
+      await page.route('**/geocoding-api.open-meteo.com/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
+      // Open-Meteo forecast.
+      await page.route('**/api.open-meteo.com/v1/forecast**', (route) => route.fulfill({
+        status: 200, contentType: 'application/json', body: JSON.stringify({ current: { temperature_2m: 21, weather_code: 0 } }),
+      }));
+
+      await gotoApp(page);
+      await seedBasicData(page);
+      await page.locator('button[aria-label="날씨 창 추가"]').first().click();
+      await wait(300);
+
+      const card = page.locator('[data-weather-widget]').first();
+      await card.locator('input[aria-label="도시 검색"]').fill('서울');
+      await card.locator('button[aria-label="지역 설정"]').click();
+      await wait(800);
+
+      pass('Korean city search resolves (city label shows)', (await card.locator('text=서울특별시').count()) > 0);
+      pass('forecast temperature is displayed', (await card.locator('text=/\\d+°/').count()) > 0);
+      pass('geocode: no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
+    } finally {
+      await browser.close();
+    }
+  }
+
   return allOk();
 }
 

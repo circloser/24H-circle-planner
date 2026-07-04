@@ -31,27 +31,52 @@ interface Current {
   code: number;
 }
 
-/** Geocode a place name. Open-Meteo first (fast, English/romanized); falls back
- *  to Nominatim/OSM which handles non-ASCII queries like "서울". */
-async function geocode(name: string, lang: string): Promise<WeatherPlace | null> {
+/** Open-Meteo geocoder: fast, clean canonical names — but only indexes ASCII/
+ *  romanized names (returns nothing for Hangul like "서울"). */
+async function geocodeOpenMeteo(name: string, lang: string): Promise<WeatherPlace | null> {
   try {
     const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=1&language=${lang}`;
     const j = await (await fetch(url)).json();
     const r = j?.results?.[0];
     if (r) return { name: r.country ? `${r.name}, ${r.country}` : r.name, lat: r.latitude, lon: r.longitude };
   } catch {
-    /* try the fallback */
+    /* caller falls through */
   }
+  return null;
+}
+
+/** Photon (Komoot) geocoder: OSM-based, accurate for non-ASCII queries like
+ *  "서울", and sends CORS headers (unlike Nominatim, which now 403s browsers). */
+async function geocodePhoton(name: string, lang: string): Promise<WeatherPlace | null> {
   try {
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name)}&format=json&limit=1&accept-language=${lang}`;
+    const plang = ['en', 'de', 'fr'].includes(lang) ? lang : 'default';
+    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(name)}&limit=1&lang=${plang}`;
     const j = await (await fetch(url)).json();
-    const r = Array.isArray(j) ? j[0] : null;
-    if (r) {
-      const label = String(r.display_name || name).split(',').slice(0, 2).join(',').trim();
-      return { name: label, lat: Number(r.lat), lon: Number(r.lon) };
+    const f = Array.isArray(j?.features) ? j.features[0] : null;
+    const coords = f?.geometry?.coordinates; // [lon, lat]
+    if (f && Array.isArray(coords) && coords.length === 2) {
+      const p = f.properties ?? {};
+      const label = [p.name, p.country].filter(Boolean).join(', ') || name;
+      return { name: label, lat: Number(coords[1]), lon: Number(coords[0]) };
     }
   } catch {
-    /* no luck */
+    /* caller falls through */
+  }
+  return null;
+}
+
+/** Geocode a place name. A Hangul (or otherwise non-ASCII) query goes to Photon
+ *  first — Open-Meteo returns nothing (or a wrong hit) for those — while an ASCII
+ *  query prefers Open-Meteo's clean canonical names. Either way the other service
+ *  is the fallback, so both Korean and English searches resolve. */
+async function geocode(name: string, lang: string): Promise<WeatherPlace | null> {
+  const nonAscii = [...name].some((c) => c.charCodeAt(0) > 127);
+  const order = nonAscii
+    ? [geocodePhoton, geocodeOpenMeteo]
+    : [geocodeOpenMeteo, geocodePhoton];
+  for (const g of order) {
+    const r = await g(name, lang);
+    if (r) return r;
   }
   return null;
 }
