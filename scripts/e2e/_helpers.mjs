@@ -65,7 +65,9 @@ export async function seedBasicData(page, { slices } = {}) {
       { id: 'b', label: '일', startTime: '08:00', endTime: '18:00', color: '#60a5fa', icon: '', textPosition: 'inside' },
       { id: 'c', label: '휴식', startTime: '18:00', endTime: '24:00', color: '#34d399', icon: '', textPosition: 'inside' },
     ];
-    const day = { id: 'd1', schedule: { id: 's', version: 1, name: '내 하루', presetSource: null, updatedAt: '2026-07-01T00:00:00.000Z', slices: sl } };
+    // Non-default name so the hub title shows the NAME, not today's date — the
+    // date title changes daily and would flake the visual baselines at midnight.
+    const day = { id: 'd1', schedule: { id: 's', version: 1, name: '테스트 하루', presetSource: null, updatedAt: '2026-07-01T00:00:00.000Z', slices: sl } };
     localStorage.setItem('24h-circle-planner.days', JSON.stringify({ version: 1, activeId: 'd1', days: [day] }));
     localStorage.setItem('24h-circle-planner.prefs', JSON.stringify({ version: 1, prefs: { language: 'ko' } }));
     const now = new Date();

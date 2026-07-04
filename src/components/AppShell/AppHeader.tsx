@@ -1,4 +1,4 @@
-import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target, ShieldCheck, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,6 +33,7 @@ export interface AppHeaderProps {
   onOpenHome: () => void;
   onOpenTransfer: () => void;
   onOpenReset: () => void;
+  onOpenE2ee: () => void;
 }
 
 /**
@@ -56,6 +57,7 @@ export function AppHeader({
   onOpenHome,
   onOpenTransfer,
   onOpenReset,
+  onOpenE2ee,
 }: AppHeaderProps) {
   const { t } = useTranslation();
   const { user, login, logout, loading: authLoading } = useAuth();
@@ -198,6 +200,8 @@ export function AppHeader({
                       >
                         {sync.status === 'syncing' ? (
                           <RefreshCw className="h-3 w-3 animate-spin" />
+                        ) : sync.status === 'locked' ? (
+                          <Lock className="h-3 w-3" />
                         ) : sync.status === 'offline' || sync.status === 'error' ? (
                           <CloudOff className="h-3 w-3" />
                         ) : (
@@ -206,13 +210,19 @@ export function AppHeader({
                         <span>
                           {sync.status === 'syncing'
                             ? t('sync.syncing')
-                            : sync.status === 'offline'
-                              ? t('sync.offline')
-                              : sync.status === 'error'
-                                ? t('sync.error')
-                                : t('sync.synced')}
+                            : sync.status === 'locked'
+                              ? t('sync.locked')
+                              : sync.status === 'offline'
+                                ? t('sync.offline')
+                                : sync.status === 'error'
+                                  ? t('sync.error')
+                                  : t('sync.synced')}
                         </span>
                       </div>
+                      <DropdownMenuItem onClick={onOpenE2ee} className="gap-2">
+                        <ShieldCheck className="h-4 w-4" />
+                        {t('e2ee.menu')}
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={handleLogout} className="gap-2">
                         <LogOut className="h-4 w-4" />
                         {t('auth.logout')}

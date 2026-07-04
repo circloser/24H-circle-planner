@@ -35,6 +35,8 @@ import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useSliceInteraction } from '@/hooks/useSliceInteraction';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useShareActions } from '@/hooks/useShareActions';
+import { useSyncStatus } from '@/hooks/useSync';
+import { E2eeDialog } from '@/components/Sync/E2eeDialog';
 import { WelcomeOverlay } from '@/components/Onboarding/WelcomeOverlay';
 import { readSharedFromHash, clearShareHash } from '@/lib/share-link';
 import { AnalyticsDialog } from '@/components/Analytics/AnalyticsDialog';
@@ -124,6 +126,7 @@ function App() {
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [diaryOpen, setDiaryOpen] = useState(false);
   const [goalsOpen, setGoalsOpen] = useState(false);
+  const [e2eeOpen, setE2eeOpen] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [editingSliceId, setEditingSliceId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -199,6 +202,18 @@ function App() {
   // Share actions (PNG via native sheet / read-only /s#d= link incl. the note).
   const { shareImage, copyLink } = useShareActions(svgRef);
 
+  // E2EE: when the cloud copy is ciphertext this device can't read, sync reports
+  // 'locked' — surface the unlock dialog automatically so the user isn't stuck.
+  const syncStatus = useSyncStatus().status;
+  useEffect(() => {
+    if (syncStatus !== 'locked') return;
+    // Defer to the next frame: opening a Radix modal synchronously from the same
+    // commit as the status change can be dismissed by its focus scope. The user
+    // can always open it from Settings → 종단간 암호화 too.
+    const id = requestAnimationFrame(() => setE2eeOpen(true));
+    return () => cancelAnimationFrame(id);
+  }, [syncStatus]);
+
   // Ask the browser to keep our localStorage from being auto-evicted, so a
   // user's schedule/memos/backups survive storage-pressure cleanups. Best-effort.
   useEffect(() => {
@@ -246,6 +261,7 @@ function App() {
         onOpenHome={() => setHomeOpen(true)}
         onOpenTransfer={() => setTransferOpen(true)}
         onOpenReset={() => setResetOpen(true)}
+        onOpenE2ee={() => setE2eeOpen(true)}
       />
 
       <main
@@ -437,6 +453,9 @@ function App() {
 
       {/* Time-accumulation goals (운동/공부 등) with progress bars. */}
       <GoalsDialog open={goalsOpen} onOpenChange={setGoalsOpen} />
+
+      {/* End-to-end encryption for cloud sync (enable / unlock / manage). */}
+      <E2eeDialog open={e2eeOpen} onOpenChange={setE2eeOpen} />
 
       {/* One-time first-visit welcome over the seeded demo schedule. */}
       <WelcomeOverlay

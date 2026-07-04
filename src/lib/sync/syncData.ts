@@ -63,6 +63,42 @@ export interface SyncEnvelope {
   data: Record<string, string>;
 }
 
+import type { EncBlock } from './e2ee';
+
+/** Wire format when E2EE is on: the server sees only `enc` (ciphertext) plus a
+ *  cleartext `modifiedAt` used for last-write-wins. Decrypted into a SyncEnvelope
+ *  at the transport boundary (syncClient) before the engine ever sees it. */
+export interface EncryptedEnvelope {
+  v: 2;
+  modifiedAt: number;
+  enc: EncBlock;
+}
+
+/** A parsed wire envelope: either plaintext (v1, engine-ready) or encrypted (v2). */
+export type WireEnvelope =
+  | { kind: 'plain'; envelope: SyncEnvelope }
+  | { kind: 'enc'; modifiedAt: number; enc: EncBlock };
+
+function isEncBlock(o: unknown): o is EncBlock {
+  const b = o as Record<string, unknown> | null;
+  return !!b && typeof b.salt === 'string' && typeof b.iv === 'string' && typeof b.ct === 'string' && typeof b.check === 'string';
+}
+
+/** Validate + classify a stored blob as a plaintext (v1) or encrypted (v2) envelope. */
+export function parseWire(raw: unknown): WireEnvelope | null {
+  try {
+    const o = (typeof raw === 'string' ? JSON.parse(raw) : raw) as Record<string, unknown> | null;
+    if (!o || typeof o !== 'object') return null;
+    if (o['v'] === 2 && isEncBlock(o['enc'])) {
+      return { kind: 'enc', modifiedAt: typeof o['modifiedAt'] === 'number' ? (o['modifiedAt'] as number) : 0, enc: o['enc'] };
+    }
+    const env = parseEnvelope(o);
+    return env ? { kind: 'plain', envelope: env } : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Snapshot the synced content keys currently in localStorage. */
 export function collectSyncData(): Record<string, string> {
   const data: Record<string, string> = {};

@@ -5,8 +5,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/hooks/usePreferences';
 import { collectSyncData, applySyncData, dataFingerprint, changedSyncKeys, LIVE_APPLY_KEYS, PREFS_KEY, PREFS_SYNC_EVENT, VIEW_KEY, VIEW_SYNC_EVENT, type SyncEnvelope } from '@/lib/sync/syncData';
 import { pullRemote, pushRemote, deviceLabel } from '@/lib/sync/syncClient';
+import { loadCachedKey, forgetKey, E2EE_EVENT, E2EE_REPUSH_EVENT, E2EE_DISABLE_EVENT } from '@/lib/sync/e2ee';
 
-export type SyncStatus = 'disabled' | 'syncing' | 'synced' | 'offline' | 'error';
+// 'locked' = the cloud copy is E2EE ciphertext and this device has no key yet;
+// the engine pauses (no push/pull would clobber it) until the passphrase unlocks.
+export type SyncStatus = 'disabled' | 'syncing' | 'synced' | 'offline' | 'error' | 'locked';
 
 interface SyncContextValue {
   status: SyncStatus;
@@ -98,6 +101,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     let stopped = false;
     let pushTimer: ReturnType<typeof setTimeout> | null = null;
     let busy = false;
+    let locked = false; // set when the cloud is E2EE ciphertext we can't read yet
+    let ready = false; // a first pull has round-tripped — until then, NEVER push
     let lastObserved = '';
     const meta = loadMeta();
     const setMeta = (m: SyncMeta) => {
@@ -169,6 +174,9 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         stat('synced');
       } else if (r.kind === 'conflict') {
         reconcile(r.envelope, r.version);
+      } else if (r.kind === 'locked') {
+        locked = true;
+        stat('locked');
       } else if (r.kind === 'offline') {
         stat('offline');
       } else if (r.kind === 'unauth') {
@@ -191,6 +199,14 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       if (stopped || busy || !navigatorOnline()) return;
       const r = await pullRemote();
       if (stopped) return;
+      // A pull has now round-tripped — pushes are safe from here. Before this,
+      // a fresh device with local data must NOT push (it could clobber an
+      // encrypted cloud copy it can't read yet with its own plaintext).
+      ready = true;
+      if (r.kind === 'locked') {
+        locked = true;
+        return stat('locked');
+      }
       if (r.kind === 'empty') {
         const data = collectSyncData();
         if (Object.keys(data).length > 0) {
@@ -222,7 +238,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     };
 
     const tick = () => {
-      if (stopped || busy) return;
+      if (stopped || busy || locked || !ready) return; // not-ready/locked → never push (would clobber the cloud)
       if (!navigatorOnline()) {
         stat('offline');
         return;
@@ -239,23 +255,47 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    // Kick off.
+    // Kick off — restore this device's cached E2EE key (if any) BEFORE the first
+    // pull, so an already-set-up device unlocks silently instead of flashing 'locked'.
     stat('syncing');
     lastObserved = currentFp();
-    void pull();
+    void loadCachedKey().then(() => { if (!stopped) void pull(); });
 
     let n = 0;
     const iv = setInterval(() => {
       n += 1;
       tick();
-      if (n % PULL_EVERY_TICKS === 0) void pull();
+      if (n % PULL_EVERY_TICKS === 0 && !locked) void pull();
     }, TICK_MS);
 
     const onWake = () => {
-      if (document.visibilityState !== 'hidden') void pull();
+      if (document.visibilityState !== 'hidden' && !locked) void pull();
+    };
+    // Unlocked (or newly enabled) → a key is now available: clear the lock and
+    // re-pull so the ciphertext decrypts and the engine resumes.
+    const onE2ee = () => {
+      locked = false;
+      void pull();
+    };
+    // Enabling encryption doesn't change the DATA (so the fingerprint is
+    // unchanged and a normal pull would see "in sync") — force a push so the
+    // cloud plaintext is replaced with ciphertext right away.
+    const onRepush = () => {
+      locked = false;
+      void doPush(meta.version);
+    };
+    // Disable cloud-wide: forget the key SILENTLY (no resume-pull race), then
+    // push the current data as plaintext (v1) so other devices read it keyless.
+    const onDisable = () => {
+      forgetKey(true);
+      locked = false;
+      void doPush(meta.version);
     };
     window.addEventListener('focus', onWake);
     window.addEventListener('online', onWake);
+    window.addEventListener(E2EE_EVENT, onE2ee);
+    window.addEventListener(E2EE_REPUSH_EVENT, onRepush);
+    window.addEventListener(E2EE_DISABLE_EVENT, onDisable);
     document.addEventListener('visibilitychange', onWake);
 
     return () => {
@@ -264,6 +304,9 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       if (pushTimer) clearTimeout(pushTimer);
       window.removeEventListener('focus', onWake);
       window.removeEventListener('online', onWake);
+      window.removeEventListener(E2EE_EVENT, onE2ee);
+      window.removeEventListener(E2EE_REPUSH_EVENT, onRepush);
+      window.removeEventListener(E2EE_DISABLE_EVENT, onDisable);
       document.removeEventListener('visibilitychange', onWake);
     };
   }, [user]);
