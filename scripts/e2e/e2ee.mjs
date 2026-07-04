@@ -65,12 +65,12 @@ export async function run() {
       // Enable E2EE via the settings menu (only shown when signed in).
       await page.locator('button[aria-label="설정"]').first().click();
       await wait(200);
-      await page.locator('[role="menuitem"]:has-text("종단간 암호화")').first().click();
+      await page.locator('[role="menuitem"]:has-text("일기 잠금")').first().click();
       await wait(400);
       await page.locator('input[aria-label="암호 (8자 이상)"]').fill('open-sesame-42');
       await page.locator('input[aria-label="암호 다시 입력"]').fill('open-sesame-42');
       await page.locator('input[type="checkbox"]').first().check();
-      await page.locator('button:has-text("암호화 켜기")').last().click();
+      await page.locator('button:has-text("잠금 설정")').last().click();
 
       const encrypted = await until(() => !!store.blob && store.blob.includes('"v":2') && !store.blob.includes(SECRET), 15000);
       pass('after enabling E2EE the cloud is CIPHERTEXT (note no longer readable)', encrypted, `v2=${store.blob?.includes('"v":2')} leaks=${store.blob?.includes(SECRET)}`);
@@ -95,7 +95,7 @@ export async function run() {
 
       // The engine reports the locked state in the settings menu (and auto-opens
       // the unlock dialog). Verify the status, then open the dialog the reliable
-      // way — the settings → 종단간 암호화 menu item — to run the unlock flow.
+      // way — the settings → 일기 잠금 menu item — to run the unlock flow.
       const locked = await until(async () => {
         await page.locator('button[aria-label="설정"]').first().click().catch(() => {});
         await wait(200);
@@ -106,9 +106,9 @@ export async function run() {
       pass('device B reports LOCKED (passphrase needed)', locked);
 
       // Open the unlock dialog from the (already open) settings menu.
-      await page.locator('[role="menuitem"]:has-text("종단간 암호화")').first().click();
+      await page.locator('[role="menuitem"]:has-text("일기 잠금")').first().click();
       await wait(500);
-      pass('unlock dialog opens', (await page.locator('text=암호화된 데이터 잠금 해제').count()) > 0);
+      pass('unlock dialog opens', (await page.locator('text=일기 잠금 해제').count()) > 0);
 
       await page.locator('input[aria-label="암호 (8자 이상)"]').fill('nope-nope-nope');
       await page.locator('button:has-text("잠금 해제")').last().click();
