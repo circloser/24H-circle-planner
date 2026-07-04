@@ -228,6 +228,36 @@ const STATES = [
       await seedBasicData(page);
     },
   },
+  {
+    name: 'day-view',
+    async setup(page) {
+      await gotoApp(page);
+      await seedBasicData(page);
+      await page.evaluate(() => {
+        const raw = JSON.parse(localStorage.getItem('24h-circle-planner.prefs'));
+        raw.prefs.chartView = 'day';
+        localStorage.setItem('24h-circle-planner.prefs', JSON.stringify(raw));
+      });
+      await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+      await page.keyboard.press('Escape').catch(() => {});
+      await wait(500);
+    },
+  },
+  {
+    name: 'night-view',
+    async setup(page) {
+      await gotoApp(page);
+      await seedBasicData(page);
+      await page.evaluate(() => {
+        const raw = JSON.parse(localStorage.getItem('24h-circle-planner.prefs'));
+        raw.prefs.chartView = 'night';
+        localStorage.setItem('24h-circle-planner.prefs', JSON.stringify(raw));
+      });
+      await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+      await page.keyboard.press('Escape').catch(() => {});
+      await wait(500);
+    },
+  },
 ];
 
 mkdirSync(isBaseline ? BASELINE : CURRENT, { recursive: true });

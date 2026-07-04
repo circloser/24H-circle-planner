@@ -725,6 +725,24 @@ export function CircleTimeline({
         <BoundaryHandles slices={slices} spec={spec} onPointerDownHandle={onPointerDownHandle} />
       ) : null}
 
+      {/* 12h seam: the window's two edge hours (06/18 for day, 18/06 for night)
+          meet at the BOTTOM but are NOT contiguous in time — the other 12h are
+          hidden. A bold dashed radial cut visualises that discontinuity. Kept in
+          exports (it's structural, unlike the live now-line). */}
+      {is12h ? (() => {
+        const inner = polarToCartesian(cx, cy, innerR, spec.startAngleDeg);
+        const outer = polarToCartesian(cx, cy, outerR + 6, spec.startAngleDeg);
+        return (
+          <g className="seam-cut" aria-hidden="true" style={{ pointerEvents: 'none' }}>
+            {/* Light casing so the dashes read over any slice colour. */}
+            <line x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y}
+              stroke="hsl(var(--background))" strokeWidth={10} strokeLinecap="round" opacity={0.9} />
+            <line x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y}
+              stroke="hsl(var(--foreground) / 0.8)" strokeWidth={6} strokeLinecap="round" strokeDasharray="12 9" />
+          </g>
+        );
+      })() : null}
+
       {/* Now-indicator: solid red line at current time angle. Toggleable.
           Hidden in 12h when the current time falls outside the window.
           Tagged data-export-exclude="true" — stripped from PNG/PDF clone. */}
