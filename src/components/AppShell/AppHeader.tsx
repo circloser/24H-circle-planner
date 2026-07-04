@@ -1,4 +1,4 @@
-import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target, Lock } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target, Lock, CalendarClock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,6 +25,7 @@ export interface AppHeaderProps {
   onOpenDiary: () => void;
   onOpenAnalytics: () => void;
   onOpenGoals: () => void;
+  onOpenWeekday: () => void;
   onOpenPresets: () => void;
   onOpenSettings: (section: SettingsSection) => void;
   onOpenExport: () => void;
@@ -49,6 +50,7 @@ export function AppHeader({
   onOpenDiary,
   onOpenAnalytics,
   onOpenGoals,
+  onOpenWeekday,
   onOpenPresets,
   onOpenSettings,
   onOpenExport,
@@ -116,6 +118,10 @@ export function AppHeader({
               <DropdownMenuItem onClick={onOpenSavePreset} className="gap-2">
                 <BookmarkPlus className="h-4 w-4" />
                 {t('header.savePreset')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onOpenWeekday} className="gap-2">
+                <CalendarClock className="h-4 w-4" />
+                {t('weekday.title')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={onOpenDiary} className="gap-2">

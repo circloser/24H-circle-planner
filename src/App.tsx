@@ -46,6 +46,11 @@ import { GoalsDialog } from '@/components/Goals/GoalsDialog';
 import { GoalsWidget } from '@/components/Goals/GoalsWidget';
 import { DiaryViewSync } from '@/components/DiaryViewSync';
 import { RecordView } from '@/components/Record/RecordView';
+import { WeekdayScheduleDialog } from '@/components/Weekday/WeekdayScheduleDialog';
+import { WeekdayPromptDialog } from '@/components/Weekday/WeekdayPromptDialog';
+import { loadWeekdayMap, weekdayName, STORAGE_KEY_WEEKDAY_PROMPTED } from '@/lib/weekday-schedules';
+import { loadSlots } from '@/lib/slots';
+import { dateKey } from '@/hooks/useDiary';
 import { PRESETS } from '@/data/presets';
 import type { Slot } from '@/types/slot';
 import type { Schedule } from '@/types/schedule';
@@ -127,6 +132,20 @@ function App() {
   const [diaryOpen, setDiaryOpen] = useState(false);
   const [goalsOpen, setGoalsOpen] = useState(false);
   const [e2eeOpen, setE2eeOpen] = useState(false);
+  const [weekdayOpen, setWeekdayOpen] = useState(false);
+  // On opening the app on a weekday that has an assigned default schedule, ask
+  // once (per local day) whether to load it. Skipped when arriving via a share
+  // link. Reads the slot up front so the prompt has its name.
+  const [weekdaySlot, setWeekdaySlot] = useState<Slot | null>(() => {
+    try {
+      if (readSharedFromHash()) return null;
+      if (localStorage.getItem(STORAGE_KEY_WEEKDAY_PROMPTED) === dateKey()) return null;
+      const slotId = loadWeekdayMap()[new Date().getDay()];
+      return slotId ? (loadSlots()[slotId] ?? null) : null;
+    } catch {
+      return null;
+    }
+  });
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [editingSliceId, setEditingSliceId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
@@ -220,6 +239,15 @@ function App() {
     void requestPersistentStorage();
   }, []);
 
+  // Mark today as prompted the moment a weekday prompt is shown, so a reload
+  // before the user answers doesn't ask again this day.
+  useEffect(() => {
+    if (weekdaySlot) {
+      try { localStorage.setItem(STORAGE_KEY_WEEKDAY_PROMPTED, dateKey()); } catch { /* ignore */ }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // A shared schedule was parsed from the URL fragment on init — strip the
   // fragment so a reload doesn't re-prompt; the confirm dialog handles loading.
   useEffect(() => {
@@ -253,6 +281,7 @@ function App() {
         onOpenDiary={() => setDiaryOpen(true)}
         onOpenAnalytics={() => setAnalyticsOpen(true)}
         onOpenGoals={() => setGoalsOpen(true)}
+        onOpenWeekday={() => setWeekdayOpen(true)}
         onOpenPresets={() => setPresetOpen(true)}
         onOpenSettings={setSettingsSection}
         onOpenExport={() => setExportOpen(true)}
@@ -456,6 +485,17 @@ function App() {
 
       {/* End-to-end encryption for cloud sync (enable / unlock / manage). */}
       <E2eeDialog open={e2eeOpen} onOpenChange={setE2eeOpen} />
+
+      {/* Assign a saved schedule to each weekday. */}
+      <WeekdayScheduleDialog open={weekdayOpen} onOpenChange={setWeekdayOpen} />
+
+      {/* On opening the app on a weekday with an assigned default → confirm load. */}
+      <WeekdayPromptDialog
+        slot={weekdaySlot}
+        dayName={weekdayName(new Date().getDay(), lang)}
+        onKeep={() => setWeekdaySlot(null)}
+        onLoad={(slot) => { handleSlotLoad(slot); setWeekdaySlot(null); }}
+      />
 
       {/* One-time first-visit welcome over the seeded demo schedule. */}
       <WelcomeOverlay
