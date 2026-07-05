@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Dialog,
   DialogContent,
@@ -143,18 +144,22 @@ export function AnalyticsDialog({ open, onOpenChange }: AnalyticsDialogProps) {
         {/* Reserved ad space (consistent with the other dialogs). */}
         <AdSlot slot="analytics" className="mt-3" />
 
-        {/* Trend hover tooltip — follows the cursor, above the dialog (z-50). */}
-        {tip && (
-          <div
-            className="pointer-events-none fixed z-[60] flex items-center gap-1.5 rounded-md border border-border bg-surface px-2 py-1 text-xs shadow-md"
-            style={{ left: tip.x + 12, top: tip.y - 34 }}
-            role="tooltip"
-          >
-            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: tip.color }} />
-            <span className="font-medium text-foreground">{tip.label.trim() || t('analytics.untitled')}</span>
-            <span className="text-muted-foreground">{fmtMin(tip.minutes)}</span>
-          </div>
-        )}
+        {/* Trend hover tooltip — portaled to <body> so it escapes the Dialog's
+            `transform` (which would otherwise reframe `position:fixed` to the
+            dialog box, misplacing it AND growing the dialog's scroll height). */}
+        {tip &&
+          createPortal(
+            <div
+              className="pointer-events-none fixed z-[100] flex items-center gap-1.5 rounded-md border border-border bg-surface px-2 py-1 text-xs shadow-md"
+              style={{ left: tip.x + 12, top: tip.y - 34 }}
+              role="tooltip"
+            >
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: tip.color }} />
+              <span className="font-medium text-foreground">{tip.label.trim() || t('analytics.untitled')}</span>
+              <span className="text-muted-foreground">{fmtMin(tip.minutes)}</span>
+            </div>,
+            document.body,
+          )}
       </DialogContent>
     </Dialog>
   );

@@ -45,6 +45,9 @@ html.show-en .lang-en { display:revert; }
   body { background:#15171c; color:#e5e7eb; }
   .logo, h1, h2, h3 { color:#f3f4f6; }
   p, li { color:#c5cad3; }
+  /* .lead is a class → beats the `p` rule above; needs its own dark override
+     (else the light-mode #3a4150 stays dark-on-dark and is unreadable). */
+  .lead { color:#d7dce4; }
   header.site, footer.site { border-color:#2a2e37; }
   .card, .gcard, blockquote { background:#1c1f26; border-color:#2a2e37; }
   .gcard h3 { color:#f3f4f6; }
