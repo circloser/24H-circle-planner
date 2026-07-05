@@ -30,6 +30,7 @@ async function stabilise(page) {
       *, *::before, *::after { animation: none !important; transition: none !important; }
       .now-indicator { visibility: hidden !important; }
       [data-clock-widget] { visibility: hidden !important; } /* ticking analog/digital clock */
+      [data-calendar-widget] { visibility: hidden !important; } /* mini-calendar: today-marker drifts daily */
       [data-save-indicator] { visibility: hidden !important; } /* transient saving/saved chip */
       .table-time-mark { visibility: hidden !important; } /* table view's per-minute time lines */
     `,
@@ -226,6 +227,21 @@ const STATES = [
     async setup(page) {
       await gotoApp(page);
       await seedBasicData(page);
+    },
+  },
+  {
+    name: 'main-de',
+    async setup(page) {
+      await gotoApp(page);
+      await seedBasicData(page);
+      await page.evaluate(() => {
+        const raw = JSON.parse(localStorage.getItem('24h-circle-planner.prefs'));
+        raw.prefs.language = 'de';
+        localStorage.setItem('24h-circle-planner.prefs', JSON.stringify(raw));
+      });
+      await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+      await page.keyboard.press('Escape').catch(() => {});
+      await wait(500);
     },
   },
   {

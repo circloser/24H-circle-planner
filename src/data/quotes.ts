@@ -17,6 +17,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '삶이 있는 한 희망은 있다.', author: '키케로' },
     en: { text: 'Where there is life, there is hope.', author: 'Cicero' },
+    de: { text: 'Wo Leben ist, da ist auch Hoffnung.', author: 'Cicero' },
     ja: { text: '命ある限り、希望はある。', author: 'キケロ' },
     zh: { text: '只要还活着，就有希望。', author: '西塞罗' },
     fr: { text: "Tant qu'il y a de la vie, il y a de l'espoir.", author: 'Cicéron' },
@@ -26,6 +27,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '오늘 할 수 있는 일에 전력을 다하라.', author: '아이작 뉴턴' },
     en: { text: 'Put your whole strength into what you can do today.', author: 'Isaac Newton' },
+    de: { text: 'Setze deine ganze Kraft in das, was du heute tun kannst.', author: 'Isaac Newton' },
     ja: { text: '今日できることに全力を尽くせ。', author: 'アイザック・ニュートン' },
     zh: { text: '全力以赴做好今天能做的事。', author: '艾萨克·牛顿' },
     fr: { text: "Donne tout ce que tu peux à ce que tu peux faire aujourd'hui.", author: 'Isaac Newton' },
@@ -35,6 +37,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '성공은 영원하지 않고 실패는 치명적이지 않다.', author: '윈스턴 처칠' },
     en: { text: 'Success is not final, and failure is not fatal.', author: 'Winston Churchill' },
+    de: { text: 'Erfolg ist nicht endgültig, Misserfolg ist nicht tödlich.', author: 'Winston Churchill' },
     ja: { text: '成功は最終的なものではなく、失敗も致命的ではない。', author: 'ウィンストン・チャーチル' },
     zh: { text: '成功并非终点，失败也并非末日。', author: '温斯顿·丘吉尔' },
     fr: { text: "Le succès n'est pas final, l'échec n'est pas fatal.", author: 'Winston Churchill' },
@@ -44,6 +47,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '절대, 절대, 절대 포기하지 말라.', author: '윈스턴 처칠' },
     en: { text: 'Never, never, never give up.', author: 'Winston Churchill' },
+    de: { text: 'Niemals, niemals, niemals aufgeben.', author: 'Winston Churchill' },
     ja: { text: '決して、決して、決して諦めるな。', author: 'ウィンストン・チャーチル' },
     zh: { text: '永远、永远、永远不要放弃。', author: '温斯顿·丘吉尔' },
     fr: { text: "N'abandonnez jamais, jamais, jamais.", author: 'Winston Churchill' },
@@ -53,6 +57,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '성공이란 열정을 잃지 않고 실패를 거듭하는 능력이다.', author: '윈스턴 처칠' },
     en: { text: 'Success is the ability to go from failure to failure without losing your enthusiasm.', author: 'Winston Churchill' },
+    de: { text: 'Erfolg ist die Fähigkeit, von Misserfolg zu Misserfolg zu gehen, ohne die Begeisterung zu verlieren.', author: 'Winston Churchill' },
     ja: { text: '成功とは、情熱を失わずに失敗を重ねられる力である。', author: 'ウィンストン・チャーチル' },
     zh: { text: '成功就是从一个失败走向另一个失败，却不失热情。', author: '温斯顿·丘吉尔' },
     fr: { text: "Le succès, c'est d'aller d'échec en échec sans perdre son enthousiasme.", author: 'Winston Churchill' },
@@ -62,6 +67,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '상상력은 지식보다 중요하다.', author: '알베르트 아인슈타인' },
     en: { text: 'Imagination is more important than knowledge.', author: 'Albert Einstein' },
+    de: { text: 'Fantasie ist wichtiger als Wissen.', author: 'Albert Einstein' },
     ja: { text: '想像力は知識より重要だ。', author: 'アルベルト・アインシュタイン' },
     zh: { text: '想象力比知识更重要。', author: '阿尔伯特·爱因斯坦' },
     fr: { text: "L'imagination est plus importante que le savoir.", author: 'Albert Einstein' },
@@ -71,6 +77,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '인생은 자전거를 타는 것과 같다. 균형을 잡으려면 움직여야 한다.', author: '알베르트 아인슈타인' },
     en: { text: 'Life is like riding a bicycle. To keep your balance, you must keep moving.', author: 'Albert Einstein' },
+    de: { text: 'Das Leben ist wie Fahrradfahren. Um das Gleichgewicht zu halten, musst du in Bewegung bleiben.', author: 'Albert Einstein' },
     ja: { text: '人生は自転車に乗るようなもの。バランスを保つには進み続けなければならない。', author: 'アルベルト・アインシュタイン' },
     zh: { text: '人生就像骑自行车，要保持平衡就得不断前进。', author: '阿尔伯特·爱因斯坦' },
     fr: { text: "La vie, c'est comme une bicyclette : pour garder l'équilibre, il faut avancer.", author: 'Albert Einstein' },
@@ -80,6 +87,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '실패는 성공의 어머니다.', author: '토마스 에디슨' },
     en: { text: 'Failure is the mother of success.', author: 'Thomas Edison' },
+    de: { text: 'Der Misserfolg ist die Mutter des Erfolgs.', author: 'Thomas Edison' },
     ja: { text: '失敗は成功の母。', author: 'トーマス・エジソン' },
     zh: { text: '失败是成功之母。', author: '托马斯·爱迪生' },
     fr: { text: "L'échec est la mère du succès.", author: 'Thomas Edison' },
@@ -89,6 +97,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '천재는 1퍼센트의 영감과 99퍼센트의 노력으로 만들어진다.', author: '토마스 에디슨' },
     en: { text: 'Genius is one percent inspiration and ninety-nine percent perspiration.', author: 'Thomas Edison' },
+    de: { text: 'Genie ist ein Prozent Inspiration und neunundneunzig Prozent Transpiration.', author: 'Thomas Edison' },
     ja: { text: '天才とは1パーセントのひらめきと99パーセントの努力である。', author: 'トーマス・エジソン' },
     zh: { text: '天才是百分之一的灵感加上百分之九十九的汗水。', author: '托马斯·爱迪生' },
     fr: { text: "Le génie, c'est un pour cent d'inspiration et quatre-vingt-dix-neuf pour cent de transpiration.", author: 'Thomas Edison' },
@@ -98,6 +107,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '할 수 있다고 믿든 할 수 없다고 믿든, 믿는 대로 될 것이다.', author: '헨리 포드' },
     en: { text: "Whether you think you can, or you think you can't — you're right.", author: 'Henry Ford' },
+    de: { text: 'Ob du denkst, du kannst es, oder du kannst es nicht — du hast recht.', author: 'Henry Ford' },
     ja: { text: 'できると思うかできないと思うか、どちらも正しい。', author: 'ヘンリー・フォード' },
     zh: { text: '无论你认为自己能还是不能，你都是对的。', author: '亨利·福特' },
     fr: { text: 'Que vous pensiez pouvoir ou ne pas pouvoir, vous avez raison.', author: 'Henry Ford' },
@@ -107,6 +117,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '사람은 누구나 자기가 할 수 있다고 생각하는 것보다 더 많은 것을 할 수 있다.', author: '헨리 포드' },
     en: { text: 'Everyone can do more than they think they can.', author: 'Henry Ford' },
+    de: { text: 'Jeder kann mehr, als er glaubt.', author: 'Henry Ford' },
     ja: { text: '誰もが自分で思う以上のことができる。', author: 'ヘンリー・フォード' },
     zh: { text: '每个人能做到的都比自己想象的多。', author: '亨利·福特' },
     fr: { text: "Chacun peut faire plus qu'il ne le croit.", author: 'Henry Ford' },
@@ -116,6 +127,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '위대한 일을 하는 유일한 방법은 당신이 하는 일을 사랑하는 것이다.', author: '스티브 잡스' },
     en: { text: 'The only way to do great work is to love what you do.', author: 'Steve Jobs' },
+    de: { text: 'Der einzige Weg, großartige Arbeit zu leisten, ist zu lieben, was man tut.', author: 'Steve Jobs' },
     ja: { text: '偉大な仕事をする唯一の方法は、自分のすることを愛することだ。', author: 'スティーブ・ジョブズ' },
     zh: { text: '做出伟大工作的唯一方法，就是热爱你所做的事。', author: '史蒂夫·乔布斯' },
     fr: { text: "La seule façon de faire du bon travail est d'aimer ce que l'on fait.", author: 'Steve Jobs' },
@@ -125,6 +137,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '계속 갈망하라, 계속 우직하게 나아가라.', author: '스티브 잡스' },
     en: { text: 'Stay hungry, stay foolish.', author: 'Steve Jobs' },
+    de: { text: 'Bleib hungrig, bleib töricht.', author: 'Steve Jobs' },
     ja: { text: 'ハングリーであれ、愚かであれ。', author: 'スティーブ・ジョブズ' },
     zh: { text: '求知若饥，虚心若愚。', author: '史蒂夫·乔布斯' },
     fr: { text: 'Restez affamés, restez fous.', author: 'Steve Jobs' },
@@ -134,6 +147,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '당신의 시간은 한정되어 있다. 다른 사람의 삶을 사느라 시간을 낭비하지 말라.', author: '스티브 잡스' },
     en: { text: "Your time is limited, so don't waste it living someone else's life.", author: 'Steve Jobs' },
+    de: { text: 'Deine Zeit ist begrenzt, also verschwende sie nicht damit, das Leben eines anderen zu leben.', author: 'Steve Jobs' },
     ja: { text: '時間は限られている。他人の人生を生きて無駄にするな。', author: 'スティーブ・ジョブズ' },
     zh: { text: '你的时间有限，不要浪费它去过别人的生活。', author: '史蒂夫·乔布斯' },
     fr: { text: "Votre temps est limité, ne le gâchez pas à vivre la vie d'un autre.", author: 'Steve Jobs' },
@@ -143,6 +157,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '혁신은 리더와 추종자를 구분 짓는 기준이다.', author: '스티브 잡스' },
     en: { text: 'Innovation distinguishes between a leader and a follower.', author: 'Steve Jobs' },
+    de: { text: 'Innovation unterscheidet einen Anführer von einem Mitläufer.', author: 'Steve Jobs' },
     ja: { text: '革新こそがリーダーと追随者を分ける。', author: 'スティーブ・ジョブズ' },
     zh: { text: '创新决定了你是领袖还是追随者。', author: '史蒂夫·乔布斯' },
     fr: { text: "L'innovation distingue le leader du suiveur.", author: 'Steve Jobs' },
@@ -152,6 +167,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '천 리 길도 한 걸음부터.', author: '노자' },
     en: { text: 'A journey of a thousand miles begins with a single step.', author: 'Laozi' },
+    de: { text: 'Eine Reise von tausend Meilen beginnt mit einem einzigen Schritt.', author: 'Laotse' },
     ja: { text: '千里の道も一歩から。', author: '老子' },
     zh: { text: '千里之行，始于足下。', author: '老子' },
     fr: { text: 'Un voyage de mille lieues commence par un seul pas.', author: 'Lao Tseu' },
@@ -161,6 +177,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '아는 것을 안다고 하고 모르는 것을 모른다고 하는 것이 곧 아는 것이다.', author: '공자' },
     en: { text: 'To know what you know and what you do not know, that is true knowledge.', author: 'Confucius' },
+    de: { text: 'Zu wissen, was man weiß, und zu wissen, was man nicht weiß, das ist wahres Wissen.', author: 'Konfuzius' },
     ja: { text: '知っていることを知っているとし、知らないことを知らないとすること、それが知ることである。', author: '孔子' },
     zh: { text: '知之为知之，不知为不知，是知也。', author: '孔子' },
     fr: { text: "Savoir ce que l'on sait et ce que l'on ne sait pas, voilà le vrai savoir.", author: 'Confucius' },
@@ -170,6 +187,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '배우기만 하고 생각하지 않으면 얻는 것이 없다.', author: '공자' },
     en: { text: 'Learning without thought is labor lost.', author: 'Confucius' },
+    de: { text: 'Lernen ohne Denken ist vergebliche Mühe.', author: 'Konfuzius' },
     ja: { text: '学んで思わざれば則ち罔し。', author: '孔子' },
     zh: { text: '学而不思则罔。', author: '孔子' },
     fr: { text: 'Apprendre sans réfléchir est peine perdue.', author: 'Confucius' },
@@ -179,6 +197,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '가장 큰 영광은 한 번도 실패하지 않음이 아니라 실패할 때마다 다시 일어서는 데 있다.', author: '공자' },
     en: { text: 'Our greatest glory is not in never falling, but in rising every time we fall.', author: 'Confucius' },
+    de: { text: 'Unser größter Ruhm liegt nicht darin, niemals zu fallen, sondern jedes Mal wieder aufzustehen.', author: 'Konfuzius' },
     ja: { text: '最大の栄光は決して倒れないことではなく、倒れるたびに起き上がることにある。', author: '孔子' },
     zh: { text: '我们最大的荣耀不在于从不跌倒，而在于每次跌倒后都能站起来。', author: '孔子' },
     fr: { text: "Notre plus grande gloire n'est pas de ne jamais tomber, mais de nous relever à chaque chute.", author: 'Confucius' },
@@ -188,6 +207,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '지식에 투자하는 것이 가장 이윤이 많이 남는다.', author: '벤저민 프랭클린' },
     en: { text: 'An investment in knowledge pays the best interest.', author: 'Benjamin Franklin' },
+    de: { text: 'Eine Investition in Wissen bringt noch immer die besten Zinsen.', author: 'Benjamin Franklin' },
     ja: { text: '知識への投資は最高の利息を生む。', author: 'ベンジャミン・フランクリン' },
     zh: { text: '投资知识，收益最佳。', author: '本杰明·富兰克林' },
     fr: { text: 'Un investissement dans le savoir rapporte les meilleurs intérêts.', author: 'Benjamin Franklin' },
@@ -197,6 +217,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '어제는 역사, 내일은 미스터리, 오늘은 선물이다.', author: '엘리너 루스벨트' },
     en: { text: 'Yesterday is history, tomorrow is a mystery, today is a gift.', author: 'Eleanor Roosevelt' },
+    de: { text: 'Gestern ist Geschichte, morgen ist ein Geheimnis, heute ist ein Geschenk.', author: 'Eleanor Roosevelt' },
     ja: { text: '昨日は歴史、明日は神秘、今日は贈り物。', author: 'エレノア・ルーズベルト' },
     zh: { text: '昨天是历史，明天是谜团，今天是礼物。', author: '埃莉诺·罗斯福' },
     fr: { text: "Hier est histoire, demain est mystère, aujourd'hui est un cadeau.", author: 'Eleanor Roosevelt' },
@@ -206,6 +227,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '꿈을 꿀 수 있다면 그것을 이룰 수도 있다.', author: '월트 디즈니' },
     en: { text: 'If you can dream it, you can do it.', author: 'Walt Disney' },
+    de: { text: 'Wenn du es träumen kannst, kannst du es auch tun.', author: 'Walt Disney' },
     ja: { text: '夢見ることができれば、それは実現できる。', author: 'ウォルト・ディズニー' },
     zh: { text: '只要你敢梦想，你就能实现。', author: '沃尔特·迪士尼' },
     fr: { text: 'Si vous pouvez le rêver, vous pouvez le faire.', author: 'Walt Disney' },
@@ -215,6 +237,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '미래를 예측하는 가장 좋은 방법은 미래를 창조하는 것이다.', author: '피터 드러커' },
     en: { text: 'The best way to predict the future is to create it.', author: 'Peter Drucker' },
+    de: { text: 'Die beste Art, die Zukunft vorherzusagen, ist, sie zu gestalten.', author: 'Peter Drucker' },
     ja: { text: '未来を予測する最良の方法は、それを創ることだ。', author: 'ピーター・ドラッカー' },
     zh: { text: '预测未来最好的方法就是创造它。', author: '彼得·德鲁克' },
     fr: { text: "La meilleure façon de prédire l'avenir est de le créer.", author: 'Peter Drucker' },
@@ -224,6 +247,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '단순함이야말로 궁극의 정교함이다.', author: '레오나르도 다 빈치' },
     en: { text: 'Simplicity is the ultimate sophistication.', author: 'Leonardo da Vinci' },
+    de: { text: 'Einfachheit ist die höchste Form der Vollendung.', author: 'Leonardo da Vinci' },
     ja: { text: '簡潔さは究極の洗練である。', author: 'レオナルド・ダ・ヴィンチ' },
     zh: { text: '简约是终极的精致。', author: '列奥纳多·达·芬奇' },
     fr: { text: 'La simplicité est la sophistication suprême.', author: 'Léonard de Vinci' },
@@ -233,6 +257,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '내가 더 멀리 보았다면 그것은 거인의 어깨 위에 서 있었기 때문이다.', author: '아이작 뉴턴' },
     en: { text: 'If I have seen further, it is by standing on the shoulders of giants.', author: 'Isaac Newton' },
+    de: { text: 'Wenn ich weiter gesehen habe, so deshalb, weil ich auf den Schultern von Riesen stand.', author: 'Isaac Newton' },
     ja: { text: '私が遠くまで見えたのは、巨人の肩の上に立っていたからだ。', author: 'アイザック・ニュートン' },
     zh: { text: '如果说我看得更远，那是因为我站在巨人的肩膀上。', author: '艾萨克·牛顿' },
     fr: { text: "Si j'ai vu plus loin, c'est en me tenant sur les épaules de géants.", author: 'Isaac Newton' },
@@ -242,6 +267,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '세상은 고통으로 가득하지만 그것을 극복하는 사람들로도 가득하다.', author: '헬렌 켈러' },
     en: { text: 'Although the world is full of suffering, it is also full of the overcoming of it.', author: 'Helen Keller' },
+    de: { text: 'Obwohl die Welt voller Leid ist, ist sie auch voller Überwindung desselben.', author: 'Helen Keller' },
     ja: { text: '世界は苦しみに満ちているが、それを乗り越える力にも満ちている。', author: 'ヘレン・ケラー' },
     zh: { text: '世界虽充满苦难，但也充满了战胜苦难的力量。', author: '海伦·凯勒' },
     fr: { text: 'Le monde est plein de souffrances, mais aussi de victoires sur celles-ci.', author: 'Helen Keller' },
@@ -251,6 +277,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '혼자서 할 수 있는 일은 적지만 함께라면 많은 것을 할 수 있다.', author: '헬렌 켈러' },
     en: { text: 'Alone we can do so little; together we can do so much.', author: 'Helen Keller' },
+    de: { text: 'Allein können wir so wenig tun; gemeinsam können wir so viel erreichen.', author: 'Helen Keller' },
     ja: { text: '一人でできることは少ないが、共にすれば多くを成せる。', author: 'ヘレン・ケラー' },
     zh: { text: '独自一人能做的很少，齐心协力却能做很多。', author: '海伦·凯勒' },
     fr: { text: 'Seuls, nous pouvons si peu ; ensemble, nous pouvons tant.', author: 'Helen Keller' },
@@ -260,6 +287,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '고통이 남기고 간 뒤를 보라! 고난이 지나면 반드시 기쁨이 스며든다.', author: '괴테' },
     en: { text: 'Behold what sorrow leaves behind! After every hardship, joy is sure to follow.', author: 'Goethe' },
+    de: { text: 'Sieh, was der Schmerz zurücklässt! Nach jeder Not folgt gewiss die Freude.', author: 'Goethe' },
     ja: { text: '苦しみが残したものを見よ。苦難の後には必ず喜びが訪れる。', author: 'ゲーテ' },
     zh: { text: '看看痛苦留下了什么！苦难过后，喜悦必将到来。', author: '歌德' },
     fr: { text: 'Vois ce que laisse la douleur ! Après l’épreuve vient toujours la joie.', author: 'Goethe' },
@@ -269,6 +297,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '스스로를 신뢰하는 순간 어떻게 살아야 할지 알게 된다.', author: '괴테' },
     en: { text: 'As soon as you trust yourself, you will know how to live.', author: 'Goethe' },
+    de: { text: 'Sobald du dir selbst vertraust, sobald weißt du zu leben.', author: 'Goethe' },
     ja: { text: '自分を信じた瞬間、どう生きるべきかが分かる。', author: 'ゲーテ' },
     zh: { text: '当你信任自己的那一刻，你就懂得如何生活。', author: '歌德' },
     fr: { text: 'Dès que tu te fais confiance, tu sauras comment vivre.', author: 'Goethe' },
@@ -278,6 +307,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '가장 유능한 사람은 가장 배우기에 힘쓰는 사람이다.', author: '괴테' },
     en: { text: 'The most capable person is the one who strives hardest to learn.', author: 'Goethe' },
+    de: { text: 'Der fähigste Mensch ist der, der sich am meisten um das Lernen bemüht.', author: 'Goethe' },
     ja: { text: '最も有能な人は、最も学ぼうと努める人である。', author: 'ゲーテ' },
     zh: { text: '最有才能的人，是最努力学习的人。', author: '歌德' },
     fr: { text: "La personne la plus capable est celle qui s'efforce le plus d'apprendre.", author: 'Goethe' },
@@ -287,6 +317,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '용기 있는 자로 살아라. 운이 따르지 않거든 용기 있는 가슴으로 불행에 맞서라.', author: '키케로' },
     en: { text: 'Live as a person of courage; if fortune fails you, face misfortune with a brave heart.', author: 'Cicero' },
+    de: { text: 'Lebe als ein Mensch von Mut; verlässt dich das Glück, so trotze dem Unglück mit tapferem Herzen.', author: 'Cicero' },
     ja: { text: '勇者として生きよ。運に恵まれずとも、勇気ある心で不運に立ち向かえ。', author: 'キケロ' },
     zh: { text: '做一个勇敢的人；若命运不济，就以勇敢的心面对不幸。', author: '西塞罗' },
     fr: { text: "Vis en homme de courage ; si la fortune te fait défaut, affronte le malheur d'un cœur vaillant.", author: 'Cicéron' },
@@ -296,6 +327,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '시간은 가장 현명한 조언자다.', author: '페리클레스' },
     en: { text: 'Time is the wisest counselor of all.', author: 'Pericles' },
+    de: { text: 'Die Zeit ist der weiseste Ratgeber von allen.', author: 'Perikles' },
     ja: { text: '時は最も賢い助言者である。', author: 'ペリクレス' },
     zh: { text: '时间是最明智的顾问。', author: '伯里克利' },
     fr: { text: 'Le temps est le plus sage des conseillers.', author: 'Périclès' },
@@ -305,6 +337,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '현재에 충실하라.', author: '호라티우스' },
     en: { text: 'Seize the day.', author: 'Horace' },
+    de: { text: 'Nutze den Tag.', author: 'Horaz' },
     ja: { text: '今日という日をつかめ。', author: 'ホラティウス' },
     zh: { text: '抓住今天。', author: '贺拉斯' },
     fr: { text: 'Cueille le jour.', author: 'Horace' },
@@ -314,6 +347,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '배움에는 끝이 없다.', author: '히포크라테스' },
     en: { text: 'There is no end to learning.', author: 'Hippocrates' },
+    de: { text: 'Das Lernen hat kein Ende.', author: 'Hippokrates' },
     ja: { text: '学びに終わりはない。', author: 'ヒポクラテス' },
     zh: { text: '学无止境。', author: '希波克拉底' },
     fr: { text: "L'apprentissage n'a pas de fin.", author: 'Hippocrate' },
@@ -323,6 +357,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '위대한 일은 갑자기 이루어지지 않는다.', author: '에픽테토스' },
     en: { text: 'No great thing is created suddenly.', author: 'Epictetus' },
+    de: { text: 'Nichts Großes entsteht plötzlich.', author: 'Epiktet' },
     ja: { text: '偉大なものは突然には生まれない。', author: 'エピクテトス' },
     zh: { text: '伟大的事物绝非一蹴而就。', author: '爱比克泰德' },
     fr: { text: 'Aucune grande chose ne se crée soudainement.', author: 'Épictète' },
@@ -332,6 +367,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '이미 끝난 일을 후회하기보다 하고 싶었던 일을 하지 못한 것을 후회하라.', author: '탈무드' },
     en: { text: 'Do not regret what is already done; regret the things you wished to do but never did.', author: 'The Talmud' },
+    de: { text: 'Bereue nicht, was bereits getan ist; bereue, was du tun wolltest und nie getan hast.', author: 'Der Talmud' },
     ja: { text: '済んだことを悔やむな。やりたくてやれなかったことを悔やめ。', author: 'タルムード' },
     zh: { text: '不要为已做的事后悔，要为想做却未做的事后悔。', author: '塔木德' },
     fr: { text: "Ne regrette pas ce qui est déjà fait ; regrette ce que tu voulais faire et n'as jamais fait.", author: 'le Talmud' },
@@ -341,6 +377,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '행복은 습관이다. 그것을 몸에 지니라.', author: '엘버트 허버드' },
     en: { text: 'Happiness is a habit — cultivate it.', author: 'Elbert Hubbard' },
+    de: { text: 'Glück ist eine Gewohnheit — pflege sie.', author: 'Elbert Hubbard' },
     ja: { text: '幸福は習慣だ。身につけよ。', author: 'エルバート・ハバード' },
     zh: { text: '幸福是一种习惯——去培养它。', author: '埃尔伯特·哈伯德' },
     fr: { text: 'Le bonheur est une habitude — cultivez-le.', author: 'Elbert Hubbard' },
@@ -350,6 +387,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '하루에 세 시간을 걸으면 칠 년 후에 지구를 한 바퀴 돌 수 있다.', author: '새뮤얼 존슨' },
     en: { text: 'Walk three hours a day, and in seven years you will have walked around the world.', author: 'Samuel Johnson' },
+    de: { text: 'Geh täglich drei Stunden zu Fuß, und in sieben Jahren hast du die Welt umrundet.', author: 'Samuel Johnson' },
     ja: { text: '一日三時間歩けば、七年で世界を一周できる。', author: 'サミュエル・ジョンソン' },
     zh: { text: '每天走三小时，七年后便能绕地球一圈。', author: '塞缪尔·约翰逊' },
     fr: { text: 'Marchez trois heures par jour et en sept ans vous aurez fait le tour du monde.', author: 'Samuel Johnson' },
@@ -359,6 +397,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '산다는 것 그것은 치열한 전투이다.', author: '로맹 롤랑' },
     en: { text: 'To live is to wage a fierce battle.', author: 'Romain Rolland' },
+    de: { text: 'Leben heißt, einen erbitterten Kampf zu führen.', author: 'Romain Rolland' },
     ja: { text: '生きるとは、激しい戦いである。', author: 'ロマン・ロラン' },
     zh: { text: '生活就是一场激烈的战斗。', author: '罗曼·罗兰' },
     fr: { text: "Vivre, c'est livrer un combat acharné.", author: 'Romain Rolland' },
@@ -368,6 +407,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '고난의 시기에 흔들리지 않는 것이야말로 진정 칭찬받을 만한 사람의 증거다.', author: '베토벤' },
     en: { text: 'To stay unshaken in times of hardship is the mark of a truly admirable person.', author: 'Beethoven' },
+    de: { text: 'In Zeiten der Not unerschütterlich zu bleiben, ist das Zeichen eines wahrhaft bewundernswerten Menschen.', author: 'Beethoven' },
     ja: { text: '苦難の時に動じないことこそ、真に称賛に値する人の証である。', author: 'ベートーヴェン' },
     zh: { text: '在逆境中不动摇，才是真正令人钦佩之人的标志。', author: '贝多芬' },
     fr: { text: "Rester inébranlable dans l'épreuve est la marque d'un homme vraiment admirable.", author: 'Beethoven' },
@@ -377,6 +417,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '행동은 모든 성공의 가장 중요한 열쇠다.', author: '파블로 피카소' },
     en: { text: 'Action is the foundational key to all success.', author: 'Pablo Picasso' },
+    de: { text: 'Handeln ist der grundlegende Schlüssel zu jedem Erfolg.', author: 'Pablo Picasso' },
     ja: { text: '行動こそ、あらゆる成功の根本的な鍵である。', author: 'パブロ・ピカソ' },
     zh: { text: '行动是一切成功的根本关键。', author: '巴勃罗·毕加索' },
     fr: { text: "L'action est la clé fondamentale de tout succès.", author: 'Pablo Picasso' },
@@ -386,6 +427,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '오늘이라는 날은 두 번 다시 오지 않는다는 것을 잊지 말라.', author: '단테' },
     en: { text: 'Remember that this day will never come again.', author: 'Dante Alighieri' },
+    de: { text: 'Bedenke, dass dieser Tag nie wiederkehren wird.', author: 'Dante Alighieri' },
     ja: { text: '今日という日は二度と来ないことを忘れるな。', author: 'ダンテ・アリギエーリ' },
     zh: { text: '记住，今天将永不再来。', author: '但丁·阿利吉耶里' },
     fr: { text: 'Souviens-toi que ce jour ne reviendra jamais.', author: 'Dante Alighieri' },
@@ -395,6 +437,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '남이 너에게 해주기를 바라는 그대로 남에게 해주어라.', author: '성경' },
     en: { text: 'Do unto others as you would have them do unto you.', author: 'The Bible' },
+    de: { text: 'Behandle andere so, wie du von ihnen behandelt werden möchtest.', author: 'Die Bibel' },
     ja: { text: '人にしてもらいたいことを、人にもしなさい。', author: '聖書' },
     zh: { text: '你想别人怎样待你，你也要怎样待人。', author: '圣经' },
     fr: { text: 'Fais aux autres ce que tu voudrais qu’ils te fassent.', author: 'la Bible' },
@@ -404,6 +447,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '당신이 할 수 있는 가장 큰 모험은 바로 당신이 꿈꾸던 삶을 사는 것이다.', author: '오프라 윈프리' },
     en: { text: 'The biggest adventure you can take is to live the life of your dreams.', author: 'Oprah Winfrey' },
+    de: { text: 'Das größte Abenteuer, das du erleben kannst, ist, das Leben deiner Träume zu leben.', author: 'Oprah Winfrey' },
     ja: { text: '最大の冒険は、夢見た人生を生きることだ。', author: 'オプラ・ウィンフリー' },
     zh: { text: '你能踏上的最大冒险，就是活出你梦想的人生。', author: '奥普拉·温弗瑞' },
     fr: { text: 'La plus grande aventure que vous puissiez vivre est de vivre la vie de vos rêves.', author: 'Oprah Winfrey' },
@@ -413,6 +457,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '성공의 비결은 단 한 가지, 잘할 수 있는 일에 광적으로 집중하는 것이다.', author: '톰 모나건' },
     en: { text: 'The secret of success is to focus fanatically on what you do best.', author: 'Tom Monaghan' },
+    de: { text: 'Das Geheimnis des Erfolgs ist, sich fanatisch auf das zu konzentrieren, was man am besten kann.', author: 'Tom Monaghan' },
     ja: { text: '成功の秘訣はただ一つ、自分が最も得意なことに狂おしく集中することだ。', author: 'トム・モナハン' },
     zh: { text: '成功的秘诀只有一个：狂热地专注于你最擅长的事。', author: '汤姆·莫纳汉' },
     fr: { text: "Le secret du succès est de se concentrer farouchement sur ce que l'on fait de mieux.", author: 'Tom Monaghan' },
@@ -422,6 +467,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '위대한 정신은 항상 평범한 정신의 격렬한 반대에 부딪혀 왔다.', author: '알베르트 아인슈타인' },
     en: { text: 'Great spirits have always encountered violent opposition from mediocre minds.', author: 'Albert Einstein' },
+    de: { text: 'Große Geister sind schon immer auf den heftigen Widerstand mittelmäßiger Geister gestoßen.', author: 'Albert Einstein' },
     ja: { text: '偉大な精神は、つねに凡庸な精神の激しい反対に遭ってきた。', author: 'アルベルト・アインシュタイン' },
     zh: { text: '伟大的心灵总是遭到平庸者的激烈反对。', author: '阿尔伯特·爱因斯坦' },
     fr: { text: 'Les grands esprits ont toujours rencontré une violente opposition des esprits médiocres.', author: 'Albert Einstein' },
@@ -431,6 +477,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '노력에는 늦음이란 없다.', author: '보들레르' },
     en: { text: 'It is never too late to make an effort.', author: 'Charles Baudelaire' },
+    de: { text: 'Es ist nie zu spät, sich anzustrengen.', author: 'Charles Baudelaire' },
     ja: { text: '努力するのに遅すぎることはない。', author: 'シャルル・ボードレール' },
     zh: { text: '努力永远不嫌晚。', author: '夏尔·波德莱尔' },
     fr: { text: "Il n'est jamais trop tard pour faire un effort.", author: 'Charles Baudelaire' },
@@ -440,6 +487,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '위대한 희망이 위대한 사람을 만든다.', author: '토머스 풀러' },
     en: { text: 'Great hopes make great men.', author: 'Thomas Fuller' },
+    de: { text: 'Große Hoffnungen machen große Menschen.', author: 'Thomas Fuller' },
     ja: { text: '大きな希望が偉大な人をつくる。', author: 'トーマス・フラー' },
     zh: { text: '远大的希望造就伟大的人。', author: '托马斯·富勒' },
     fr: { text: 'De grands espoirs font les grands hommes.', author: 'Thomas Fuller' },
@@ -449,6 +497,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '인생은 가까이서 보면 비극이지만 멀리서 보면 희극이다.', author: '찰리 채플린' },
     en: { text: 'Life is a tragedy when seen in close-up, but a comedy in long-shot.', author: 'Charlie Chaplin' },
+    de: { text: 'Das Leben ist aus der Nähe eine Tragödie, aus der Ferne eine Komödie.', author: 'Charlie Chaplin' },
     ja: { text: '人生は近くで見れば悲劇だが、遠くから見れば喜劇だ。', author: 'チャーリー・チャップリン' },
     zh: { text: '人生近看是悲剧，远看是喜剧。', author: '查理·卓别林' },
     fr: { text: 'La vie est une tragédie en gros plan, mais une comédie en plan large.', author: 'Charlie Chaplin' },
@@ -458,6 +507,7 @@ export const QUOTES: Quote[] = [
   {
     ko: { text: '가장 어두운 밤도 끝이 나고 해는 떠오른다.', author: '빅토르 위고' },
     en: { text: 'Even the darkest night will end and the sun will rise.', author: 'Victor Hugo' },
+    de: { text: 'Selbst die dunkelste Nacht geht zu Ende und die Sonne geht auf.', author: 'Victor Hugo' },
     ja: { text: 'どんなに暗い夜も明け、太陽は昇る。', author: 'ヴィクトル・ユーゴー' },
     zh: { text: '即使最黑暗的夜晚也会结束，太阳终将升起。', author: '维克多·雨果' },
     fr: { text: 'Même la nuit la plus sombre prendra fin et le soleil se lèvera.', author: 'Victor Hugo' },

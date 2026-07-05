@@ -5,6 +5,7 @@
  */
 import { ko, type TKey } from './dict/ko';
 import { en } from './dict/en';
+import { de } from './dict/de';
 import { ja, zh, fr, es, ru } from './dict/extra';
 
 export type { TKey };
@@ -12,6 +13,7 @@ export type { TKey };
 export const LANGUAGES = [
   { code: 'ko', label: '한국어' },
   { code: 'en', label: 'English' },
+  { code: 'de', label: 'Deutsch' },
   { code: 'ja', label: '日本語' },
   { code: 'zh', label: '中文' },
   { code: 'fr', label: 'Français' },
@@ -23,7 +25,8 @@ export type Lang = (typeof LANGUAGES)[number]['code'];
 
 type Dict = Record<TKey, string>;
 
-export const TRANSLATIONS: Record<Lang, Partial<Dict>> = { ko, en, ja, zh, fr, es, ru };
+// de is a FULL translation (Record<TKey,string>); ja/zh/fr/es/ru are partial.
+export const TRANSLATIONS: Record<Lang, Partial<Dict>> = { ko, en, de, ja, zh, fr, es, ru };
 
 /**
  * Resolve a key for a language: lang → English → the key itself.

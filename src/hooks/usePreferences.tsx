@@ -98,15 +98,18 @@ const STORAGE_KEY = '24h-circle-planner.prefs';
 
 /**
  * First-launch language: detect the browser's preferred language and default to
- * Korean only when it actually is Korean; everything else starts in English.
- * Used only when no preference has been saved yet — the user's explicit choice
- * (persisted) always wins on later visits.
+ * a FULLY-translated locale (Korean or German) when it matches; everything else
+ * starts in English. The other languages (ja/zh/fr/es/ru) are partial, so we
+ * don't auto-select them (they'd render mostly English) — they stay opt-in via
+ * the language picker. Used only when no preference has been saved yet.
  */
 function detectInitialLanguage(): Lang {
   try {
     const nav = typeof navigator !== 'undefined' ? navigator : undefined;
     const tag = (nav?.language || nav?.languages?.[0] || '').toLowerCase();
-    return tag.startsWith('ko') ? 'ko' : 'en';
+    if (tag.startsWith('ko')) return 'ko';
+    if (tag.startsWith('de')) return 'de';
+    return 'en';
   } catch {
     return 'en';
   }

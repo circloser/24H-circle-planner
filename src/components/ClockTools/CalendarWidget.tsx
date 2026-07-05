@@ -54,6 +54,7 @@ export function CalendarWidget({ calendar, onMove, onClose }: CalendarWidgetProp
 
   return (
     <div
+      data-calendar-widget
       className={inline ? 'group relative w-full' : 'group'}
       style={inline ? undefined : { position: 'fixed', left: calendar.pos.x, top: calendar.pos.y, width: 232, zIndex: 25 }}
     >
