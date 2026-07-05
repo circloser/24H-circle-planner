@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Cloud, Lock, Check } from 'lucide-react';
+import { Cloud, Archive, BarChart3, Ban, Check } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -72,7 +72,9 @@ export function UpgradeDialog({ open, onOpenChange }: UpgradeDialogProps) {
 
   const features = [
     { icon: Cloud, text: t('upgrade.featSync') },
-    { icon: Lock, text: t('upgrade.featLock') },
+    { icon: Archive, text: t('upgrade.featArchive') },
+    { icon: BarChart3, text: t('upgrade.featStats') },
+    { icon: Ban, text: t('upgrade.featNoAds') },
   ];
 
   return (

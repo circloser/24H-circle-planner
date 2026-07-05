@@ -13,6 +13,8 @@ import { Input } from '@/components/ui/input';
 import { AdSlot } from '@/components/Ads/AdSlot';
 import { loadSlots, saveSlot } from '@/lib/slots';
 import { useTranslation } from '@/hooks/usePreferences';
+import { useAuth } from '@/hooks/useAuth';
+import { FREE_SLOT_LIMIT, requestUpgrade } from '@/lib/pro';
 import type { Schedule } from '@/types/schedule';
 import type { Slot } from '@/types/slot';
 
@@ -57,6 +59,7 @@ interface SaveAsDialogBodyProps {
 
 function SaveAsDialogBody({ currentSchedule, onOpenChange, onSaved }: SaveAsDialogBodyProps) {
   const { t } = useTranslation();
+  const isPro = useAuth().plan === 'pro';
   // Initialize name at mount time — no useEffect needed
   const [name, setName] = useState(() =>
     computeDefaultName(currentSchedule.name, t('saveAs.copySuffix')),
@@ -73,9 +76,16 @@ function SaveAsDialogBody({ currentSchedule, onOpenChange, onSaved }: SaveAsDial
       createdAt: new Date().toISOString(),
     };
 
-    const result = saveSlot(slot);
+    // Free plan caps saved schedules; Pro is unlimited (archive is a Pro feature).
+    const result = saveSlot(slot, isPro ? Infinity : FREE_SLOT_LIMIT);
     if (!result.success && result.reason === 'capacity') {
-      toast.error(t('saveAs.capacity'));
+      if (isPro) {
+        toast.error(t('saveAs.capacity'));
+      } else {
+        toast.error(t('saveAs.capacityFree', { n: String(FREE_SLOT_LIMIT) }), {
+          action: { label: t('upgrade.cta'), onClick: requestUpgrade },
+        });
+      }
       return;
     }
 

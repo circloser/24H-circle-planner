@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { v4 as uuid } from 'uuid';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -15,6 +15,8 @@ import { AdSlot } from '@/components/Ads/AdSlot';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useDiary, dateKey, type DiaryEntry } from '@/hooks/useDiary';
 import { useTranslation } from '@/hooks/usePreferences';
+import { useAuth } from '@/hooks/useAuth';
+import { isDiaryDateFree, requestUpgrade, FREE_DIARY_DAYS } from '@/lib/pro';
 import { MiniChart } from './MiniChart';
 
 interface DiaryDialogProps {
@@ -35,6 +37,7 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
   const dispatch = useStoreDispatch();
   const { entries, saveEntry, setEntryNote, removeEntry } = useDiary();
   const { t, lang } = useTranslation();
+  const isPro = useAuth().plan === 'pro';
 
   const today = new Date();
   const todayKey = dateKey(today);
@@ -187,6 +190,24 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
             const key = keyOf(day);
             const entry = entries[key];
             const isToday = key === todayKey;
+            // Free plan: only the last FREE_DIARY_DAYS are accessible; older days
+            // are locked (data kept) behind a Pro upsell.
+            const locked = !isPro && !isDiaryDateFree(key, today);
+            if (locked) {
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={requestUpgrade}
+                  className="group relative grid aspect-square place-items-center rounded-md p-0.5 opacity-45 transition-opacity hover:opacity-70"
+                  title={t('diary.olderPro', { n: String(FREE_DIARY_DAYS) })}
+                  aria-label={t('diary.olderPro', { n: String(FREE_DIARY_DAYS) })}
+                >
+                  <span className="text-xs text-muted-foreground/85">{day}</span>
+                  <Lock className="absolute right-0 top-0 h-2.5 w-2.5 text-muted-foreground" />
+                </button>
+              );
+            }
             return (
               <button
                 key={key}

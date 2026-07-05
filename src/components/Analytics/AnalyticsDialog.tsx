@@ -6,9 +6,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { BarChart3 } from 'lucide-react';
 import { AdSlot } from '@/components/Ads/AdSlot';
 import { useDiary, dateKey } from '@/hooks/useDiary';
 import { useTranslation } from '@/hooks/usePreferences';
+import { useAuth } from '@/hooks/useAuth';
+import { requestUpgrade } from '@/lib/pro';
 import { analyzeDays } from '@/lib/analytics';
 import type { TimeSlice } from '@/types/time-slice';
 
@@ -29,6 +33,7 @@ type Range = 'all' | 'month' | 'week';
 export function AnalyticsDialog({ open, onOpenChange }: AnalyticsDialogProps) {
   const { entries } = useDiary();
   const { t, lang } = useTranslation();
+  const isPro = useAuth().plan === 'pro'; // stats report is a Pro feature
   const [range, setRange] = useState<Range>('all');
   // Hover tooltip for the per-day trend segments (the native `title` was too
   // slow/undiscoverable to tell which item a colour band is).
@@ -73,6 +78,17 @@ export function AnalyticsDialog({ open, onOpenChange }: AnalyticsDialogProps) {
           <DialogTitle>{t('analytics.title')}</DialogTitle>
         </DialogHeader>
 
+        {!isPro ? (
+          <div className="flex flex-col items-center gap-3 py-6 text-center">
+            <span className="grid h-12 w-12 place-items-center rounded-full bg-primary/10">
+              <BarChart3 className="h-6 w-6 text-primary" />
+            </span>
+            <p className="text-sm font-medium text-foreground">{t('analytics.proTitle')}</p>
+            <p className="max-w-xs text-xs text-muted-foreground">{t('analytics.proBody')}</p>
+            <Button onClick={requestUpgrade} className="mt-1">{t('billing.upgrade')}</Button>
+          </div>
+        ) : (
+          <>
         {/* Range selector — analysis uses SAVED DIARIES only. */}
         <div className="flex flex-wrap gap-1.5">
           {(['all', 'month', 'week'] as Range[]).map((r) => (
@@ -143,6 +159,8 @@ export function AnalyticsDialog({ open, onOpenChange }: AnalyticsDialogProps) {
 
         {/* Reserved ad space (consistent with the other dialogs). */}
         <AdSlot slot="analytics" className="mt-3" />
+          </>
+        )}
 
         {/* Trend hover tooltip — portaled to <body> so it escapes the Dialog's
             `transform` (which would otherwise reframe `position:fixed` to the

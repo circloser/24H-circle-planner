@@ -16,6 +16,7 @@ import { exportTableCsv, exportTablePng, buildTableSvg } from '@/lib/export/tabl
 import { exportRangePng, exportRangeCsv, type RangeDay } from '@/lib/export/rangeExport';
 import { useDiary, dateKey } from '@/hooks/useDiary';
 import { useTranslation, useChartView, useShowIcons } from '@/hooks/usePreferences';
+import { useAuth } from '@/hooks/useAuth';
 import type { Schedule } from '@/types/schedule';
 import type { TimeSlice } from '@/types/time-slice';
 
@@ -353,6 +354,8 @@ function ExportPreview({
  */
 function AdSlot() {
   const { t } = useTranslation();
+  const isPro = useAuth().plan === 'pro';
+  if (isPro) return null; // ad-free — the Pro benefit
   return (
     <div
       data-ad-slot="export"

@@ -16,8 +16,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CircleTimeline } from '@/components/CircleTimeline/CircleTimeline';
-import { loadSlots, deleteSlot, renameSlot, SLOTS_CAPACITY } from '@/lib/slots';
+import { loadSlots, deleteSlot, renameSlot } from '@/lib/slots';
 import { useTranslation } from '@/hooks/usePreferences';
+import { useAuth } from '@/hooks/useAuth';
+import { FREE_SLOT_LIMIT, requestUpgrade } from '@/lib/pro';
 import type { Slot } from '@/types/slot';
 
 interface SlotSheetProps {
@@ -231,9 +233,11 @@ function SlotSheetBody({ onOpenChange, onLoad }: SlotSheetBodyProps) {
   // Initialize from localStorage at mount (lazy initializer — no useEffect needed)
   const [slots, setSlots] = useState<Record<string, Slot>>(loadSlots);
 
+  const isPro = useAuth().plan === 'pro';
   const slotList = Object.values(slots);
   const count = slotList.length;
-  const atCapacity = count >= SLOTS_CAPACITY;
+  // Free plan caps the archive; Pro is unlimited.
+  const atCapacity = !isPro && count >= FREE_SLOT_LIMIT;
 
   function handleDelete(id: string) {
     deleteSlot(id);
@@ -256,15 +260,19 @@ function SlotSheetBody({ onOpenChange, onLoad }: SlotSheetBodyProps) {
         <SheetTitle>
           {t('header.mySchedules')}{' '}
           <span className="text-sm font-normal text-muted-foreground">
-            {count}/{SLOTS_CAPACITY}
+            {count}/{isPro ? '∞' : FREE_SLOT_LIMIT}
           </span>
         </SheetTitle>
       </SheetHeader>
 
       {atCapacity && (
-        <div className="flex-shrink-0 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md px-3 py-2">
-          {t('slot.atCapacity')}
-        </div>
+        <button
+          type="button"
+          onClick={requestUpgrade}
+          className="flex-shrink-0 text-left text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md px-3 py-2 transition-colors hover:border-amber-400"
+        >
+          {t('slot.atCapacityFree', { n: String(FREE_SLOT_LIMIT) })}
+        </button>
       )}
 
       <div className="flex-1 overflow-y-auto">

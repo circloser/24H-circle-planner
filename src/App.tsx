@@ -39,6 +39,7 @@ import { useSyncStatus } from '@/hooks/useSync';
 import { useAuth } from '@/hooks/useAuth';
 import { E2eeDialog } from '@/components/Sync/E2eeDialog';
 import { UpgradeDialog } from '@/components/Billing/UpgradeDialog';
+import { OPEN_UPGRADE_EVENT } from '@/lib/pro';
 import { WelcomeOverlay } from '@/components/Onboarding/WelcomeOverlay';
 import { readSharedFromHash, clearShareHash } from '@/lib/share-link';
 import { AnalyticsDialog } from '@/components/Analytics/AnalyticsDialog';
@@ -193,6 +194,13 @@ function App() {
     const qs = params.toString();
     window.history.replaceState({}, '', window.location.pathname + (qs ? `?${qs}` : '') + window.location.hash);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Any gated surface can request the paywall via requestUpgrade() (a window event).
+  useEffect(() => {
+    const onUpgrade = () => setUpgradeOpen(true);
+    window.addEventListener(OPEN_UPGRADE_EVENT, onUpgrade);
+    return () => window.removeEventListener(OPEN_UPGRADE_EVENT, onUpgrade);
   }, []);
 
   /**

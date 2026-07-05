@@ -118,14 +118,15 @@ export function saveSlots(slots: Record<string, Slot>): void {
 // ─── saveSlot ─────────────────────────────────────────────────────────────────
 
 /**
- * Save a single slot.
+ * Save a single slot. `capacity` is the max number of slots allowed (plan-based:
+ * FREE_SLOT_LIMIT for free, Infinity for Pro); defaults to SLOTS_CAPACITY.
  * Returns { success: false, reason: 'capacity' } if at capacity and the slot is new.
  */
-export function saveSlot(slot: Slot): { success: boolean; reason?: string } {
+export function saveSlot(slot: Slot, capacity: number = SLOTS_CAPACITY): { success: boolean; reason?: string } {
   const existing = loadSlots();
   const isNew = !(slot.id in existing);
 
-  if (isNew && Object.keys(existing).length >= SLOTS_CAPACITY) {
+  if (isNew && Object.keys(existing).length >= capacity) {
     return { success: false, reason: 'capacity' };
   }
 

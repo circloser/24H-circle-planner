@@ -31,10 +31,19 @@ vi.mock('@/lib/slots', () => ({
   SLOTS_CAPACITY: 10,
 }));
 
+// Control the plan (free/pro) that gates the archive capacity.
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: vi.fn(() => ({ plan: 'free', user: null, billingEnabled: false, loading: false, login: vi.fn(), logout: vi.fn(), refresh: vi.fn() })),
+}));
+
 import { loadSlots, deleteSlot, renameSlot } from '@/lib/slots';
+import { useAuth } from '@/hooks/useAuth';
 const mockLoadSlots = loadSlots as ReturnType<typeof vi.fn>;
 const mockDeleteSlot = deleteSlot as ReturnType<typeof vi.fn>;
 const mockRenameSlot = renameSlot as ReturnType<typeof vi.fn>;
+const mockUseAuth = useAuth as ReturnType<typeof vi.fn>;
+const asFree = () => mockUseAuth.mockReturnValue({ plan: 'free', user: null, billingEnabled: false, loading: false, login: vi.fn(), logout: vi.fn(), refresh: vi.fn() });
+const asPro = () => mockUseAuth.mockReturnValue({ plan: 'pro', user: { id: 'u', email: null, provider: 'google' }, billingEnabled: true, loading: false, login: vi.fn(), logout: vi.fn(), refresh: vi.fn() });
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -99,6 +108,7 @@ beforeEach(() => {
   mockLoadSlots.mockReturnValue({});
   mockDeleteSlot.mockImplementation(() => undefined);
   mockRenameSlot.mockImplementation(() => undefined);
+  asFree();
 });
 
 describe('SlotSheet', () => {
@@ -204,17 +214,28 @@ describe('SlotSheet', () => {
     void container;
   });
 
-  it('shows capacity warning banner when 10 slots are present', () => {
-    mockLoadSlots.mockReturnValue(make10Slots());
-    renderSheet();
-    expect(screen.getByText(/최대 10개 슬롯에 도달했습니다/)).toBeTruthy();
-  });
-
-  it('does not show capacity warning when fewer than 10 slots', () => {
+  it('shows the free-plan upsell banner when at the free slot limit (3)', () => {
     mockLoadSlots.mockReturnValue({
       'slot-1': makeSlot('slot-1', '아침'),
+      'slot-2': makeSlot('slot-2', '점심'),
+      'slot-3': makeSlot('slot-3', '저녁'),
     });
     renderSheet();
-    expect(screen.queryByText(/최대 10개 슬롯에 도달했습니다/)).toBeNull();
+    expect(screen.getByText(/무료는 시간표 3개/)).toBeTruthy();
+  });
+
+  it('does not show the upsell banner when below the free limit', () => {
+    mockLoadSlots.mockReturnValue({ 'slot-1': makeSlot('slot-1', '아침') });
+    renderSheet();
+    expect(screen.queryByText(/무료는 시간표/)).toBeNull();
+  });
+
+  it('Pro plan: no upsell banner even with 10 slots (unlimited archive)', () => {
+    asPro();
+    mockLoadSlots.mockReturnValue(make10Slots());
+    renderSheet();
+    expect(screen.queryByText(/무료는 시간표/)).toBeNull();
+    // Unlimited marker in the header count.
+    expect(screen.getByText(/10\/∞/)).toBeTruthy();
   });
 });
