@@ -125,6 +125,13 @@ export function UpgradeDialog({ open, onOpenChange }: UpgradeDialogProps) {
           </Button>
 
           <p className="text-center text-[11px] text-muted-foreground">{t('upgrade.note')}</p>
+          <p className="text-center text-[11px] text-muted-foreground">
+            <a href="/terms" target="_blank" rel="noopener" className="underline hover:text-foreground">{t('footer.terms')}</a>
+            {' · '}
+            <a href="/refund" target="_blank" rel="noopener" className="underline hover:text-foreground">{t('footer.refund')}</a>
+            {' · '}
+            <a href="/privacy" target="_blank" rel="noopener" className="underline hover:text-foreground">{t('footer.privacy')}</a>
+          </p>
         </div>
       </DialogContent>
     </Dialog>

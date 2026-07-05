@@ -18,6 +18,8 @@ export const de: Record<TKey, string> = {
   'footer.faq': 'FAQ',
   'footer.about': 'Über uns',
   'footer.privacy': 'Datenschutz',
+  'footer.terms': 'AGB',
+  'footer.refund': 'Erstattung',
   'footer.contact': 'Kontakt',
   'settings.title': 'Einstellungen',
   'settings.language': 'Sprache',

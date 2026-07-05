@@ -21,6 +21,8 @@ export const ko = {
   'footer.faq': 'FAQ',
   'footer.about': '소개',
   'footer.privacy': '개인정보처리방침',
+  'footer.terms': '이용약관',
+  'footer.refund': '환불',
   'footer.contact': '문의',
   'settings.title': '설정',
   'settings.language': '언어',

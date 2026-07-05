@@ -24,6 +24,10 @@ export function AppFooter() {
         <span aria-hidden style={{ opacity: 0.4 }}>·</span>
         <a href="/privacy" className="hover:underline">{t('footer.privacy')}</a>
         <span aria-hidden style={{ opacity: 0.4 }}>·</span>
+        <a href="/terms" className="hover:underline">{t('footer.terms')}</a>
+        <span aria-hidden style={{ opacity: 0.4 }}>·</span>
+        <a href="/refund" className="hover:underline">{t('footer.refund')}</a>
+        <span aria-hidden style={{ opacity: 0.4 }}>·</span>
         <a href="/contact" className="hover:underline">{t('footer.contact')}</a>
       </nav>
       <p className="mt-1.5 text-muted-foreground/80">© 2026 Circloser · 24houring.com</p>
