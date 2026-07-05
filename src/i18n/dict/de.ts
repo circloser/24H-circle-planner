@@ -249,7 +249,7 @@ export const de: Record<TKey, string> = {
   'ad.housePromo': 'Mit Pro werbefrei · unbegrenztes Archiv · Statistik',
   'saveAs.capacityFree': 'Kostenlos bis zu {n} Pläne speichern. Mit Pro unbegrenzt.',
   'slot.atCapacityFree': 'Kostenlos bis zu {n} Pläne. Mit Pro unbegrenzt →',
-  'diary.olderPro': 'Einträge älter als {n} Tage gibt es mit Pro.',
+  'diary.olderPro': 'Einträge an Tagen älter als {n} Tage mit Pro. Vorhandene Einträge bleiben erhalten.',
   'analytics.proTitle': 'Statistik-Berichte sind eine Pro-Funktion',
   'analytics.proBody': 'Analysiere anhand deiner gespeicherten Tagebücher, wie du deine Zeit nutzt. Mit Pro der Bericht über den gesamten Zeitraum.',
   'sync.synced': 'Synchronisiert',

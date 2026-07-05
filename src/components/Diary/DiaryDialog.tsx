@@ -190,10 +190,12 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
             const key = keyOf(day);
             const entry = entries[key];
             const isToday = key === todayKey;
-            // Free plan: only the last FREE_DIARY_DAYS are accessible; older days
-            // are locked (data kept) behind a Pro upsell.
-            const locked = !isPro && !isDiaryDateFree(key, today);
-            if (locked) {
+            // Free plan: existing entries are PRESERVED and stay viewable/loadable at
+            // any date (loading opens a read-only diary view). Only NEW input beyond
+            // the free window — saving a snapshot to an out-of-window EMPTY date — is
+            // blocked → Pro upsell. So over-limit data is kept, just frozen.
+            const blockedNew = !isPro && !entry && !isDiaryDateFree(key, today);
+            if (blockedNew) {
               return (
                 <button
                   key={key}

@@ -250,7 +250,7 @@ export const ko = {
   'ad.housePromo': 'Pro로 광고 없이 · 무제한 보관 · 통계 리포트',
   'saveAs.capacityFree': '무료는 시간표 {n}개까지 저장할 수 있어요. Pro로 무제한 저장하세요.',
   'slot.atCapacityFree': '무료는 시간표 {n}개까지예요. Pro로 무제한 보관하기 →',
-  'diary.olderPro': '{n}일이 지난 기록은 Pro에서 볼 수 있어요.',
+  'diary.olderPro': '최근 {n}일 이전 날짜엔 Pro로 기록을 추가할 수 있어요. 기존 기록은 그대로 보관돼요.',
   'analytics.proTitle': '통계 리포트는 Pro 기능',
   'analytics.proBody': '저장한 일기를 바탕으로 시간 사용을 분석해 드려요. Pro에서 전체 기간 리포트를 확인하세요.',
   'sync.synced': '동기화됨',

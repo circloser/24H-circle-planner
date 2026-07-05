@@ -249,7 +249,7 @@ export const en: Record<TKey, string> = {
   'ad.housePromo': 'Go ad-free with Pro · unlimited archive · stats',
   'saveAs.capacityFree': 'Free saves up to {n} schedules. Go Pro for unlimited.',
   'slot.atCapacityFree': 'Free keeps up to {n} schedules. Go Pro for unlimited →',
-  'diary.olderPro': 'Entries older than {n} days are available on Pro.',
+  'diary.olderPro': 'Add entries on dates older than {n} days with Pro. Existing entries are kept.',
   'analytics.proTitle': 'Stats reports are a Pro feature',
   'analytics.proBody': 'Analyze how you spend your time from your saved diaries. Go Pro for full-history reports.',
   'sync.synced': 'Synced',
