@@ -416,9 +416,32 @@ interface PolarSubscription {
   id?: string;
   status?: string;
   current_period_end?: string | null;
+  cancel_at_period_end?: boolean;
   customer?: { id?: string; external_id?: string | null };
   customer_id?: string;
   metadata?: Record<string, unknown>;
+}
+
+/**
+ * No auto-renewal model: a free trial must EXPIRE (not convert to a charge) unless
+ * the customer actively continues. Setting `cancel_at_period_end` on a trialing
+ * subscription schedules it to end at the trial's end with no charge — Polar still
+ * emails a heads-up ~3 days before, and the customer can continue (uncancel) or
+ * re-subscribe from the portal. Best-effort: needs the `subscriptions:write` scope
+ * on the token; on failure the subscription simply keeps Polar's default behaviour.
+ */
+async function scheduleTrialEnd(env: Env, sub: PolarSubscription): Promise<void> {
+  if (!env.POLAR_ACCESS_TOKEN || !sub.id) return;
+  try {
+    const res = await fetch(`${polarBase(env)}/subscriptions/${sub.id}`, {
+      method: 'PATCH',
+      headers: { authorization: `Bearer ${env.POLAR_ACCESS_TOKEN}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ cancel_at_period_end: true }),
+    });
+    if (!res.ok) console.error('[polar] scheduleTrialEnd failed', res.status, sub.id);
+  } catch (e) {
+    console.error('[polar] scheduleTrialEnd error', e instanceof Error ? e.message : e);
+  }
 }
 
 /** Write the latest subscription state for the mapped user (idempotent upsert). */
@@ -460,6 +483,11 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
   // each keeps entitlement current (created/active/updated/canceled/revoked/…).
   if (event.type?.startsWith('subscription.') && event.data) {
     await upsertSubscription(env.DB, event.data);
+    // No auto-renewal: schedule trialing subs to end at trial's end (no charge)
+    // unless already scheduled. Idempotent — once cancel_at_period_end is set, skip.
+    if (event.data.status === 'trialing' && !event.data.cancel_at_period_end) {
+      await scheduleTrialEnd(env, event.data);
+    }
   }
   return json({ received: true });
 }

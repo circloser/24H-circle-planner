@@ -241,7 +241,7 @@ export const de: Record<TKey, string> = {
   'upgrade.perYear': 'Jahr',
   'upgrade.cta': 'Kostenlos starten',
   'upgrade.ctaBusy': 'Weiterleitung…',
-  'upgrade.note': 'Jederzeit kündbar. Zahlungen werden sicher von Polar abgewickelt.',
+  'upgrade.note': 'Keine automatische Abbuchung nach der Testphase — wir informieren dich vorher, und du verlängerst nur, wenn du möchtest. Zahlungen werden sicher von Polar abgewickelt.',
   'upgrade.syncIsPro': 'Cloud-Sync ist Pro',
   'upgrade.featArchive': 'Unbegrenztes Archiv (Pläne & Tagebuch)',
   'upgrade.featStats': 'Statistik-Berichte (Zeitanalyse)',

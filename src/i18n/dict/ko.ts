@@ -242,7 +242,7 @@ export const ko = {
   'upgrade.perYear': '년',
   'upgrade.cta': '무료로 시작하기',
   'upgrade.ctaBusy': '이동 중…',
-  'upgrade.note': '언제든 해지할 수 있어요. 결제는 Polar가 안전하게 처리합니다.',
+  'upgrade.note': '체험이 끝나도 자동 결제되지 않아요. 종료 전에 안내드리고, 계속 이용하려면 직접 이어가면 됩니다. 결제는 Polar가 안전하게 처리합니다.',
   'upgrade.syncIsPro': '클라우드 동기화는 Pro',
   'upgrade.featArchive': '무제한 아카이브 (시간표·일기)',
   'upgrade.featStats': '통계 리포트 (시간 분석)',

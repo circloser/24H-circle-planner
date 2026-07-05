@@ -241,7 +241,7 @@ export const en: Record<TKey, string> = {
   'upgrade.perYear': 'year',
   'upgrade.cta': 'Start free',
   'upgrade.ctaBusy': 'Redirecting…',
-  'upgrade.note': 'Cancel anytime. Payments are securely handled by Polar.',
+  'upgrade.note': 'No automatic charge when the trial ends — we notify you first, and you continue only if you choose to. Payments are securely handled by Polar.',
   'upgrade.syncIsPro': 'Cloud sync is Pro',
   'upgrade.featArchive': 'Unlimited archive (schedules & diary)',
   'upgrade.featStats': 'Stats reports (time analysis)',
