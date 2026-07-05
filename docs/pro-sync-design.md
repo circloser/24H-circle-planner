@@ -1,7 +1,8 @@
 # 24Houring Pro 동기화 — 백엔드 설계 문서
 
 > 목적: PC↔모바일 등 기기 간 데이터 동기화를 **유료(Pro)** 기능으로 도입.
-> 인증 = **OAuth 계정**, 백엔드 = **Cloudflare(Workers + D1)**, 결제 = **Lemon Squeezy(구독)**.
+> 인증 = **OAuth 계정**, 백엔드 = **Cloudflare(Workers + D1)**, 결제 = **Polar(구독, Merchant of Record)**.
+> _(설계 초안은 Lemon Squeezy 기준으로 작성됨 — 실제 구현은 Polar로 전환. 결제 세부는 §6 및 `worker/README.md` 참고.)_
 > 무료 티어는 지금처럼 **100% 로컬·무계정** 유지. 동기화는 *옵트인*.
 >
 > 선행 작업으로 무백엔드 **QR 기기 이전**(`DeviceTransferDialog`, `#p=` 공유링크)이 이미 배포됨 — 수요 검증용. 본 문서는 그 다음 단계.
@@ -138,12 +139,15 @@ CREATE TABLE sync_data (
 
 ---
 
-## 6. 결제 / 구독 (Lemon Squeezy · Merchant of Record)
+## 6. 결제 / 구독 (Polar · Merchant of Record)
 
-- **체크아웃**: LS 호스티드 체크아웃(오버레이/링크). `checkout[custom][user_id]`에 우리 `user.id`를 넣어 웹훅이 계정에 매핑.
-- **웹훅**: `POST /api/webhooks/lemonsqueezy` → **HMAC 서명 검증**(`LS_WEBHOOK_SECRET`) → 이벤트별 `subscriptions` 갱신:
-  `subscription_created/updated` → status·current_period_end, `subscription_cancelled/expired` → 상태 반영, `subscription_payment_success` → 기간 연장.
-- **관리/해지**: LS 고객 포털 링크 제공.
+> 구현됨(샌드박스). `POLAR_SERVER=sandbox`, product id는 `wrangler.jsonc` `vars`.
+> 토큰/웹훅시크릿은 Worker secret(`POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`).
+
+- **체크아웃**: `POST /api/checkout` → Polar 체크아웃 세션 생성(`external_customer_id`=우리 `user.id`, `metadata.user_id`) → 호스티드 체크아웃 URL 반환. 완료 시 `/?checkout=success`로 복귀.
+- **웹훅**: `POST /api/webhooks/polar` → **Standard Webhooks 서명 검증**(`POLAR_WEBHOOK_SECRET`, `webhook-id/timestamp/signature`) → `subscription.*` 이벤트마다 구독 객체로 `subscriptions` upsert(`customer.external_id`로 사용자 매핑). 취소는 기간말(`cancel_at_period_end`) → 만료 시 `subscription.revoked`로 status=canceled.
+- **관리/해지**: `POST /api/billing/portal` → `/v1/customer-sessions/`로 고객 세션 발급 → Polar 고객 포털 URL 반환.
+- **엔타이틀먼트**: `GET /api/me`가 status∈{active,trialing}이고 `current_period_end`가 미래이면 `plan:'pro'`.
 - **가격(선행 분석 재확인)**: 월 ₩2,000–4,000 / 연 ₩19,000–29,000, **14일 무료 체험**. MoR이 글로벌 VAT·인보이스·환불 대행(수수료 ~5%+α). 국내 전용 확장 시 토스/포트원 병행 가능.
 - ⚠️ 추후 네이티브 앱으로 감싸면 디지털상품 IAP 강제 대상 → **웹 구독 유지**가 마진상 유리.
 

@@ -33,9 +33,19 @@ pnpm run build                     # SPA build unchanged
    ```
    Then uncomment `DB: D1Database` in `index.ts` `Env`.
 2. **Apply the schema:** `npx wrangler d1 migrations apply 24houring` (and `--remote` for prod).
-3. **Set secrets** (phases 2–4): `npx wrangler secret put GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `KAKAO_*` / `APPLE_*` / `LS_WEBHOOK_SECRET` / `SESSION_PEPPER`.
-4. Implement auth (`/api/auth/*`, `/api/me`), then sync (`/api/sync`), then billing
-   (`/api/checkout`, `/api/webhooks/lemonsqueezy`) per the design doc roadmap.
+3. **Set secrets:** `npx wrangler secret put GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`
+   for auth, and for billing (Polar): `POLAR_ACCESS_TOKEN` (Organization Access Token)
+   + `POLAR_WEBHOOK_SECRET` (the `polar_whs_…` from the webhook config). Non-secret
+   Polar config (`POLAR_SERVER=sandbox`, `POLAR_PRODUCT_ID`) lives in `wrangler.jsonc` `vars`.
+4. Auth (`/api/auth/*`, `/api/me`) and sync (`/api/sync`) are live. Billing is Polar
+   (Merchant of Record) in **sandbox**:
+   - `POST /api/checkout` → creates a Polar checkout session → `{ url }` (hosted checkout).
+   - `POST /api/billing/portal` → mints a customer session → `{ url }` (manage/cancel).
+   - `POST /api/webhooks/polar` → Standard-Webhooks-verified; `subscription.*` events
+     upsert the `subscriptions` row (mapped via `external_customer_id` = our user id).
+   In the Polar sandbox dashboard, point the webhook at `https://24houring.com/api/webhooks/polar`
+   and subscribe to the `subscription.*` events. Flip `POLAR_SERVER` to `production`
+   (and swap to a production token/secret/product) to go live.
 
 > Deploy is Cloudflare Workers Builds (pnpm 10.11.1). To add deps use
 > `npx pnpm@10.11.1 add <pkg>` (see project memory: cloudflare-deploy).

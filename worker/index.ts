@@ -15,6 +15,12 @@ export interface Env {
   /** Google OAuth client (set as Worker secrets). */
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
+  /** Polar billing (Merchant of Record). Token + webhook secret are Worker secrets;
+   *  server + product id are non-secret vars (wrangler.jsonc). */
+  POLAR_ACCESS_TOKEN?: string; // Organization Access Token (polar_oat_…)
+  POLAR_WEBHOOK_SECRET?: string; // Standard Webhooks secret (polar_whs_…)
+  POLAR_PRODUCT_ID?: string; // Pro product id
+  POLAR_SERVER?: string; // 'sandbox' (default) | 'production'
 }
 
 const SID_COOKIE = 'sid';
@@ -209,8 +215,14 @@ async function handleMe(request: Request, env: Env): Promise<Response> {
   const user = await sessionUser(env.DB, sid);
   if (!user) return json({ user: null });
   const sub = await env.DB.prepare('SELECT status, current_period_end FROM subscriptions WHERE user_id=?').bind(user.id).first<{ status: string; current_period_end: number | null }>();
-  const active = !!sub && (sub.status === 'active' || sub.status === 'on_trial') && (sub.current_period_end == null || sub.current_period_end > Date.now());
-  return json({ user: { id: user.id, email: user.email, provider: user.provider }, plan: active ? 'pro' : 'free' });
+  // Entitled while the subscription is live and the paid period hasn't lapsed.
+  // Polar keeps status 'active' (with cancel_at_period_end) until it revokes at the
+  // period end → status becomes 'canceled'. 'trialing'/'on_trial' also grant access.
+  const ENTITLED = new Set(['active', 'trialing', 'on_trial']);
+  const active = !!sub && ENTITLED.has(sub.status) && (sub.current_period_end == null || sub.current_period_end > Date.now());
+  // `billing` lets the client hide the upgrade CTA until Polar is actually wired up
+  // (token set), so a deploy is invisible to users until the operator activates it.
+  return json({ user: { id: user.id, email: user.email, provider: user.provider }, plan: active ? 'pro' : 'free', billing: Boolean(env.POLAR_ACCESS_TOKEN) });
 }
 
 async function handleLogout(request: Request, env: Env): Promise<Response> {
@@ -280,6 +292,152 @@ async function handleSyncPut(request: Request, env: Env): Promise<Response> {
   return json({ version: newVersion, updatedAt: now });
 }
 
+// ─── Billing (Polar · Merchant of Record) ──────────────────────────────────────
+// Sandbox by default. Checkout + customer portal use an Organization Access Token
+// (POLAR_ACCESS_TOKEN); webhooks are verified with the Standard Webhooks signature
+// (POLAR_WEBHOOK_SECRET). Reconciliation to our users is via `external_customer_id`
+// (= our user.id), echoed back as `customer.external_id` on webhook payloads.
+
+const POLAR_PRODUCT_ID_DEFAULT = '19519cbf-78fe-42a9-b398-be8ef90b9f5c';
+
+function polarBase(env: Env): string {
+  return env.POLAR_SERVER === 'production' ? 'https://api.polar.sh/v1' : 'https://sandbox-api.polar.sh/v1';
+}
+
+/** Standard (non-url) base64 of bytes — Standard Webhooks signatures use it. */
+function b64FromBytes(bytes: Uint8Array): string {
+  let bin = '';
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin);
+}
+
+/** Length-checked constant-time string compare. */
+function safeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+/**
+ * Verify a Standard Webhooks signature exactly as Polar sends it. The HMAC key is
+ * the raw secret's UTF-8 bytes: Polar hands you `polar_whs_…`, the standardwebhooks
+ * lib base64-decodes its input, so the documented usage base64-ENCODES that raw
+ * string first — net effect, the key bytes are the raw secret string's UTF-8 bytes.
+ * Signed content is `${id}.${timestamp}.${body}`; the header is a space-separated
+ * list of `v1,<base64sig>` entries (any match passes).
+ */
+async function verifyPolarWebhook(secret: string, headers: Headers, body: string): Promise<boolean> {
+  const id = headers.get('webhook-id');
+  const ts = headers.get('webhook-timestamp');
+  const sig = headers.get('webhook-signature');
+  if (!id || !ts || !sig) return false;
+  // Replay guard: reject timestamps more than 5 minutes from now.
+  const tsMs = Number(ts) * 1000;
+  if (!Number.isFinite(tsMs) || Math.abs(Date.now() - tsMs) > 5 * 60 * 1000) return false;
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const mac = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${id}.${ts}.${body}`));
+  const expected = b64FromBytes(new Uint8Array(mac));
+  return sig.split(' ').some((part) => {
+    const comma = part.indexOf(',');
+    return safeEqual(comma >= 0 ? part.slice(comma + 1) : part, expected);
+  });
+}
+
+/** POST /api/checkout — create a Polar checkout session, return its hosted URL. */
+async function handleCheckout(request: Request, env: Env): Promise<Response> {
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'unauthorized' }, 401);
+  if (!env.POLAR_ACCESS_TOKEN) return json({ error: 'billing_unconfigured' }, 503);
+  const origin = new URL(request.url).origin;
+  const body: Record<string, unknown> = {
+    products: [env.POLAR_PRODUCT_ID || POLAR_PRODUCT_ID_DEFAULT],
+    success_url: `${origin}/?checkout=success`,
+    external_customer_id: user.id,
+    metadata: { user_id: user.id },
+  };
+  if (user.email) body.customer_email = user.email;
+  const res = await fetch(`${polarBase(env)}/checkouts/`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${env.POLAR_ACCESS_TOKEN}`, 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) return json({ error: 'checkout_failed', status: res.status }, 502);
+  const data = (await res.json()) as { url?: string };
+  if (!data.url) return json({ error: 'checkout_no_url' }, 502);
+  return json({ url: data.url });
+}
+
+/** POST /api/billing/portal — mint a customer session, return its portal URL. */
+async function handlePortal(request: Request, env: Env): Promise<Response> {
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'unauthorized' }, 401);
+  if (!env.POLAR_ACCESS_TOKEN) return json({ error: 'billing_unconfigured' }, 503);
+  const res = await fetch(`${polarBase(env)}/customer-sessions/`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${env.POLAR_ACCESS_TOKEN}`, 'content-type': 'application/json' },
+    body: JSON.stringify({ external_customer_id: user.id }),
+  });
+  // 404 = this user has no Polar customer yet (never purchased) → nothing to manage.
+  if (res.status === 404) return json({ error: 'no_customer' }, 404);
+  if (!res.ok) return json({ error: 'portal_failed', status: res.status }, 502);
+  const data = (await res.json()) as { customer_portal_url?: string };
+  if (!data.customer_portal_url) return json({ error: 'portal_no_url' }, 502);
+  return json({ url: data.customer_portal_url });
+}
+
+interface PolarSubscription {
+  id?: string;
+  status?: string;
+  current_period_end?: string | null;
+  customer?: { id?: string; external_id?: string | null };
+  customer_id?: string;
+  metadata?: Record<string, unknown>;
+}
+
+/** Write the latest subscription state for the mapped user (idempotent upsert). */
+async function upsertSubscription(db: D1Database, sub: PolarSubscription): Promise<void> {
+  const metaUser = typeof sub.metadata?.user_id === 'string' ? sub.metadata.user_id : null;
+  const userId = sub.customer?.external_id || metaUser;
+  if (!userId) return; // no way to map this to one of our users — ignore
+  const status = sub.status ?? 'unknown';
+  const periodEnd = sub.current_period_end ? Date.parse(sub.current_period_end) : null;
+  await db
+    .prepare(
+      `INSERT INTO subscriptions (user_id, status, current_period_end, polar_subscription_id, polar_customer_id, updated_at)
+       VALUES (?,?,?,?,?,?)
+       ON CONFLICT(user_id) DO UPDATE SET
+         status=excluded.status,
+         current_period_end=excluded.current_period_end,
+         polar_subscription_id=excluded.polar_subscription_id,
+         polar_customer_id=excluded.polar_customer_id,
+         updated_at=excluded.updated_at`,
+    )
+    .bind(userId, status, Number.isFinite(periodEnd as number) ? periodEnd : null, sub.id ?? null, sub.customer?.id ?? sub.customer_id ?? null, Date.now())
+    .run();
+}
+
+/** POST /api/webhooks/polar — verify signature, then reconcile subscription state. */
+async function handleWebhook(request: Request, env: Env): Promise<Response> {
+  if (!env.POLAR_WEBHOOK_SECRET || !env.DB) return json({ error: 'unconfigured' }, 503);
+  const body = await request.text(); // raw body is required for signature verification
+  if (!(await verifyPolarWebhook(env.POLAR_WEBHOOK_SECRET, request.headers, body))) {
+    return json({ error: 'invalid_signature' }, 403);
+  }
+  let event: { type?: string; data?: PolarSubscription };
+  try {
+    event = JSON.parse(body) as typeof event;
+  } catch {
+    return json({ error: 'bad_json' }, 400);
+  }
+  // Every subscription.* event carries the full subscription object; upserting on
+  // each keeps entitlement current (created/active/updated/canceled/revoked/…).
+  if (event.type?.startsWith('subscription.') && event.data) {
+    await upsertSubscription(env.DB, event.data);
+  }
+  return json({ received: true });
+}
+
 // ─── Router ──────────────────────────────────────────────────────────────────
 
 export default {
@@ -290,7 +448,7 @@ export default {
 
     if (p.startsWith('/api/')) {
       if (p === '/api/health' && m === 'GET') {
-        return json({ ok: true, service: '24houring-api', db: Boolean(env.DB), auth: Boolean(env.GOOGLE_CLIENT_ID), ts: Date.now() });
+        return json({ ok: true, service: '24houring-api', db: Boolean(env.DB), auth: Boolean(env.GOOGLE_CLIENT_ID), billing: Boolean(env.POLAR_ACCESS_TOKEN), ts: Date.now() });
       }
       if (p === '/api/auth/google/start' && m === 'GET') return handleStart(request, env);
       if (p === '/api/auth/google/callback' && m === 'GET') return handleCallback(request, env);
@@ -298,6 +456,9 @@ export default {
       if (p === '/api/logout' && m === 'POST') return handleLogout(request, env);
       if (p === '/api/sync' && m === 'GET') return handleSyncGet(request, env);
       if (p === '/api/sync' && m === 'PUT') return handleSyncPut(request, env);
+      if (p === '/api/checkout' && m === 'POST') return handleCheckout(request, env);
+      if (p === '/api/billing/portal' && m === 'POST') return handlePortal(request, env);
+      if (p === '/api/webhooks/polar' && m === 'POST') return handleWebhook(request, env);
       return json({ error: 'not_found' }, 404);
     }
 

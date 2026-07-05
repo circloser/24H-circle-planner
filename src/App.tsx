@@ -36,6 +36,7 @@ import { useSliceInteraction } from '@/hooks/useSliceInteraction';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useShareActions } from '@/hooks/useShareActions';
 import { useSyncStatus } from '@/hooks/useSync';
+import { useAuth } from '@/hooks/useAuth';
 import { E2eeDialog } from '@/components/Sync/E2eeDialog';
 import { WelcomeOverlay } from '@/components/Onboarding/WelcomeOverlay';
 import { readSharedFromHash, clearShareHash } from '@/lib/share-link';
@@ -164,17 +165,29 @@ function App() {
   })();
   const isMobile = useIsMobile();
   const chartView = useChartView();
+  const { refresh: refreshAuth } = useAuth();
 
-  // One-time toast for the OAuth round-trip result: the Worker lands us back on
-  // /?login=ok (or /?login_error=…). Show feedback, then strip the param so a
-  // refresh doesn't repeat it. The session itself is read by useAuth on mount.
+  // One-time toast for OAuth (/?login=ok|…) and Polar checkout (/?checkout=success)
+  // round-trips. Show feedback, re-read the session (entitlement may have just
+  // changed), then strip the param so a refresh doesn't repeat it.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (!params.has('login') && !params.has('login_error')) return;
-    if (params.get('login') === 'ok') toast.success(t('auth.welcome'));
-    else toast.error(t('auth.loginFailed'));
+    const hasLogin = params.has('login') || params.has('login_error');
+    const hasCheckout = params.has('checkout');
+    if (!hasLogin && !hasCheckout) return;
+    if (hasLogin) {
+      if (params.get('login') === 'ok') toast.success(t('auth.welcome'));
+      else toast.error(t('auth.loginFailed'));
+    }
+    if (hasCheckout) {
+      if (params.get('checkout') === 'success') {
+        toast.success(t('billing.checkoutSuccess'));
+        void refreshAuth(); // webhook may have already flipped us to Pro
+      }
+    }
     params.delete('login');
     params.delete('login_error');
+    params.delete('checkout');
     const qs = params.toString();
     window.history.replaceState({}, '', window.location.pathname + (qs ? `?${qs}` : '') + window.location.hash);
     // eslint-disable-next-line react-hooks/exhaustive-deps

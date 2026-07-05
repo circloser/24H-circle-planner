@@ -1,4 +1,4 @@
-import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target, Lock, CalendarClock } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target, Lock, CalendarClock, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,6 +15,7 @@ import { ChartViewToggle } from '@/components/ChartViewToggle/ChartViewToggle';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useAuth } from '@/hooks/useAuth';
 import { useSyncStatus } from '@/hooks/useSync';
+import { startCheckout, openBillingPortal } from '@/lib/sync/billing';
 import type { SettingsSection } from '@/components/Settings/SettingsDialog';
 
 export interface AppHeaderProps {
@@ -62,11 +63,18 @@ export function AppHeader({
   onOpenE2ee,
 }: AppHeaderProps) {
   const { t } = useTranslation();
-  const { user, login, logout, loading: authLoading } = useAuth();
+  const { user, plan, billingEnabled, login, logout, loading: authLoading } = useAuth();
   const sync = useSyncStatus();
 
   const handleLogout = () => {
     void logout().then(() => toast.success(t('auth.signedOut')));
+  };
+
+  const handleUpgrade = () => {
+    startCheckout().catch(() => toast.error(t('billing.checkoutError')));
+  };
+  const handleManage = () => {
+    openBillingPortal().catch(() => toast.error(t('billing.portalError')));
   };
 
   return (
@@ -200,6 +208,11 @@ export function AppHeader({
                         <span className="truncate text-xs text-muted-foreground">
                           {user.email ?? user.provider}
                         </span>
+                        {plan === 'pro' && (
+                          <span className="ml-auto shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                            Pro
+                          </span>
+                        )}
                       </DropdownMenuLabel>
                       <div
                         className="flex items-center gap-1.5 px-2 pb-1.5 text-xs text-muted-foreground"
@@ -225,6 +238,17 @@ export function AppHeader({
                                   : t('sync.synced')}
                         </span>
                       </div>
+                      {plan === 'pro' ? (
+                        <DropdownMenuItem onClick={handleManage} className="gap-2">
+                          <CreditCard className="h-4 w-4" />
+                          {t('billing.manage')}
+                        </DropdownMenuItem>
+                      ) : billingEnabled ? (
+                        <DropdownMenuItem onClick={handleUpgrade} className="gap-2">
+                          <Sparkles className="h-4 w-4" />
+                          {t('billing.upgrade')}
+                        </DropdownMenuItem>
+                      ) : null}
                       <DropdownMenuItem onClick={onOpenE2ee} className="gap-2">
                         <Lock className="h-4 w-4" />
                         {t('e2ee.menu')}
