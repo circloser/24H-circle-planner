@@ -15,7 +15,7 @@ import { ChartViewToggle } from '@/components/ChartViewToggle/ChartViewToggle';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useAuth } from '@/hooks/useAuth';
 import { useSyncStatus } from '@/hooks/useSync';
-import { startCheckout, openBillingPortal } from '@/lib/sync/billing';
+import { openBillingPortal } from '@/lib/sync/billing';
 import type { SettingsSection } from '@/components/Settings/SettingsDialog';
 
 export interface AppHeaderProps {
@@ -36,6 +36,7 @@ export interface AppHeaderProps {
   onOpenTransfer: () => void;
   onOpenReset: () => void;
   onOpenE2ee: () => void;
+  onOpenUpgrade: () => void;
 }
 
 /**
@@ -61,6 +62,7 @@ export function AppHeader({
   onOpenTransfer,
   onOpenReset,
   onOpenE2ee,
+  onOpenUpgrade,
 }: AppHeaderProps) {
   const { t } = useTranslation();
   const { user, plan, billingEnabled, login, logout, loading: authLoading } = useAuth();
@@ -70,9 +72,6 @@ export function AppHeader({
     void logout().then(() => toast.success(t('auth.signedOut')));
   };
 
-  const handleUpgrade = () => {
-    startCheckout().catch(() => toast.error(t('billing.checkoutError')));
-  };
   const handleManage = () => {
     openBillingPortal().catch(() => toast.error(t('billing.portalError')));
   };
@@ -214,45 +213,47 @@ export function AppHeader({
                           </span>
                         )}
                       </DropdownMenuLabel>
-                      <div
-                        className="flex items-center gap-1.5 px-2 pb-1.5 text-xs text-muted-foreground"
-                      >
-                        {sync.status === 'syncing' ? (
-                          <RefreshCw className="h-3 w-3 animate-spin" />
-                        ) : sync.status === 'locked' ? (
-                          <Lock className="h-3 w-3" />
-                        ) : sync.status === 'offline' || sync.status === 'error' ? (
-                          <CloudOff className="h-3 w-3" />
-                        ) : (
-                          <Cloud className="h-3 w-3" />
-                        )}
-                        <span>
-                          {sync.status === 'syncing'
-                            ? t('sync.syncing')
-                            : sync.status === 'locked'
-                              ? t('sync.locked')
-                              : sync.status === 'offline'
-                                ? t('sync.offline')
-                                : sync.status === 'error'
-                                  ? t('sync.error')
-                                  : t('sync.synced')}
-                        </span>
-                      </div>
                       {plan === 'pro' ? (
-                        <DropdownMenuItem onClick={handleManage} className="gap-2">
-                          <CreditCard className="h-4 w-4" />
-                          {t('billing.manage')}
-                        </DropdownMenuItem>
+                        <>
+                          {/* Live sync status — Pro only (sync is a Pro feature). */}
+                          <div className="flex items-center gap-1.5 px-2 pb-1.5 text-xs text-muted-foreground">
+                            {sync.status === 'syncing' ? (
+                              <RefreshCw className="h-3 w-3 animate-spin" />
+                            ) : sync.status === 'locked' ? (
+                              <Lock className="h-3 w-3" />
+                            ) : sync.status === 'offline' || sync.status === 'error' ? (
+                              <CloudOff className="h-3 w-3" />
+                            ) : (
+                              <Cloud className="h-3 w-3" />
+                            )}
+                            <span>
+                              {sync.status === 'syncing'
+                                ? t('sync.syncing')
+                                : sync.status === 'locked'
+                                  ? t('sync.locked')
+                                  : sync.status === 'offline'
+                                    ? t('sync.offline')
+                                    : sync.status === 'error'
+                                      ? t('sync.error')
+                                      : t('sync.synced')}
+                            </span>
+                          </div>
+                          <DropdownMenuItem onClick={handleManage} className="gap-2">
+                            <CreditCard className="h-4 w-4" />
+                            {t('billing.manage')}
+                          </DropdownMenuItem>
+                          {/* Diary lock (E2EE) rides on sync → Pro only. */}
+                          <DropdownMenuItem onClick={onOpenE2ee} className="gap-2">
+                            <Lock className="h-4 w-4" />
+                            {t('e2ee.menu')}
+                          </DropdownMenuItem>
+                        </>
                       ) : billingEnabled ? (
-                        <DropdownMenuItem onClick={handleUpgrade} className="gap-2">
+                        <DropdownMenuItem onClick={onOpenUpgrade} className="gap-2">
                           <Sparkles className="h-4 w-4" />
                           {t('billing.upgrade')}
                         </DropdownMenuItem>
                       ) : null}
-                      <DropdownMenuItem onClick={onOpenE2ee} className="gap-2">
-                        <Lock className="h-4 w-4" />
-                        {t('e2ee.menu')}
-                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={handleLogout} className="gap-2">
                         <LogOut className="h-4 w-4" />
                         {t('auth.logout')}

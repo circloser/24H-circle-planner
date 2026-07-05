@@ -75,7 +75,9 @@ function restorePrevious(): void {
  * the app is fully usable without an account.
  */
 export function SyncProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, plan } = useAuth();
+  // Cloud sync is a Pro feature (includes the free trial, which reports as 'pro').
+  const pro = plan === 'pro';
   const { t } = useTranslation();
   // Latest translator, read from inside the long-lived [user] sync effect without
   // making that effect depend on (and re-subscribe on) every language change.
@@ -96,7 +98,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!user) return; // signed out → engine idle; status is derived as 'disabled' below
+    if (!user || !pro) return; // signed out / free → engine idle; status derived as 'disabled' below
 
     let stopped = false;
     let pushTimer: ReturnType<typeof setTimeout> | null = null;
@@ -309,10 +311,10 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       window.removeEventListener(E2EE_DISABLE_EVENT, onDisable);
       document.removeEventListener('visibilitychange', onWake);
     };
-  }, [user]);
+  }, [user, pro]);
 
-  // When signed out the engine is idle — always present 'disabled' downstream.
-  return <SyncContext.Provider value={{ status: user ? status : 'disabled', lastSyncedAt }}>{children}</SyncContext.Provider>;
+  // Signed out or on the free plan → engine idle; always present 'disabled'.
+  return <SyncContext.Provider value={{ status: user && pro ? status : 'disabled', lastSyncedAt }}>{children}</SyncContext.Provider>;
 }
 
 function navigatorOnline(): boolean {

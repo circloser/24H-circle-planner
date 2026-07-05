@@ -38,6 +38,7 @@ import { useShareActions } from '@/hooks/useShareActions';
 import { useSyncStatus } from '@/hooks/useSync';
 import { useAuth } from '@/hooks/useAuth';
 import { E2eeDialog } from '@/components/Sync/E2eeDialog';
+import { UpgradeDialog } from '@/components/Billing/UpgradeDialog';
 import { WelcomeOverlay } from '@/components/Onboarding/WelcomeOverlay';
 import { readSharedFromHash, clearShareHash } from '@/lib/share-link';
 import { AnalyticsDialog } from '@/components/Analytics/AnalyticsDialog';
@@ -133,6 +134,7 @@ function App() {
   const [diaryOpen, setDiaryOpen] = useState(false);
   const [goalsOpen, setGoalsOpen] = useState(false);
   const [e2eeOpen, setE2eeOpen] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [weekdayOpen, setWeekdayOpen] = useState(false);
   // On opening the app on a weekday that has an assigned default schedule, ask
   // once (per local day) whether to load it. Skipped when arriving via a share
@@ -304,6 +306,7 @@ function App() {
         onOpenTransfer={() => setTransferOpen(true)}
         onOpenReset={() => setResetOpen(true)}
         onOpenE2ee={() => setE2eeOpen(true)}
+        onOpenUpgrade={() => setUpgradeOpen(true)}
       />
 
       <main
@@ -498,6 +501,7 @@ function App() {
 
       {/* End-to-end encryption for cloud sync (enable / unlock / manage). */}
       <E2eeDialog open={e2eeOpen} onOpenChange={setE2eeOpen} />
+      <UpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} />
 
       {/* Assign a saved schedule to each weekday. */}
       <WeekdayScheduleDialog open={weekdayOpen} onOpenChange={setWeekdayOpen} />

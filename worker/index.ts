@@ -386,6 +386,32 @@ async function handlePortal(request: Request, env: Env): Promise<Response> {
   return json({ url: data.customer_portal_url });
 }
 
+/** GET /api/billing/product — public price info for the Pro product (for the
+ *  paywall UI), read live from Polar so the displayed price never drifts. */
+async function handleProduct(request: Request, env: Env): Promise<Response> {
+  if (!env.POLAR_ACCESS_TOKEN) return json({ error: 'billing_unconfigured' }, 503);
+  const productId = env.POLAR_PRODUCT_ID || POLAR_PRODUCT_ID_DEFAULT;
+  const res = await fetch(`${polarBase(env)}/products/${productId}`, {
+    headers: { authorization: `Bearer ${env.POLAR_ACCESS_TOKEN}`, accept: 'application/json' },
+  });
+  if (!res.ok) return json({ error: 'product_failed', status: res.status }, 502);
+  const p = (await res.json()) as {
+    name?: string;
+    recurring_interval?: string | null;
+    prices?: Array<{ amount_type?: string; price_amount?: number; amount?: number; price_currency?: string; recurring_interval?: string | null }>;
+  };
+  // Amounts are in the currency's minor unit (cents). Skip free/non-fixed tiers.
+  const prices = (p.prices ?? [])
+    .filter((pr) => pr.amount_type !== 'free' && pr.amount_type !== 'custom')
+    .map((pr) => ({
+      amount: typeof pr.price_amount === 'number' ? pr.price_amount : typeof pr.amount === 'number' ? pr.amount : null,
+      currency: (pr.price_currency ?? 'usd').toLowerCase(),
+      interval: pr.recurring_interval ?? p.recurring_interval ?? null,
+    }))
+    .filter((pr) => pr.amount != null);
+  return json({ name: p.name ?? null, prices });
+}
+
 interface PolarSubscription {
   id?: string;
   status?: string;
@@ -456,6 +482,7 @@ export default {
       if (p === '/api/logout' && m === 'POST') return handleLogout(request, env);
       if (p === '/api/sync' && m === 'GET') return handleSyncGet(request, env);
       if (p === '/api/sync' && m === 'PUT') return handleSyncPut(request, env);
+      if (p === '/api/billing/product' && m === 'GET') return handleProduct(request, env);
       if (p === '/api/checkout' && m === 'POST') return handleCheckout(request, env);
       if (p === '/api/billing/portal' && m === 'POST') return handlePortal(request, env);
       if (p === '/api/webhooks/polar' && m === 'POST') return handleWebhook(request, env);
