@@ -152,13 +152,12 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* SVG chart text: prioritise crisp, well-hinted glyphs. optimizeLegibility keeps
-   the OS text hinting (crisper small labels on browsers that hint SVG text, e.g.
-   Firefox/Safari; no change on Chromium, which we verified). Chart labels also
-   carry an adaptive halo (SliceLabel paint-order stroke) for edge definition on
-   coloured wedges. */
+/* SVG chart text: MAXIMUM antialiasing (smoothest edges, no border/halo).
+   geometricPrecision disables grid-fitting/hinting → pure geometric grayscale AA,
+   so glyph edges stay smooth (no pixel-snapped jaggies) at the scaled-down size;
+   antialiased + grayscale keep webkit/macOS smoothing on. */
 svg text {
-  text-rendering: optimizeLegibility;
+  text-rendering: geometricPrecision;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
