@@ -152,11 +152,13 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* SVG chart text: prioritise crisp, well-shaped glyphs over render speed.
-   The chart is drawn at a 1072px viewBox and scaled down, so geometric
-   precision keeps the labels smooth at the displayed size. */
+/* SVG chart text: prioritise crisp, well-hinted glyphs. optimizeLegibility keeps
+   the OS text hinting (crisper small labels on browsers that hint SVG text, e.g.
+   Firefox/Safari; no change on Chromium, which we verified). Chart labels also
+   carry an adaptive halo (SliceLabel paint-order stroke) for edge definition on
+   coloured wedges. */
 svg text {
-  text-rendering: geometricPrecision;
+  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

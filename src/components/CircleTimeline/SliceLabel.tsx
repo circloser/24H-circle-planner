@@ -6,7 +6,7 @@ import {
   truncateLabel,
 } from '@/lib/svg-geometry';
 import { FULL_SPEC, type ViewSpec } from '@/lib/chart-view';
-import { idealTextColor, DARK_TEXT } from '@/lib/contrast';
+import { idealTextColor, relativeLuminance, DARK_TEXT } from '@/lib/contrast';
 import { useTranslation, useShowIcons } from '@/hooks/usePreferences';
 import { useCoarsePointer } from '@/hooks/useCoarsePointer';
 import { translateLabel } from '@/i18n/content';
@@ -116,6 +116,11 @@ export function SliceLabel({ slice, onEdit, spec = FULL_SPEC }: SliceLabelProps)
   // black/white from the slice's luminance; outside labels keep the dark tone.
   const insideFill = slice.textColor || idealTextColor(slice.color);
   const outsideFill = slice.textColor || LABEL_TEXT_DEFAULT;
+  // Adaptive halo: a thin stroke UNDER the glyph (paint-order:stroke) in the tone
+  // opposite the text, giving small labels a crisp edge on coloured wedges without
+  // a heavier font. Width scales with the (possibly shrunk) font size.
+  const insideTextLight = (relativeLuminance(insideFill) ?? 0) > 0.5;
+  const haloColor = insideTextLight ? 'rgba(17,22,38,0.5)' : 'rgba(255,255,255,0.62)';
   const fontWeight = slice.bold ? 700 : 400;
   const fontStyle = slice.italic ? 'italic' : 'normal';
 
@@ -163,6 +168,10 @@ export function SliceLabel({ slice, onEdit, spec = FULL_SPEC }: SliceLabelProps)
             fontWeight={fontWeight}
             fontStyle={fontStyle}
             fill={insideFill}
+            paintOrder="stroke"
+            stroke={haloColor}
+            strokeWidth={Math.max(1.6, textPx * 0.13)}
+            strokeLinejoin="round"
             style={labelFontSize(textPx)}
           >
             {localized}
