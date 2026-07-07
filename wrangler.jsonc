@@ -29,11 +29,13 @@
     { "binding": "DB", "database_name": "24houring", "database_id": "a21e309c-9753-4fe1-91b0-9456ce4c3ec2", "migrations_dir": "worker/migrations" }
   ],
 
-  // Non-secret Polar (billing) config. The access token + webhook secret are
-  // SECRETS — set them with `wrangler secret put POLAR_ACCESS_TOKEN` /
-  // `POLAR_WEBHOOK_SECRET`. Flip POLAR_SERVER to "production" when going live.
+  // Non-secret Polar (billing) config. PRODUCTION (real payments). The access token
+  // + webhook secret are SECRETS set in the Worker's runtime "Variables and Secrets"
+  // — they MUST be the PRODUCTION values (production OAT with products:read +
+  // checkouts:write + customer_sessions:write + subscriptions:write, and the
+  // production webhook secret). Set POLAR_SERVER back to "sandbox" to test.
   "vars": {
-    "POLAR_SERVER": "sandbox",
-    "POLAR_PRODUCT_ID": "19519cbf-78fe-42a9-b398-be8ef90b9f5c"
+    "POLAR_SERVER": "production",
+    "POLAR_PRODUCT_ID": "7c6f2b4a-718c-47b0-9dd5-bc1aef50dab5"
   }
 }

@@ -298,7 +298,7 @@ async function handleSyncPut(request: Request, env: Env): Promise<Response> {
 // (POLAR_WEBHOOK_SECRET). Reconciliation to our users is via `external_customer_id`
 // (= our user.id), echoed back as `customer.external_id` on webhook payloads.
 
-const POLAR_PRODUCT_ID_DEFAULT = '19519cbf-78fe-42a9-b398-be8ef90b9f5c';
+const POLAR_PRODUCT_ID_DEFAULT = '7c6f2b4a-718c-47b0-9dd5-bc1aef50dab5';
 
 function polarBase(env: Env): string {
   return env.POLAR_SERVER === 'production' ? 'https://api.polar.sh/v1' : 'https://sandbox-api.polar.sh/v1';
