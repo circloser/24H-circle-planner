@@ -25,6 +25,8 @@
  * Loading a diary is a view state, not a data change, so it now syncs nothing.
  */
 
+import { CLOCKTOOLS_KEY, GOALSWIDGET_KEY, isWidgetKey, encodeWidgetValue, decodeWidgetValue } from './widgetSync';
+
 const PREFIX = '24h-circle-planner.';
 
 /** localStorage keys included in the synced blob. */
@@ -36,13 +38,13 @@ export const SYNC_KEYS: readonly string[] = [
   'user-presets',
   'goals',
   'records',
-  // NB: the floating widgets (`clocktools`, `goalswidget`) are intentionally NOT
-  // synced here. Naively adding them caused a login-time apply→reload loop: an
-  // old cloud blob lacks these keys, so applySyncData removes them + reloads;
-  // loadState then regenerates a fresh-uuid default → the device looks dirty
-  // again, and the corrective seed-push is preempted by the reload every cycle.
-  // Loop-safe widget sync needs live-apply (no reload) + in-memory adoption in
-  // useClockTools/GoalsWidget — see that follow-up before re-adding.
+  // Floating widgets. Loop-safe because they are LIVE-APPLIED (no reload),
+  // KEPT when absent from an old cloud blob (never wiped/regenerated), and their
+  // positions travel centre-relative (see widgetSync) so re-saving an applied
+  // value reproduces byte-identical wire data. All three are what a naive add
+  // lacked — that version looped on login.
+  'clocktools',
+  'goalswidget',
   'prefs',
   'view',
 ].map((k) => PREFIX + k);
@@ -53,8 +55,11 @@ export const PREFS_KEY = PREFIX + 'prefs';
 /** The synced diary-view cursor ({diaryDate}) — applied live (no reload). */
 export const VIEW_KEY = PREFIX + 'view';
 
-/** localStorage keys the sync engine applies LIVE (via events) instead of reloading. */
-export const LIVE_APPLY_KEYS: readonly string[] = [PREFS_KEY, VIEW_KEY];
+/** localStorage keys the sync engine applies LIVE (via events) instead of reloading.
+ *  The floating widgets are here so a remote widget change never reloads the page —
+ *  which is what preempted the seed-push and caused the login loop. useClockTools /
+ *  GoalsWidget re-read their state on the events below. */
+export const LIVE_APPLY_KEYS: readonly string[] = [PREFS_KEY, VIEW_KEY, CLOCKTOOLS_KEY, GOALSWIDGET_KEY];
 
 /** Window event fired after applying a prefs-only cloud change (re-read live). */
 export const PREFS_SYNC_EVENT = '24h:prefs-synced';
@@ -106,25 +111,33 @@ export function parseWire(raw: unknown): WireEnvelope | null {
   }
 }
 
-/** Snapshot the synced content keys currently in localStorage. */
+/** Snapshot the synced content keys currently in localStorage. Widget positions
+ *  are re-based to the viewport centre for the wire (see widgetSync). */
 export function collectSyncData(): Record<string, string> {
   const data: Record<string, string> = {};
   for (const key of SYNC_KEYS) {
     const v = localStorage.getItem(key);
-    if (v !== null) data[key] = v;
+    if (v !== null) data[key] = isWidgetKey(key) ? encodeWidgetValue(v) : v;
   }
   return data;
 }
 
 /**
- * Overwrite the synced content keys from `data`. Keys absent from `data` are
- * removed so deletions propagate. Device-local keys are never touched.
+ * Overwrite the synced content keys from `data`. Widget values are decoded from
+ * centre-relative back to this viewport's absolute pixels. A non-widget key
+ * absent from `data` is removed so deletions propagate; a WIDGET key absent is
+ * KEPT — an old cloud blob predating widget sync must not wipe local widgets,
+ * and keeping it (rather than removing→regenerating a default) is what stops the
+ * login apply→reload loop. Device-local keys are never touched.
  */
 export function applySyncData(data: Record<string, string>): void {
   for (const key of SYNC_KEYS) {
     const v = data[key];
-    if (typeof v === 'string') localStorage.setItem(key, v);
-    else localStorage.removeItem(key);
+    if (typeof v === 'string') {
+      localStorage.setItem(key, isWidgetKey(key) ? decodeWidgetValue(v) : v);
+    } else if (!isWidgetKey(key)) {
+      localStorage.removeItem(key);
+    }
   }
 }
 

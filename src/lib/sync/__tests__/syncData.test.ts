@@ -4,17 +4,23 @@ import { SYNC_KEYS, PREFS_KEY, VIEW_KEY, LIVE_APPLY_KEYS, dataFingerprint, canon
 const K = (s: string) => `24h-circle-planner.${s}`;
 
 describe('sync payload keys', () => {
-  it('syncs content keys AND prefs, but never device-local theme', () => {
-    for (const k of ['days', 'diary', 'memos', 'goals', 'records', 'prefs']) {
+  it('syncs content keys, floating widgets AND prefs, but never device-local theme', () => {
+    for (const k of ['days', 'diary', 'memos', 'goals', 'records', 'clocktools', 'goalswidget', 'prefs']) {
       expect(SYNC_KEYS).toContain(K(k));
     }
     expect(SYNC_KEYS).not.toContain(K('theme'));
     expect(PREFS_KEY).toBe(K('prefs'));
   });
 
-  it('does NOT sync floating-widget keys (they caused a login apply→reload loop)', () => {
-    expect(SYNC_KEYS).not.toContain(K('clocktools'));
-    expect(SYNC_KEYS).not.toContain(K('goalswidget'));
+  it('applies floating-widget changes LIVE (no reload) so the seed-push is never preempted', () => {
+    expect(LIVE_APPLY_KEYS).toContain(K('clocktools'));
+    expect(LIVE_APPLY_KEYS).toContain(K('goalswidget'));
+    // A widget-only remote change must classify as live-appliable.
+    const a = { [K('days')]: 'x', [K('clocktools')]: '{"a":1}' };
+    const b = { [K('days')]: 'x', [K('clocktools')]: '{"a":2}' };
+    const changed = changedSyncKeys(a, b);
+    expect(changed).toEqual([K('clocktools')]);
+    expect(changed.every((k) => LIVE_APPLY_KEYS.includes(k))).toBe(true);
   });
 
   it('does NOT sync the legacy `schedule` key (days is authoritative; it mirrors transient present → diary-load loop)', () => {

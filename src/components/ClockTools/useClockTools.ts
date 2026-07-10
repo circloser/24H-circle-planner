@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { v4 as uuid } from 'uuid';
 import type { Pos } from './clock-utils';
+import { CLOCKTOOLS_SYNC_EVENT } from '@/lib/sync/widgetSync';
 
 export type ClockMode = 'analog' | 'digital';
 // NB: clock and weather are NOT ToolKinds — unlike the on/off singleton tools,
@@ -212,6 +213,15 @@ export function useClockTools(): ClockToolsApi {
   useEffect(() => {
     saveState(state);
   }, [state]);
+
+  // Cloud sync applied a new clock-tools value to localStorage (no reload) — adopt
+  // it into memory so the widgets move/appear live. loadState is idempotent for a
+  // full-shape value, so re-saving it produces identical wire data (no sync churn).
+  useEffect(() => {
+    const onSync = () => setState(loadState());
+    window.addEventListener(CLOCKTOOLS_SYNC_EVENT, onSync);
+    return () => window.removeEventListener(CLOCKTOOLS_SYNC_EVENT, onSync);
+  }, []);
 
   const toggle = useCallback((kind: ToolKind) => {
     setState((s) => ({ ...s, [kind]: { ...s[kind], on: !s[kind].on } }));

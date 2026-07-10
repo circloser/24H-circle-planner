@@ -5,6 +5,7 @@ import { useGoals } from '@/hooks/useGoals';
 import { useTranslation } from '@/hooks/usePreferences';
 import { accumulatedMinutes } from '@/lib/goals';
 import { makeDragStart, type Pos } from '@/components/ClockTools/clock-utils';
+import { GOALS_WIDGET_SYNC_EVENT } from '@/lib/sync/widgetSync';
 
 const POS_KEY = '24h-circle-planner.goalswidget';
 const CARD_W = 300;
@@ -62,6 +63,14 @@ export function GoalsWidget() {
       // storage unavailable — position simply won't persist
     }
   }, [pos]);
+
+  // Cloud sync applied a new position to localStorage (no reload) — adopt it live.
+  // loadPos clamps to this viewport, so the card can't land off-screen.
+  useEffect(() => {
+    const onSync = () => setPos(loadPos());
+    window.addEventListener(GOALS_WIDGET_SYNC_EVENT, onSync);
+    return () => window.removeEventListener(GOALS_WIDGET_SYNC_EVENT, onSync);
+  }, []);
 
   // The feature only shows up once the user has set a goal/mission.
   if (goals.length === 0) return null;
