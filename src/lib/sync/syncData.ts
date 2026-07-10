@@ -36,14 +36,13 @@ export const SYNC_KEYS: readonly string[] = [
   'user-presets',
   'goals',
   'records',
-  // Floating widgets travel too: `clocktools` (clocks/calendar/weather/alarm/timer
-  // — which are open + their positions) and the goals-widget position. Both always
-  // serialize as a full, default-merged shape, so canonicalValue keeps them
-  // loop-safe. Positions are device-local pixels; mobile lays these out inline
-  // (positions ignored there) and desktops are similar-sized, so cross-viewport
-  // drift is negligible.
-  'clocktools',
-  'goalswidget',
+  // NB: the floating widgets (`clocktools`, `goalswidget`) are intentionally NOT
+  // synced here. Naively adding them caused a login-time apply→reload loop: an
+  // old cloud blob lacks these keys, so applySyncData removes them + reloads;
+  // loadState then regenerates a fresh-uuid default → the device looks dirty
+  // again, and the corrective seed-push is preempted by the reload every cycle.
+  // Loop-safe widget sync needs live-apply (no reload) + in-memory adoption in
+  // useClockTools/GoalsWidget — see that follow-up before re-adding.
   'prefs',
   'view',
 ].map((k) => PREFIX + k);
