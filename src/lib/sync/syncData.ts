@@ -36,6 +36,14 @@ export const SYNC_KEYS: readonly string[] = [
   'user-presets',
   'goals',
   'records',
+  // Floating widgets travel too: `clocktools` (clocks/calendar/weather/alarm/timer
+  // — which are open + their positions) and the goals-widget position. Both always
+  // serialize as a full, default-merged shape, so canonicalValue keeps them
+  // loop-safe. Positions are device-local pixels; mobile lays these out inline
+  // (positions ignored there) and desktops are similar-sized, so cross-viewport
+  // drift is negligible.
+  'clocktools',
+  'goalswidget',
   'prefs',
   'view',
 ].map((k) => PREFIX + k);
