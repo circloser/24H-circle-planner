@@ -211,7 +211,18 @@ export function useClockTools(): ClockToolsApi {
   }, []);
 
   const toggle = useCallback((kind: ToolKind) => {
-    setState((s) => ({ ...s, [kind]: { ...s[kind], on: !s[kind].on } }));
+    setState((s) => {
+      if (s[kind].on) return { ...s, [kind]: { ...s[kind], on: false } };
+      // Opening a singleton tool → (re)spawn it next to the chart, so it never
+      // opens at a stale, far-flung stored position. The user can drag it after.
+      const pos =
+        kind === 'timer'
+          ? spawnNearCentre(-340, 130, 200, 160)
+          : kind === 'alarm'
+            ? spawnNearCentre(-340, 210, 200, 140)
+            : spawnNearCentre(-360, -210, 232, 240); // calendar
+      return { ...s, [kind]: { ...s[kind], on: true, pos } };
+    });
   }, []);
 
   const addClock = useCallback(() => {
