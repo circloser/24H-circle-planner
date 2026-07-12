@@ -4,6 +4,7 @@ import { v4 as uuid } from 'uuid';
 import { randomQuote } from '@/data/quotes';
 import { useTranslation } from '@/hooks/usePreferences';
 import { usePersistedState, type PersistedCodec } from '@/hooks/usePersistedState';
+import { toStored } from '@/components/ClockTools/clock-utils';
 
 const MEMO_SIZE = 200;
 
@@ -81,10 +82,10 @@ function pickSpawn(size: number): { x: number; y: number } {
     if (cr.top - headerY >= size + m) regions.push([m, vw - size - m, headerY, cr.top - size - m]);
     if (regions.length) {
       const [xLo, xHi, yLo, yHi] = regions[Math.floor(Math.random() * regions.length)];
-      return { x: Math.round(rand(xLo, xHi)), y: Math.round(rand(yLo, yHi)) };
+      return toStored(Math.round(rand(xLo, xHi)), Math.round(rand(yLo, yHi)));
     }
   }
-  return { x: Math.round(rand(m, vw - size - m)), y: Math.round(rand(headerY + 12, vh - size - m)) };
+  return toStored(Math.round(rand(m, vw - size - m)), Math.round(rand(headerY + 12, vh - size - m)));
 }
 
 /**
@@ -93,7 +94,7 @@ function pickSpawn(size: number): { x: number; y: number } {
  */
 function rightSpawn(size: number): { x: number; y: number } {
   const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
-  return { x: Math.max(16, vw - size - 40), y: 150 };
+  return toStored(Math.max(16, vw - size - 40), 150);
 }
 
 interface MemoContextValue {

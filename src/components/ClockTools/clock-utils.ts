@@ -59,6 +59,28 @@ export function dragFloor(): { minX: number; minY: number } {
   return { minX: cx - w / 2 + 4, minY: cy - h / 2 + 4 };
 }
 
+const vw = () => (typeof window !== 'undefined' && window.innerWidth ? window.innerWidth : 1280);
+const vh = () => (typeof window !== 'undefined' && window.innerHeight ? window.innerHeight : 800);
+
+/** Convert a DESIRED position in the current viewport to the value we must STORE
+ *  so anchoredStyle renders it exactly there on this viewport (inverse of the
+ *  anchor offset). */
+export function toStored(x: number, y: number): Pos {
+  const { cx, cy } = layoutOrigin();
+  return { x: Math.round(x - vw() / 2 + cx), y: Math.round(y - vh() / 2 + cy) };
+}
+
+/** A spawn position NEAR the centred chart: (dx,dy) offset from the current
+ *  viewport centre, clamped so the whole widget (w×h) stays on screen, then
+ *  mapped into stored (anchor) space. New widgets therefore always appear next
+ *  to the chart — overlapping is fine, the user can drag them out — and never
+ *  off-screen, on any viewport size. */
+export function spawnNearCentre(dx: number, dy: number, w = 180, h = 180): Pos {
+  const x = Math.min(Math.max(8, vw() / 2 + dx), Math.max(8, vw() - w - 8));
+  const y = Math.min(Math.max(72, vh() / 2 + dy), Math.max(72, vh() - h - 8));
+  return toStored(x, y);
+}
+
 /** Current time, re-rendered every `intervalMs` while `active` (no ticking when off). */
 export function useNow(active: boolean, intervalMs = 1000): Date {
   const [now, setNow] = useState(() => new Date());

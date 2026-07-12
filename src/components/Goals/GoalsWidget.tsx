@@ -4,17 +4,15 @@ import { useDiary } from '@/hooks/useDiary';
 import { useGoals } from '@/hooks/useGoals';
 import { useTranslation } from '@/hooks/usePreferences';
 import { accumulatedMinutes } from '@/lib/goals';
-import { makeDragStart, anchoredStyle, type Pos } from '@/components/ClockTools/clock-utils';
+import { makeDragStart, anchoredStyle, spawnNearCentre, type Pos } from '@/components/ClockTools/clock-utils';
 import { GOALS_WIDGET_SYNC_EVENT } from '@/lib/sync/widgetSync';
 
 const POS_KEY = '24h-circle-planner.goalswidget';
 const CARD_W = 300;
 
-/** Default spot: floating just above the bottom-right FAB. */
+/** Default spot: floating near the chart (lower-right), on-screen at any size. */
 function defaultPos(): Pos {
-  const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
-  const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-  return { x: Math.max(12, vw - CARD_W - 20), y: Math.max(76, vh - 420) };
+  return spawnNearCentre(40, 120, CARD_W, 300);
 }
 
 function loadPos(): Pos {

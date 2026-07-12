@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { v4 as uuid } from 'uuid';
-import type { Pos } from './clock-utils';
+import { spawnNearCentre, type Pos } from './clock-utils';
 import { CLOCKTOOLS_SYNC_EVENT } from '@/lib/sync/widgetSync';
 
 export type ClockMode = 'analog' | 'digital';
@@ -73,40 +73,27 @@ interface LegacyWeatherState {
 
 const STORAGE_KEY = '24h-circle-planner.clocktools';
 
-const clampY = (y: number) => Math.max(76, y);
-
-/** Where a NEW weather window spawns: the old single-widget spot, cascaded
- *  24px per already-open window so stacked windows stay individually grabbable. */
+/** Where a NEW weather window spawns: just right of the chart, cascaded per
+ *  already-open window so stacked windows stay individually grabbable. */
 export function weatherSpawnPos(count: number): Pos {
-  const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
-  const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-  return {
-    x: Math.min(206 + count * 24, Math.max(20, vw - 224)),
-    y: clampY(Math.min(vh - 360 + count * 24, vh - 160)),
-  };
+  return spawnNearCentre(150 + count * 26, -40 + count * 26, 204, 200);
 }
 
-/** Where a NEW clock spawns: the old single-clock spot, same 24px cascade. */
+/** Where a NEW clock spawns: just left of the chart, same cascade. */
 export function clockSpawnPos(count: number): Pos {
-  const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
-  const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-  return {
-    x: Math.min(20 + count * 24, Math.max(20, vw - 188)),
-    y: clampY(Math.min(vh - 600 + count * 24, vh - 160)),
-  };
+  return spawnNearCentre(-340 + count * 26, -40 + count * 26, 168, 150);
 }
 
 /** Default stacked positions above the bottom-left FAB. One local clock + the
  *  calendar start ON (floating on the LEFT) so a first-time visitor lands on a
  *  live dashboard; every other tool stays off until opened. */
 function defaultState(): ClockToolsState {
-  const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
   return {
-    clocks: [{ id: uuid(), mode: 'analog', pos: { x: 20, y: clampY(vh - 600) }, tz: null }],
-    calendar: { on: true, pos: { x: 206, y: clampY(vh - 600) } },
-    timer: { on: false, pos: { x: 20, y: clampY(vh - 360) }, setSec: 300, remainingSec: 300, running: false, endAt: null },
+    clocks: [{ id: uuid(), mode: 'analog', pos: spawnNearCentre(-340, -40, 168, 150), tz: null }],
+    calendar: { on: true, pos: spawnNearCentre(-360, -210, 232, 240) },
+    timer: { on: false, pos: spawnNearCentre(-340, 130, 200, 160), setSec: 300, remainingSec: 300, running: false, endAt: null },
     weathers: [],
-    alarm: { on: false, pos: { x: 20, y: clampY(vh - 200) }, time: '07:00', enabled: false },
+    alarm: { on: false, pos: spawnNearCentre(-340, 210, 200, 140), time: '07:00', enabled: false },
   };
 }
 
