@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect, useState } from 'react';
 import { Search, RefreshCw, MapPin, Loader2, X } from 'lucide-react';
-import { makeDragStart, type Pos } from './clock-utils';
+import { makeDragStart, anchoredStyle, type Pos } from './clock-utils';
 import type { WeatherItem, WeatherPlace } from './useClockTools';
 import { useTranslation } from '@/hooks/usePreferences';
 import { FloatingInlineContext } from './floatingInline';
@@ -157,7 +157,7 @@ export function WeatherWidget({ weather, onChange, onMove, onClose }: WeatherWid
       // widgets and its controls (✕/refresh/search) would stay unclickable.
       className={inline ? 'group relative w-full' : 'group z-[25] hover:z-[26]'}
       data-weather-widget // stable hook — e2e/visual harness selector (live data)
-      style={inline ? undefined : { position: 'fixed', left: weather.pos.x, top: weather.pos.y, width: 204 }}
+      style={inline ? undefined : { ...anchoredStyle(weather.pos.x, weather.pos.y), width: 204 }}
     >
       {/* Box — fades in only on hover (clean reading by default); always inline. */}
       <div

@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { X } from 'lucide-react';
 import { AnalogClock } from './AnalogClock';
-import { makeDragStart, useNow, pad2, type Pos } from './clock-utils';
+import { makeDragStart, anchoredStyle, useNow, pad2, type Pos } from './clock-utils';
 import type { ClockItem } from './useClockTools';
 import { TIMEZONES } from '@/data/timezones';
 import { useTranslation } from '@/hooks/usePreferences';
@@ -66,7 +66,7 @@ export function ClockWidget({ clock, onChange, onMove, onClose }: ClockWidgetPro
       // widgets (cascaded clocks, the calendar), leaving its controls unclickable.
       className={inline ? 'group relative w-full' : 'group z-[25] hover:z-[26]'}
       data-clock-widget // stable hook — the visual-regression harness hides ticking clocks
-      style={inline ? undefined : { position: 'fixed', left: clock.pos.x, top: clock.pos.y, width: 168 }}
+      style={inline ? undefined : { ...anchoredStyle(clock.pos.x, clock.pos.y), width: 168 }}
     >
       {/* Box — fades in only on hover (clean clock by default); always shown inline. */}
       <div

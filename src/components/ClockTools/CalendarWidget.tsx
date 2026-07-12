@@ -1,6 +1,6 @@
 import { useContext, useState } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { makeDragStart, useNow, type Pos } from './clock-utils';
+import { makeDragStart, anchoredStyle, useNow, type Pos } from './clock-utils';
 import type { CalendarState } from './useClockTools';
 import { useTranslation } from '@/hooks/usePreferences';
 import { FloatingInlineContext } from './floatingInline';
@@ -56,7 +56,7 @@ export function CalendarWidget({ calendar, onMove, onClose }: CalendarWidgetProp
     <div
       data-calendar-widget
       className={inline ? 'group relative w-full' : 'group'}
-      style={inline ? undefined : { position: 'fixed', left: calendar.pos.x, top: calendar.pos.y, width: 232, zIndex: 25 }}
+      style={inline ? undefined : { ...anchoredStyle(calendar.pos.x, calendar.pos.y), width: 232, zIndex: 25 }}
     >
       {/* Box — fades in only on hover (clean calendar by default); always inline. */}
       <div

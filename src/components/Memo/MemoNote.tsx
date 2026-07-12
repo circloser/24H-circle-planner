@@ -2,6 +2,7 @@ import { type PointerEvent as ReactPointerEvent } from 'react';
 import { X, GripHorizontal, AlignLeft, AlignCenter } from 'lucide-react';
 import { useMemos, MEMO_COLORS, type Memo } from '@/hooks/useMemos';
 import { FONT_FAMILIES, useTranslation } from '@/hooks/usePreferences';
+import { anchoredStyle, dragFloor } from '@/components/ClockTools/clock-utils';
 
 const SIZE = 200; // fixed (size not adjustable, by request)
 const FOLD = 26; // folded-corner size (px)
@@ -57,6 +58,7 @@ export function MemoNote({ memo }: { memo: Memo }) {
     const startY = e.clientY;
     const origX = memo.x;
     const origY = memo.y;
+    const { minX, minY } = dragFloor();
     let moved = false;
     // Window-level listeners (not pointer-capture): capture on the paper isn't
     // reliably delivered when the press starts over the contentEditable text.
@@ -64,8 +66,8 @@ export function MemoNote({ memo }: { memo: Memo }) {
       if (!moved && Math.hypot(ev.clientX - startX, ev.clientY - startY) < 4) return;
       moved = true;
       updateMemo(memo.id, {
-        x: Math.max(0, origX + (ev.clientX - startX)),
-        y: Math.max(0, origY + (ev.clientY - startY)),
+        x: Math.max(minX, origX + (ev.clientX - startX)),
+        y: Math.max(minY, origY + (ev.clientY - startY)),
       });
     };
     const onUp = () => {
@@ -101,7 +103,7 @@ export function MemoNote({ memo }: { memo: Memo }) {
   return (
     <div
       className="memo-note group"
-      style={{ position: 'fixed', left: memo.x, top: memo.y, width: SIZE, height: SIZE, zIndex: 20 }}
+      style={{ ...anchoredStyle(memo.x, memo.y), width: SIZE, height: SIZE, zIndex: 20 }}
     >
       {/* Hover toolbar — colour + alignment + font, above the note (not clipped). */}
       <div className="memo-toolbar">

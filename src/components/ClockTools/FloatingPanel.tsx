@@ -1,6 +1,6 @@
 import { useContext, type ReactNode } from 'react';
 import { X, GripHorizontal } from 'lucide-react';
-import { makeDragStart, type Pos } from './clock-utils';
+import { makeDragStart, anchoredStyle, type Pos } from './clock-utils';
 import { FloatingInlineContext } from './floatingInline';
 
 interface FloatingPanelProps {
@@ -65,7 +65,7 @@ export function FloatingPanel({
 
   return (
     <div
-      style={{ position: 'fixed', left: pos.x, top: pos.y, width, zIndex: 25 }}
+      style={{ ...anchoredStyle(pos.x, pos.y), width, zIndex: 25 }}
       className="overflow-hidden rounded-xl shadow-xl"
     >
       <div

@@ -4,7 +4,7 @@ import { useDiary } from '@/hooks/useDiary';
 import { useGoals } from '@/hooks/useGoals';
 import { useTranslation } from '@/hooks/usePreferences';
 import { accumulatedMinutes } from '@/lib/goals';
-import { makeDragStart, type Pos } from '@/components/ClockTools/clock-utils';
+import { makeDragStart, anchoredStyle, type Pos } from '@/components/ClockTools/clock-utils';
 import { GOALS_WIDGET_SYNC_EVENT } from '@/lib/sync/widgetSync';
 
 const POS_KEY = '24h-circle-planner.goalswidget';
@@ -17,22 +17,14 @@ function defaultPos(): Pos {
   return { x: Math.max(12, vw - CARD_W - 20), y: Math.max(76, vh - 420) };
 }
 
-/** Keep a stored position on-screen after a resize / smaller window. */
-function clampPos(p: Pos): Pos {
-  const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
-  const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-  return {
-    x: Math.min(Math.max(0, p.x), Math.max(0, vw - 60)),
-    y: Math.min(Math.max(0, p.y), Math.max(0, vh - 60)),
-  };
-}
-
 function loadPos(): Pos {
   try {
     const raw = localStorage.getItem(POS_KEY);
     if (raw) {
       const p = JSON.parse(raw) as Partial<Pos>;
-      if (p && typeof p.x === 'number' && typeof p.y === 'number') return clampPos({ x: p.x, y: p.y });
+      // No viewport clamp on load — anchoredStyle re-bases the position to the
+      // viewport centre at render, so a stored spot stays put across sizes.
+      if (p && typeof p.x === 'number' && typeof p.y === 'number') return { x: p.x, y: p.y };
     }
   } catch {
     // ignore corrupt/unavailable storage
@@ -88,8 +80,7 @@ export function GoalsWidget() {
           onPointerLeave={() => setHover(false)}
           className="fixed z-30 max-h-[60vh] w-[300px] cursor-grab touch-none overflow-y-auto rounded-xl p-3 transition-shadow active:cursor-grabbing"
           style={{
-            left: pos.x,
-            top: pos.y,
+            ...anchoredStyle(pos.x, pos.y),
             // Transparent at rest; on hover reveal the same boundary as the
             // clock/calendar floating cards (1px border + shadow) and lift the
             // surface slightly so the whole card brightens under the pointer.

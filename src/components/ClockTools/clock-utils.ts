@@ -5,6 +5,60 @@ export interface Pos {
   y: number;
 }
 
+/**
+ * Floating widgets store ABSOLUTE top-left pixels, but rendering them literally
+ * makes them cling to the top-left as the viewport grows. Instead we anchor every
+ * widget to the viewport CENTRE: `layoutOrigin` is the viewport centre captured
+ * ONCE (device-local, persisted) the first time this build runs, and a widget at
+ * stored (x,y) renders at `calc(50vw + (x - originCx))`. At the origin size that
+ * is exactly (x,y) — no jump — and as the viewport grows/shrinks or you zoom, the
+ * widget keeps its distance from the centre (margins expand symmetrically), just
+ * like the chart. This is purely a render/drag transform: storage and cloud sync
+ * (which already send centre-relative positions) are untouched.
+ */
+const ORIGIN_KEY = '24h-circle-planner.layout-origin';
+let originCache: { cx: number; cy: number } | null = null;
+export function layoutOrigin(): { cx: number; cy: number } {
+  if (originCache) return originCache;
+  try {
+    const raw = localStorage.getItem(ORIGIN_KEY);
+    if (raw) {
+      const o = JSON.parse(raw) as Partial<{ cx: number; cy: number }>;
+      if (typeof o?.cx === 'number' && typeof o?.cy === 'number') {
+        originCache = { cx: o.cx, cy: o.cy };
+        return originCache;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  const w = typeof window !== 'undefined' && window.innerWidth ? window.innerWidth : 1280;
+  const h = typeof window !== 'undefined' && window.innerHeight ? window.innerHeight : 800;
+  originCache = { cx: Math.round(w / 2), cy: Math.round(h / 2) };
+  try {
+    localStorage.setItem(ORIGIN_KEY, JSON.stringify(originCache));
+  } catch {
+    /* ignore */
+  }
+  return originCache;
+}
+
+/** `position:fixed` left/top that anchor a widget's absolute (x,y) to the
+ *  viewport centre (see layoutOrigin). Spread into a widget's style. */
+export function anchoredStyle(x: number, y: number): { position: 'fixed'; left: string; top: string } {
+  const { cx, cy } = layoutOrigin();
+  return { position: 'fixed', left: `calc(50vw + ${x - cx}px)`, top: `calc(50vh + ${y - cy}px)` };
+}
+
+/** Lower bound for a stored abs coordinate so the widget's top-left stays on
+ *  screen once the centre-anchor offset is applied. */
+export function dragFloor(): { minX: number; minY: number } {
+  const { cx, cy } = layoutOrigin();
+  const w = typeof window !== 'undefined' && window.innerWidth ? window.innerWidth : 1280;
+  const h = typeof window !== 'undefined' && window.innerHeight ? window.innerHeight : 800;
+  return { minX: cx - w / 2 + 4, minY: cy - h / 2 + 4 };
+}
+
 /** Current time, re-rendered every `intervalMs` while `active` (no ticking when off). */
 export function useNow(active: boolean, intervalMs = 1000): Date {
   const [now, setNow] = useState(() => new Date());
@@ -77,10 +131,11 @@ export function makeDragStart(pos: Pos, onChange: (p: Pos) => void) {
     const startY = e.clientY;
     const origX = pos.x;
     const origY = pos.y;
+    const { minX, minY } = dragFloor();
     const onMove = (ev: PointerEvent) => {
       onChange({
-        x: Math.max(0, origX + (ev.clientX - startX)),
-        y: Math.max(0, origY + (ev.clientY - startY)),
+        x: Math.max(minX, origX + (ev.clientX - startX)),
+        y: Math.max(minY, origY + (ev.clientY - startY)),
       });
     };
     const onUp = () => {
