@@ -13,6 +13,7 @@ export const en: Record<TKey, string> = {
   'header.settings': 'Settings',
   'header.design': 'Design',
   'footer.guides': 'Guides',
+  'footer.templates': 'Templates',
   'footer.stories': 'Stories',
   'footer.health': 'Health',
   'footer.faq': 'FAQ',

@@ -14,6 +14,8 @@ export function AppFooter() {
       <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
         <a href="/guides/" className="hover:underline">{t('footer.guides')}</a>
         <span aria-hidden style={{ opacity: 0.4 }}>·</span>
+        <a href="/templates/" className="hover:underline">{t('footer.templates')}</a>
+        <span aria-hidden style={{ opacity: 0.4 }}>·</span>
         <a href="/stories/" className="hover:underline">{t('footer.stories')}</a>
         <span aria-hidden style={{ opacity: 0.4 }}>·</span>
         <a href="/health/" className="hover:underline">{t('footer.health')}</a>

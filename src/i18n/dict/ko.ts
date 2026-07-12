@@ -16,6 +16,7 @@ export const ko = {
   'header.settings': '설정',
   'header.design': '디자인',
   'footer.guides': '가이드',
+  'footer.templates': '템플릿',
   'footer.stories': '스토리',
   'footer.health': '건강',
   'footer.faq': 'FAQ',
