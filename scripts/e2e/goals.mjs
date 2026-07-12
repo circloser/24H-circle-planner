@@ -27,9 +27,13 @@ export async function run() {
     const bgOpen = await card.evaluate((el) => getComputedStyle(el).backgroundColor);
     pass('transparent right after opening', bgOpen === 'rgba(0, 0, 0, 0)' || bgOpen === 'transparent', `bg=${bgOpen}`);
 
+    // Hover with REAL movement INSIDE the card (pointermove fires). Coordinates
+    // come from the card's own box — the spawn position is centre-anchored now,
+    // so fixed viewport points would land outside and trigger pointerleave.
     await card.hover();
-    await page.mouse.move(820, 600);
-    await page.mouse.move(830, 610); // real movement → pointermove fires
+    const bb = await card.boundingBox();
+    await page.mouse.move(bb.x + bb.width / 2 + 5, bb.y + 20);
+    await page.mouse.move(bb.x + bb.width / 2 + 12, bb.y + 26); // real movement → pointermove fires
     await wait(150);
     const bgHover = await card.evaluate((el) => getComputedStyle(el).backgroundColor);
     pass('background appears on hover', bgHover !== 'rgba(0, 0, 0, 0)' && bgHover !== 'transparent', `bg=${bgHover}`);
