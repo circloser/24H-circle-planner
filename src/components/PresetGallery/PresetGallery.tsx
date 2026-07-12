@@ -14,6 +14,7 @@ import { PRESETS } from '@/data/presets';
 import { COLOR_THEMES } from '@/data/color-themes';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useUserPresets } from '@/hooks/useUserPresets';
+import { track } from '@/lib/track';
 import { translatePresetName, translatePresetDesc } from '@/i18n/content';
 import type { Preset } from '@/types/preset';
 import type { TimeSlice } from '@/types/time-slice';
@@ -61,6 +62,7 @@ export function PresetGallery({ open, onOpenChange, onConfirm, onLoadUserPreset,
   function handleCardClick(preset: Preset, isUser = false) {
     if (mode === 'append') {
       // Nothing to overwrite — commit straight away.
+      track('preset_load', { preset: isUser ? 'user' : preset.name });
       if (isUser && onLoadUserPreset) onLoadUserPreset(preset, themeColors);
       else onConfirm(preset.name, themeColors);
       onOpenChange(false);
@@ -73,6 +75,7 @@ export function PresetGallery({ open, onOpenChange, onConfirm, onLoadUserPreset,
 
   function handleConfirm() {
     if (pendingPreset) {
+      track('preset_load', { preset: pendingIsUser ? 'user' : pendingPreset.name });
       if (pendingIsUser && onLoadUserPreset) onLoadUserPreset(pendingPreset, themeColors);
       else onConfirm(pendingPreset.name, themeColors);
     }

@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { track } from '@/lib/track';
 
 export interface AuthUser {
   id: string;
@@ -66,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(() => {
+    track('login_start');
     // Top-level navigation to the Worker, which 302s to Google's consent screen.
     window.location.href = '/api/auth/google/start';
   }, []);

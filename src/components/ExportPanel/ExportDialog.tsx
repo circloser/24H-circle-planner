@@ -17,6 +17,7 @@ import { exportRangePng, exportRangeCsv, type RangeDay } from '@/lib/export/rang
 import { useDiary, dateKey } from '@/hooks/useDiary';
 import { useTranslation, useChartView, useShowIcons } from '@/hooks/usePreferences';
 import { useAuth } from '@/hooks/useAuth';
+import { track } from '@/lib/track';
 import type { Schedule } from '@/types/schedule';
 import type { TimeSlice } from '@/types/time-slice';
 
@@ -66,6 +67,7 @@ function PngTab({
     setLoading(true);
     try {
       const { exportPng } = await import('@/lib/export/png');
+      track('export', { format: 'png' });
       const blob = await exportPng(svgRef.current, { size, transparent });
       const filename = `24h-${slug(scheduleName)}-${formatDateYYYYMMDD()}.png`;
       triggerDownload(blob, filename);
@@ -157,6 +159,7 @@ function PdfTab({
     setLoading(true);
     try {
       const { exportPdf } = await import('@/lib/export/pdf');
+      track('export', { format: 'pdf' });
       const blob = await exportPdf(svgRef.current, { scheduleName });
       const filename = `24h-${slug(scheduleName)}-${formatDateYYYYMMDD()}.pdf`;
       triggerDownload(blob, filename);
@@ -202,6 +205,7 @@ function JsonTab({
   async function handleExport() {
     setExportLoading(true);
     try {
+      track('export', { format: 'json' });
       const { exportScheduleAsJson } = await import('@/lib/export/jsonIo');
       const blob = exportScheduleAsJson(schedule);
       const filename = `24h-${slug(scheduleName)}-${formatDateYYYYMMDD()}.json`;

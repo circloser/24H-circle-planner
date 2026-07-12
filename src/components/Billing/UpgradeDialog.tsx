@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useAuth } from '@/hooks/useAuth';
 import { startCheckout } from '@/lib/sync/billing';
+import { track } from '@/lib/track';
 import { toast } from 'sonner';
 
 interface UpgradeDialogProps {
@@ -73,6 +74,7 @@ export function UpgradeDialog({ open, onOpenChange }: UpgradeDialogProps) {
       });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
       if (res.ok && data.ok) {
+        track('coupon_redeem');
         await refresh();
         toast.success(ko ? '쿠폰이 적용됐어요. Pro가 활성화되었습니다!' : 'Coupon applied — Pro is now active!');
         onOpenChange(false);
@@ -112,6 +114,7 @@ export function UpgradeDialog({ open, onOpenChange }: UpgradeDialogProps) {
   // Fetch the live price once the dialog opens (never blocks the CTA).
   useEffect(() => {
     if (!open) return;
+    track('upgrade_open');
     let cancelled = false;
     void fetch('/api/billing/product', { headers: { accept: 'application/json' } })
       .then((r) => (r.ok ? r.json() : null))
@@ -130,6 +133,7 @@ export function UpgradeDialog({ open, onOpenChange }: UpgradeDialogProps) {
       return;
     }
     setBusy(true);
+    track('checkout_start');
     startCheckout().catch(() => {
       setBusy(false);
       toast.error(t('billing.checkoutError'));

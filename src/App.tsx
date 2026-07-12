@@ -8,6 +8,7 @@ import { AppHeader } from '@/components/AppShell/AppHeader';
 import { AppFooter } from '@/components/AppShell/AppFooter';
 import { ResetDialog } from '@/components/AppShell/ResetDialog';
 import { ShareImportDialog } from '@/components/AppShell/ShareImportDialog';
+import { track } from '@/lib/track';
 import { CircleTimeline } from '@/components/CircleTimeline/CircleTimeline';
 import { ScheduleTable } from '@/components/ScheduleTable/ScheduleTable';
 import { DeviceTransferDialog } from '@/components/DeviceTransferDialog/DeviceTransferDialog';
@@ -542,7 +543,10 @@ function App() {
       <ShareImportDialog
         schedule={shareImport}
         onClose={() => setShareImport(null)}
-        onImport={(s) => dispatch({ type: 'LOAD_SCHEDULE', schedule: s })}
+        onImport={(s) => {
+          track('schedule_import', { name: s.name ?? '' });
+          dispatch({ type: 'LOAD_SCHEDULE', schedule: s });
+        }}
       />
 
       {/* Desktop only: floating post-it memos (bottom-right) + clock tools

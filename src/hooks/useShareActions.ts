@@ -4,6 +4,7 @@ import { buildViewUrl, copyToClipboard } from '@/lib/share-link';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useStoreSelector } from '@/hooks/useScheduleStore';
 import { useDiary, dateKey } from '@/hooks/useDiary';
+import { track } from '@/lib/track';
 
 /**
  * The two "share this day" actions, extracted from App:
@@ -26,6 +27,7 @@ export function useShareActions(svgRef: React.RefObject<SVGSVGElement | null>) {
     }
     try {
       const outcome = await shareChartImage(svgRef.current, present.name, t('share.text'));
+      track('share', { method: 'image' });
       if (outcome === 'downloaded') toast.success(t('share.saved'));
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return; // user cancelled
@@ -36,6 +38,7 @@ export function useShareActions(svgRef: React.RefObject<SVGSVGElement | null>) {
   async function copyLink() {
     const note = entries[diaryDate ?? dateKey()]?.note ?? '';
     const ok = await copyToClipboard(buildViewUrl(present, note));
+    if (ok) track('share', { method: 'link' });
     if (ok) toast.success(t('sharelink.copied'));
     else toast.error(t('sharelink.copyFail'));
   }
