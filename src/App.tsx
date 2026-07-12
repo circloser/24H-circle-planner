@@ -197,10 +197,18 @@ function App() {
   }, []);
 
   // Any gated surface can request the paywall via requestUpgrade() (a window event).
+  // `#coupons` also opens it — the entry point for admins (who are auto-Pro and
+  // never hit a gate) to reach the coupon-issuing panel, and for anyone with a code.
   useEffect(() => {
     const onUpgrade = () => setUpgradeOpen(true);
+    const onHash = () => { if (window.location.hash === '#coupons') setUpgradeOpen(true); };
+    onHash();
     window.addEventListener(OPEN_UPGRADE_EVENT, onUpgrade);
-    return () => window.removeEventListener(OPEN_UPGRADE_EVENT, onUpgrade);
+    window.addEventListener('hashchange', onHash);
+    return () => {
+      window.removeEventListener(OPEN_UPGRADE_EVENT, onUpgrade);
+      window.removeEventListener('hashchange', onHash);
+    };
   }, []);
 
   /**

@@ -12,6 +12,8 @@ export interface AuthState {
   plan: 'free' | 'pro';
   /** True once the Worker has Polar billing configured (gates the upgrade CTA). */
   billingEnabled: boolean;
+  /** True when the signed-in email is on the admin allowlist (shows coupon panel). */
+  admin: boolean;
   loading: boolean;
 }
 
@@ -21,7 +23,7 @@ export interface AuthContextValue extends AuthState {
   refresh: () => Promise<void>;
 }
 
-const SIGNED_OUT: AuthState = { user: null, plan: 'free', billingEnabled: false, loading: false };
+const SIGNED_OUT: AuthState = { user: null, plan: 'free', billingEnabled: false, admin: false, loading: false };
 
 /** Read the current session from the Worker. Never throws — any failure (no
  * Worker, offline, non-200) resolves to signed-out. */
@@ -29,8 +31,8 @@ async function fetchMe(): Promise<AuthState> {
   try {
     const res = await fetch('/api/me', { credentials: 'include', headers: { accept: 'application/json' } });
     if (!res.ok) throw new Error(`me ${res.status}`);
-    const data = (await res.json()) as { user: AuthUser | null; plan?: 'free' | 'pro'; billing?: boolean };
-    return { user: data.user ?? null, plan: data.plan ?? 'free', billingEnabled: Boolean(data.billing), loading: false };
+    const data = (await res.json()) as { user: AuthUser | null; plan?: 'free' | 'pro'; billing?: boolean; admin?: boolean };
+    return { user: data.user ?? null, plan: data.plan ?? 'free', billingEnabled: Boolean(data.billing), admin: Boolean(data.admin), loading: false };
   } catch {
     return SIGNED_OUT;
   }
@@ -47,7 +49,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
  * out — the app is fully usable without an account.
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AuthState>({ user: null, plan: 'free', billingEnabled: false, loading: true });
+  const [state, setState] = useState<AuthState>({ user: null, plan: 'free', billingEnabled: false, admin: false, loading: true });
 
   useEffect(() => {
     let cancelled = false;

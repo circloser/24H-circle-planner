@@ -21,6 +21,15 @@ export interface Env {
   POLAR_WEBHOOK_SECRET?: string; // Standard Webhooks secret (polar_whs_…)
   POLAR_PRODUCT_ID?: string; // Pro product id
   POLAR_SERVER?: string; // 'sandbox' (default) | 'production'
+  /** Comma-separated emails always entitled to Pro (no subscription). Non-secret var. */
+  ADMIN_EMAILS?: string;
+}
+
+/** Whether `email` is on the admin allowlist (always Pro). */
+function isAdminEmail(env: Env, email: string | null | undefined): boolean {
+  if (!email) return false;
+  const list = (env.ADMIN_EMAILS || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
+  return list.includes(email.toLowerCase());
 }
 
 const SID_COOKIE = 'sid';
@@ -214,15 +223,28 @@ async function handleMe(request: Request, env: Env): Promise<Response> {
   if (!sid) return json({ user: null });
   const user = await sessionUser(env.DB, sid);
   if (!user) return json({ user: null });
-  const sub = await env.DB.prepare('SELECT status, current_period_end FROM subscriptions WHERE user_id=?').bind(user.id).first<{ status: string; current_period_end: number | null }>();
-  // Entitled while the subscription is live and the paid period hasn't lapsed.
-  // Polar keeps status 'active' (with cancel_at_period_end) until it revokes at the
-  // period end → status becomes 'canceled'. 'trialing'/'on_trial' also grant access.
-  const ENTITLED = new Set(['active', 'trialing', 'on_trial']);
-  const active = !!sub && ENTITLED.has(sub.status) && (sub.current_period_end == null || sub.current_period_end > Date.now());
+  // Entitlement = admin allowlist OR a live Polar subscription OR an active
+  // coupon grant. Admins are always Pro (no subscription needed).
+  const admin = isAdminEmail(env, user.email);
+  let active = admin;
+  if (!active) {
+    const sub = await env.DB.prepare('SELECT status, current_period_end FROM subscriptions WHERE user_id=?').bind(user.id).first<{ status: string; current_period_end: number | null }>();
+    // Polar keeps status 'active' (with cancel_at_period_end) until it revokes at the
+    // period end → status becomes 'canceled'. 'trialing'/'on_trial' also grant access.
+    const ENTITLED = new Set(['active', 'trialing', 'on_trial']);
+    active = !!sub && ENTITLED.has(sub.status) && (sub.current_period_end == null || sub.current_period_end > Date.now());
+  }
+  if (!active) {
+    try {
+      const grant = await env.DB.prepare('SELECT 1 FROM grants WHERE user_id=? AND (expires_at IS NULL OR expires_at > ?) LIMIT 1').bind(user.id, Date.now()).first();
+      active = !!grant;
+    } catch {
+      // `grants` table not migrated yet → treat as no grant (never break /api/me).
+    }
+  }
   // `billing` lets the client hide the upgrade CTA until Polar is actually wired up
-  // (token set), so a deploy is invisible to users until the operator activates it.
-  return json({ user: { id: user.id, email: user.email, provider: user.provider }, plan: active ? 'pro' : 'free', billing: Boolean(env.POLAR_ACCESS_TOKEN) });
+  // (token set); `admin` reveals the coupon-issuing panel.
+  return json({ user: { id: user.id, email: user.email, provider: user.provider }, plan: active ? 'pro' : 'free', billing: Boolean(env.POLAR_ACCESS_TOKEN), admin });
 }
 
 async function handleLogout(request: Request, env: Env): Promise<Response> {
@@ -492,6 +514,92 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
   return json({ received: true });
 }
 
+// ─── Coupons (self-serve Pro codes) ──────────────────────────────────────────
+
+const DAY_MS = 86_400_000;
+
+/** Redeem a coupon code → grant the signed-in user Pro (permanent or N days). */
+async function handleCouponRedeem(request: Request, env: Env): Promise<Response> {
+  if (!env.DB) return json({ error: 'unconfigured' }, 503);
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'unauthorized' }, 401);
+
+  let body: { code?: unknown };
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    return json({ error: 'bad_json' }, 400);
+  }
+  const code = String(body.code ?? '').trim().toUpperCase();
+  if (!code || code.length > 64) return json({ error: 'invalid_code' }, 400);
+
+  const now = Date.now();
+  const coupon = await env.DB.prepare('SELECT grant_days, expires_at FROM coupons WHERE code=?').bind(code).first<{ grant_days: number | null; expires_at: number | null }>();
+  if (!coupon) return json({ error: 'invalid_code' }, 404);
+  if (coupon.expires_at != null && coupon.expires_at <= now) return json({ error: 'code_expired' }, 400);
+
+  const dup = await env.DB.prepare('SELECT 1 FROM grants WHERE user_id=? AND code=?').bind(user.id, code).first();
+  if (dup) return json({ error: 'already_redeemed' }, 409);
+
+  // Atomically claim a use — guards max_uses / expiry against concurrent redeems.
+  const claim = await env.DB.prepare(
+    'UPDATE coupons SET used_count=used_count+1 WHERE code=? AND (max_uses IS NULL OR used_count < max_uses) AND (expires_at IS NULL OR expires_at > ?)',
+  ).bind(code, now).run();
+  if (!claim.meta || claim.meta.changes === 0) return json({ error: 'code_exhausted' }, 409);
+
+  const expiresAt = coupon.grant_days == null || coupon.grant_days <= 0 ? null : now + coupon.grant_days * DAY_MS;
+  await env.DB.prepare('INSERT INTO grants (user_id, code, expires_at, created_at) VALUES (?, ?, ?, ?)').bind(user.id, code, expiresAt, now).run();
+  return json({ ok: true, plan: 'pro', expiresAt });
+}
+
+/** Unambiguous code alphabet (no 0/O/1/I). */
+function randomCode(): string {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const bytes = crypto.getRandomValues(new Uint8Array(10));
+  let s = '';
+  for (const b of bytes) s += alphabet[b % alphabet.length];
+  return s;
+}
+
+/** Admin-only coupon management: GET lists codes, POST creates one. */
+async function handleAdminCoupons(request: Request, env: Env): Promise<Response> {
+  if (!env.DB) return json({ error: 'unconfigured' }, 503);
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'unauthorized' }, 401);
+  if (!isAdminEmail(env, user.email)) return json({ error: 'forbidden' }, 403);
+
+  if (request.method === 'GET') {
+    const { results } = await env.DB.prepare('SELECT code, grant_days, max_uses, used_count, note, created_at, expires_at FROM coupons ORDER BY created_at DESC LIMIT 200').all();
+    return json({ coupons: results ?? [] });
+  }
+
+  let body: { code?: unknown; grantDays?: unknown; maxUses?: unknown; note?: unknown; codeExpiresAt?: unknown };
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    return json({ error: 'bad_json' }, 400);
+  }
+  let code = String(body.code ?? '').trim().toUpperCase();
+  if (!code) code = randomCode();
+  if (!/^[A-Z0-9-]{3,64}$/.test(code)) return json({ error: 'invalid_code' }, 400);
+  // grant_days: null/0/absent → permanent; positive int → that many days.
+  const gd = Math.floor(Number(body.grantDays));
+  const grantDays = Number.isFinite(gd) && gd > 0 ? gd : null;
+  const mu = Math.floor(Number(body.maxUses));
+  const maxUses = Number.isFinite(mu) && mu > 0 ? mu : null;
+  const note = body.note == null ? null : String(body.note).slice(0, 200);
+  const ce = Number(body.codeExpiresAt);
+  const codeExpiresAt = Number.isFinite(ce) && ce > 0 ? ce : null;
+
+  try {
+    await env.DB.prepare('INSERT INTO coupons (code, grant_days, max_uses, used_count, note, created_at, expires_at) VALUES (?, ?, ?, 0, ?, ?, ?)')
+      .bind(code, grantDays, maxUses, note, Date.now(), codeExpiresAt).run();
+  } catch {
+    return json({ error: 'code_exists' }, 409);
+  }
+  return json({ ok: true, code, grantDays, maxUses, note });
+}
+
 // ─── Router ──────────────────────────────────────────────────────────────────
 
 export default {
@@ -514,6 +622,8 @@ export default {
       if (p === '/api/checkout' && m === 'POST') return handleCheckout(request, env);
       if (p === '/api/billing/portal' && m === 'POST') return handlePortal(request, env);
       if (p === '/api/webhooks/polar' && m === 'POST') return handleWebhook(request, env);
+      if (p === '/api/coupon/redeem' && m === 'POST') return handleCouponRedeem(request, env);
+      if (p === '/api/admin/coupons' && (m === 'GET' || m === 'POST')) return handleAdminCoupons(request, env);
       return json({ error: 'not_found' }, 404);
     }
 
