@@ -4,7 +4,7 @@ import { v4 as uuid } from 'uuid';
 import { randomQuote } from '@/data/quotes';
 import { useTranslation } from '@/hooks/usePreferences';
 import { usePersistedState, type PersistedCodec } from '@/hooks/usePersistedState';
-import { toStored } from '@/components/ClockTools/clock-utils';
+import { toStored, migrateLegacyPos } from '@/components/ClockTools/clock-utils';
 
 const MEMO_SIZE = 200;
 
@@ -28,6 +28,9 @@ const STORAGE_KEY = '24h-circle-planner.memos';
 
 interface MemoEnvelope {
   version: 1;
+  /** 'centre' marks x/y as offsets from the viewport centre (current format);
+   *  absent = legacy absolute pixels (migrated on decode). */
+  coords?: string;
   memos: Memo[];
   visible?: boolean;
 }
@@ -37,24 +40,31 @@ interface MemoState {
   visible: boolean;
 }
 
-/** Storage envelope `{version: 1, memos, visible}` — byte-compat pinned by tests. */
+/** Storage envelope `{version: 1, coords: 'centre', memos, visible}`. version
+ *  stays 1 so older builds still read it (positions shifted, never lost). */
 export const memosCodec: PersistedCodec<MemoState> = {
   decode: (parsed) => {
     const p = parsed as MemoEnvelope | null;
     if (p && p.version === 1 && Array.isArray(p.memos)) {
+      const centre = p.coords === 'centre';
       // Migrate older memos that predate createdAt/onScreen (keep array order
-      // as creation order; default to shown on screen).
-      const memos = (p.memos as Array<Partial<Memo> & Memo>).map((m, i) => ({
-        ...m,
-        align: (m.align === 'left' ? 'left' : 'center') as 'left' | 'center',
-        createdAt: typeof m.createdAt === 'number' ? m.createdAt : i,
-        onScreen: m.onScreen !== false,
-      }));
+      // as creation order; default to shown on screen). Unmarked envelopes carry
+      // legacy ABSOLUTE positions → re-express as centre offsets.
+      const memos = (p.memos as Array<Partial<Memo> & Memo>).map((m, i) => {
+        const pos = centre ? { x: m.x, y: m.y } : migrateLegacyPos({ x: m.x, y: m.y });
+        return {
+          ...m,
+          ...pos,
+          align: (m.align === 'left' ? 'left' : 'center') as 'left' | 'center',
+          createdAt: typeof m.createdAt === 'number' ? m.createdAt : i,
+          onScreen: m.onScreen !== false,
+        };
+      });
       return { memos, visible: p.visible !== false };
     }
     return null;
   },
-  encode: (state) => ({ version: 1, memos: state.memos, visible: state.visible }),
+  encode: (state) => ({ version: 1, coords: 'centre', memos: state.memos, visible: state.visible }),
   fallback: () => ({ memos: [], visible: true }),
 };
 

@@ -1,79 +1,78 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { encodeWidgetValue, decodeWidgetValue, CLOCKTOOLS_KEY, GOALSWIDGET_KEY } from '../widgetSync';
-import { collectSyncData, applySyncData, canonicalValue } from '../syncData';
+import { CLOCKTOOLS_KEY, GOALSWIDGET_KEY } from '../widgetSync';
+import { collectSyncData, applySyncData } from '../syncData';
+import { toStored, anchoredStyle, migrateLegacyPos, dragFloor } from '@/components/ClockTools/clock-utils';
 
 function setViewport(w: number, h: number) {
   Object.defineProperty(window, 'innerWidth', { value: w, configurable: true, writable: true });
   Object.defineProperty(window, 'innerHeight', { value: h, configurable: true, writable: true });
 }
 
-describe('widgetSync centre-relative transform', () => {
-  it('encode then decode on the same viewport is exact (loop-safe involution)', () => {
+describe('centre-offset position space (clock-utils)', () => {
+  beforeEach(() => localStorage.clear());
+
+  it('toStored maps a viewport point to a centre offset; anchoredStyle renders it back', () => {
     setViewport(1600, 900);
-    const raw = JSON.stringify({ x: 900, y: 450 });
-    expect(canonicalValue(decodeWidgetValue(encodeWidgetValue(raw)))).toBe(canonicalValue(raw));
-    // odd viewport too — integer centre keeps it exact
-    setViewport(1365, 767);
-    expect(canonicalValue(decodeWidgetValue(encodeWidgetValue(raw)))).toBe(canonicalValue(raw));
+    expect(toStored(900, 450)).toEqual({ x: 100, y: 0 }); // 100px right of centre
+    expect(anchoredStyle(100, 0)).toEqual({ position: 'fixed', left: 'calc(50vw + 100px)', top: 'calc(50vh + 0px)' });
   });
 
-  it('a position AT the centre encodes to the origin', () => {
-    setViewport(1600, 900); // centre 800,450
-    expect(JSON.parse(encodeWidgetValue(JSON.stringify({ x: 800, y: 450 })))).toEqual({ x: 0, y: 0 });
+  it('an offset means the same chart-relative spot on ANY viewport (no re-basing)', () => {
+    setViewport(1600, 900);
+    const stored = toStored(900, 450);
+    setViewport(1000, 700);
+    // Same stored value renders 100px right of THIS viewport's centre too.
+    expect(anchoredStyle(stored.x, stored.y).left).toBe('calc(50vw + 100px)');
   });
 
-  it('maps centre-relative across viewports (bigger screen → same offset, wider margins)', () => {
-    setViewport(1600, 900); // centre 800,450
-    const wire = encodeWidgetValue(JSON.stringify({ x: 900, y: 450 })); // +100,+0 from centre
-    setViewport(1000, 700); // centre 500,350
-    expect(JSON.parse(decodeWidgetValue(wire))).toEqual({ x: 600, y: 350 }); // still 100 right of centre
+  it('migrateLegacyPos re-expresses a legacy ABSOLUTE position using the persisted origin', () => {
+    localStorage.setItem('24h-circle-planner.layout-origin', JSON.stringify({ cx: 960, cy: 540 }));
+    expect(migrateLegacyPos({ x: 1060, y: 540 })).toEqual({ x: 100, y: 0 });
   });
 
-  it('shifts every nested pos in a clock-tools blob but leaves non-position objects', () => {
-    setViewport(1000, 800); // centre 500,400
-    const raw = JSON.stringify({
-      version: 1,
-      state: {
-        clocks: [{ id: 'c1', mode: 'analog', pos: { x: 600, y: 400 }, tz: null }],
-        calendar: { on: true, pos: { x: 500, y: 400 } },
-        timer: { on: false, pos: { x: 500, y: 500 }, setSec: 300, remainingSec: 300, running: false, endAt: null },
-        weathers: [{ id: 'w1', pos: { x: 700, y: 400 }, place: { name: 'Seoul', lat: 37.5, lon: 127 } }],
-        alarm: { on: false, pos: { x: 500, y: 300 }, time: '07:00', enabled: false },
-      },
-    });
-    const enc = JSON.parse(encodeWidgetValue(raw));
-    expect(enc.state.clocks[0].pos).toEqual({ x: 100, y: 0 });
-    expect(enc.state.calendar.pos).toEqual({ x: 0, y: 0 });
-    expect(enc.state.timer.pos).toEqual({ x: 0, y: 100 });
-    expect(enc.state.weathers[0].pos).toEqual({ x: 200, y: 0 });
-    expect(enc.state.weathers[0].place).toEqual({ name: 'Seoul', lat: 37.5, lon: 127 }); // 3-key → untouched
-    expect(enc.state.timer.setSec).toBe(300); // scalar untouched
+  it('migrateLegacyPos falls back to the live centre when no origin was persisted', () => {
+    setViewport(1200, 800);
+    expect(migrateLegacyPos({ x: 700, y: 400 })).toEqual({ x: 100, y: 0 });
   });
 
-  it('passes a corrupt / non-JSON value through unchanged', () => {
-    expect(encodeWidgetValue('not json')).toBe('not json');
-    expect(decodeWidgetValue('not json')).toBe('not json');
+  it('dragFloor keeps the top-left on screen in offset space', () => {
+    setViewport(1200, 800);
+    expect(dragFloor()).toEqual({ minX: 4 - 600, minY: 4 - 400 });
   });
 });
 
-describe('collectSyncData / applySyncData widget handling', () => {
+describe('sync wire is a byte-identical pass-through (the anti-drift invariant)', () => {
   beforeEach(() => localStorage.clear());
 
-  it('collect encodes widget positions; apply decodes them into THIS viewport', () => {
-    setViewport(1600, 900);
-    localStorage.setItem(GOALSWIDGET_KEY, JSON.stringify({ x: 900, y: 450 }));
-    localStorage.setItem('24h-circle-planner.days', 'DAYS');
-    const collected = collectSyncData();
-    expect(JSON.parse(collected[GOALSWIDGET_KEY])).toEqual({ x: 100, y: 0 }); // centre-relative on the wire
-    expect(collected['24h-circle-planner.days']).toBe('DAYS'); // non-widget untouched
+  it('collect ships the stored widget strings VERBATIM', () => {
+    const ct = JSON.stringify({ version: 1, coords: 'centre', state: { clocks: [{ id: 'c1', pos: { x: -340, y: -40 } }] } });
+    const gw = JSON.stringify({ x: 40, y: 120, c: 1 });
+    localStorage.setItem(CLOCKTOOLS_KEY, ct);
+    localStorage.setItem(GOALSWIDGET_KEY, gw);
+    const data = collectSyncData();
+    expect(data[CLOCKTOOLS_KEY]).toBe(ct);
+    expect(data[GOALSWIDGET_KEY]).toBe(gw);
+  });
 
-    setViewport(1000, 700); // a different device
-    applySyncData(collected);
-    expect(JSON.parse(localStorage.getItem(GOALSWIDGET_KEY)!)).toEqual({ x: 600, y: 350 });
+  it('push→apply round-trips byte-identically EVEN ACROSS A RESIZE (regression: positions drifted per sync cycle)', () => {
+    setViewport(1600, 900);
+    const ct = JSON.stringify({ version: 1, coords: 'centre', state: { calendar: { on: true, pos: { x: -360, y: -210 } } } });
+    localStorage.setItem(CLOCKTOOLS_KEY, ct);
+    localStorage.setItem('24h-circle-planner.days', 'D');
+    const wire = collectSyncData();
+    // The window is resized between the push and the pull — the old transform
+    // re-based against the live centre here and shifted every position.
+    setViewport(1100, 700);
+    applySyncData(wire);
+    expect(localStorage.getItem(CLOCKTOOLS_KEY)).toBe(ct);
+    // …and repeated cycles stay fixed too.
+    setViewport(1400, 1000);
+    applySyncData(collectSyncData());
+    expect(localStorage.getItem(CLOCKTOOLS_KEY)).toBe(ct);
   });
 
   it('KEEPS a local widget key when the cloud blob omits it (no wipe → no login loop)', () => {
-    localStorage.setItem(CLOCKTOOLS_KEY, JSON.stringify({ version: 1, state: { clocks: [] } }));
+    localStorage.setItem(CLOCKTOOLS_KEY, JSON.stringify({ version: 1, coords: 'centre', state: { clocks: [] } }));
     applySyncData({ '24h-circle-planner.days': 'X' }); // an old, pre-widget-sync blob
     expect(localStorage.getItem(CLOCKTOOLS_KEY)).not.toBeNull();
   });

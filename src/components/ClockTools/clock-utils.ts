@@ -6,68 +6,57 @@ export interface Pos {
 }
 
 /**
- * Floating widgets store ABSOLUTE top-left pixels, but rendering them literally
- * makes them cling to the top-left as the viewport grows. Instead we anchor every
- * widget to the viewport CENTRE: `layoutOrigin` is the viewport centre captured
- * ONCE (device-local, persisted) the first time this build runs, and a widget at
- * stored (x,y) renders at `calc(50vw + (x - originCx))`. At the origin size that
- * is exactly (x,y) — no jump — and as the viewport grows/shrinks or you zoom, the
- * widget keeps its distance from the centre (margins expand symmetrically), just
- * like the chart. This is purely a render/drag transform: storage and cloud sync
- * (which already send centre-relative positions) are untouched.
+ * ONE coordinate space for every floating widget: a stored `Pos` is the offset
+ * of the widget's top-left FROM THE VIEWPORT CENTRE — the circular chart's
+ * anchor. Rendering is `calc(50vw + x)`, dragging/spawning store back the same
+ * offset, and cloud sync ships the offset UNTRANSFORMED. Because storage, render
+ * and the sync wire all share this space, a value survives any number of
+ * push/pull/apply cycles byte-identically (no drift) and lands at the same spot
+ * relative to the chart on every device and window size.
+ *
+ * Legacy values (absolute top-left pixels, in the space of the once-persisted
+ * "layout origin") are migrated on load via migrateLegacyPos — the same visual
+ * spot expressed as a centre offset.
  */
 const ORIGIN_KEY = '24h-circle-planner.layout-origin';
-let originCache: { cx: number; cy: number } | null = null;
-export function layoutOrigin(): { cx: number; cy: number } {
-  if (originCache) return originCache;
-  try {
-    const raw = localStorage.getItem(ORIGIN_KEY);
-    if (raw) {
-      const o = JSON.parse(raw) as Partial<{ cx: number; cy: number }>;
-      if (typeof o?.cx === 'number' && typeof o?.cy === 'number') {
-        originCache = { cx: o.cx, cy: o.cy };
-        return originCache;
-      }
-    }
-  } catch {
-    /* ignore */
-  }
-  const w = typeof window !== 'undefined' && window.innerWidth ? window.innerWidth : 1280;
-  const h = typeof window !== 'undefined' && window.innerHeight ? window.innerHeight : 800;
-  originCache = { cx: Math.round(w / 2), cy: Math.round(h / 2) };
-  try {
-    localStorage.setItem(ORIGIN_KEY, JSON.stringify(originCache));
-  } catch {
-    /* ignore */
-  }
-  return originCache;
-}
-
-/** `position:fixed` left/top that anchor a widget's absolute (x,y) to the
- *  viewport centre (see layoutOrigin). Spread into a widget's style. */
-export function anchoredStyle(x: number, y: number): { position: 'fixed'; left: string; top: string } {
-  const { cx, cy } = layoutOrigin();
-  return { position: 'fixed', left: `calc(50vw + ${x - cx}px)`, top: `calc(50vh + ${y - cy}px)` };
-}
-
-/** Lower bound for a stored abs coordinate so the widget's top-left stays on
- *  screen once the centre-anchor offset is applied. */
-export function dragFloor(): { minX: number; minY: number } {
-  const { cx, cy } = layoutOrigin();
-  const w = typeof window !== 'undefined' && window.innerWidth ? window.innerWidth : 1280;
-  const h = typeof window !== 'undefined' && window.innerHeight ? window.innerHeight : 800;
-  return { minX: cx - w / 2 + 4, minY: cy - h / 2 + 4 };
-}
 
 const vw = () => (typeof window !== 'undefined' && window.innerWidth ? window.innerWidth : 1280);
 const vh = () => (typeof window !== 'undefined' && window.innerHeight ? window.innerHeight : 800);
 
-/** Convert a DESIRED position in the current viewport to the value we must STORE
- *  so anchoredStyle renders it exactly there on this viewport (inverse of the
- *  anchor offset). */
+/** The centre legacy ABSOLUTE positions were anchored to: the persisted layout
+ *  origin if one exists (pre-offset builds wrote it), else the live centre. */
+function legacyOrigin(): { cx: number; cy: number } {
+  try {
+    const raw = localStorage.getItem(ORIGIN_KEY);
+    if (raw) {
+      const o = JSON.parse(raw) as Partial<{ cx: number; cy: number }>;
+      if (typeof o?.cx === 'number' && typeof o?.cy === 'number') return { cx: o.cx, cy: o.cy };
+    }
+  } catch {
+    /* ignore */
+  }
+  return { cx: Math.round(vw() / 2), cy: Math.round(vh() / 2) };
+}
+
+/** Legacy absolute top-left pixels → centre offset (same rendered spot). */
+export function migrateLegacyPos(p: Pos): Pos {
+  const { cx, cy } = legacyOrigin();
+  return { x: Math.round(p.x - cx), y: Math.round(p.y - cy) };
+}
+
+/** `position:fixed` left/top for a centre-offset position. */
+export function anchoredStyle(x: number, y: number): { position: 'fixed'; left: string; top: string } {
+  return { position: 'fixed', left: `calc(50vw + ${x}px)`, top: `calc(50vh + ${y}px)` };
+}
+
+/** Lower bound (offset space) keeping the widget's top-left on screen. */
+export function dragFloor(): { minX: number; minY: number } {
+  return { minX: 4 - vw() / 2, minY: 4 - vh() / 2 };
+}
+
+/** Convert a DESIRED position in the current viewport to the stored offset. */
 export function toStored(x: number, y: number): Pos {
-  const { cx, cy } = layoutOrigin();
-  return { x: Math.round(x - vw() / 2 + cx), y: Math.round(y - vh() / 2 + cy) };
+  return { x: Math.round(x - vw() / 2), y: Math.round(y - vh() / 2) };
 }
 
 /** A spawn position NEAR the centred chart: (dx,dy) offset from the current

@@ -25,7 +25,7 @@
  * Loading a diary is a view state, not a data change, so it now syncs nothing.
  */
 
-import { CLOCKTOOLS_KEY, GOALSWIDGET_KEY, isWidgetKey, encodeWidgetValue, decodeWidgetValue } from './widgetSync';
+import { CLOCKTOOLS_KEY, GOALSWIDGET_KEY, isWidgetKey } from './widgetSync';
 
 const PREFIX = '24h-circle-planner.';
 
@@ -112,29 +112,29 @@ export function parseWire(raw: unknown): WireEnvelope | null {
 }
 
 /** Snapshot the synced content keys currently in localStorage. Widget positions
- *  are re-based to the viewport centre for the wire (see widgetSync). */
+ *  are stored centre-relative already, so every value ships verbatim. */
 export function collectSyncData(): Record<string, string> {
   const data: Record<string, string> = {};
   for (const key of SYNC_KEYS) {
     const v = localStorage.getItem(key);
-    if (v !== null) data[key] = isWidgetKey(key) ? encodeWidgetValue(v) : v;
+    if (v !== null) data[key] = v;
   }
   return data;
 }
 
 /**
- * Overwrite the synced content keys from `data`. Widget values are decoded from
- * centre-relative back to this viewport's absolute pixels. A non-widget key
- * absent from `data` is removed so deletions propagate; a WIDGET key absent is
- * KEPT — an old cloud blob predating widget sync must not wipe local widgets,
- * and keeping it (rather than removing→regenerating a default) is what stops the
+ * Overwrite the synced content keys from `data` (verbatim — widget positions
+ * are centre offsets on every device, no re-basing). A non-widget key absent
+ * from `data` is removed so deletions propagate; a WIDGET key absent is KEPT —
+ * an old cloud blob predating widget sync must not wipe local widgets, and
+ * keeping it (rather than removing→regenerating a default) is what stops the
  * login apply→reload loop. Device-local keys are never touched.
  */
 export function applySyncData(data: Record<string, string>): void {
   for (const key of SYNC_KEYS) {
     const v = data[key];
     if (typeof v === 'string') {
-      localStorage.setItem(key, isWidgetKey(key) ? decodeWidgetValue(v) : v);
+      localStorage.setItem(key, v);
     } else if (!isWidgetKey(key)) {
       localStorage.removeItem(key);
     }

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { v4 as uuid } from 'uuid';
-import { spawnNearCentre, type Pos } from './clock-utils';
+import { spawnNearCentre, migrateLegacyPos, type Pos } from './clock-utils';
 import { CLOCKTOOLS_SYNC_EVENT } from '@/lib/sync/widgetSync';
 
 export type ClockMode = 'analog' | 'digital';
@@ -142,7 +142,7 @@ function loadState(): ClockToolsState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      const parsed = JSON.parse(raw) as { version?: number; state?: Partial<ClockToolsState> };
+      const parsed = JSON.parse(raw) as { version?: number; coords?: string; state?: Partial<ClockToolsState> };
       if (parsed && parsed.version === 1 && parsed.state) {
         const s = parsed.state as LegacyEnvelope;
         const merged: ClockToolsState = {
@@ -152,6 +152,17 @@ function loadState(): ClockToolsState {
           weathers: migrateWeathers(s),
           alarm: { ...def.alarm, ...s.alarm, pos: { ...def.alarm.pos, ...s.alarm?.pos } },
         };
+        // Positions without the `coords:'centre'` marker are legacy ABSOLUTE
+        // pixels — re-express them as centre offsets (same rendered spot).
+        // Marked envelopes are already offsets and pass through untouched, so a
+        // load→save round-trip is byte-stable (sync sees no phantom change).
+        if (parsed.coords !== 'centre') {
+          merged.clocks = merged.clocks.map((c) => ({ ...c, pos: migrateLegacyPos(c.pos) }));
+          merged.calendar = { ...merged.calendar, pos: migrateLegacyPos(merged.calendar.pos) };
+          merged.timer = { ...merged.timer, pos: migrateLegacyPos(merged.timer.pos) };
+          merged.weathers = merged.weathers.map((w) => ({ ...w, pos: migrateLegacyPos(w.pos) }));
+          merged.alarm = { ...merged.alarm, pos: migrateLegacyPos(merged.alarm.pos) };
+        }
         // A timer that finished while the tab was closed: stop it silently.
         if (merged.timer.running && (!merged.timer.endAt || merged.timer.endAt <= Date.now())) {
           merged.timer = { ...merged.timer, running: false, endAt: null, remainingSec: 0 };
@@ -167,7 +178,9 @@ function loadState(): ClockToolsState {
 
 function saveState(state: ClockToolsState): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, state }));
+    // version stays 1 (older builds still read it — they just see the positions
+    // as absolute, shifted but never reset); `coords` marks the offset space.
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, coords: 'centre', state }));
   } catch {
     // storage unavailable — tools simply won't persist
   }

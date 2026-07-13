@@ -77,13 +77,17 @@ describe('storage envelope byte-compatibility', () => {
     expect(goalsCodec.decode({ version: 1, goals: [goal, { bogus: true }] })).toEqual([goal]);
   });
 
-  it('memos: {"version":1,"memos":[…],"visible":…} (+ legacy migration on decode)', () => {
-    expect(JSON.stringify(memosCodec.encode({ memos: [], visible: true }))).toBe('{"version":1,"memos":[],"visible":true}');
-    // A legacy memo lacking createdAt/onScreen/align migrates with defaults.
+  it('memos: {"version":1,"coords":"centre","memos":[…],"visible":…} (+ legacy migration on decode)', () => {
+    expect(JSON.stringify(memosCodec.encode({ memos: [], visible: true }))).toBe('{"version":1,"coords":"centre","memos":[],"visible":true}');
+    // A legacy memo lacking createdAt/onScreen/align migrates with defaults, and
+    // its legacy ABSOLUTE x/y are re-expressed as centre offsets (see clock-utils).
     const legacy = { version: 1, memos: [{ id: 'm1', text: 'hi', x: 1, y: 2, color: '#fef08a', fontFamily: 'Pretendard' }] };
     const decoded = memosCodec.decode(legacy)!;
     expect(decoded.memos[0]).toMatchObject({ id: 'm1', align: 'center', createdAt: 0, onScreen: true });
     expect(decoded.visible).toBe(true);
+    // A marked (current-format) envelope round-trips positions untouched.
+    const marked = { version: 1, coords: 'centre', memos: [{ id: 'm2', text: 'hi', x: -50, y: 60, color: '#fef08a', fontFamily: 'Pretendard', align: 'center', createdAt: 1, onScreen: true }], visible: true };
+    expect(memosCodec.decode(marked)!.memos[0]).toMatchObject({ x: -50, y: 60 });
   });
 
   it('records: the state is the envelope {"version":1,"byDate":…,"active":…}', () => {

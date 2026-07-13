@@ -4,7 +4,7 @@ import { useDiary } from '@/hooks/useDiary';
 import { useGoals } from '@/hooks/useGoals';
 import { useTranslation } from '@/hooks/usePreferences';
 import { accumulatedMinutes } from '@/lib/goals';
-import { makeDragStart, anchoredStyle, spawnNearCentre, type Pos } from '@/components/ClockTools/clock-utils';
+import { makeDragStart, anchoredStyle, spawnNearCentre, migrateLegacyPos, type Pos } from '@/components/ClockTools/clock-utils';
 import { GOALS_WIDGET_SYNC_EVENT } from '@/lib/sync/widgetSync';
 
 const POS_KEY = '24h-circle-planner.goalswidget';
@@ -19,10 +19,12 @@ function loadPos(): Pos {
   try {
     const raw = localStorage.getItem(POS_KEY);
     if (raw) {
-      const p = JSON.parse(raw) as Partial<Pos>;
-      // No viewport clamp on load — anchoredStyle re-bases the position to the
-      // viewport centre at render, so a stored spot stays put across sizes.
-      if (p && typeof p.x === 'number' && typeof p.y === 'number') return { x: p.x, y: p.y };
+      const p = JSON.parse(raw) as Partial<Pos> & { c?: number };
+      if (p && typeof p.x === 'number' && typeof p.y === 'number') {
+        // `c:1` marks centre-offset space (current); unmarked values are legacy
+        // absolute pixels → re-express as offsets (same rendered spot).
+        return p.c === 1 ? { x: p.x, y: p.y } : migrateLegacyPos({ x: p.x, y: p.y });
+      }
     }
   } catch {
     // ignore corrupt/unavailable storage
@@ -48,7 +50,7 @@ export function GoalsWidget() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(POS_KEY, JSON.stringify(pos));
+      localStorage.setItem(POS_KEY, JSON.stringify({ x: pos.x, y: pos.y, c: 1 }));
     } catch {
       // storage unavailable — position simply won't persist
     }
