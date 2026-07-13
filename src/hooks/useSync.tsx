@@ -195,8 +195,19 @@ export function SyncProvider({ children }: { children: ReactNode }) {
 
     // Decide between local and server when they diverge (last-write-wins).
     const reconcile = (serverEnv: SyncEnvelope, serverVersion: number) => {
-      if (meta.modifiedAt > serverEnv.modifiedAt) {
-        void doPush(serverVersion); // local is newer → overwrite server
+      if (meta.modifiedAt >= serverEnv.modifiedAt) {
+        // The TIE (==) case matters: applyRemote copies the server's modifiedAt,
+        // so when a load-time normalization/migration rewrites a stored value
+        // right after an adopt, content differs while the timestamps still tie.
+        // Preferring the server here re-applies + reloads forever (the "refresh
+        // loop" — the debounced corrective push is always preempted by the
+        // reload). Prefer LOCAL and stamp a FRESH modifiedAt so this push wins
+        // strictly on every other device — without the bump they would tie too
+        // and push their own bytes back (cross-device ping-pong).
+        if (meta.modifiedAt === serverEnv.modifiedAt) {
+          setMeta({ version: meta.version, baseFp: meta.baseFp, modifiedAt: Date.now() });
+        }
+        void doPush(serverVersion); // local is newer (or normalized) → overwrite server
       } else {
         applyRemote(serverEnv, serverVersion); // server is newer → adopt
       }
