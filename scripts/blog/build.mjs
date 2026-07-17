@@ -171,11 +171,17 @@ const fmtDateKo = (d) => { const [y, m, day] = d.split('-'); return `${y}년 ${N
 
 function postPage(p) {
   const canonical = `${ORIGIN}/blog/${p.slug}`;
+  // Optional frontmatter `image:` (path under /blog/img/) → og:image, JSON-LD
+  // image, and a hero figure under the title in both languages.
+  const heroUrl = p.image ? `${ORIGIN}${p.image}` : `${ORIGIN}/og-image.png`;
+  const hero = p.image
+    ? `<p style="text-align:center;margin:14px 0"><img src="${p.image}" alt="${esc(p.title_ko)}" width="520" style="max-width:100%;height:auto;border-radius:16px" loading="lazy" /></p>\n`
+    : '';
   const jsonld = `<script type="application/ld+json">
 ${JSON.stringify({
   '@context': 'https://schema.org', '@type': 'BlogPosting',
   headline: p.title_ko, description: p.desc_ko, inLanguage: ['ko', 'en'],
-  image: `${ORIGIN}/og-image.png`, datePublished: p.date, dateModified: p.date,
+  image: heroUrl, datePublished: p.date, dateModified: p.date,
   author: { '@type': 'Organization', name: '24Houring', url: `${ORIGIN}/` },
   publisher: { '@type': 'Organization', name: '24Houring', url: `${ORIGIN}/` },
   mainEntityOfPage: canonical,
@@ -195,12 +201,12 @@ ${JSON.stringify({
     <div class="lang-ko">
     <h1>${esc(p.title_ko)}</h1>
     <p class="en" style="margin:0 0 14px">${fmtDateKo(p.date)} · 24Houring</p>
-${p.ko}
+${hero}${p.ko}
     </div>
     <div class="lang-en">
     <h1>${esc(p.title_en)}</h1>
     <p class="en" style="margin:0 0 14px">${p.date} · 24Houring</p>
-${p.en}
+${hero}${p.en}
     </div>
 ${CTA}`;
 
