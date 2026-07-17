@@ -46,6 +46,9 @@ function mdToHtml(md) {
   return blocks
     .map((b) => {
       const lines = b.trim().split('\n');
+      // Standalone image block: ![alt](src)
+      const img = lines.length === 1 && lines[0].match(/^!\[([^\]]*)\]\(([^)\s]+)\)$/);
+      if (img) return `<p style="text-align:center;margin:14px 0"><img src="${img[2]}" alt="${esc(img[1])}" width="520" style="max-width:100%;height:auto;border-radius:16px" loading="lazy" /></p>`;
       if (/^###\s/.test(lines[0])) return `<h3>${inline(lines[0].replace(/^###\s+/, ''))}</h3>`;
       if (/^##\s/.test(lines[0])) return `<h2>${inline(lines[0].replace(/^##\s+/, ''))}</h2>`;
       if (lines.every((l) => /^>\s?/.test(l))) {
