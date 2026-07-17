@@ -20,6 +20,7 @@ export const en: Record<TKey, string> = {
   'palette.max': 'Up to 20 items.',
   'palette.remove': 'Remove',
   'footer.guides': 'Guides',
+  'footer.blog': 'Blog',
   'footer.templates': 'Templates',
   'footer.stories': 'Stories',
   'footer.health': 'Health',

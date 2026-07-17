@@ -23,6 +23,7 @@ export const ko = {
   'palette.max': '최대 20개까지 등록할 수 있어요.',
   'palette.remove': '삭제',
   'footer.guides': '가이드',
+  'footer.blog': '블로그',
   'footer.templates': '템플릿',
   'footer.stories': '스토리',
   'footer.health': '건강',
