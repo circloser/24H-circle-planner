@@ -77,6 +77,12 @@ describe('sync wire is a byte-identical pass-through (the anti-drift invariant)'
     expect(localStorage.getItem(CLOCKTOOLS_KEY)).not.toBeNull();
   });
 
+  it('KEEPS the time palette when an old cloud blob omits it (user-authored, never wiped)', () => {
+    localStorage.setItem('24h-circle-planner.palette', JSON.stringify({ version: 1, items: [{ id: 'p1', label: '수면', color: '#c4b5fd', icon: '🌙' }] }));
+    applySyncData({ '24h-circle-planner.days': 'X' });
+    expect(localStorage.getItem('24h-circle-planner.palette')).not.toBeNull();
+  });
+
   it('REMOVES a non-widget key when the cloud blob omits it (deletion still propagates)', () => {
     localStorage.setItem('24h-circle-planner.memos', 'M');
     applySyncData({ '24h-circle-planner.days': 'X' });

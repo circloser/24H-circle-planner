@@ -8,6 +8,7 @@ import { AppHeader } from '@/components/AppShell/AppHeader';
 import { AppFooter } from '@/components/AppShell/AppFooter';
 import { ResetDialog } from '@/components/AppShell/ResetDialog';
 import { ShareImportDialog } from '@/components/AppShell/ShareImportDialog';
+import { TimePaletteDialog } from '@/components/TimePalette/TimePaletteDialog';
 import { track } from '@/lib/track';
 import { CircleTimeline } from '@/components/CircleTimeline/CircleTimeline';
 import { ScheduleTable } from '@/components/ScheduleTable/ScheduleTable';
@@ -88,6 +89,7 @@ function App() {
   const dispatch = useStoreDispatch();
 
   const [presetOpen, setPresetOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   // A schedule arriving via a share link (#p=…) → confirm before it replaces.
   const [shareImport, setShareImport] = useState<Schedule | null>(() => readSharedFromHash());
   // First visit → one-time welcome over the seeded demo (skipped when opening a link).
@@ -315,6 +317,7 @@ function App() {
         onOpenGoals={() => setGoalsOpen(true)}
         onOpenWeekday={() => setWeekdayOpen(true)}
         onOpenPresets={() => setPresetOpen(true)}
+        onOpenPalette={() => setPaletteOpen(true)}
         onOpenSettings={setSettingsSection}
         onOpenExport={() => setExportOpen(true)}
         onShareImage={shareImage}
@@ -519,6 +522,7 @@ function App() {
       {/* End-to-end encryption for cloud sync (enable / unlock / manage). */}
       <E2eeDialog open={e2eeOpen} onOpenChange={setE2eeOpen} />
       <UpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} />
+      <TimePaletteDialog open={paletteOpen} onOpenChange={setPaletteOpen} />
 
       {/* Assign a saved schedule to each weekday. */}
       <WeekdayScheduleDialog open={weekdayOpen} onOpenChange={setWeekdayOpen} />

@@ -6,6 +6,9 @@ import { labelAnchorInside, truncateLabel } from '@/lib/svg-geometry';
 import { IconChips } from './IconChips';
 import { ColorSwatch } from './ColorSwatch';
 import { IconPickerDialog } from '@/components/IconPicker/IconPickerDialog';
+import { useTimePalette } from '@/hooks/useTimePalette';
+import { idealTextColor } from '@/lib/contrast';
+import { track } from '@/lib/track';
 import { cn } from '@/lib/utils';
 import type { TimeSlice } from '@/types/time-slice';
 
@@ -54,6 +57,7 @@ interface SliceEditorInnerProps {
 }
 
 function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerProps) {
+  const { items: palette } = useTimePalette();
   const dispatch = useStoreDispatch();
 
   // State initializes from slice on mount; key={sliceId} forces remount on change
@@ -151,6 +155,32 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
       className="rounded-xl border bg-background shadow-2xl p-3 flex flex-col gap-2"
       onPointerDown={(e) => e.stopPropagation()}
     >
+      {/* Time-palette chips — one tap fills label + colour + icon with a saved
+          recurring item (managed in 디자인 → 타임 팔레트). Hidden when empty. */}
+      {palette.length > 0 && (
+        <div className="flex max-h-16 flex-wrap gap-1 overflow-y-auto">
+          {palette.map((it) => (
+            <button
+              key={it.id}
+              type="button"
+              data-palette-chip
+              title={it.label}
+              onClick={() => {
+                setLabel(it.label);
+                setColor(it.color);
+                setIcon(it.icon);
+                track('palette_apply');
+              }}
+              className="inline-flex max-w-full items-center gap-1 truncate rounded-full px-2 py-0.5 text-xs transition-transform hover:scale-105"
+              style={{ backgroundColor: it.color, color: idealTextColor(it.color) }}
+            >
+              {it.icon && <span aria-hidden>{it.icon}</span>}
+              <span className="truncate">{it.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Label input */}
       <div className="flex flex-col gap-1">
         <Input

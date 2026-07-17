@@ -25,7 +25,7 @@
  * Loading a diary is a view state, not a data change, so it now syncs nothing.
  */
 
-import { CLOCKTOOLS_KEY, GOALSWIDGET_KEY, isWidgetKey } from './widgetSync';
+import { CLOCKTOOLS_KEY, GOALSWIDGET_KEY } from './widgetSync';
 
 const PREFIX = '24h-circle-planner.';
 
@@ -45,9 +45,17 @@ export const SYNC_KEYS: readonly string[] = [
   // lacked — that version looped on login.
   'clocktools',
   'goalswidget',
+  // The time palette (user-defined label+colour+icon items). Its codec is
+  // byte-stable on load→save, so syncing it is loop-safe; keep-if-absent below
+  // protects it from old cloud blobs that predate the key.
+  'palette',
   'prefs',
   'view',
 ].map((k) => PREFIX + k);
+
+/** Keys KEPT when absent from a cloud blob (older blobs must not wipe them);
+ *  deletions of every other key still propagate. */
+const KEEP_IF_ABSENT = new Set<string>([CLOCKTOOLS_KEY, GOALSWIDGET_KEY, PREFIX + 'palette']);
 
 /** The synced preferences key — applied live (no reload) when it alone changes. */
 export const PREFS_KEY = PREFIX + 'prefs';
@@ -135,7 +143,7 @@ export function applySyncData(data: Record<string, string>): void {
     const v = data[key];
     if (typeof v === 'string') {
       localStorage.setItem(key, v);
-    } else if (!isWidgetKey(key)) {
+    } else if (!KEEP_IF_ABSENT.has(key)) {
       localStorage.removeItem(key);
     }
   }

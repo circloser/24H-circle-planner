@@ -12,6 +12,7 @@ import { UserPresetsProvider } from './hooks/useUserPresets.tsx'
 import { DaysProvider } from './hooks/useDays.tsx'
 import { DiaryProvider } from './hooks/useDiary.tsx'
 import { GoalsProvider } from './hooks/useGoals.tsx'
+import { TimePaletteProvider } from './hooks/useTimePalette.tsx'
 import { RecordsProvider } from './hooks/useRecords.tsx'
 import { SpikeRunner } from './components/SpikeRunner.tsx'
 import { SharedView } from './components/SharedView/SharedView.tsx'
@@ -98,7 +99,9 @@ if (isSpike) {
                     <DiaryProvider>
                       <GoalsProvider>
                         <RecordsProvider>
-                          <App />
+                          <TimePaletteProvider>
+                            <App />
+                          </TimePaletteProvider>
                         </RecordsProvider>
                       </GoalsProvider>
                     </DiaryProvider>
