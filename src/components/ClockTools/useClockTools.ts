@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { v4 as uuid } from 'uuid';
-import { spawnNearCentre, migrateLegacyPos, type Pos } from './clock-utils';
+import { spawnNearCentre, migrateLegacyPos, clampOffset, type Pos } from './clock-utils';
 import { CLOCKTOOLS_SYNC_EVENT } from '@/lib/sync/widgetSync';
 
 export type ClockMode = 'analog' | 'digital';
@@ -163,6 +163,13 @@ function loadState(): ClockToolsState {
           merged.weathers = merged.weathers.map((w) => ({ ...w, pos: migrateLegacyPos(w.pos) }));
           merged.alarm = { ...merged.alarm, pos: migrateLegacyPos(merged.alarm.pos) };
         }
+        // Every position gets clamped on-screen — an unreachable widget can't be
+        // dragged back (in-range values pass through unchanged → byte-stable).
+        merged.clocks = merged.clocks.map((c) => ({ ...c, pos: clampOffset(c.pos, 168, 150) }));
+        merged.calendar = { ...merged.calendar, pos: clampOffset(merged.calendar.pos, 232, 240) };
+        merged.timer = { ...merged.timer, pos: clampOffset(merged.timer.pos, 200, 160) };
+        merged.weathers = merged.weathers.map((w) => ({ ...w, pos: clampOffset(w.pos, 204, 200) }));
+        merged.alarm = { ...merged.alarm, pos: clampOffset(merged.alarm.pos, 200, 140) };
         // A timer that finished while the tab was closed: stop it silently.
         if (merged.timer.running && (!merged.timer.endAt || merged.timer.endAt <= Date.now())) {
           merged.timer = { ...merged.timer, running: false, endAt: null, remainingSec: 0 };

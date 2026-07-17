@@ -4,7 +4,7 @@ import { v4 as uuid } from 'uuid';
 import { randomQuote } from '@/data/quotes';
 import { useTranslation } from '@/hooks/usePreferences';
 import { usePersistedState, type PersistedCodec } from '@/hooks/usePersistedState';
-import { toStored, migrateLegacyPos } from '@/components/ClockTools/clock-utils';
+import { toStored, migrateLegacyPos, clampOffset } from '@/components/ClockTools/clock-utils';
 
 const MEMO_SIZE = 200;
 
@@ -51,7 +51,8 @@ export const memosCodec: PersistedCodec<MemoState> = {
       // as creation order; default to shown on screen). Unmarked envelopes carry
       // legacy ABSOLUTE positions → re-express as centre offsets.
       const memos = (p.memos as Array<Partial<Memo> & Memo>).map((m, i) => {
-        const pos = centre ? { x: m.x, y: m.y } : migrateLegacyPos({ x: m.x, y: m.y });
+        // Clamp on-screen: an unreachable note can't be dragged back.
+        const pos = clampOffset(centre ? { x: m.x, y: m.y } : migrateLegacyPos({ x: m.x, y: m.y }), 200, 200);
         return {
           ...m,
           ...pos,

@@ -4,7 +4,7 @@ import { useDiary } from '@/hooks/useDiary';
 import { useGoals } from '@/hooks/useGoals';
 import { useTranslation } from '@/hooks/usePreferences';
 import { accumulatedMinutes } from '@/lib/goals';
-import { makeDragStart, anchoredStyle, spawnNearCentre, migrateLegacyPos, type Pos } from '@/components/ClockTools/clock-utils';
+import { makeDragStart, anchoredStyle, spawnNearCentre, migrateLegacyPos, clampOffset, type Pos } from '@/components/ClockTools/clock-utils';
 import { GOALS_WIDGET_SYNC_EVENT } from '@/lib/sync/widgetSync';
 
 const POS_KEY = '24h-circle-planner.goalswidget';
@@ -22,8 +22,9 @@ function loadPos(): Pos {
       const p = JSON.parse(raw) as Partial<Pos> & { c?: number };
       if (p && typeof p.x === 'number' && typeof p.y === 'number') {
         // `c:1` marks centre-offset space (current); unmarked values are legacy
-        // absolute pixels → re-express as offsets (same rendered spot).
-        return p.c === 1 ? { x: p.x, y: p.y } : migrateLegacyPos({ x: p.x, y: p.y });
+        // absolute pixels → re-express as offsets (same rendered spot). Always
+        // clamp on-screen — an off-screen card can't even be dragged back.
+        return clampOffset(p.c === 1 ? { x: p.x, y: p.y } : migrateLegacyPos({ x: p.x, y: p.y }), CARD_W, 300);
       }
     }
   } catch {

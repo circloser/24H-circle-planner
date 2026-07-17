@@ -59,6 +59,27 @@ export function toStored(x: number, y: number): Pos {
   return { x: Math.round(x - vw() / 2), y: Math.round(y - vh() / 2) };
 }
 
+/**
+ * Clamp a centre-offset so a grabbable part of the widget (its top-left corner,
+ * with ≥60px of body) stays inside the CURRENT viewport. Applied on every load,
+ * this guarantees no widget can ever render unreachable — whatever historical,
+ * corrupted, or other-device value storage holds (e.g. drift-era cloud values
+ * that were double-migrated made the goals card invisible AND undraggable).
+ * In-range values pass through unchanged, so load→save stays byte-stable and
+ * sync never sees a phantom diff; out-of-range values change ONCE and converge
+ * via the tie-prefers-local push.
+ */
+export function clampOffset(p: Pos, w = 200, h = 160): Pos {
+  const minX = 8 - vw() / 2;
+  const maxX = vw() / 2 - Math.min(w, 60);
+  const minY = 8 - vh() / 2;
+  const maxY = vh() / 2 - Math.min(h, 60);
+  return {
+    x: Math.round(Math.min(Math.max(p.x, minX), maxX)),
+    y: Math.round(Math.min(Math.max(p.y, minY), maxY)),
+  };
+}
+
 /** A spawn position NEAR the centred chart: (dx,dy) offset from the current
  *  viewport centre, clamped so the whole widget (w×h) stays on screen, then
  *  mapped into stored (anchor) space. New widgets therefore always appear next
