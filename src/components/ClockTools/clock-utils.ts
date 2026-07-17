@@ -70,6 +70,13 @@ export function toStored(x: number, y: number): Pos {
  * via the tie-prefers-local push.
  */
 export function clampOffset(p: Pos, w = 200, h = 160): Pos {
+  // MOBILE (<768px) renders every widget INLINE — positions aren't used there,
+  // so clamping against a phone viewport would SQUEEZE all coordinates into a
+  // ~390px band, persist them, and sync that scrambled layout to desktops
+  // (exactly what happened when a phone tab opened next to a desktop). Below
+  // the breakpoint this is a byte-stable pass-through; only viewports that
+  // actually float the widgets enforce the on-screen guarantee.
+  if (vw() < 768) return p;
   const minX = 8 - vw() / 2;
   const maxX = vw() / 2 - Math.min(w, 60);
   const minY = 8 - vh() / 2;

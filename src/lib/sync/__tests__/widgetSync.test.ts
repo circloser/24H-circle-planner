@@ -39,6 +39,19 @@ describe('centre-offset position space (clock-utils)', () => {
     setViewport(1200, 800);
     expect(dragFloor()).toEqual({ minX: 4 - 600, minY: 4 - 400 });
   });
+
+  it('clampOffset enforces on-screen on DESKTOP but is a byte-stable pass-through on MOBILE (regression: a phone tab squeezed and synced every position)', async () => {
+    const { clampOffset } = await import('@/components/ClockTools/clock-utils');
+    const far = { x: -920, y: -420 };
+    setViewport(1280, 950);
+    const clamped = clampOffset(far, 300, 300);
+    expect(clamped.x).toBeGreaterThanOrEqual(8 - 640);
+    expect(clamped.y).toBeGreaterThanOrEqual(8 - 475);
+    // Mobile viewport → positions are inline-rendered, value must NOT change.
+    setViewport(390, 844);
+    expect(clampOffset(far, 300, 300)).toEqual(far);
+    expect(clampOffset({ x: 640, y: 300 }, 200, 160)).toEqual({ x: 640, y: 300 });
+  });
 });
 
 describe('sync wire is a byte-identical pass-through (the anti-drift invariant)', () => {
