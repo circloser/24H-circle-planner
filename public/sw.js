@@ -4,7 +4,7 @@
  * works offline (data lives in localStorage). Navigations are network-first
  * (fresh on every online visit); same-origin assets are stale-while-revalidate.
  */
-const CACHE = '24h-cache-v2';
+const CACHE = '24h-cache-v3';
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/favicon.svg', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -18,6 +18,38 @@ self.addEventListener('activate', (event) => {
     caches.keys()
       .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
+  );
+});
+
+// Web Push (Pro closed-tab slice alarms): the Worker cron sends
+// {title, body}; showing a notification is mandatory for userVisibleOnly subs.
+self.addEventListener('push', (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    /* non-JSON push → generic notification */
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || '24Houring', {
+      body: data.body || '',
+      tag: 'slice-start', // boundaries replace each other, never stack
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+    }),
+  );
+});
+
+// Tap → focus an open app tab, else open one.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const c of list) {
+        if ('focus' in c) return c.focus();
+      }
+      return clients.openWindow('/');
+    }),
   );
 });
 

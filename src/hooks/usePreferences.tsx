@@ -78,6 +78,10 @@ export interface Preferences {
   /** Browser notification when the day crosses into the next slice of the
    *  active timetable (needs per-device Notification permission too). */
   sliceAlarms: boolean;
+  /** Pro: server-sent Web Push for the same boundaries — arrives with the tab
+   *  CLOSED. Synced intent; each device still subscribes with its own
+   *  permission. */
+  pushAlarms: boolean;
 }
 
 const DEFAULT_PREFS: Preferences = {
@@ -92,6 +96,7 @@ const DEFAULT_PREFS: Preferences = {
   worldClocks: [],
   chartView: 'full',
   sliceAlarms: false,
+  pushAlarms: false,
   bgType: 'pattern',
   bgColor: '#f4f5f7',
   bgImage: null,

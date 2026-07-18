@@ -38,6 +38,11 @@
     "POLAR_SERVER": "production",
     "POLAR_PRODUCT_ID": "7c6f2b4a-718c-47b0-9dd5-bc1aef50dab5",
     // Emails always entitled to Pro (no subscription) + shown the coupon-issuing panel.
-    "ADMIN_EMAILS": "singlena@gmail.com"
-  }
+    "ADMIN_EMAILS": "singlena@gmail.com",
+    // Web Push (Pro closed-tab alarms). Private key = VAPID_PRIVATE_KEY secret.
+    "VAPID_PUBLIC_KEY": "BFUzJmVp8uJlFAKIZEEAFr3O1u-FLD7cbvHVXOuHtPNQ5zdZl0j_vgnDvwDNRWo8kmr0uWRv8E5EcHzmdwBy1ls",
+    "VAPID_SUBJECT": "mailto:singlena@gmail.com"
+  },
+  // Minute cron: match each push plan's local HH:MM and send due notifications.
+  "triggers": { "crons": ["* * * * *"] }
 }

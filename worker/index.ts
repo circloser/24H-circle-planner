@@ -7,6 +7,8 @@
  * See docs/pro-sync-design.md.
  */
 
+import { sendWebPush } from '../src/lib/webpush';
+
 export interface Env {
   /** Static assets binding (the built SPA in ./dist). */
   ASSETS: { fetch: (request: Request) => Promise<Response> };
@@ -23,6 +25,11 @@ export interface Env {
   POLAR_SERVER?: string; // 'sandbox' (default) | 'production'
   /** Comma-separated emails always entitled to Pro (no subscription). Non-secret var. */
   ADMIN_EMAILS?: string;
+  /** Web Push (Pro closed-tab alarms): VAPID public key (var) + subject (var);
+   *  the pkcs8 private key lives in the VAPID_PRIVATE_KEY runtime secret. */
+  VAPID_PUBLIC_KEY?: string;
+  VAPID_PRIVATE_KEY?: string;
+  VAPID_SUBJECT?: string;
 }
 
 /** Whether `email` is on the admin allowlist (always Pro). */
@@ -217,6 +224,25 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
   return new Response(null, { status: 302, headers });
 }
 
+/** Pro entitlement shared by /api/me, the push endpoints and the push cron:
+ *  admin allowlist OR live Polar subscription OR active coupon grant. */
+async function isEntitled(env: Env, user: { id: string; email: string | null }): Promise<boolean> {
+  if (isAdminEmail(env, user.email)) return true;
+  if (!env.DB) return false;
+  const sub = await env.DB.prepare('SELECT status, current_period_end FROM subscriptions WHERE user_id=?').bind(user.id).first<{ status: string; current_period_end: number | null }>();
+  // Polar keeps status 'active' (with cancel_at_period_end) until it revokes at the
+  // period end → status becomes 'canceled'. 'trialing'/'on_trial' also grant access.
+  const ENTITLED = new Set(['active', 'trialing', 'on_trial']);
+  if (sub && ENTITLED.has(sub.status) && (sub.current_period_end == null || sub.current_period_end > Date.now())) return true;
+  try {
+    const grant = await env.DB.prepare('SELECT 1 FROM grants WHERE user_id=? AND (expires_at IS NULL OR expires_at > ?) LIMIT 1').bind(user.id, Date.now()).first();
+    return !!grant;
+  } catch {
+    // `grants` table not migrated yet → treat as no grant (never break auth).
+    return false;
+  }
+}
+
 async function handleMe(request: Request, env: Env): Promise<Response> {
   if (!env.DB) return json({ user: null });
   const sid = parseCookies(request.headers.get('cookie'))[SID_COOKIE];
@@ -226,22 +252,7 @@ async function handleMe(request: Request, env: Env): Promise<Response> {
   // Entitlement = admin allowlist OR a live Polar subscription OR an active
   // coupon grant. Admins are always Pro (no subscription needed).
   const admin = isAdminEmail(env, user.email);
-  let active = admin;
-  if (!active) {
-    const sub = await env.DB.prepare('SELECT status, current_period_end FROM subscriptions WHERE user_id=?').bind(user.id).first<{ status: string; current_period_end: number | null }>();
-    // Polar keeps status 'active' (with cancel_at_period_end) until it revokes at the
-    // period end → status becomes 'canceled'. 'trialing'/'on_trial' also grant access.
-    const ENTITLED = new Set(['active', 'trialing', 'on_trial']);
-    active = !!sub && ENTITLED.has(sub.status) && (sub.current_period_end == null || sub.current_period_end > Date.now());
-  }
-  if (!active) {
-    try {
-      const grant = await env.DB.prepare('SELECT 1 FROM grants WHERE user_id=? AND (expires_at IS NULL OR expires_at > ?) LIMIT 1').bind(user.id, Date.now()).first();
-      active = !!grant;
-    } catch {
-      // `grants` table not migrated yet → treat as no grant (never break /api/me).
-    }
-  }
+  const active = admin || (await isEntitled(env, user));
   // `billing` lets the client hide the upgrade CTA until Polar is actually wired up
   // (token set); `admin` reveals the coupon-issuing panel.
   return json({ user: { id: user.id, email: user.email, provider: user.provider }, plan: active ? 'pro' : 'free', billing: Boolean(env.POLAR_ACCESS_TOKEN), admin });
@@ -600,6 +611,139 @@ async function handleAdminCoupons(request: Request, env: Env): Promise<Response>
   return json({ ok: true, code, grantDays, maxUses, note });
 }
 
+// ─── Web Push (Pro closed-tab slice alarms) ──────────────────────────────────
+// The client uploads TODAY-agnostic notification strings per boundary
+// ({t:'HH:MM', title, body}) plus its UTC offset; the minute cron matches each
+// user's local HH:MM and sends an encrypted push to every registered device.
+// Crypto lives in src/lib/webpush.ts (RFC 8291/8292, vector-tested).
+
+const MAX_BOUNDARIES = 64;
+
+async function pushUser(request: Request, env: Env): Promise<{ id: string; email: string | null } | Response> {
+  if (!env.DB) return json({ error: 'unconfigured' }, 503);
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'unauthorized' }, 401);
+  if (!(await isEntitled(env, user))) return json({ error: 'pro_required' }, 403);
+  return user;
+}
+
+async function handlePushSubscribe(request: Request, env: Env): Promise<Response> {
+  const user = await pushUser(request, env);
+  if (user instanceof Response) return user;
+  let body: { endpoint?: unknown; p256dh?: unknown; auth?: unknown };
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    return json({ error: 'bad_json' }, 400);
+  }
+  const endpoint = String(body.endpoint ?? '');
+  const p256dh = String(body.p256dh ?? '');
+  const auth = String(body.auth ?? '');
+  if (!endpoint.startsWith('https://') || endpoint.length > 1024 || !p256dh || p256dh.length > 256 || !auth || auth.length > 64) {
+    return json({ error: 'bad_subscription' }, 400);
+  }
+  await env.DB!.prepare(
+    'INSERT INTO push_subs (endpoint, user_id, p256dh, auth, created_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(endpoint) DO UPDATE SET user_id=excluded.user_id, p256dh=excluded.p256dh, auth=excluded.auth',
+  ).bind(endpoint, user.id, p256dh, auth, Date.now()).run();
+  return json({ ok: true });
+}
+
+async function handlePushUnsubscribe(request: Request, env: Env): Promise<Response> {
+  if (!env.DB) return json({ error: 'unconfigured' }, 503);
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'unauthorized' }, 401);
+  let body: { endpoint?: unknown };
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    return json({ error: 'bad_json' }, 400);
+  }
+  await env.DB.prepare('DELETE FROM push_subs WHERE endpoint=? AND user_id=?').bind(String(body.endpoint ?? ''), user.id).run();
+  return json({ ok: true });
+}
+
+async function handlePushPlanPut(request: Request, env: Env): Promise<Response> {
+  const user = await pushUser(request, env);
+  if (user instanceof Response) return user;
+  let body: { boundaries?: unknown; tzOffset?: unknown };
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    return json({ error: 'bad_json' }, 400);
+  }
+  const tz = Math.trunc(Number(body.tzOffset));
+  if (!Number.isFinite(tz) || tz < -900 || tz > 900) return json({ error: 'bad_tz' }, 400);
+  if (!Array.isArray(body.boundaries) || body.boundaries.length > MAX_BOUNDARIES) return json({ error: 'bad_boundaries' }, 400);
+  const boundaries = (body.boundaries as Array<Record<string, unknown>>).flatMap((b) => {
+    const t = String(b?.t ?? '');
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(t)) return [];
+    return [{ t, title: String(b?.title ?? '').slice(0, 120), body: String(b?.body ?? '').slice(0, 80) }];
+  });
+  await env.DB!.prepare(
+    'INSERT INTO push_plans (user_id, boundaries, tz_offset, last_fired, updated_at) VALUES (?, ?, ?, NULL, ?) ON CONFLICT(user_id) DO UPDATE SET boundaries=excluded.boundaries, tz_offset=excluded.tz_offset, updated_at=excluded.updated_at',
+  ).bind(user.id, JSON.stringify(boundaries), tz, Date.now()).run();
+  return json({ ok: true, count: boundaries.length });
+}
+
+async function handlePushPlanDelete(request: Request, env: Env): Promise<Response> {
+  if (!env.DB) return json({ error: 'unconfigured' }, 503);
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'unauthorized' }, 401);
+  await env.DB.prepare('DELETE FROM push_plans WHERE user_id=?').bind(user.id).run();
+  return json({ ok: true });
+}
+
+interface PushPlanRow { user_id: string; boundaries: string; tz_offset: number; last_fired: string | null }
+
+/** Minute cron: fire due boundaries (current minute, or the previous one when
+ *  the trigger jittered past it) for entitled users, at most once each. */
+async function runPushCron(env: Env): Promise<void> {
+  if (!env.DB || !env.VAPID_PRIVATE_KEY || !env.VAPID_PUBLIC_KEY) return;
+  const nowMs = Date.now();
+  const { results } = await env.DB.prepare('SELECT user_id, boundaries, tz_offset, last_fired FROM push_plans').all<PushPlanRow>();
+  const vapid = { publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY, subject: env.VAPID_SUBJECT || 'mailto:singlena@gmail.com' };
+  for (const plan of results ?? []) {
+    try {
+      let boundaries: Array<{ t: string; title?: string; body?: string }> = [];
+      try {
+        boundaries = JSON.parse(plan.boundaries) as typeof boundaries;
+      } catch {
+        continue;
+      }
+      // Candidate minutes in the USER's local clock, newest first.
+      let due: { key: string; b: { t: string; title?: string; body?: string } } | null = null;
+      for (const delta of [0, 60_000]) {
+        const local = new Date(nowMs - delta + plan.tz_offset * 60_000);
+        const t = `${String(local.getUTCHours()).padStart(2, '0')}:${String(local.getUTCMinutes()).padStart(2, '0')}`;
+        const b = boundaries.find((x) => x && x.t === t);
+        if (b) {
+          due = { key: `${local.toISOString().slice(0, 10)}|${t}`, b };
+          break;
+        }
+      }
+      if (!due || plan.last_fired === due.key) continue;
+      // Mark BEFORE sending — at-most-once beats duplicate alarms on retry.
+      await env.DB.prepare('UPDATE push_plans SET last_fired=? WHERE user_id=?').bind(due.key, plan.user_id).run();
+      const userRow = await env.DB.prepare('SELECT id, email FROM users WHERE id=?').bind(plan.user_id).first<{ id: string; email: string | null }>();
+      if (!userRow || !(await isEntitled(env, userRow))) continue;
+      const subs = await env.DB.prepare('SELECT endpoint, p256dh, auth FROM push_subs WHERE user_id=?').bind(plan.user_id).all<{ endpoint: string; p256dh: string; auth: string }>();
+      const payload = JSON.stringify({ title: due.b.title || '24Houring', body: due.b.body || '' });
+      for (const s of subs.results ?? []) {
+        try {
+          const status = await sendWebPush(s, payload, vapid);
+          if (status === 404 || status === 410) {
+            await env.DB.prepare('DELETE FROM push_subs WHERE endpoint=?').bind(s.endpoint).run();
+          }
+        } catch {
+          // per-device best effort
+        }
+      }
+    } catch {
+      // per-plan best effort — one bad row must not stall the cron
+    }
+  }
+}
+
 // ─── Router ──────────────────────────────────────────────────────────────────
 
 export default {
@@ -624,10 +768,19 @@ export default {
       if (p === '/api/webhooks/polar' && m === 'POST') return handleWebhook(request, env);
       if (p === '/api/coupon/redeem' && m === 'POST') return handleCouponRedeem(request, env);
       if (p === '/api/admin/coupons' && (m === 'GET' || m === 'POST')) return handleAdminCoupons(request, env);
+      if (p === '/api/push/subscribe' && m === 'POST') return handlePushSubscribe(request, env);
+      if (p === '/api/push/subscribe' && m === 'DELETE') return handlePushUnsubscribe(request, env);
+      if (p === '/api/push/plan' && m === 'PUT') return handlePushPlanPut(request, env);
+      if (p === '/api/push/plan' && m === 'DELETE') return handlePushPlanDelete(request, env);
       return json({ error: 'not_found' }, 404);
     }
 
     // Non-API request → serve the SPA (unchanged behaviour).
     return env.ASSETS.fetch(request);
+  },
+
+  /** Minute cron (wrangler.jsonc triggers.crons) → due push alarms. */
+  async scheduled(_controller: unknown, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }): Promise<void> {
+    ctx.waitUntil(runPushCron(env));
   },
 };

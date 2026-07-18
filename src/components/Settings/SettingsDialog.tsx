@@ -22,6 +22,9 @@ import {
   type WorldClock,
 } from '@/hooks/usePreferences';
 import { fileToBackgroundDataUrl } from '@/lib/image-bg';
+import { useAuth } from '@/hooks/useAuth';
+import { requestUpgrade } from '@/lib/pro';
+import { enablePush, disablePush, pushSupported } from '@/lib/push';
 import { AdSlot } from '@/components/Ads/AdSlot';
 import { useStoreDispatch } from '@/hooks/useScheduleStore';
 import { COLOR_THEMES } from '@/data/color-themes';
@@ -62,6 +65,7 @@ const OPT_CHIP = 'opt-chip px-3 py-1.5 rounded-md text-sm';
 
 export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
   const { prefs, setPreference } = usePreferences();
+  const { plan } = useAuth();
   const { t, lang } = useTranslation();
   const dispatch = useStoreDispatch();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -247,6 +251,51 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
                   </button>
                 </div>
                 <p className="text-[11px] text-muted-foreground">{t('settings.sliceAlarmsHint')}</p>
+              </div>
+
+              {/* Pro tier: server-sent Web Push — arrives with the tab CLOSED. */}
+              <div className="flex flex-col gap-2">
+                <span className="text-xs text-muted-foreground">{t('settings.pushAlarms')}</span>
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void (async () => {
+                        if (plan !== 'pro') {
+                          requestUpgrade();
+                          return;
+                        }
+                        if (!pushSupported() || typeof Notification === 'undefined' || Notification.permission === 'denied') {
+                          toast.error(t('settings.alarmPermDenied'));
+                          return;
+                        }
+                        const p = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
+                        if (p !== 'granted') {
+                          toast.error(t('settings.alarmPermDenied'));
+                          return;
+                        }
+                        if (await enablePush()) setPreference('pushAlarms', true);
+                        else toast.error(t('settings.pushFail'));
+                      })();
+                    }}
+                    aria-pressed={prefs.pushAlarms}
+                    className={OPT_CHIP}
+                  >
+                    {t('settings.iconsShow')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreference('pushAlarms', false);
+                      void disablePush();
+                    }}
+                    aria-pressed={!prefs.pushAlarms}
+                    className={OPT_CHIP}
+                  >
+                    {t('settings.iconsHide')}
+                  </button>
+                </div>
+                <p className="text-[11px] text-muted-foreground">{t('settings.pushAlarmsHint')}</p>
               </div>
 
               {/* Now line on/off */}
