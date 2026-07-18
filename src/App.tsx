@@ -9,6 +9,7 @@ import { AppFooter } from '@/components/AppShell/AppFooter';
 import { ResetDialog } from '@/components/AppShell/ResetDialog';
 import { ShareImportDialog } from '@/components/AppShell/ShareImportDialog';
 import { TimePaletteDialog } from '@/components/TimePalette/TimePaletteDialog';
+import { useSliceAlarms } from '@/hooks/useSliceAlarms';
 import { track } from '@/lib/track';
 import { CircleTimeline } from '@/components/CircleTimeline/CircleTimeline';
 import { ScheduleTable } from '@/components/ScheduleTable/ScheduleTable';
@@ -251,6 +252,10 @@ function App() {
 
   // T4: keyboard shortcuts (undo/redo + drag-cancel)
   useKeyboardShortcuts({ liveDragGroupRef });
+
+  // "시간표가 곧 알람": crossing into the next slice fires a browser notification
+  // (opt-in via 설정 → 타임라인; needs this device's Notification permission).
+  useSliceAlarms();
 
   // Share actions (PNG via native sheet / read-only /s#d= link incl. the note).
   const { shareImage, copyLink } = useShareActions(svgRef);

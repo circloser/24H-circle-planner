@@ -75,6 +75,9 @@ export interface Preferences {
   nowLineWidth: number; // stroke width of the current-time line
   worldClocks: WorldClock[]; // extra timezone lines
   chartView: ChartView; // 24h ('full') / 12h day / 12h night clock window
+  /** Browser notification when the day crosses into the next slice of the
+   *  active timetable (needs per-device Notification permission too). */
+  sliceAlarms: boolean;
 }
 
 const DEFAULT_PREFS: Preferences = {
@@ -88,6 +91,7 @@ const DEFAULT_PREFS: Preferences = {
   nowLineWidth: NOW_LINE_DEFAULT_WIDTH,
   worldClocks: [],
   chartView: 'full',
+  sliceAlarms: false,
   bgType: 'pattern',
   bgColor: '#f4f5f7',
   bgImage: null,

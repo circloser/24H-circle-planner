@@ -216,6 +216,39 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
           {/* Timeline: now-line style + world-clock lines */}
           {section === 'timeline' && (
             <div className="flex flex-col gap-4">
+              {/* Slice-start notifications — the timetable IS the alarm. */}
+              <div className="flex flex-col gap-2">
+                <span className="text-xs text-muted-foreground">{t('settings.sliceAlarms')}</span>
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void (async () => {
+                        if (typeof Notification === 'undefined') {
+                          toast.error(t('settings.alarmPermDenied'));
+                          return;
+                        }
+                        if (Notification.permission === 'denied') {
+                          toast.error(t('settings.alarmPermDenied'));
+                          return;
+                        }
+                        const p = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
+                        if (p === 'granted') setPreference('sliceAlarms', true);
+                        else toast.error(t('settings.alarmPermDenied'));
+                      })();
+                    }}
+                    aria-pressed={prefs.sliceAlarms}
+                    className={OPT_CHIP}
+                  >
+                    {t('settings.iconsShow')}
+                  </button>
+                  <button type="button" onClick={() => setPreference('sliceAlarms', false)} aria-pressed={!prefs.sliceAlarms} className={OPT_CHIP}>
+                    {t('settings.iconsHide')}
+                  </button>
+                </div>
+                <p className="text-[11px] text-muted-foreground">{t('settings.sliceAlarmsHint')}</p>
+              </div>
+
               {/* Now line on/off */}
               <div className="flex flex-col gap-2">
                 <span className="text-xs text-muted-foreground">{t('settings.clockNowLine')}</span>
