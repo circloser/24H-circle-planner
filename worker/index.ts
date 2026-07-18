@@ -108,15 +108,15 @@ function redirectHome(origin: string, setCookie: string, query: string): Respons
 
 interface UserRow { id: string; provider: string; provider_sub: string; email: string | null; created_at: number }
 
-async function upsertUser(db: D1Database, provider: string, sub: string, email: string | null): Promise<string> {
+async function upsertUser(db: D1Database, provider: string, sub: string, email: string | null): Promise<{ id: string; isNew: boolean }> {
   const found = await db.prepare('SELECT id FROM users WHERE provider=? AND provider_sub=?').bind(provider, sub).first<{ id: string }>();
   if (found?.id) {
     if (email) await db.prepare('UPDATE users SET email=? WHERE id=?').bind(email, found.id).run();
-    return found.id;
+    return { id: found.id, isNew: false };
   }
   const id = crypto.randomUUID();
   await db.prepare('INSERT INTO users (id, provider, provider_sub, email, created_at) VALUES (?,?,?,?,?)').bind(id, provider, sub, email, Date.now()).run();
-  return id;
+  return { id, isNew: true };
 }
 
 async function createSession(db: D1Database, userId: string): Promise<string> {
@@ -169,7 +169,7 @@ async function handleStart(request: Request, env: Env): Promise<Response> {
   });
 }
 
-async function handleCallback(request: Request, env: Env): Promise<Response> {
+async function handleCallback(request: Request, env: Env, ctx?: Waiter): Promise<Response> {
   const url = new URL(request.url);
   const origin = url.origin;
   const clearTx = cookie(TX_COOKIE, '', 0);
@@ -214,8 +214,18 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
   }
 
   const email = typeof payload.email === 'string' ? payload.email : null;
-  const userId = await upsertUser(env.DB, 'google', sub, email);
+  const { id: userId, isNew } = await upsertUser(env.DB, 'google', sub, email);
   const sid = await createSession(env.DB, userId);
+
+  // Ops: tell the admins a NEW user just signed up (never delays the redirect).
+  if (isNew) {
+    ctx?.waitUntil(
+      (async () => {
+        const c = await env.DB!.prepare('SELECT COUNT(*) AS n FROM users').first<{ n: number }>();
+        await notifyAdmins(env, '🎉 새 가입', `${email ?? '(이메일 없음)'} · 누적 ${c?.n ?? '?'}명`);
+      })(),
+    );
+  }
 
   const headers = new Headers();
   headers.append('set-cookie', clearTx);
@@ -500,7 +510,7 @@ async function upsertSubscription(db: D1Database, sub: PolarSubscription): Promi
 }
 
 /** POST /api/webhooks/polar — verify signature, then reconcile subscription state. */
-async function handleWebhook(request: Request, env: Env): Promise<Response> {
+async function handleWebhook(request: Request, env: Env, ctx?: Waiter): Promise<Response> {
   if (!env.POLAR_WEBHOOK_SECRET || !env.DB) return json({ error: 'unconfigured' }, 503);
   const body = await request.text(); // raw body is required for signature verification
   if (!(await verifyPolarWebhook(env.POLAR_WEBHOOK_SECRET, request.headers, body))) {
@@ -516,6 +526,11 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
   // each keeps entitlement current (created/active/updated/canceled/revoked/…).
   if (event.type?.startsWith('subscription.') && event.data) {
     await upsertSubscription(env.DB, event.data);
+    // Ops: revenue-state changes (skip the noisy `.updated`).
+    const t = event.type;
+    if (t === 'subscription.created' || t === 'subscription.active' || t === 'subscription.canceled' || t === 'subscription.revoked') {
+      ctx?.waitUntil(notifyAdmins(env, '💰 구독 이벤트', `${t.replace('subscription.', '')} · ${event.data.status ?? ''}`));
+    }
     // No auto-renewal: schedule trialing subs to end at trial's end (no charge)
     // unless already scheduled. Idempotent — once cancel_at_period_end is set, skip.
     if (event.data.status === 'trialing' && !event.data.cancel_at_period_end) {
@@ -530,7 +545,7 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
 const DAY_MS = 86_400_000;
 
 /** Redeem a coupon code → grant the signed-in user Pro (permanent or N days). */
-async function handleCouponRedeem(request: Request, env: Env): Promise<Response> {
+async function handleCouponRedeem(request: Request, env: Env, ctx?: Waiter): Promise<Response> {
   if (!env.DB) return json({ error: 'unconfigured' }, 503);
   const user = await currentUser(request, env);
   if (!user) return json({ error: 'unauthorized' }, 401);
@@ -560,6 +575,7 @@ async function handleCouponRedeem(request: Request, env: Env): Promise<Response>
 
   const expiresAt = coupon.grant_days == null || coupon.grant_days <= 0 ? null : now + coupon.grant_days * DAY_MS;
   await env.DB.prepare('INSERT INTO grants (user_id, code, expires_at, created_at) VALUES (?, ?, ?, ?)').bind(user.id, code, expiresAt, now).run();
+  ctx?.waitUntil(notifyAdmins(env, '🎟️ 쿠폰 사용', `${code} · ${user.email ?? user.id}`));
   return json({ ok: true, plan: 'pro', expiresAt });
 }
 
@@ -609,6 +625,48 @@ async function handleAdminCoupons(request: Request, env: Env): Promise<Response>
     return json({ error: 'code_exists' }, 409);
   }
   return json({ ok: true, code, grantDays, maxUses, note });
+}
+
+// ─── Admin ops notifications ─────────────────────────────────────────────────
+// Reuses the Web Push infra: events (signup / subscription / coupon) and the
+// daily digest go to every push-subscribed device of ADMIN_EMAILS accounts.
+// Only METADATA is ever reported — sync blobs stay opaque (E2EE-compatible).
+
+/** ExecutionContext-shaped: lets handlers fire best-effort work post-response. */
+type Waiter = { waitUntil(p: Promise<unknown>): void };
+
+async function notifyAdmins(env: Env, title: string, body: string): Promise<void> {
+  try {
+    if (!env.DB || !env.VAPID_PRIVATE_KEY || !env.VAPID_PUBLIC_KEY) return;
+    const emails = (env.ADMIN_EMAILS || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
+    if (!emails.length) return;
+    const q = emails.map(() => '?').join(',');
+    const admins = await env.DB.prepare(`SELECT id FROM users WHERE lower(email) IN (${q})`).bind(...emails).all<{ id: string }>();
+    const vapid = { publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY, subject: env.VAPID_SUBJECT || 'mailto:singlena@gmail.com' };
+    for (const a of admins.results ?? []) {
+      const subs = await env.DB.prepare('SELECT endpoint, p256dh, auth FROM push_subs WHERE user_id=?').bind(a.id).all<{ endpoint: string; p256dh: string; auth: string }>();
+      for (const s of subs.results ?? []) {
+        try {
+          const st = await sendWebPush(s, JSON.stringify({ title, body, tag: 'ops' }), vapid);
+          if (st === 404 || st === 410) await env.DB.prepare('DELETE FROM push_subs WHERE endpoint=?').bind(s.endpoint).run();
+        } catch {
+          // per-device best effort
+        }
+      }
+    }
+  } catch {
+    // ops notifications must never break user-facing flows
+  }
+}
+
+/** Admin-only delivery check: sends a test ops push to the admin's devices. */
+async function handleNotifyTest(request: Request, env: Env): Promise<Response> {
+  if (!env.DB) return json({ error: 'unconfigured' }, 503);
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'unauthorized' }, 401);
+  if (!isAdminEmail(env, user.email)) return json({ error: 'forbidden' }, 403);
+  await notifyAdmins(env, '🔔 운영 알림 테스트', '이 알림이 보이면 정상 작동 중입니다.');
+  return json({ ok: true });
 }
 
 // ─── Web Push (Pro closed-tab slice alarms) ──────────────────────────────────
@@ -742,12 +800,34 @@ async function runPushCron(env: Env): Promise<void> {
       // per-plan best effort — one bad row must not stall the cron
     }
   }
+
+  // ── Daily ops digest for admins — 21:00 KST, once per local day ────────────
+  try {
+    const kst = new Date(nowMs + 540 * 60_000);
+    const hm = `${String(kst.getUTCHours()).padStart(2, '0')}:${String(kst.getUTCMinutes()).padStart(2, '0')}`;
+    if (hm === '21:00' || hm === '21:01') {
+      const day = kst.toISOString().slice(0, 10);
+      const prev = await env.DB.prepare("SELECT value FROM ops_state WHERE key='last_digest'").first<{ value: string }>();
+      if (prev?.value !== day) {
+        // Mark BEFORE sending (at-most-once, same rule as the alarm cron).
+        await env.DB.prepare("INSERT INTO ops_state (key, value) VALUES ('last_digest', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind(day).run();
+        const midnight = Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate()) - 540 * 60_000;
+        const count = async (sql: string) => (await env.DB!.prepare(sql).bind(midnight).first<{ n: number }>())?.n ?? 0;
+        const signups = await count('SELECT COUNT(*) AS n FROM users WHERE created_at >= ?');
+        const logins = await count('SELECT COUNT(*) AS n FROM sessions WHERE created_at >= ?');
+        const syncs = await count('SELECT COUNT(*) AS n FROM sync_data WHERE updated_at >= ?');
+        await notifyAdmins(env, '📊 오늘의 24Houring', `가입 ${signups} · 로그인 ${logins} · 동기화 ${syncs}`);
+      }
+    }
+  } catch {
+    // digest is best effort
+  }
 }
 
 // ─── Router ──────────────────────────────────────────────────────────────────
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx?: Waiter): Promise<Response> {
     const url = new URL(request.url);
     const p = url.pathname;
     const m = request.method;
@@ -757,7 +837,7 @@ export default {
         return json({ ok: true, service: '24houring-api', db: Boolean(env.DB), auth: Boolean(env.GOOGLE_CLIENT_ID), billing: Boolean(env.POLAR_ACCESS_TOKEN), ts: Date.now() });
       }
       if (p === '/api/auth/google/start' && m === 'GET') return handleStart(request, env);
-      if (p === '/api/auth/google/callback' && m === 'GET') return handleCallback(request, env);
+      if (p === '/api/auth/google/callback' && m === 'GET') return handleCallback(request, env, ctx);
       if (p === '/api/me' && m === 'GET') return handleMe(request, env);
       if (p === '/api/logout' && m === 'POST') return handleLogout(request, env);
       if (p === '/api/sync' && m === 'GET') return handleSyncGet(request, env);
@@ -765,8 +845,9 @@ export default {
       if (p === '/api/billing/product' && m === 'GET') return handleProduct(request, env);
       if (p === '/api/checkout' && m === 'POST') return handleCheckout(request, env);
       if (p === '/api/billing/portal' && m === 'POST') return handlePortal(request, env);
-      if (p === '/api/webhooks/polar' && m === 'POST') return handleWebhook(request, env);
-      if (p === '/api/coupon/redeem' && m === 'POST') return handleCouponRedeem(request, env);
+      if (p === '/api/webhooks/polar' && m === 'POST') return handleWebhook(request, env, ctx);
+      if (p === '/api/coupon/redeem' && m === 'POST') return handleCouponRedeem(request, env, ctx);
+      if (p === '/api/admin/notify-test' && m === 'POST') return handleNotifyTest(request, env);
       if (p === '/api/admin/coupons' && (m === 'GET' || m === 'POST')) return handleAdminCoupons(request, env);
       if (p === '/api/push/subscribe' && m === 'POST') return handlePushSubscribe(request, env);
       if (p === '/api/push/subscribe' && m === 'DELETE') return handlePushUnsubscribe(request, env);
