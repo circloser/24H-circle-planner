@@ -68,11 +68,15 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
   const [bold, setBold] = useState(slice.bold ?? false);
   const [italic, setItalic] = useState(slice.italic ?? false);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [pos, setPos] = useState({ left: '50%', top: '50%' });
+  // Editor centre in viewport px; null until computed (renders centred meanwhile).
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
 
-  // Compute position from SVG centroid
+  // Compute position from the SVG centroid, CLAMPED into the viewport — on
+  // mobile an edge slice would otherwise push half the 280px editor off-screen
+  // (untappable inputs). Vertical clamp uses an estimate; the effect below
+  // measures the real box after paint and nudges the remainder.
   useEffect(() => {
     if (!svgRef.current) return;
     const svg = svgRef.current;
@@ -81,9 +85,37 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
     const { x, y } = labelAnchorInside(slice);
     const screenX = ctm.a * x + ctm.c * y + ctm.e;
     const screenY = ctm.b * x + ctm.d * y + ctm.f;
-    setPos({ left: `${screenX}px`, top: `${screenY}px` });
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const halfW = 148; // 280/2 + 8px margin
+    setPos({
+      left: Math.min(Math.max(screenX, halfW), Math.max(halfW, vw - halfW)),
+      top: Math.min(Math.max(screenY, 200), Math.max(200, vh - 210)),
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount; position doesn't change while editor is open
+
+  // Second pass: the editor's height varies (palette chips, warnings), so after
+  // the first paint measure the actual rect and shift it fully on-screen.
+  const adjustedRef = useRef(false);
+  useEffect(() => {
+    if (!pos || adjustedRef.current) return;
+    adjustedRef.current = true;
+    requestAnimationFrame(() => {
+      const el = editorRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      let dx = 0;
+      let dy = 0;
+      if (r.left < 8) dx = 8 - r.left;
+      else if (r.right > vw - 8) dx = vw - 8 - r.right;
+      if (r.top < 60) dy = 60 - r.top;
+      else if (r.bottom > vh - 8) dy = vh - 8 - r.bottom;
+      if (dx || dy) setPos((p) => (p ? { left: p.left + dx, top: p.top + dy } : p));
+    });
+  }, [pos]);
 
   // Auto-focus
   useEffect(() => {
@@ -146,8 +178,8 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
       aria-label="슬라이스 편집"
       style={{
         position: 'fixed',
-        left: pos.left,
-        top: pos.top,
+        left: pos ? `${pos.left}px` : '50%',
+        top: pos ? `${pos.top}px` : '50%',
         transform: 'translate(-50%, -50%)',
         zIndex: 9999,
         width: 280,
