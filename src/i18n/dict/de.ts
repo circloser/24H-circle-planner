@@ -19,6 +19,7 @@ export const de: Record<TKey, string> = {
   'settings.pushAlarms': 'Auch bei geschlossenem Tab (Pro)',
   'settings.pushAlarmsHint': 'Der Server sendet zu jedem Blockstart eine Push-Nachricht — auch bei geschlossenem Tab oder Browser. Die Texte (Blockname + Zeiten) werden dafür serverseitig gespeichert. Auf iOS: App zum Home-Bildschirm hinzufügen.',
   'settings.pushFail': 'Push-Abonnement fehlgeschlagen — bitte gleich erneut versuchen.',
+  'upgrade.playInfo': 'Pro-Abos werden in dieser App nicht verkauft. Wenn du bereits Pro hast, melde dich einfach an — es gilt automatisch.',
   'palette.title': 'Zeit-Palette',
   'palette.desc': 'Speichere wiederkehrende Einträge mit Farbe und Icon und füge sie im Editor mit einem Klick ein.',
   'palette.itemName': 'Name (z. B. Schlaf, Sport)',

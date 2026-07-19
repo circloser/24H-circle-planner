@@ -19,6 +19,7 @@ export const en: Record<TKey, string> = {
   'settings.pushAlarms': 'Notify even when closed (Pro)',
   'settings.pushAlarmsHint': 'The server pushes each block start, so notifications arrive with the tab or browser closed. The notification text (block name + times) is stored server-side for delivery. On iOS, install the app to the Home Screen to receive them.',
   'settings.pushFail': 'Push subscription failed — please try again shortly.',
+  'upgrade.playInfo': 'Pro subscriptions are not sold in this app. If you already have Pro, just sign in and it applies automatically.',
   'palette.title': 'Time Palette',
   'palette.desc': 'Save your recurring items with a colour and icon, then fill them into the editor with one click.',
   'palette.itemName': 'Item name (e.g. Sleep, Workout)',

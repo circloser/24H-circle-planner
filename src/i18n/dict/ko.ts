@@ -22,6 +22,7 @@ export const ko = {
   'settings.pushAlarms': '탭을 닫아도 알림 (Pro)',
   'settings.pushAlarmsHint': '서버가 항목 시작 시각에 푸시를 보내 탭·브라우저를 닫아도 알림이 옵니다. 알림 문구(항목 이름·시간)가 발송을 위해 서버에 저장됩니다. iOS는 홈 화면에 추가한 앱에서 수신됩니다.',
   'settings.pushFail': '푸시 구독에 실패했어요. 잠시 후 다시 시도해 주세요.',
+  'upgrade.playInfo': 'Pro 구독은 이 앱에서 판매하지 않습니다. 이미 Pro를 이용 중이라면 로그인만 하면 그대로 적용돼요.',
   'palette.title': '타임 팔레트',
   'palette.desc': '자주 쓰는 항목을 색과 아이콘으로 미리 등록해 두면, 시간표 편집기에서 한 번의 클릭으로 불러올 수 있어요.',
   'palette.itemName': '항목 이름 (예: 수면, 운동)',

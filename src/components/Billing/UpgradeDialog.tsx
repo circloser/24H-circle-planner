@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useAuth } from '@/hooks/useAuth';
 import { startCheckout } from '@/lib/sync/billing';
+import { isPlayStoreApp } from '@/lib/twa';
 import { track } from '@/lib/track';
 import { toast } from 'sonner';
 
@@ -54,6 +55,9 @@ export function UpgradeDialog({ open, onOpenChange }: UpgradeDialogProps) {
   const { t, lang } = useTranslation();
   const { user, login, refresh, admin } = useAuth();
   const ko = lang === 'ko';
+  // Google Play build: Play policy forbids selling digital goods outside Play
+  // Billing, so the dialog turns informational — no prices, no checkout CTA.
+  const inPlayApp = isPlayStoreApp();
   const [prices, setPrices] = useState<PriceInfo[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [code, setCode] = useState('');
@@ -155,9 +159,11 @@ export function UpgradeDialog({ open, onOpenChange }: UpgradeDialogProps) {
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
-          <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-            {t('upgrade.trialBadge')}
-          </span>
+          {!inPlayApp && (
+            <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+              {t('upgrade.trialBadge')}
+            </span>
+          )}
 
           <p className="text-sm text-muted-foreground">{t('upgrade.subtitle')}</p>
 
@@ -180,7 +186,7 @@ export function UpgradeDialog({ open, onOpenChange }: UpgradeDialogProps) {
           </p>
 
           {/* Live price(s) from Polar; absent until fetched / if offline. */}
-          {prices && prices.length > 0 && (
+          {!inPlayApp && prices && prices.length > 0 && (
             <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
               {prices.map((p, i) => (
                 <span key={i} className="font-semibold text-foreground">
@@ -190,9 +196,13 @@ export function UpgradeDialog({ open, onOpenChange }: UpgradeDialogProps) {
             </div>
           )}
 
-          <Button onClick={onCta} disabled={busy} className="w-full">
-            {busy ? t('upgrade.ctaBusy') : t('upgrade.cta')}
-          </Button>
+          {inPlayApp ? (
+            <p className="rounded-md bg-muted/40 px-3 py-2 text-xs text-muted-foreground">{t('upgrade.playInfo')}</p>
+          ) : (
+            <Button onClick={onCta} disabled={busy} className="w-full">
+              {busy ? t('upgrade.ctaBusy') : t('upgrade.cta')}
+            </Button>
+          )}
 
           {/* Coupon redeem — anyone with a code can activate Pro here. */}
           <div className="border-t border-border pt-3">
@@ -231,7 +241,7 @@ export function UpgradeDialog({ open, onOpenChange }: UpgradeDialogProps) {
             </div>
           )}
 
-          <p className="text-center text-[11px] text-muted-foreground">{t('upgrade.note')}</p>
+          {!inPlayApp && <p className="text-center text-[11px] text-muted-foreground">{t('upgrade.note')}</p>}
           <p className="text-center text-[11px] text-muted-foreground">
             <a href="/terms" target="_blank" rel="noopener" className="underline hover:text-foreground">{t('footer.terms')}</a>
             {' · '}
