@@ -31,3 +31,10 @@ coverage
 *.sln
 *.sw?
 scripts/e2e/__visual__/
+
+# Google Play signing package (keystore + passwords) — NEVER commit
+24Houring - Google Play package/
+24Houring - Google Play package.zip
+*.keystore
+*.aab
+*.apk
