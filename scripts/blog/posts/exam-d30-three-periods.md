@@ -1,0 +1,150 @@
+---
+slug: exam-d30-three-periods
+date: 2026-07-20
+title_ko: 시험 D-30, 하루를 3교시로 나누는 법
+title_en: Exam D-30 — Divide the Day into Three Periods, Not Ten Open Hours
+desc_ko: "10시간 앉아 있어도 순공은 4시간 안팎입니다. 남은 30일, 하루를 끝이 정해진 3교시로 나누면 같은 시간의 밀도가 달라집니다. 3교시 시간표, 마감 효과, 교시 성공률, D-30→D-7→D-1 운영법까지."
+desc_en: "Ten seated hours yield about four real ones. With 30 days left, three fixed periods with hard endings beat open-ended grinding — the timetable, the deadline effect, period win-rates, and the D-30 to D-1 shift."
+---
+<!--ko-->
+D-30이 되면 많은 수험생이 같은 결심을 합니다. "오늘부터 하루 10시간씩 공부한다." 그리고 대부분 같은 방식으로 어긋납니다. 열 시간을 앉아 있었는데 저녁이 되면 남은 게 없는 날이 반복되는 것이죠. 시험까지 30일, 지금 부족한 것은 공부 시간이 아니라 **하루의 형태**입니다. 이 글은 하루를 학교처럼 딱 3교시로 나누는 설계법입니다. 단순하지만, 같은 시간의 밀도가 완전히 달라집니다.
+
+## 앉아 있는 10시간, 실제 공부는 4시간
+
+"오늘은 하루 종일 공부"라고 정한 날을 스톱워치로 재 보면 결과는 대개 비슷합니다. 책상에 앉아 있던 시간은 10시간, 실제로 문제를 풀고 개념을 읽은 순공 시간은 4시간 안팎입니다. 나머지 6시간은 세 갈래로 사라집니다.
+
+- **시작 지연**: 끝이 정해져 있지 않은 하루는 시작도 급하지 않습니다. "밥 먹고 시작하지", "이 영상만 보고" — 오전이 통째로 워밍업이 됩니다.
+- **저강도 유지**: 10시간을 버텨야 한다는 것을 몸이 알기 때문에 무의식적으로 페이스를 낮춥니다. 마라톤 페이스의 공부는 앉아 있는 시간만 길고 밀도는 낮습니다.
+- **휴식의 침식**: 쉬는 시간이 따로 정해져 있지 않으면 휴식이 공부 사이사이로 스며듭니다. 10분이 40분이 되어도 "아직 하루가 기니까"라며 넘어가게 됩니다.
+
+시간이 넉넉하다고 느껴지는 순간, 일은 그 시간을 다 채울 때까지 늘어집니다. 내 하루가 실제로 어디서 새는지 확인하고 싶다면 [숨은 2시간을 찾는 시간 가계부 실험](/blog/hidden-two-hours)을 딱 하루만 해 보세요. 수험생의 기록에서는 보통 2시간이 아니라 4~6시간이 나옵니다.
+
+## 하루를 3교시로 나눈다
+
+해법은 공부 시간을 늘리는 것이 아니라, 하루를 **끝이 있는 구간**으로 다시 써는 것입니다. 학교 시간표처럼 딱 3교시입니다.
+
+- **1교시 09:00–12:00 (3시간)** — 그날 가장 어려운 과목. 머리가 가장 맑은 시간에 가장 무거운 것을 놓습니다.
+- **2교시 14:00–16:30 (2.5시간)** — 두 번째 과목, 주로 문제 풀이. 점심 직후의 처지는 컨디션에는 손을 움직이는 공부가 맞습니다.
+- **3교시 19:00–21:30 (2.5시간)** — 암기 과목과 그날의 오답 정리. 자기 직전에 본 것이 기억에 가장 오래 남습니다.
+
+합치면 순공 8시간입니다. 왜 4교시, 5교시가 아니라 3교시일까요. 사람이 한 번에 유지할 수 있는 깊은 집중은 2.5~3시간이 실질적인 한계 단위이고, 교시가 많아질수록 과목을 전환하는 비용과 "다음엔 뭐 하지"라는 결정 비용이 함께 늘어나기 때문입니다. 각 교시에는 **시작 시각, 끝나는 시각, 과목** — 이 세 가지가 미리 정해져 있어야 합니다. 매 시간 "이제 뭐 하지"를 다시 결정하지 않는 것만으로 하루의 마찰이 절반으로 줄어듭니다. 하루를 블록 단위로 설계하는 기본기는 [타임 블로킹 가이드](/guides/time-blocking)에 정리되어 있습니다.
+
+교시의 과목은 **전날 밤에 정해 둡니다.** 아침에 "오늘은 뭐 하지"를 고르는 순간 이미 결정 비용으로 하루가 새기 시작합니다. 자기 전 1분, 내일 세 교시의 과목만 적어 두면 다음 날은 실행만 남습니다.
+
+학교나 학원이 있는 날은 3교시를 고집하지 말고 **2교시로 줄이세요.** 예를 들어 하교 후 17:00–19:00를 1교시, 20:00–22:00를 2교시로 잡는 식입니다. 교시 수는 줄어도 '끝이 정해진 구간'이라는 원칙만 지키면 됩니다.
+
+## 시작 시각을 지키는 두 가지 장치
+
+사실 마감보다 먼저 무너지는 것은 시작입니다. 두 가지 장치가 도움이 됩니다.
+
+- **5분 전 착석**: 교시 시작 5분 전에 책상에 앉아 물, 화장실, 폰 정리를 끝냅니다. 9시 정각에 '앉기 시작'하면 실제 시작은 9시 20분이 됩니다.
+- **진입 과제 고정**: 각 교시의 첫 15분은 가장 쉬운 일로 시작합니다. 어제 틀린 문제 3개 다시 풀기, 어제 외운 것 백지에 써 보기 같은 것들이요. 시동이 걸린 머리는 어려운 과제로 자연스럽게 넘어가지만, 차가운 머리로 어려운 과제를 바로 마주하면 시작 자체를 회피하게 됩니다.
+
+참고로 3교시의 시각 자체는 절대적이지 않습니다. 밤에 머리가 맑은 타입이라면 세 교시를 통째로 뒤로 밀어 11:00–14:00, 16:00–18:30, 21:00–23:30으로 잡아도 됩니다. 중요한 것은 '언제'가 아니라 **끝이 정해진 세 구간**이라는 형태입니다.
+
+## 마감 효과 — 끝이 있어야 밀도가 생긴다
+
+왜 3교시가 개방형 10시간을 이길까요. 시험장을 떠올리면 됩니다. 시험 시간 80분 동안의 집중력은 평소의 몇 배입니다. **마감이 밀도를 만들기 때문**입니다. 각 교시에 '더는 못 하는 시각'이 정해져 있으면, 같은 원리가 매일 세 번 작동합니다.
+
+규칙은 하나뿐입니다. **교시가 끝나면 정말로 끝냅니다.** 문제가 안 풀려도 12시가 되면 덮습니다. 아쉬운 채로 끊는 것이 오히려 유리합니다 — 끝내지 못한 일은 머리에 남아 있어서, 다음 교시를 미루지 않고 제시간에 이어 시작하게 만듭니다. 반대로 "30분만 더"를 허용하기 시작하면 마감은 더 이상 마감이 아니게 되고, 열흘 안에 형태 없는 10시간 공부로 되돌아갑니다.
+
+끝 시각은 머리로 기억하지 말고 **알람으로 외부화**하세요. 시계를 흘끔거리며 "얼마나 남았지"를 스스로 판단하는 것 자체가 집중을 갉아먹습니다. 교시 시작에 알람 하나, 끝에 알람 하나 — 판단을 기계에 맡기면 그 사이의 시간은 온전히 공부에만 쓸 수 있습니다.
+
+> 공부의 양은 앉아 있는 시간에서 나오지 않습니다. 끝이 정해진 시간 안에서 나옵니다.
+
+## 휴식은 남는 시간이 아니라 일정이다
+
+3교시 사이의 빈 구간 — 12:00~14:00, 16:30~19:00, 21:30 이후 — 는 남는 시간이 아니라 **시간표에 적힌 일정**입니다. 점심 후 20분 낮잠이나 산책, 저녁 전 30분 운동, 21:30 이후는 완전한 자유 시간처럼요.
+
+휴식이 일정이 되면 두 가지가 달라집니다. 쉬는 동안 죄책감이 사라지고(지금은 쉬는 시간이 맞으니까요), 공부 시간에 휴식이 스며들지 않습니다(쉬는 시간이 따로 있으니까요). 한 가지 주의할 점이 있다면, 교시 사이 휴식에서 **폰은 최악의 선택**이라는 것입니다. 화면은 눈과 머리를 계속 쓰게 해서 회복이 되지 않고, 20분이 90분이 되기 쉽습니다. 몸을 움직이는 것(산책, 스트레칭), 눈을 감는 것(짧은 낮잠), 밥을 천천히 먹는 것이 다음 교시의 밀도를 올려 주는 휴식입니다. D-30의 진짜 적은 하루의 과로가 아니라 30일 누적의 방전입니다.
+
+## 매일 밤 셀 것은 순공 시간이 아니라 교시 성공률
+
+하루를 평가하는 방식도 바꾸세요. "오늘 몇 시간 했나"를 세기 시작하면 숫자를 부풀리고 싶어집니다. 대신 **오늘 3교시 중 몇 교시를 지켰는가**만 셉니다. 3승, 2승 1패, 이런 식으로요. 교시 하나의 성공 조건은 명확합니다 — 정한 시각에 시작했고, 정한 과목을 했고, 정한 시각에 끝냈으면 승리입니다. 30일이면 총 90교시. 70승이면 아주 잘한 시험 준비입니다. 100퍼센트는 목표가 아닙니다.
+
+체크는 머릿속이 아니라 눈에 보이는 곳에 하세요. 시간표 위에 그날의 승패를 표시해 두면 일주일 치 기록이 쌓이는 것이 보이고, 그 기록 자체가 다음 주를 지키게 만드는 동기가 됩니다.
+
+## D-30 → D-7 → D-1: 틀은 두고 내용만 바꾼다
+
+3교시 구조의 또 다른 장점은 시험이 다가와도 **계획을 새로 세울 필요가 없다**는 것입니다. 틀은 그대로 두고 교시의 내용만 갈아 끼웁니다.
+
+- **D-30~D-8**: 1교시 취약 과목 개념, 2교시 문제 풀이, 3교시 암기와 오답 정리. 범위를 넓게 도는 시기입니다.
+- **D-7~D-2**: 세 교시를 전부 기출과 오답 회전으로 전환합니다. 새로운 교재는 펴지 않고, 틀린 것만 좁혀서 반복합니다.
+- **D-1**: 교시는 유지하되 강도를 절반으로 낮춥니다. 요약본과 오답 노트만 훑고, 3교시는 일찍 끝내고 잠을 삽니다. 마지막 밤의 벼락치기로 얻는 점수보다 수면으로 지키는 점수가 큽니다.
+
+같은 틀 안에서 내용만 바뀌기 때문에, 시기가 넘어갈 때마다 "계획을 다시 세워야 하는데"라는 부담 없이 자연스럽게 다음 단계로 옮겨 갈 수 있습니다.
+
+## 오늘 저녁, 원 위에 세 조각을 그리세요
+
+3교시 시간표는 목록보다 원으로 그렸을 때 힘이 셉니다. 하루 전체가 한 바퀴로 보이면 세 개의 공부 조각과 그 사이의 휴식, 그리고 수면까지 하나의 리듬으로 연결되어 보이기 때문입니다. [24Houring](/)에서 바로 그릴 수 있고, [수험생 공부 계획표 템플릿](/templates/exam-student)을 불러오면 3교시 뼈대를 5분 만에 내 시험 일정에 맞출 수 있습니다. D-30은 하루의 형태를 바꾸기에 충분히 긴 시간입니다.
+<!--en-->
+Around D-30, most students make the same resolution: "From today, ten hours of studying a day." And most drift off course the same way — ten hours in the chair, and by evening nothing to show for it. With thirty days left, what's missing isn't study time; it's **the shape of the day**. This is a simple design: divide the day, school-style, into exactly three periods. Same hours, completely different density.
+
+## Ten hours seated, four hours studied
+
+Time a "study all day" day with a stopwatch and the result is usually similar: ten hours at the desk, roughly four hours of actually solving problems and reading concepts. The other six leak away in three directions.
+
+- **Delayed starts.** A day with no defined end feels like it has no urgency to begin. "After lunch," "just this one video" — the whole morning becomes a warm-up.
+- **Low-intensity cruising.** Your body knows it has to survive ten hours, so it quietly lowers the pace. Marathon-pace studying is long on chair time and short on density.
+- **Erosion by rest.** With no scheduled breaks, rest seeps into the gaps between tasks. Ten minutes becomes forty, and "the day is still long" waves it through.
+
+The moment time feels abundant, work stretches until it fills all of it. If you want to see exactly where your own day leaks, run the [hidden-two-hours time audit](/blog/hidden-two-hours) for a single day. For exam students the audit usually turns up not two but four to six missing hours.
+
+## Divide the day into three periods
+
+The fix is not more study time but re-cutting the day into **segments that end**. Like a school timetable: exactly three periods.
+
+- **Period 1, 09:00–12:00 (3h)** — the day's hardest subject. Put the heaviest thing where your head is clearest.
+- **Period 2, 14:00–16:30 (2.5h)** — the second subject, mostly problem sets. The post-lunch slump suits work that keeps your hands moving.
+- **Period 3, 19:00–21:30 (2.5h)** — memorization plus the day's mistake review. What you see last before sleep is retained longest.
+
+That adds up to eight real hours. Why three periods and not five? Because 2.5–3 hours is the practical unit of sustained deep focus, and every extra period adds subject-switching costs plus one more "what now?" decision. Each period must have three things fixed in advance: **a start time, an end time, and a subject**. Simply not re-deciding "what should I do now" every hour cuts the day's friction in half. The fundamentals of designing a day in blocks are covered in the [time-blocking guide](/guides/time-blocking).
+
+Decide each period's subject **the night before.** Choosing "what should I study today" in the morning is where the leak begins. One minute before bed — write down tomorrow's three subjects — and the next day contains only execution.
+
+On school or academy days, don't force three — **shrink to two**: say 17:00–19:00 as period one and 20:00–22:00 as period two. The number of periods can flex; the principle of a segment with a fixed ending cannot.
+
+## Two devices for protecting the start
+
+In truth, what collapses before the deadline is the start. Two devices help.
+
+- **Seated five minutes early.** Be at the desk five minutes before the period begins — water, bathroom, phone put away. If you start *sitting down* at 9:00 sharp, the real start is 9:20.
+- **A fixed entry task.** Open every period with its easiest fifteen minutes: re-solving three of yesterday's wrong answers, or writing yesterday's memorization onto a blank page. A warmed-up mind slides naturally into hard material; a cold mind facing hard material avoids starting at all.
+
+Note that the clock times themselves aren't sacred. If your head is clearest at night, push all three periods later — 11:00–14:00, 16:00–18:30, 21:00–23:30. What matters isn't *when*; it's the form: **three segments with fixed endings**.
+
+## The deadline effect — density comes from endings
+
+Why does three periods beat ten open hours? Think of the exam hall. Your focus during an 80-minute paper is several times your everyday focus, because **a deadline creates density**. Give every period a "no more after this" time, and the same mechanism fires three times a day.
+
+There is only one rule: **when a period ends, it really ends.** Even mid-problem, close the book at noon. Stopping with unfinished business actually works in your favour — an interrupted task stays live in your head, which pulls you into the next period on time instead of postponing it. Allow "just thirty more minutes" once, and within ten days you're back to the shapeless ten-hour day.
+
+Don't keep the end time in your head — **externalize it to an alarm**. Glancing at the clock and judging "how much is left" is itself a drain on focus. One alarm at the start of the period, one at the end: hand the judging to a machine, and the time in between belongs entirely to the work.
+
+> Study output doesn't come from hours in the chair. It comes from hours with an ending.
+
+## Rest is a schedule item, not leftovers
+
+The gaps between periods — 12:00–14:00, 16:30–19:00, after 21:30 — aren't leftover time; they are **rest written on the timetable**: a 20-minute nap or walk after lunch, 30 minutes of exercise before dinner, fully free time after 21:30.
+
+When rest is scheduled, two things change. Guilt disappears while resting (this genuinely is rest time), and rest stops leaking into study time (it now has its own slot). One warning: **the phone is the worst between-period rest**. Screens keep the eyes and mind working, so nothing recovers, and 20 minutes quietly becomes 90. Moving your body (a walk, stretching), closing your eyes (a short nap), eating slowly — those are the breaks that raise the next period's density. The real enemy at D-30 isn't one exhausting day; it's the battery drain accumulated over thirty.
+
+## Count period wins, not study hours
+
+Change how you grade the day, too. Start counting "hours studied" and you'll want to inflate the number. Instead count only **how many of today's three periods you kept**: 3-0, 2-1, and so on. A period's success condition is unambiguous — you started at the set time, did the set subject, and stopped at the set time. Thirty days is ninety periods; seventy wins is an excellent exam campaign. One hundred percent is not the goal.
+
+Keep the score somewhere visible, not in your head. Mark each day's wins and losses on the timetable itself — watching a week of record accumulate becomes, in itself, the motivation that protects the next week.
+
+## D-30 → D-7 → D-1: keep the frame, swap the contents
+
+The other advantage of the three-period frame is that as the exam approaches you **never have to re-plan**. The frame stays; only the contents rotate.
+
+- **D-30 to D-8**: period 1 weak-subject concepts, period 2 problem sets, period 3 memorization and mistake review. This is the wide-coverage phase.
+- **D-7 to D-2**: switch all three periods to rotating past papers and your error log. Open nothing new; narrow down to what you got wrong.
+- **D-1**: keep the periods but halve the intensity. Skim only summaries and the error notebook, end period 3 early, and buy sleep. The points sleep protects are worth more than the points a last-night cram earns.
+
+Because only the contents change inside the same frame, each phase shift happens without the "I need to re-plan everything" tax.
+
+## Tonight, draw three wedges on a circle
+
+A three-period timetable is stronger drawn as a circle than as a list. When the whole day is one loop, the three study wedges, the rest between them, and sleep itself read as a single connected rhythm. You can draw it right away on [24Houring](/), or import the [exam-prep study template](/templates/exam-student) and fit the three-period skeleton to your own exam in five minutes. Thirty days is plenty of time to change the shape of a day.

@@ -1,0 +1,106 @@
+---
+slug: record-one-week
+date: 2026-07-20
+title_ko: 계획 없이 기록만 1주일 — 시간 가계부 실험
+title_en: One Week of Recording, Zero Planning — The Time Ledger Experiment
+desc_ko: "계획에 번번이 실패한다면 일주일만 계획을 멈추고 기록만 해 보세요. 30분 블록, 하루 3번 체크인, 정직한 이름표 — 시간 가계부 실험의 7일 프로토콜과 8일째에 가장 큰 누수 하나를 찾아 그것만 바꾸는 법을 정리했습니다."
+desc_en: "If your plans keep collapsing, stop planning for one week and only record. The seven-day time-ledger protocol — 30-minute blocks, three daily check-ins, honest labels — and how to find your single biggest leak on day eight."
+---
+<!--ko-->
+계획을 세우면 사흘을 못 넘기는 사람에게 세상은 늘 같은 조언을 합니다. "더 현실적인 계획을 세워 보세요." 이 글의 제안은 정반대입니다. **일주일만, 계획을 아예 세우지 마세요.** 대신 기록만 하세요. 가계부를 써 본 분이라면 이 순서가 낯설지 않을 겁니다. 예산은 지출 내역이 쌓인 다음에야 짤 수 있으니까요. 시간도 똑같습니다. 이 글은 그 일주일을 어떻게 보내면 되는지에 대한 구체적인 사용 설명서입니다.
+
+> 지출 기록 없이 예산부터 짜는 사람은 없습니다. 그런데 우리는 하루가 실제로 어떻게 흘러가는지 한 번도 본 적 없이 계획부터 세웁니다. 본 적 없는 하루는 설계할 수 없습니다.
+
+## 계획-실패 사이클은 왜 반복될까
+
+계획이 반복해서 무너지는 사람의 패턴은 거의 똑같습니다. 의욕이 오른 일요일 밤에 '이상적인 하루'를 설계합니다 — 6시 기상, 아침 운동, 저녁 공부 2시간. 문제는 이 계획의 주인공이 실제의 내가 아니라 **상상 속의 나**라는 점입니다. 실제의 나는 7시 40분에 겨우 일어나고, 퇴근하면 일단 소파에 눕고, 밤 11시에 갑자기 부지런해집니다. 이틀쯤은 의지로 버티지만 사흘째엔 실제의 내가 이깁니다. 그러면 자책하고, 자책의 힘으로 더 빡빡한 계획을 세우고, 더 빨리 무너집니다. 이것이 **계획-실패 사이클**입니다.
+
+이 사이클의 원인은 의지 부족이 아니라 **데이터 부족**입니다. 내 하루의 실측값을 한 번도 재 보지 않은 채 설계도부터 그렸기 때문입니다. 그래서 처방도 더 강한 의지가 아니라, 일주일치 실측입니다. 혹시 이 사이클을 이미 세 번 이상 돌았다면, 지금 필요한 것은 네 번째 계획이 아니라 첫 번째 기록입니다.
+
+## 7일 기록 프로토콜
+
+규칙은 네 가지뿐이고, 준비물은 메모장 하나면 충분합니다.
+
+1. **30분 블록으로 적습니다.** 분 단위 정밀함은 필요 없습니다. "9:00~9:30 메일, 9:30~11:00 회의" 수준이면 충분하고, 30분보다 짧은 일은 가장 가까운 블록에 붙입니다. 해상도를 낮춰야 일주일을 완주합니다.
+2. **하루 3번, 정해진 시간에만 기록합니다.** 활동이 바뀔 때마다 적는 실시간 기록은 대부분 사흘을 못 갑니다. 대신 점심 직후 1분(오전 복기), 저녁 식사 후 1분(오후 복기), 잠들기 전 3분(저녁 복기) — 이렇게 세 번의 체크인이면 반나절 이내의 기억으로 하루가 충분히 복원됩니다. 하루 총 5분의 투자입니다.
+3. **정직한 이름을 붙입니다.** "휴식 2시간"이 아니라 "유튜브 1.5시간 + 인스타 30분"이라고 적으세요. 남에게 보여 줄 것처럼 쓰는 순간 데이터는 오염됩니다. 이 기록은 아무에게도 보여 주지 않는 나만의 장부입니다. 이름표가 정직해야 8일째의 진단도 정직해집니다.
+4. **고치려 하지 않습니다.** 기록을 시작하면 사흘째쯤 행동을 바꾸고 싶은 유혹이 반드시 옵니다. 참으세요. 이번 주의 목표는 좋은 하루가 아니라 **정확한 하루**입니다. 관찰 기간에 행동을 고치면 다음 주에 쓸 데이터가 망가집니다.
+
+실제 기록의 밀도는 이 정도면 충분합니다. "7:30 기상·아침밥, 8:30 출근길(폰), 9:00 메일, 10:00 회의, 11:30 업무, 12:30 점심" — 몇 줄에 반나절이 들어가는 수준이어야 일주일을 완주할 수 있습니다. 여유가 있다면 선택 규칙을 하나 더해도 좋습니다. 블록 끝에 ◯△× 하나로 그 시간의 집중 상태를 표시하는 것입니다. "10:00 회의 ×, 14:00 보고서 ◯" — 이 기호 하나면 8일째에 시간의 양뿐 아니라 **머리가 맑은 시간이 언제인지**까지 함께 읽을 수 있습니다. 다만 조금이라도 부담스러우면 생략하세요. 이 실험은 완주가 우선입니다.
+
+## 완주를 위한 세 가지 요령
+
+- **체크인을 놓쳤다면, 다음 체크인에서 몰아서 적습니다.** 점심 체크인을 잊었으면 저녁에 아침부터 복기하면 됩니다. 정확도는 조금 떨어져도 실험은 계속됩니다. 하루를 통째로 놓쳤다면 그날은 비워 두고 넘어가세요. 엿새치 데이터로도 패턴은 충분히 보입니다. "완벽한 7일을 처음부터 다시" 하겠다며 실험을 미루는 것이 최악의 선택입니다.
+- **주말을 반드시 포함하세요.** 평일 5일만 적고 끝내고 싶어지지만, 시간이 가장 큰 덩어리로 사라지는 날은 대개 토요일과 일요일입니다. 주말 이틀이 빠진 시간 장부는 외식비를 뺀 가계부와 같습니다.
+- **월요일을 기다리지 마세요.** 오늘이 목요일이어도 오늘 밤부터 시작하면 됩니다. 시작 요일은 결과에 아무 영향이 없고, "다음 주 월요일부터"는 계획-실패 사이클이 가장 좋아하는 문장입니다.
+
+## 일주일 뒤, 거의 모든 기록에 나타나는 세 가지
+
+사람마다 하루는 다르지만, 일주일치 기록을 펼치면 놀랄 만큼 공통적인 패턴 세 가지가 나타납니다. 여러분의 장부에서는 이 중 몇 개가 보이는지 세어 보세요. 대부분 두 개 이상이 나옵니다.
+
+- **전환 손실.** 하루가 새는 곳은 활동 자체가 아니라 활동과 활동 사이입니다. 회의가 끝나고 다음 일을 시작하기까지 15분, 저녁을 먹고 씻으러 가기까지 25분 — 한 번에 10~20분씩, 하루 대여섯 번. 합치면 **하루 1시간 이상이 '사이'에서 사라집니다.** [숨은 2시간 찾기](/blog/hidden-two-hours)에서 다룬 행방불명 시간의 정체가 대부분 이것입니다.
+- **21시~24시의 블랙홀.** 기록해 보면 밤 9시부터 자정까지 세 시간이 "그냥 있었음", "폰 봄" 정도로 뭉개지는 날이 많습니다. 평일 닷새면 15시간 — 주말 하루의 깨어 있는 시간을 통째로 넘는 크기가 매주 형체 없이 사라지고 있는 셈입니다. 이 구간이 뭉개지는 이유는 하루치 의지력이 바닥나는 시간이기 때문이라, 나중에 계획을 세울 때도 이 시간대에는 결심이 아니라 미리 정해 둔 기본값 하나가 잘 듣습니다.
+- **평일 아침은 생각보다 균일합니다.** 반대로 기상부터 출근·등교까지의 아침 구간은 거의 매일 같은 모양으로 흘러갑니다. 이건 좋은 소식입니다. 이미 몸에 새겨진 루틴이 있다는 뜻이고, 앞으로 무언가 새 습관을 심는다면 어느 시간대의 성공 확률이 가장 높은지를 데이터가 알려 주고 있는 것이니까요.
+
+## 8일째 아침 — 기록을 읽는 법
+
+일주일이 끝나면 일곱 개의 하루를 나란히 놓고 봅니다. 목록으로 훑는 것보다 **원으로 그려서** 보는 쪽이 압도적으로 빠릅니다. 일곱 개의 원을 늘어놓으면 매일 반복되는 조각(하루의 뼈대)과 매일 다르게 새는 조각(누수)이 색과 넓이로 바로 구분됩니다. [24Houring](/)에는 계획한 하루 옆에 실제 하루를 그리는 **기록(일기) 모드**가 있어서, 저녁 체크인 때 원 위에 바로 쌓아 두면 8일째에 할 분석이 이미 절반은 끝나 있습니다. 물론 종이에 그려도 됩니다. 도구보다 중요한 것은 일곱 개의 하루를 같은 형식으로 나란히 놓는 것, 그래서 계획과 실제를 같은 원 위에서 비교할 수 있게 만드는 것입니다.
+
+읽는 법은 한 문장으로 요약됩니다. **가장 큰 누수 하나를 찾고, 그것만 바꿉니다.** 전면 개혁은 금지입니다. 21시 블랙홀이 최대 누수라면 21시에 고정 블록 하나만 심으세요 — 운동 30분이든, 목욕이든, 책 20분이든 내용은 자유지만 딱 하나여야 합니다. 전환 손실이 최대라면 가장 자주 새는 전환 하나에만 규칙을 만드세요. "회의가 끝나면 일어나서 물을 뜨러 간다"처럼 몸을 움직이는 신호가 잘 듣습니다. 나머지 하루는 기록된 모습 그대로 두세요.
+
+이렇게 만든 계획이 강한 이유는 단순합니다. **일주일 동안 실제로 검증된 하루에서 딱 한 곳만 고쳤기 때문입니다.** 상상으로 지은 설계도가 아니라 실측 도면 위에 그린 수정선 하나라서, 지켜질 수밖에 없습니다. 한 곳이 자리를 잡으면 그다음 주에 두 번째 누수를 고치면 됩니다. 두 번째로 큰 누수가 아무리 눈에 밟혀도 다음 주로 미루세요. 한 번에 하나씩 바꾸는 사람은 넉 주면 네 곳을 고치지만, 한 번에 넷을 바꾸는 사람은 대개 첫 주에 넷을 모두 잃습니다. 순서만 지키면 됩니다 — 기록, 그다음 수정, 한 번에 하나.
+
+## 기록이 먼저, 계획은 그다음
+
+계획-실패 사이클과 기록-계획 순서의 차이를 한 줄로 줄이면 이렇습니다. 계획을 먼저 세우는 사람은 **상상 속 인물**을 위해 하루를 설계하고, 기록을 먼저 하는 사람은 **실제로 나타나는 사람**을 위해 설계합니다. 전자는 주인공이 매번 나타나지 않아 무너지고, 후자는 주인공이 반드시 나타나기에 지켜집니다. 다이어트가 식단 기록에서 시작하고 저축이 가계부에서 시작하듯, 시간 관리도 시간 장부에서 시작하는 게 순서입니다. 그리고 이 순서를 바꾸는 데 필요한 것은 대단한 결심이 아니라 일주일이라는 기한뿐입니다. 기한이 있는 실험은 의지가 약해진 날에도 계속됩니다. "오늘까지만 적으면 된다"는 마음이 7일을 버티게 해 줍니다.
+
+30분 블록 기록의 세부 요령과 기록을 분석하는 틀은 [시간 가계부 가이드](/guides/time-audit)에 따로 정리되어 있습니다. 거창하게 시작할 필요는 없습니다. 오늘 밤 잠들기 전 3분, 오늘 하루를 기억나는 대로 적는 것 — 그게 첫 체크인입니다. 일주일 뒤 여러분은 아마 처음으로 자신의 하루를 '보게' 될 겁니다. 그리고 그 하루를 원으로 그려 놓고 보면, 다음 계획이 어디서 시작해야 하는지는 저절로 보입니다.
+<!--en-->
+If your plans never survive past day three, the world keeps offering you the same advice: "make a more realistic plan." This article proposes the opposite. **For one week, don't plan at all.** Only record. If you've ever kept a spending ledger, the order will feel familiar — you can only draw up a budget after the receipts have piled up. Time works exactly the same way. This article is the concrete instruction manual for how to spend that one week.
+
+> Nobody drafts a budget without ever looking at their spending. Yet we draft daily plans without once having seen how our day actually flows. You cannot design a day you have never seen.
+
+## Why the plan-then-fail cycle repeats
+
+People whose plans keep collapsing follow an almost identical pattern. On a motivated Sunday night they design an *ideal* day — up at six, morning workout, two hours of evening study. The problem: the protagonist of that plan is not the real you but **an imagined you**. The real you barely surfaces at 7:40, lies down on the sofa straight after work, and turns suddenly industrious at 11 p.m. Willpower holds for about two days; on day three the real you wins. Then comes the guilt, and on the strength of that guilt an even stricter plan, which collapses even faster. That is the **plan-then-fail cycle**.
+
+The cause of this cycle is not a shortage of willpower but a **shortage of data**. You drew the blueprint without ever surveying the ground. So the prescription isn't stronger will — it's one week of measurement. And if you've already been around this cycle three times or more, what you need now is not a fourth plan. It's a first record.
+
+## The 7-day recording protocol
+
+There are only four rules, and a notes app is all the equipment you need.
+
+1. **Record in 30-minute blocks.** Minute-level precision is not the goal. "9:00–9:30 email, 9:30–11:00 meeting" is plenty; anything shorter than 30 minutes gets attached to the nearest block. Lowering the resolution is what lets you finish the week.
+2. **Log at three fixed times a day — and only then.** Real-time logging at every activity change rarely survives three days. Instead: one minute right after lunch (reviewing the morning), one minute after dinner (the afternoon), three minutes before sleep (the evening). Three check-ins mean you're never reconstructing more than half a day from memory. Total investment: five minutes a day.
+3. **Use honest labels.** Not "rest — 2 hours" but "YouTube 1.5h + Instagram 30min." The moment you write as if someone else will read it, the data is contaminated. This ledger is yours alone; nobody ever sees it. Honest labels are what make day eight's diagnosis honest.
+4. **Do not try to improve anything.** Around day three the urge to fix your behaviour will arrive on schedule. Resist it. This week's goal is not a good day but an **accurate day**. Correcting your behaviour during the observation window ruins the data you'll need next week.
+
+This is the density a real record needs — no more: "7:30 up + breakfast, 8:30 commute (phone), 9:00 email, 10:00 meeting, 11:30 work, 12:30 lunch." Half a day should fit in a few lines; that's what makes the full week finishable. If you have room for one optional rule, add a single ◯△× at the end of each block to mark how sharp you felt: "10:00 meeting ×, 14:00 report ◯." That one symbol lets day eight tell you not just where your time goes but **when your head is actually clear**. If it feels like any burden at all, skip it — finishing the week comes first.
+
+## Three tricks for actually finishing the week
+
+- **Missed a check-in? Catch up at the next one.** Forgot the lunch check-in — reconstruct the whole morning at dinner. Accuracy drops a little; the experiment survives. Lost an entire day? Leave it blank and move on — six days of data still shows the pattern clearly. The worst possible move is postponing the experiment "to restart a perfect seven days from Monday."
+- **The weekend must be included.** You'll be tempted to stop after five weekdays, but the days when time disappears in the biggest chunks are usually Saturday and Sunday. A time ledger without the weekend is a household budget with the restaurant bills removed.
+- **Don't wait for Monday.** Even if today is Thursday, start tonight. The starting weekday has zero effect on the result — and "starting next Monday" is the plan-then-fail cycle's favourite sentence.
+
+## Three things almost every week of records reveals
+
+Everyone's days differ, yet spread out a week of records and three strikingly common patterns appear. Count how many of the three show up in your own ledger — for most people it's at least two.
+
+- **Transition losses.** The day doesn't leak inside activities — it leaks between them. Fifteen minutes between the end of a meeting and starting the next task; twenty-five between finishing dinner and getting in the shower. Ten to twenty minutes at a time, five or six times a day: **over an hour per day vanishes into the gaps.** Most of the missing time we described in [Finding Your Hidden Two Hours](/blog/hidden-two-hours) turns out to be exactly this.
+- **The 21:00–24:00 black hole.** On many recorded days, the three hours from 9 p.m. to midnight compress into "just hung around" or "was on my phone." Across five weekdays that's fifteen hours — more than the waking hours of an entire weekend day, dissolving shapelessly every single week. This stretch blurs because it's when the day's willpower runs out — which is also why, when you do plan later, this slot responds to a pre-set default far better than to resolve.
+- **Weekday mornings are far more uniform than you expected.** By contrast, the stretch from waking to leaving for work or school runs in nearly the same shape every day. This is good news: it means a routine is already engraved in your body, and the data is telling you which time of day gives any new habit its best odds of survival.
+
+## The morning of day 8 — how to read your week
+
+When the week ends, lay the seven days side by side. Scanning them **as circles** beats scanning them as lists by a wide margin: line up seven circles and the slices that repeat daily (the day's skeleton) separate instantly, by colour and by area, from the slices that leak differently each day. [24Houring](/) has a **record (diary) mode** that draws your actual day next to the planned one — stack each evening's check-in onto the circle as you go, and half of day eight's analysis is already done. Paper works too, of course. What matters more than the tool is laying the seven days out in the same format, so that plan and reality can be compared on the same circle.
+
+The reading method fits in one sentence: **find the single biggest leak, and change only that.** Total overhaul is forbidden. If the 21:00 black hole is your biggest leak, plant exactly one fixed block at 21:00 — thirty minutes of exercise, a bath, twenty minutes of reading; the content is up to you, but it must be one thing. If transition loss is the biggest, make a rule for just your leakiest transition — a physical cue works best, like "when the meeting ends, stand up and go refill my water." Leave the rest of the day exactly as recorded.
+
+Why is a plan built this way so durable? Simple: **it changes exactly one spot in a day that has already been field-tested for a week.** It's not a blueprint drawn from imagination — it's a single correction line drawn on a surveyed map, so it almost cannot fail to hold. However loudly the second-biggest leak calls to you, save it for next week. The person who changes one thing at a time has fixed four spots in four weeks; the person who changes four at once usually loses all four in the first. Once that one spot has settled, fix the second leak the following week. Just keep the order: record, then revise, one change at a time.
+
+## Record first, plan second
+
+The difference between the plan-then-fail cycle and the record-then-plan order comes down to one line. People who plan first design a day for **an imaginary person**; people who record first design for **the person who actually shows up**. The former collapses because the protagonist keeps failing to appear; the latter holds because the protagonist always does. Diets begin with a food log and savings begin with a ledger — time management, in the same order, begins with a time ledger. And switching to this order takes no grand resolution, only a deadline of one week. An experiment with an end date keeps going even on low-willpower days; "I only have to record until Sunday" is what carries you through all seven.
+
+The finer points of 30-minute-block recording and a framework for analysing what you collect are laid out in the [time audit guide](/guides/time-audit). There's no need to start big. Tonight, three minutes before sleep, write down today as far as you remember it — that's your first check-in. A week from now you will, quite possibly for the first time, actually *see* one of your own days. And once that day is drawn as a circle in front of you, where the next plan should begin becomes obvious on its own.

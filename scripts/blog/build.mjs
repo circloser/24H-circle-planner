@@ -172,7 +172,7 @@ const CTA = `
 
 const fmtDateKo = (d) => { const [y, m, day] = d.split('-'); return `${y}년 ${Number(m)}월 ${Number(day)}일`; };
 
-function postPage(p) {
+function postPage(p, allPosts) {
   const canonical = `${ORIGIN}/blog/${p.slug}`;
   // Optional frontmatter `image:` (path under /blog/img/) → og:image, JSON-LD
   // image, and a hero figure under the title in both languages.
@@ -184,8 +184,8 @@ function postPage(p) {
 ${JSON.stringify({
   '@context': 'https://schema.org', '@type': 'BlogPosting',
   headline: p.title_ko, description: p.desc_ko, inLanguage: ['ko', 'en'],
-  image: heroUrl, datePublished: p.date, dateModified: p.date,
-  author: { '@type': 'Organization', name: '24Houring', url: `${ORIGIN}/` },
+  image: heroUrl, datePublished: p.date, dateModified: p.updated || p.date,
+  author: { '@type': 'Person', name: 'Circloser', url: `${ORIGIN}/about` },
   publisher: { '@type': 'Organization', name: '24Houring', url: `${ORIGIN}/` },
   mainEntityOfPage: canonical,
 }, null, 1)}
@@ -200,17 +200,34 @@ ${JSON.stringify({
 }, null, 1)}
 </${'script'}>`;
 
+  const modKo = p.updated ? ` · 수정 ${fmtDateKo(p.updated)}` : '';
+  const modEn = p.updated ? ` · Updated ${p.updated}` : '';
+  const bylineKo = `글 <a href="/about">Circloser</a> · ${fmtDateKo(p.date)}${modKo}`;
+  const bylineEn = `By <a href="/about">Circloser</a> · ${p.date}${modEn}`;
+
+  // Related posts: the 3 most recent other posts (allPosts is date-desc).
+  const related = allPosts.filter((q) => q.slug !== p.slug).slice(0, 3);
+  const relatedHtml = related.length
+    ? `    <div class="card" style="margin-top:26px">
+      <p style="margin:0 0 8px"><strong><span class="lang-ko">함께 읽으면 좋은 글</span><span class="lang-en">Related posts</span></strong></p>
+      <ul style="margin:0;padding-left:20px">
+${related.map((q) => `        <li style="margin:4px 0"><a href="/blog/${q.slug}"><span class="lang-ko">${esc(q.title_ko)}</span><span class="lang-en">${esc(q.title_en)}</span></a></li>`).join('\n')}
+      </ul>
+    </div>`
+    : '';
+
   const body = `    <p class="crumb"><a href="/blog/"><span class="lang-ko">← 블로그 목록</span><span class="lang-en">← All posts</span></a></p>
     <div class="lang-ko">
     <h1>${esc(p.title_ko)}</h1>
-    <p class="en" style="margin:0 0 14px">${fmtDateKo(p.date)} · 24Houring</p>
+    <p class="en" style="margin:0 0 14px">${bylineKo}</p>
 ${hero}${p.ko}
     </div>
     <div class="lang-en">
     <h1>${esc(p.title_en)}</h1>
-    <p class="en" style="margin:0 0 14px">${p.date} · 24Houring</p>
+    <p class="en" style="margin:0 0 14px">${bylineEn}</p>
 ${hero}${p.en}
     </div>
+${relatedHtml}
 ${CTA}`;
 
   return shell({ title: `${p.title_ko} · 24Houring 블로그`, desc: p.desc_ko, canonical, jsonld, body });
@@ -281,7 +298,7 @@ const posts = readdirSync(POSTS_DIR)
   .sort((a, b) => (a.date < b.date ? 1 : -1));
 
 for (const p of posts) {
-  writeFileSync(join(OUT, `${p.slug}.html`), postPage(p));
+  writeFileSync(join(OUT, `${p.slug}.html`), postPage(p, posts));
   console.log(`post  ${p.slug}.html (${p.date})`);
 }
 writeFileSync(join(OUT, 'index.html'), hubPage(posts));
