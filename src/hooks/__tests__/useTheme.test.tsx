@@ -174,5 +174,15 @@ describe('useTheme (light/dark, follows system until chosen)', () => {
       act(() => { result.current.setTheme('light'); });
       expect(result.current.theme).toBe('light');
     });
+
+    it('keeps the color-scheme meta in sync (force-dark opt-out)', () => {
+      const { result } = renderHook(() => useTheme());
+      act(() => { result.current.setTheme('light'); });
+      expect(document.querySelector('meta[name="color-scheme"]')?.getAttribute('content')).toBe('only light');
+      act(() => { result.current.setTheme('dark'); });
+      expect(document.querySelector('meta[name="color-scheme"]')?.getAttribute('content')).toBe('dark');
+      act(() => { result.current.setTheme('light'); });
+      expect(document.querySelector('meta[name="color-scheme"]')?.getAttribute('content')).toBe('only light');
+    });
   });
 });

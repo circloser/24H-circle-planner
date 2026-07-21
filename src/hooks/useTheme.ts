@@ -31,6 +31,16 @@ function systemTheme(): Theme {
 function applyTheme(theme: Theme): void {
   document.documentElement.setAttribute('data-theme', theme);
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLORS[theme]);
+  // The color-scheme META is the page-level opt-out Android browsers check for
+  // force-dark ("only light" = never invert this page). CSS alone is not
+  // enough on Samsung/Chrome Android, so keep the meta in sync with the theme.
+  let meta = document.querySelector('meta[name="color-scheme"]');
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.setAttribute('name', 'color-scheme');
+    document.head.appendChild(meta);
+  }
+  meta.setAttribute('content', theme === 'dark' ? 'dark' : 'only light');
 }
 
 /**

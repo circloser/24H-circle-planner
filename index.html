@@ -6,9 +6,11 @@
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#f4f5f7" />
-    <!-- Declares native dark support so Android browsers (Chrome auto-dark,
-         Samsung Internet dark mode) never force-invert the page. -->
-    <meta name="color-scheme" content="light dark" />
+    <!-- Page-level force-dark opt-out: "only light" tells Android browsers
+         (Chrome auto-dark, Samsung Internet dark mode) to NEVER invert this
+         page — the app manages its own dark theme. The pre-paint script and
+         useTheme flip this meta to "dark" whenever the dark theme is active. -->
+    <meta name="color-scheme" content="only light" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Pre-paint theme: stored choice first, else the OS dark-mode setting.
          Keeps the installed app (TWA) from flashing white on dark phones; the
@@ -24,6 +26,8 @@
           if (t === 'dark') {
             var m = document.querySelector('meta[name="theme-color"]');
             if (m) m.setAttribute('content', '#0f131a');
+            var cs = document.querySelector('meta[name="color-scheme"]');
+            if (cs) cs.setAttribute('content', 'dark');
           }
         } catch (e) { /* default light */ }
       })();
