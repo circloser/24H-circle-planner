@@ -3,34 +3,65 @@ import { STORAGE_KEY_THEME } from '@/lib/storage';
 
 export type Theme = 'light' | 'dark';
 
-function readStoredTheme(): Theme {
+/** Browser-chrome colour per theme (status bar in the installed TWA/PWA).
+ *  light = --background hsl(220 20% 97%), dark = hsl(220 25% 8%). */
+const THEME_COLORS: Record<Theme, string> = {
+  light: '#f4f5f7',
+  dark: '#0f131a',
+};
+
+function readStoredTheme(): Theme | null {
   try {
     const stored = localStorage.getItem(STORAGE_KEY_THEME);
     if (stored === 'light' || stored === 'dark') return stored;
   } catch {
     // localStorage unavailable (SSR / private browsing edge case)
   }
-  return 'light';
+  return null;
+}
+
+function systemTheme(): Theme {
+  try {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  } catch {
+    return 'light';
+  }
 }
 
 function applyTheme(theme: Theme): void {
   document.documentElement.setAttribute('data-theme', theme);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLORS[theme]);
 }
 
 /**
- * Explicit light/dark theme only — the app does not follow the OS preference
- * (by design). `effectiveTheme` mirrors `theme` and is kept for callers.
+ * Explicit light/dark theme. Until the user picks one, the app follows the
+ * OS/browser dark-mode setting (live) — installed-app users expect the system
+ * toggle to work. The first manual toggle persists a choice and detaches from
+ * the system setting for good.
  */
 export function useTheme(): {
   theme: Theme;
   effectiveTheme: Theme;
   setTheme: (t: Theme) => void;
 } {
-  const [theme, setThemeState] = useState<Theme>(readStoredTheme);
+  const [theme, setThemeState] = useState<Theme>(() => readStoredTheme() ?? systemTheme());
+  const [followSystem, setFollowSystem] = useState<boolean>(() => readStoredTheme() === null);
 
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
+
+  useEffect(() => {
+    if (!followSystem) return;
+    try {
+      const mq = window.matchMedia('(prefers-color-scheme: dark)');
+      const onChange = (e: MediaQueryListEvent) => setThemeState(e.matches ? 'dark' : 'light');
+      mq.addEventListener('change', onChange);
+      return () => mq.removeEventListener('change', onChange);
+    } catch {
+      return; // matchMedia unavailable (jsdom edge case)
+    }
+  }, [followSystem]);
 
   const setTheme = useCallback((t: Theme) => {
     try {
@@ -38,6 +69,7 @@ export function useTheme(): {
     } catch {
       // ignore
     }
+    setFollowSystem(false);
     setThemeState(t);
   }, []);
 

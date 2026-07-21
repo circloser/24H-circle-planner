@@ -1,10 +1,10 @@
-/*
+﻿/*
  * 24Houring service worker — offline app shell + runtime asset cache.
  * Client-only SPA, so once the shell + hashed assets are cached the whole app
  * works offline (data lives in localStorage). Navigations are network-first
  * (fresh on every online visit); same-origin assets are stale-while-revalidate.
  */
-const CACHE = '24h-cache-v4';
+const CACHE = '24h-cache-v5';
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/favicon.svg', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', (event) => {

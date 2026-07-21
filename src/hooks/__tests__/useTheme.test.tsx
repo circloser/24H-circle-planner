@@ -28,11 +28,34 @@ Object.defineProperty(globalThis, 'localStorage', {
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
-describe('useTheme (light/dark only)', () => {
+/** matchMedia mock: controllable prefers-color-scheme with change events. */
+function mockMatchMedia(dark: boolean) {
+  const listeners = new Set<(e: { matches: boolean }) => void>();
+  const mql = {
+    matches: dark,
+    media: '(prefers-color-scheme: dark)',
+    addEventListener: (_: string, cb: (e: { matches: boolean }) => void) => listeners.add(cb),
+    removeEventListener: (_: string, cb: (e: { matches: boolean }) => void) => listeners.delete(cb),
+  };
+  Object.defineProperty(window, 'matchMedia', {
+    value: vi.fn(() => mql),
+    writable: true,
+    configurable: true,
+  });
+  return {
+    fire(matches: boolean) {
+      mql.matches = matches;
+      listeners.forEach((cb) => cb({ matches }));
+    },
+  };
+}
+
+describe('useTheme (light/dark, follows system until chosen)', () => {
   beforeEach(() => {
     storageMock.clear();
     vi.clearAllMocks();
     document.documentElement.removeAttribute('data-theme');
+    mockMatchMedia(false);
   });
 
   afterEach(() => {
@@ -40,9 +63,15 @@ describe('useTheme (light/dark only)', () => {
   });
 
   describe('initial state', () => {
-    it('defaults to light when no stored preference', () => {
+    it('defaults to light when no stored preference and system is light', () => {
       const { result } = renderHook(() => useTheme());
       expect(result.current.theme).toBe('light');
+    });
+
+    it('defaults to dark when no stored preference and system is dark', () => {
+      mockMatchMedia(true);
+      const { result } = renderHook(() => useTheme());
+      expect(result.current.theme).toBe('dark');
     });
 
     it('reads stored preference from localStorage', () => {
@@ -51,9 +80,44 @@ describe('useTheme (light/dark only)', () => {
       expect(result.current.theme).toBe('dark');
     });
 
-    it('ignores invalid/legacy "system" value and defaults to light', () => {
+    it('stored preference beats a differing system setting', () => {
+      mockMatchMedia(true);
+      storageMock.setItem(STORAGE_KEY_THEME, 'light');
+      const { result } = renderHook(() => useTheme());
+      expect(result.current.theme).toBe('light');
+    });
+
+    it('ignores invalid/legacy "system" value and falls back to the system setting', () => {
       storageMock.setItem(STORAGE_KEY_THEME, 'system');
       const { result } = renderHook(() => useTheme());
+      expect(result.current.theme).toBe('light');
+    });
+  });
+
+  describe('system following', () => {
+    it('tracks a live system change while no explicit choice exists', () => {
+      const media = mockMatchMedia(false);
+      const { result } = renderHook(() => useTheme());
+      expect(result.current.theme).toBe('light');
+      act(() => media.fire(true));
+      expect(result.current.theme).toBe('dark');
+      act(() => media.fire(false));
+      expect(result.current.theme).toBe('light');
+    });
+
+    it('stops following the system after an explicit setTheme', () => {
+      const media = mockMatchMedia(false);
+      const { result } = renderHook(() => useTheme());
+      act(() => { result.current.setTheme('light'); });
+      act(() => media.fire(true));
+      expect(result.current.theme).toBe('light');
+    });
+
+    it('does not follow the system when a stored choice exists', () => {
+      storageMock.setItem(STORAGE_KEY_THEME, 'light');
+      const media = mockMatchMedia(false);
+      const { result } = renderHook(() => useTheme());
+      act(() => media.fire(true));
       expect(result.current.theme).toBe('light');
     });
   });

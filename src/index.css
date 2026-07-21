@@ -74,6 +74,12 @@
   color-scheme: light dark;
 }
 
+/* Explicit theme locks the UA colour scheme (form controls, scrollbars, canvas)
+   so a dark-mode phone can't dark-render the app while it is in light theme. */
+[data-theme="light"] {
+  color-scheme: light;
+}
+
 /* ─── Dark mode overrides ─────────────────────────────────────────────────── */
 [data-theme="dark"] {
   --background:    220 25% 8%;

@@ -6,7 +6,28 @@
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#f4f5f7" />
+    <!-- Declares native dark support so Android browsers (Chrome auto-dark,
+         Samsung Internet dark mode) never force-invert the page. -->
+    <meta name="color-scheme" content="light dark" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Pre-paint theme: stored choice first, else the OS dark-mode setting.
+         Keeps the installed app (TWA) from flashing white on dark phones; the
+         React useTheme hook takes over after mount with the same logic. -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('24h-circle-planner.theme');
+          if (t !== 'light' && t !== 'dark') {
+            t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          document.documentElement.setAttribute('data-theme', t);
+          if (t === 'dark') {
+            var m = document.querySelector('meta[name="theme-color"]');
+            if (m) m.setAttribute('content', '#0f131a');
+          }
+        } catch (e) { /* default light */ }
+      })();
+    </script>
 
     <!-- Site-ownership verification (search consoles) -->
     <meta name="naver-site-verification" content="639860e7c19e8650f6abb136ac61e76ace716c3a" />
