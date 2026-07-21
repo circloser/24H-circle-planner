@@ -4,7 +4,7 @@
  * works offline (data lives in localStorage). Navigations are network-first
  * (fresh on every online visit); same-origin assets are stale-while-revalidate.
  */
-const CACHE = '24h-cache-v5';
+const CACHE = '24h-cache-v6';
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/favicon.svg', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', (event) => {
