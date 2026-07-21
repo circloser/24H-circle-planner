@@ -83,6 +83,24 @@
   color-scheme: only light;
 }
 
+/* Native dark-support signal. Samsung Internet's force-dark heuristic scans
+   stylesheets for a prefers-color-scheme dark rule and skips inverting sites
+   that have one — without this block it force-inverts the light theme inside
+   the Play Store app on Samsung-default phones (standards opt-outs ignored).
+   The rule is also a real fallback: if the pre-paint script is ever blocked,
+   dark phones still get dark surfaces before hydration. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --background:    220 25% 8%;
+    --surface:       220 22% 13%;
+    --surface-glass: 220 22% 15%;
+    --text-primary:  220 15% 92%;
+    --text-muted:    220 14% 70%;
+    --border:        220 18% 25%;
+  }
+}
+
 /* ─── Dark mode overrides ─────────────────────────────────────────────────── */
 [data-theme="dark"] {
   --background:    220 25% 8%;

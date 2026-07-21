@@ -11,6 +11,13 @@
          page — the app manages its own dark theme. The pre-paint script and
          useTheme flip this meta to "dark" whenever the dark theme is active. -->
     <meta name="color-scheme" content="only light" />
+    <!-- Dark-support signal for Samsung Internet's force-dark heuristic (it
+         scans for a prefers-color-scheme dark rule) + pre-CSS dark fallback. -->
+    <style>
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme]) { color-scheme: dark; background: #0f131a; }
+      }
+    </style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Pre-paint theme: stored choice first, else the OS dark-mode setting.
          Keeps the installed app (TWA) from flashing white on dark phones; the
