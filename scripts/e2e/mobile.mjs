@@ -32,6 +32,16 @@ export async function run() {
       localStorage.setItem('24h-circle-planner.onboarded', '1');
       localStorage.setItem('24h-circle-planner.schedule', JSON.stringify({ version: 1, schedule: { id: 's1', name: '모바일', updatedAt: new Date().toISOString(), slices: sl } }));
       localStorage.setItem('24h-circle-planner.prefs', JSON.stringify({ version: 1, prefs: { language: 'ko' } }));
+      // Rim (edge) memos at the far right / left / top — the positions that used
+      // to spill past the viewport and stretch the page on phones. Flat format
+      // folds into the active day at mount.
+      // Minutes are kept off the four cardinal slice-label angles (0/300/660/1080)
+      // so a memo's delete button never lands on a label the editor test taps.
+      localStorage.setItem('24h-circle-planner.rimmemos', JSON.stringify({ version: 1, memos: [
+        { id: 'rm-r', minute: 360, text: '오른쪽 테두리 메모 긴 텍스트 테스트', createdAt: 1 },
+        { id: 'rm-l', minute: 1140, text: '왼쪽 테두리 메모', createdAt: 1 },
+        { id: 'rm-t', minute: 90, text: '위쪽 메모', createdAt: 1 },
+      ] }));
     });
     await gotoApp(page);
 
@@ -110,8 +120,26 @@ export async function run() {
       await page.getByRole('menuitem', { name: '프리셋' }).click();
     });
 
-    // ── 4. Main page: no horizontal overflow ─────────────────────────────────
+    // ── 4. Main page: no horizontal overflow (with rim memos present) ────────
     pass('no horizontal overflow (main)', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+
+    // ── 5. Rim (edge) memos: rendered, on-screen, deletable on touch ─────────
+    {
+      const boxes = await page.evaluate(() =>
+        [...document.querySelectorAll('.rim-memo-text')].map((el) => {
+          const r = el.getBoundingClientRect();
+          return [Math.round(r.left), Math.round(r.right)];
+        }),
+      );
+      pass('rim memos rendered', boxes.length === 3, `count=${boxes.length}`);
+      pass('rim memos on-screen', boxes.every(([l, r]) => l >= -1 && r <= VW + 1), JSON.stringify(boxes));
+      const delOpacity = await page
+        .locator('button[aria-label="메모 삭제"]')
+        .first()
+        .evaluate((el) => Number(getComputedStyle(el.parentElement).opacity))
+        .catch(() => 0);
+      pass('rim delete visible on touch', delOpacity > 0.5, `opacity=${delOpacity}`);
+    }
 
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
   } finally {

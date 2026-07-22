@@ -129,11 +129,6 @@ export function useRimMemos(dayId: string | null) {
   const remove = useCallback((id: string) => {
     setList((m) => m.filter((x) => x.id !== id));
   }, [setList]);
-  // Replace the active day's whole list — used to restore a diary's rim memos
-  // when that record is loaded (so memos belong to the loaded date).
-  const replace = useCallback((list: RimMemo[]) => {
-    setByDay((prev) => ({ ...prev, [key]: list }));
-  }, [key]);
 
-  return { memos, add, update, setMinute, remove, replace };
+  return { memos, add, update, setMinute, remove };
 }

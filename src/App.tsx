@@ -314,7 +314,7 @@ function App() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col overflow-x-clip">
       <AppHeader
         onOpenAbout={() => setAboutOpen(true)}
         onOpenSlots={() => setSlotSheetOpen(true)}
