@@ -95,6 +95,7 @@ export const ko = {
   'theme.systemMode': '시스템 설정',
   'common.save': '저장',
   'common.cancel': '취소',
+  'common.close': '닫기',
   'preset.galleryTitle': '라이프스타일 프리셋',
   'preset.galleryDesc': '원하는 루틴을 선택하면 적용 여부를 확인한 뒤 현재 시간표에 반영됩니다.',
   'preset.applyTitle': '{name} 적용',
@@ -471,6 +472,7 @@ export const ko = {
   'rim.placeholder': '메모…',
   'rim.delete': '메모 삭제',
   'rim.move': '테두리 따라 이동',
+  'rim.viewTitle': '테두리 메모',
   'about.open': '24Houring 소개 · 사용 안내',
 } as const;
 

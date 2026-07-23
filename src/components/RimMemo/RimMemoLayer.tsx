@@ -6,6 +6,14 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react';
 import { X, Move } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { useRimMemos, type RimMemo } from './useRimMemos';
 import { useChartView, useTranslation } from '@/hooks/usePreferences';
 import { useDays } from '@/hooks/useDays';
@@ -22,6 +30,7 @@ const VB_MARGIN = 36;
 const VB_SIZE = 1072; // 1000 + 2*36
 const BAND_OUTER = OUTER_R + 58; // hover-capture ring (just outside the slices)
 const ELBOW_R = OUTER_R + 60; // where the leader ends and the memo begins
+const DOT_R = OUTER_R + 18; // mobile: marker dot hugging the rim
 
 const polar = (r: number, deg: number) => {
   const a = (deg * Math.PI) / 180;
@@ -29,6 +38,8 @@ const polar = (r: number, deg: number) => {
 };
 const pctX = (x: number) => ((x + VB_MARGIN) / VB_SIZE) * 100;
 const pctY = (y: number) => ((y + VB_MARGIN) / VB_SIZE) * 100;
+const fmtMinute = (m: number) =>
+  `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 
 function annulusPath(ro: number, ri: number): string {
   const f = (n: number) => n.toFixed(2);
@@ -43,7 +54,7 @@ function annulusPath(ro: number, ri: number): string {
   ].join(' ');
 }
 
-// ─── A single transparent, editable rim memo ──────────────────────────────────
+// ─── A single transparent, editable rim memo (desktop) ───────────────────────
 
 function RimMemoBox({
   memo,
@@ -51,7 +62,6 @@ function RimMemoBox({
   autoFocus,
   readOnly = false,
   deletable = false,
-  isMobile = false,
   onChange,
   onDelete,
   onStartDrag,
@@ -59,59 +69,29 @@ function RimMemoBox({
   memo: RimMemo;
   angleDeg: number;
   autoFocus: boolean;
-  /** No text editing / dragging (touch or a locked diary snapshot). */
+  /** No text editing / dragging (a locked diary snapshot). */
   readOnly?: boolean;
-  /** Show the delete control (allowed on touch even though editing isn't). */
+  /** Show the hover controls (drag along the rim + delete). */
   deletable?: boolean;
-  isMobile?: boolean;
   onChange: (text: string) => void;
   onDelete: () => void;
   onStartDrag: (e: ReactPointerEvent<HTMLElement>) => void;
 }) {
   const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
-  const boxRef = useRef<HTMLDivElement>(null);
   const right = Math.cos((angleDeg * Math.PI) / 180) >= 0;
   const elbow = polar(ELBOW_R, angleDeg);
   const leftPct = pctX(elbow.x);
   const topPct = pctY(elbow.y);
 
-  // On phones the chart fills the width, so a memo anchored near the left/right
-  // edge would spill past the viewport and stretch the page. Nudge it back
-  // in-bounds after paint (keeps it readable instead of clipped).
-  const [dx, setDx] = useState(0);
-  useEffect(() => {
-    // Measure after paint (rAF) and nudge — setState lives inside the frame
-    // callback, not the effect body, so it can't loop.
-    const id = requestAnimationFrame(() => {
-      if (!isMobile) {
-        setDx((prev) => (prev === 0 ? prev : 0));
-        return;
-      }
-      const el = boxRef.current;
-      if (!el || typeof window === 'undefined') return;
-      const r = el.getBoundingClientRect();
-      const vw = window.innerWidth;
-      const M = 6;
-      let corr = 0;
-      if (r.left < M) corr = M - r.left;
-      else if (r.right > vw - M) corr = vw - M - r.right;
-      setDx((prev) => (Math.abs(corr) < 0.5 ? prev : prev + corr));
-    });
-    return () => cancelAnimationFrame(id);
-  }, [memo.text, angleDeg, isMobile]);
-
   // Position outside the chart: right-half memos grow rightward, left-half leftward.
-  // On touch the box itself is inert (pointerEvents:none) so it can never swallow
-  // a slice tap when clamped inward over the chart — only the delete button is live.
   const style: CSSProperties = {
     position: 'absolute',
     top: `${topPct}%`,
-    transform: `translateY(-50%) translateX(${dx}px)`,
-    width: isMobile ? 132 : 150,
+    transform: 'translateY(-50%)',
+    width: 150,
     zIndex: 24,
     textAlign: right ? 'left' : 'right',
-    pointerEvents: isMobile ? 'none' : 'auto',
     ...(right ? { left: `${leftPct}%` } : { right: `${100 - leftPct}%` }),
   };
 
@@ -124,40 +104,31 @@ function RimMemoBox({
     if (autoFocus && ref.current) ref.current.focus();
   }, [autoFocus]);
 
-  const btnSize = isMobile ? 'h-6 w-6' : 'h-5 w-5';
-  const iconSize = isMobile ? 'h-3.5 w-3.5' : 'h-3 w-3';
-
   return (
-    <div ref={boxRef} className="group" style={style}>
-      {/* Controls. Desktop: drag-along-rim + delete, revealed on hover. Touch:
-          delete only, always visible, pointerEvents re-enabled (the box itself
-          is inert on touch). */}
+    <div className="group pointer-events-auto" style={style}>
+      {/* Hover-only controls — drag along the rim + delete. */}
       {deletable && (
       <div
-        className={`absolute -top-2.5 z-10 flex items-center gap-1 transition-opacity ${
-          isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-        }`}
-        style={{ [right ? 'left' : 'right']: -8, pointerEvents: 'auto' } as CSSProperties}
+        className="absolute -top-2.5 z-10 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+        style={{ [right ? 'left' : 'right']: -8 } as CSSProperties}
       >
-        {!readOnly && (
         <button
           type="button"
           onPointerDown={onStartDrag}
           aria-label={t('rim.move')}
-          className={`grid ${btnSize} cursor-grab place-items-center rounded-full shadow active:cursor-grabbing`}
+          className="grid h-5 w-5 cursor-grab place-items-center rounded-full shadow active:cursor-grabbing"
           style={{ backgroundColor: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))', touchAction: 'none' }}
         >
-          <Move className={iconSize} style={{ color: 'hsl(var(--text-muted))' }} />
+          <Move className="h-3 w-3" style={{ color: 'hsl(var(--text-muted))' }} />
         </button>
-        )}
         <button
           type="button"
           onClick={onDelete}
           aria-label={t('rim.delete')}
-          className={`grid ${btnSize} place-items-center rounded-full shadow`}
+          className="grid h-5 w-5 place-items-center rounded-full shadow"
           style={{ backgroundColor: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))' }}
         >
-          <X className={iconSize} style={{ color: 'hsl(var(--text-muted))' }} />
+          <X className="h-3 w-3" style={{ color: 'hsl(var(--text-muted))' }} />
         </button>
       </div>
       )}
@@ -196,13 +167,17 @@ function RimMemoBox({
 // ─── Layer ────────────────────────────────────────────────────────────────────
 
 /**
- * Overlay on the chart that lets you drop a memo by hovering near the rim: a
- * leader line extends outward and the note sits outside the chart (right-half →
- * right, left-half → left). Transparent; the delete X shows on hover (desktop)
- * or always (touch). The thin hover-capture ring sits OUTSIDE the slices so it
- * never blocks slice editing.
+ * Overlay on the chart for rim (edge) memos.
+ *
+ * Desktop: hover near the rim → leader line + a "+" to drop a note; notes are
+ * transparent inline text with hover controls (drag along the rim, delete).
+ *
+ * Mobile: full notes would cover the chart on a phone, so each memo renders as
+ * a small dot on the rim; tapping it opens a popup to read (and delete) it.
+ * Creating/editing/dragging stays desktop-only.
  */
 export function RimMemoLayer() {
+  const { t } = useTranslation();
   const { activeId } = useDays();
   const { memos, add, update, setMinute, remove } = useRimMemos(activeId);
   const { entries } = useDiary();
@@ -213,16 +188,17 @@ export function RimMemoLayer() {
   const svgRef = useRef<SVGSVGElement>(null);
   const [hoverAngle, setHoverAngle] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  // Mobile: memo currently open in the view popup.
+  const [viewId, setViewId] = useState<string | null>(null);
 
   // When a diary record is loaded, show THAT date's saved rim memos read-only —
-  // without touching the active day's own list. (The previous version copied the
-  // diary's memos into the active day and never restored them, so they leaked
-  // into the editing view after leaving the diary.) Leaving the diary
+  // without touching the active day's own list. Leaving the diary
   // (diaryDate → null) falls straight back to the live `memos`.
   const source = diaryDate ? (entries[diaryDate]?.rimMemos ?? []) : memos;
 
   // Only memos whose anchor time is visible in the current window are shown.
   const visible = source.filter((m) => isInWindow(m.minute, spec));
+  const viewMemo = viewId ? visible.find((m) => m.id === viewId) ?? null : null;
 
   const toAngle = (clientX: number, clientY: number): number | null => {
     const svg = svgRef.current;
@@ -259,7 +235,7 @@ export function RimMemoLayer() {
   const band = annulusPath(BAND_OUTER, OUTER_R);
   // Full editing (create via the ring, edit text, drag along the rim) is a
   // desktop-hover interaction — off on touch and in a locked diary snapshot.
-  // Deleting is still allowed on touch (that's how you clear a memo there).
+  // Deleting is still allowed on touch (via the view popup).
   const canEdit = !locked && !diaryDate && !isMobile;
   const canModify = !locked && !diaryDate;
 
@@ -305,8 +281,8 @@ export function RimMemoLayer() {
           );
         })()}
 
-        {/* Leader line per memo (angle derived from the active view). */}
-        {visible.map((m) => {
+        {/* Leader line per memo (desktop text layout only). */}
+        {!isMobile && visible.map((m) => {
           const ang = angleForMin(m.minute, spec);
           const rim = polar(OUTER_R, ang);
           const elbow = polar(ELBOW_R, ang);
@@ -319,21 +295,97 @@ export function RimMemoLayer() {
         })}
       </svg>
 
-      {/* HTML memo boxes (outside the chart; editable). */}
-      {visible.map((m) => (
-        <RimMemoBox
-          key={m.id}
-          memo={m}
-          angleDeg={angleForMin(m.minute, spec)}
-          autoFocus={editingId === m.id}
-          readOnly={!canEdit}
-          deletable={canModify}
-          isMobile={isMobile}
-          onChange={(text) => update(m.id, text)}
-          onDelete={() => remove(m.id)}
-          onStartDrag={(e) => startDrag(m.id, e)}
-        />
-      ))}
+      {isMobile ? (
+        // Mobile: one small dot per memo, hugging the rim. Tap → view popup.
+        visible.map((m) => {
+          const ang = angleForMin(m.minute, spec);
+          const p = polar(DOT_R, ang);
+          return (
+            <button
+              key={m.id}
+              type="button"
+              data-rim-dot
+              aria-label={`${t('rim.viewTitle')} ${fmtMinute(m.minute)}`}
+              onClick={() => setViewId(m.id)}
+              className="grid place-items-center"
+              style={{
+                position: 'absolute',
+                left: `${pctX(p.x)}%`,
+                top: `${pctY(p.y)}%`,
+                transform: 'translate(-50%, -50%)',
+                width: 28,
+                height: 28,
+                zIndex: 24,
+                pointerEvents: 'auto',
+                background: 'transparent',
+              }}
+            >
+              <span
+                aria-hidden
+                style={{
+                  width: 13,
+                  height: 13,
+                  borderRadius: 9999,
+                  backgroundColor: 'hsl(var(--accent))',
+                  border: '2px solid hsl(var(--background))',
+                  boxShadow: '0 1px 4px rgb(0 0 0 / 0.35)',
+                }}
+              />
+            </button>
+          );
+        })
+      ) : (
+        // Desktop: HTML memo boxes (outside the chart; editable).
+        visible.map((m) => (
+          <RimMemoBox
+            key={m.id}
+            memo={m}
+            angleDeg={angleForMin(m.minute, spec)}
+            autoFocus={editingId === m.id}
+            readOnly={!canEdit}
+            deletable={canModify}
+            onChange={(text) => update(m.id, text)}
+            onDelete={() => remove(m.id)}
+            onStartDrag={(e) => startDrag(m.id, e)}
+          />
+        ))
+      )}
+
+      {/* Mobile view popup — read the memo, optionally delete it. */}
+      {isMobile && (
+        <Dialog open={!!viewMemo} onOpenChange={(o) => { if (!o) setViewId(null); }}>
+          <DialogContent className="max-w-xs">
+            <DialogHeader>
+              <DialogTitle>
+                {t('rim.viewTitle')}
+                {viewMemo && (
+                  <span className="ml-2 text-sm font-normal text-muted-foreground">
+                    {fmtMinute(viewMemo.minute)}
+                  </span>
+                )}
+              </DialogTitle>
+            </DialogHeader>
+            <p className="max-h-60 overflow-y-auto whitespace-pre-wrap break-words text-sm text-foreground">
+              {viewMemo?.text.trim() ? viewMemo.text : t('rim.placeholder')}
+            </p>
+            <DialogFooter className="flex-row justify-end gap-2">
+              {canModify && viewMemo && (
+                <Button
+                  variant="outline"
+                  aria-label={t('rim.delete')}
+                  onClick={() => {
+                    remove(viewMemo.id);
+                    setViewId(null);
+                  }}
+                >
+                  {t('rim.delete')}
+                </Button>
+              )}
+              <Button onClick={() => setViewId(null)}>{t('common.close')}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

@@ -7,6 +7,8 @@ import { IconChips } from './IconChips';
 import { ColorSwatch } from './ColorSwatch';
 import { IconPickerDialog } from '@/components/IconPicker/IconPickerDialog';
 import { useTimePalette } from '@/hooks/useTimePalette';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { useTranslation } from '@/hooks/usePreferences';
 import { idealTextColor } from '@/lib/contrast';
 import { track } from '@/lib/track';
 import { cn } from '@/lib/utils';
@@ -59,6 +61,14 @@ interface SliceEditorInnerProps {
 function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerProps) {
   const { items: palette } = useTimePalette();
   const dispatch = useStoreDispatch();
+  const { t } = useTranslation();
+  const isMobile = useIsMobile();
+  // Boundary indices for direct time editing (mobile): boundary i sits at the
+  // END of slices[i], so this slice's end = its own index, start = previous.
+  const sliceCount = useStoreSelector((s) => s.history.present.slices.length);
+  const sliceIndex = useStoreSelector((s) =>
+    s.history.present.slices.findIndex((x) => x.id === sliceId),
+  );
 
   // State initializes from slice on mount; key={sliceId} forces remount on change
   const [label, setLabel] = useState(slice.label);
@@ -235,6 +245,49 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
           </p>
         )}
       </div>
+
+      {/* Start/end time editing — mobile only (desktop adjusts by dragging the
+          boundary handles). Changes apply live via RESIZE_BOUNDARY; invalid
+          values are rejected by the schedule model (no-op). Hidden for a
+          single-slice day (no boundaries to move). */}
+      {isMobile && sliceCount > 1 && sliceIndex >= 0 && (
+        <div className="flex items-center gap-2">
+          <label className="flex flex-1 flex-col gap-0.5">
+            <span className="text-[11px] font-medium text-muted-foreground">{t('block.start')}</span>
+            <input
+              type="time"
+              step={600}
+              value={slice.startTime === '24:00' ? '00:00' : slice.startTime}
+              onChange={(e) => {
+                if (!e.target.value) return;
+                dispatch({
+                  type: 'RESIZE_BOUNDARY',
+                  boundaryIndex: (sliceIndex - 1 + sliceCount) % sliceCount,
+                  newHHmm: e.target.value,
+                });
+              }}
+              className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+            />
+          </label>
+          <label className="flex flex-1 flex-col gap-0.5">
+            <span className="text-[11px] font-medium text-muted-foreground">{t('block.end')}</span>
+            <input
+              type="time"
+              step={600}
+              value={slice.endTime === '24:00' ? '00:00' : slice.endTime}
+              onChange={(e) => {
+                if (!e.target.value) return;
+                dispatch({
+                  type: 'RESIZE_BOUNDARY',
+                  boundaryIndex: sliceIndex,
+                  newHHmm: e.target.value,
+                });
+              }}
+              className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+            />
+          </label>
+        </div>
+      )}
 
       {/* Icon chips */}
       <IconChips

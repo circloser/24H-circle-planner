@@ -92,6 +92,7 @@ export const en: Record<TKey, string> = {
   'theme.systemMode': 'System',
   'common.save': 'Save',
   'common.cancel': 'Cancel',
+  'common.close': 'Close',
   'preset.galleryTitle': 'Lifestyle presets',
   'preset.galleryDesc':
     "Pick a routine; you'll confirm before it's applied to your current schedule.",
@@ -470,5 +471,6 @@ export const en: Record<TKey, string> = {
   'rim.placeholder': 'Memo…',
   'rim.delete': 'Delete memo',
   'rim.move': 'Drag along the rim',
+  'rim.viewTitle': 'Edge memo',
   'about.open': 'About 24Houring · guide',
 };

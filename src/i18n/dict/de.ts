@@ -92,6 +92,7 @@ export const de: Record<TKey, string> = {
   'theme.systemMode': 'Systemeinstellung',
   'common.save': 'Speichern',
   'common.cancel': 'Abbrechen',
+  'common.close': 'Schließen',
   'preset.galleryTitle': 'Lifestyle-Vorlagen',
   'preset.galleryDesc':
     'Wählen Sie eine Routine aus; Sie bestätigen, bevor sie auf Ihren aktuellen Zeitplan angewendet wird.',
@@ -470,5 +471,6 @@ export const de: Record<TKey, string> = {
   'rim.placeholder': 'Notiz…',
   'rim.delete': 'Notiz löschen',
   'rim.move': 'Entlang des Rands ziehen',
+  'rim.viewTitle': 'Rand-Notiz',
   'about.open': 'Über 24Houring · Anleitung',
 };

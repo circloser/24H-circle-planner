@@ -63,6 +63,22 @@ export async function run() {
       await wait(250);
     }
 
+    // ── 1.5 Editor: direct start/end time editing (mobile-only inputs) ───────
+    {
+      const bb = await page.locator('[data-label-id="right"]').first().boundingBox();
+      await page.touchscreen.tap(bb.x + bb.width / 2, bb.y + bb.height / 2);
+      await wait(500);
+      const timeInputs = editor.locator('input[type="time"]');
+      pass('editor has time inputs', (await timeInputs.count()) === 2, `count=${await timeInputs.count()}`);
+      // right slice is 02:00–08:00 → move its start to 03:00 (top grows to 22–03).
+      await timeInputs.first().fill('03:00');
+      await wait(400);
+      const v = await timeInputs.first().inputValue().catch(() => '');
+      pass('start time edit applies', v === '03:00', `value=${v}`);
+      await page.keyboard.press('Escape');
+      await wait(300);
+    }
+
     // ── 2. Icon picker (opened from the editor's 더보기) fits ────────────────
     {
       const bb = await page.locator('[data-label-id="right"]').first().boundingBox();
@@ -123,22 +139,27 @@ export async function run() {
     // ── 4. Main page: no horizontal overflow (with rim memos present) ────────
     pass('no horizontal overflow (main)', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
 
-    // ── 5. Rim (edge) memos: rendered, on-screen, deletable on touch ─────────
+    // ── 5. Rim (edge) memos: dots on the rim → tap → popup → delete ──────────
     {
-      const boxes = await page.evaluate(() =>
-        [...document.querySelectorAll('.rim-memo-text')].map((el) => {
+      const dots = await page.evaluate(() =>
+        [...document.querySelectorAll('[data-rim-dot]')].map((el) => {
           const r = el.getBoundingClientRect();
           return [Math.round(r.left), Math.round(r.right)];
         }),
       );
-      pass('rim memos rendered', boxes.length === 3, `count=${boxes.length}`);
-      pass('rim memos on-screen', boxes.every(([l, r]) => l >= -1 && r <= VW + 1), JSON.stringify(boxes));
-      const delOpacity = await page
-        .locator('button[aria-label="메모 삭제"]')
-        .first()
-        .evaluate((el) => Number(getComputedStyle(el.parentElement).opacity))
-        .catch(() => 0);
-      pass('rim delete visible on touch', delOpacity > 0.5, `opacity=${delOpacity}`);
+      pass('rim memo dots rendered', dots.length === 3, `count=${dots.length}`);
+      pass('rim memo dots on-screen', dots.every(([l, r]) => l >= -1 && r <= VW + 1), JSON.stringify(dots));
+      pass('no rim text boxes on mobile', (await page.locator('.rim-memo-text').count()) === 0);
+      // Tap the first dot (rm-r) → popup shows that memo's text.
+      await page.locator('[data-rim-dot]').first().tap();
+      await wait(500);
+      const dlg = page.locator('[role="dialog"]').last();
+      const dlgText = (await dlg.innerText().catch(() => '')).replace(/\n/g, ' ');
+      pass('rim popup shows memo text', dlgText.includes('오른쪽 테두리 메모'), dlgText.slice(0, 50));
+      await dlg.locator('button[aria-label="메모 삭제"]').tap();
+      await wait(400);
+      const left = await page.locator('[data-rim-dot]').count();
+      pass('rim delete via popup', left === 2, `dots left=${left}`);
     }
 
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
