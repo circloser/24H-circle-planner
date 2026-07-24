@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SYNC_KEYS, PREFS_KEY, VIEW_KEY, LIVE_APPLY_KEYS, dataFingerprint, canonicalValue, changedSyncKeys } from '../syncData';
+import { SYNC_KEYS, PREFS_KEY, VIEW_KEY, LIVE_APPLY_KEYS, dataFingerprint, canonicalValue, changedSyncKeys, mergeSyncData } from '../syncData';
 
 const K = (s: string) => `24h-circle-planner.${s}`;
 
@@ -109,5 +109,93 @@ describe('diary view sync', () => {
     const a = { [K('days')]: '{"activeId":"d1"}', [K('view')]: '{"diaryDate":null}' };
     const b = { [K('days')]: '{"activeId":"d2"}', [K('view')]: '{"diaryDate":"2026-07-15"}' };
     expect(changedSyncKeys(a, b).every((k) => LIVE_APPLY_KEYS.includes(k))).toBe(false);
+  });
+});
+
+describe('mergeSyncData (3-way, per-key)', () => {
+  const fp = dataFingerprint;
+
+  it('THE launch bug: different keys edited on two devices BOTH survive', () => {
+    const base = { [K('days')]: 'D0', [K('memos')]: 'M0' };
+    const local = { [K('days')]: 'D0', [K('memos')]: 'M1' }; // phone added a memo
+    const server = { [K('days')]: 'D1', [K('memos')]: 'M0' }; // PC edited the schedule
+    const { merged, conflicts } = mergeSyncData(base, local, server, false);
+    expect(merged[K('days')]).toBe('D1'); // PC's schedule kept
+    expect(merged[K('memos')]).toBe('M1'); // phone's memo kept
+    expect(conflicts).toEqual([]); // no genuine conflict — different keys
+  });
+
+  it('only local changed a key → local wins that key', () => {
+    const base = { [K('goals')]: 'G0' };
+    const { merged } = mergeSyncData(base, { [K('goals')]: 'G1' }, { [K('goals')]: 'G0' }, false);
+    expect(merged[K('goals')]).toBe('G1');
+  });
+
+  it('only server changed a key → server wins that key', () => {
+    const base = { [K('goals')]: 'G0' };
+    const { merged } = mergeSyncData(base, { [K('goals')]: 'G0' }, { [K('goals')]: 'G2' }, false);
+    expect(merged[K('goals')]).toBe('G2');
+  });
+
+  it('SAME key changed on both → conflict; LWW tiebreak by preferServerOnConflict', () => {
+    const base = { [K('days')]: 'D0' };
+    const local = { [K('days')]: 'DL' };
+    const server = { [K('days')]: 'DS' };
+    expect(mergeSyncData(base, local, server, false).merged[K('days')]).toBe('DL'); // prefer local
+    expect(mergeSyncData(base, local, server, true).merged[K('days')]).toBe('DS'); // prefer server
+    expect(mergeSyncData(base, local, server, false).conflicts).toEqual([K('days')]);
+  });
+
+  it('propagates a real deletion (present in base, deleted locally, untouched on server)', () => {
+    const base = { [K('records')]: 'R0' };
+    const local = {}; // deleted locally
+    const server = { [K('records')]: 'R0' }; // server unchanged
+    const { merged } = mergeSyncData(base, local, server, false);
+    expect(merged[K('records')]).toBeUndefined(); // deletion wins
+  });
+
+  it('a NEW key on one side is adopted', () => {
+    const base = {};
+    const { merged } = mergeSyncData(base, { [K('records')]: 'R1' }, {}, false);
+    expect(merged[K('records')]).toBe('R1');
+  });
+
+  it('KEEP_IF_ABSENT: an old cloud blob missing a widget key never wipes the local widget', () => {
+    const base = { [K('clocktools')]: 'W0' };
+    const local = { [K('clocktools')]: 'W0' };
+    const server = {}; // old blob predates widget sync (key absent)
+    const { merged } = mergeSyncData(base, local, server, false);
+    expect(merged[K('clocktools')]).toBe('W0'); // widget preserved, not deleted
+  });
+
+  it('KEEP_IF_ABSENT: a widget present only on the server is adopted', () => {
+    const { merged } = mergeSyncData({}, {}, { [K('goalswidget')]: 'GW1' }, false);
+    expect(merged[K('goalswidget')]).toBe('GW1');
+  });
+
+  it('no common ancestor (first sync) → union, same-key conflicts by LWW', () => {
+    const local = { [K('days')]: 'DL', [K('memos')]: 'ML' };
+    const server = { [K('days')]: 'DS', [K('goals')]: 'GS' };
+    const { merged } = mergeSyncData({}, local, server, false);
+    expect(merged[K('memos')]).toBe('ML'); // only local had it
+    expect(merged[K('goals')]).toBe('GS'); // only server had it
+    expect(merged[K('days')]).toBe('DL'); // both had it, differ → prefer local
+  });
+
+  it('canonical equality: cosmetic re-serialization is not a conflict', () => {
+    const base = { [K('prefs')]: '{"a":1,"b":2}' };
+    const local = { [K('prefs')]: '{"b":2,"a":1}' }; // same, reordered
+    const server = { [K('prefs')]: '{"a":1,"b":2}' };
+    const { merged, conflicts } = mergeSyncData(base, local, server, false);
+    expect(conflicts).toEqual([]);
+    expect(canonicalValue(merged[K('prefs')])).toBe(canonicalValue('{"a":1,"b":2}'));
+  });
+
+  it('merged == server when only server moved (drives adopt-no-push)', () => {
+    const base = { [K('days')]: 'D0', [K('memos')]: 'M0' };
+    const local = { [K('days')]: 'D0', [K('memos')]: 'M0' };
+    const server = { [K('days')]: 'D0', [K('memos')]: 'M9' };
+    const { merged } = mergeSyncData(base, local, server, false);
+    expect(fp(merged)).toBe(fp(server));
   });
 });

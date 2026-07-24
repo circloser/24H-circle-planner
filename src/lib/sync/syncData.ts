@@ -186,6 +186,67 @@ export function changedSyncKeys(a: Record<string, string>, b: Record<string, str
   return SYNC_KEYS.filter((k) => canonicalValue(a[k]) !== canonicalValue(b[k]));
 }
 
+/**
+ * Three-way merge of two diverged snapshots against their last-synced common
+ * ancestor (`base`) — the fix for silent cross-device data loss. Whole-blob
+ * last-write-wins used to discard the entire losing side; here each synced key
+ * is merged independently:
+ *
+ *  - only ONE side changed a key (vs base)     → take that side (this is what
+ *    lets "phone edited memos" + "PC edited the schedule" BOTH survive);
+ *  - NEITHER changed it / both equal           → keep it;
+ *  - BOTH changed the same key differently      → a genuine conflict; fall back
+ *    to whole-envelope LWW (`preferServerOnConflict`).
+ *
+ * Key ABSENCE is a value too, so a real deletion (present in base, gone locally,
+ * untouched on the server) propagates. The exception is KEEP_IF_ABSENT keys
+ * (widgets, palette): an absent side is treated as "no opinion" so an old cloud
+ * blob that predates a key can never wipe it (the original login-loop guard).
+ *
+ * With no ancestor (`base` empty — a device's very first sync) every present key
+ * reads as "changed", so the merge degrades to a union with same-key conflicts
+ * resolved by LWW — still strictly better than dropping a whole side.
+ */
+export function mergeSyncData(
+  base: Record<string, string>,
+  local: Record<string, string>,
+  server: Record<string, string>,
+  preferServerOnConflict: boolean,
+): { merged: Record<string, string>; conflicts: string[] } {
+  const merged: Record<string, string> = {};
+  const conflicts: string[] = [];
+  const take = (v: string | undefined, key: string) => {
+    if (typeof v === 'string') merged[key] = v;
+  };
+
+  for (const key of SYNC_KEYS) {
+    const l = local[key];
+    const s = server[key];
+    const lc = canonicalValue(l);
+    const sc = canonicalValue(s);
+    const bc = canonicalValue(base[key]);
+
+    if (lc === sc) {
+      take(typeof l === 'string' ? l : s, key); // agree (incl. both-absent → stays absent)
+      continue;
+    }
+    // Never let an absent side delete a keep-if-absent key (anti-wipe guard).
+    if (KEEP_IF_ABSENT.has(key)) {
+      if (l === undefined) { take(s, key); continue; }
+      if (s === undefined) { take(l, key); continue; }
+    }
+    const localChanged = lc !== bc;
+    const serverChanged = sc !== bc;
+    if (localChanged && !serverChanged) take(l, key); // only local moved (incl. local deletion)
+    else if (serverChanged && !localChanged) take(s, key); // only server moved
+    else {
+      conflicts.push(key); // both moved differently → genuine conflict
+      take(preferServerOnConflict ? s : l, key);
+    }
+  }
+  return { merged, conflicts };
+}
+
 /** Validate + normalise a stored blob string into an envelope (or null). */
 export function parseEnvelope(raw: unknown): SyncEnvelope | null {
   try {

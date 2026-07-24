@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/hooks/usePreferences';
-import { collectSyncData, applySyncData, dataFingerprint, changedSyncKeys, LIVE_APPLY_KEYS, PREFS_KEY, PREFS_SYNC_EVENT, VIEW_KEY, VIEW_SYNC_EVENT, type SyncEnvelope } from '@/lib/sync/syncData';
+import { collectSyncData, applySyncData, dataFingerprint, changedSyncKeys, mergeSyncData, LIVE_APPLY_KEYS, PREFS_KEY, PREFS_SYNC_EVENT, VIEW_KEY, VIEW_SYNC_EVENT, type SyncEnvelope } from '@/lib/sync/syncData';
 import { CLOCKTOOLS_KEY, GOALSWIDGET_KEY, CLOCKTOOLS_SYNC_EVENT, GOALS_WIDGET_SYNC_EVENT } from '@/lib/sync/widgetSync';
 import { pullRemote, pushRemote, deviceLabel } from '@/lib/sync/syncClient';
 import { loadCachedKey, forgetKey, E2EE_EVENT, E2EE_REPUSH_EVENT, E2EE_DISABLE_EVENT } from '@/lib/sync/e2ee';
@@ -23,6 +23,27 @@ export const useSyncStatus = (): SyncContextValue => useContext(SyncContext);
 const META_KEY = '24h-circle-planner.syncmeta';
 const PREV_KEY = '24h-circle-planner.sync-prev';
 const APPLIED_KEY = '24h-circle-planner.sync-applied';
+// Last-synced snapshot (the common ancestor for 3-way merge). Kept so a
+// conflict merges per-key against what BOTH sides last agreed on, instead of
+// discarding a whole side (the cross-device data-loss fix).
+const BASE_KEY = '24h-circle-planner.sync-base';
+
+function loadBase(): Record<string, string> {
+  try {
+    const o = JSON.parse(localStorage.getItem(BASE_KEY) ?? '') as unknown;
+    if (o && typeof o === 'object' && !Array.isArray(o)) return o as Record<string, string>;
+  } catch {
+    /* ignore */
+  }
+  return {};
+}
+function saveBase(data: Record<string, string>): void {
+  try {
+    localStorage.setItem(BASE_KEY, JSON.stringify(data));
+  } catch {
+    /* ignore */
+  }
+}
 
 const PUSH_DEBOUNCE_MS = 1500;
 const TICK_MS = 2000;
@@ -119,26 +140,26 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     };
     const currentFp = () => dataFingerprint(collectSyncData());
 
-    // Adopt the cloud snapshot: stash local for undo, write content, reload.
-    const applyRemote = (env: SyncEnvelope, version: number) => {
-      const before = collectSyncData();
-      const changed = changedSyncKeys(before, env.data);
-      try {
-        localStorage.setItem(PREV_KEY, JSON.stringify(before));
-      } catch {
-        /* ignore */
-      }
-      applySyncData(env.data);
-      setMeta({ version, baseFp: dataFingerprint(env.data), modifiedAt: env.modifiedAt });
-
+    // Write `target` into localStorage and surface the change to the user:
+    // nothing (canonical no-op), live-apply events (prefs/view/widgets), or a
+    // reload to re-hydrate the stores (days/diary/…). Callers set meta + base
+    // BEFORE calling (both persist before any reload).
+    const surface = (before: Record<string, string>, target: Record<string, string>, withToast: boolean) => {
+      const changed = changedSyncKeys(before, target);
       // Nothing actually differs (canonically) → just mark synced, never reload.
       if (changed.length === 0) {
         setLastSyncedAt(Date.now());
         stat('synced');
         return;
       }
-      // A change touching ONLY live-appliable keys (prefs, diary view) is applied
-      // in place; anything else (days/diary/…) still reloads to re-hydrate stores.
+      try {
+        localStorage.setItem(PREV_KEY, JSON.stringify(before));
+      } catch {
+        /* ignore */
+      }
+      applySyncData(target);
+      // A change touching ONLY live-appliable keys (prefs, diary view, widgets)
+      // is applied in place; anything else (days/diary/…) reloads to re-hydrate.
       if (changed.every((k) => LIVE_APPLY_KEYS.includes(k))) {
         if (changed.includes(PREFS_KEY)) window.dispatchEvent(new Event(PREFS_SYNC_EVENT));
         if (changed.includes(VIEW_KEY)) window.dispatchEvent(new Event(VIEW_SYNC_EVENT));
@@ -149,7 +170,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         setLastSyncedAt(Date.now());
         stat('synced');
         // Toast only for a settings change; a diary-view follow is self-evident.
-        if (changed.includes(PREFS_KEY)) {
+        if (withToast && changed.includes(PREFS_KEY)) {
           toast.success(tRef.current('sync.appliedFromCloud'), {
             action: { label: tRef.current('sync.undo'), onClick: () => restorePrevious() },
             duration: 8000,
@@ -165,6 +186,15 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       window.location.reload();
     };
 
+    // Adopt the cloud snapshot wholesale (used when this device has no local
+    // edits): record it as the new common ancestor, then surface it.
+    const applyRemote = (env: SyncEnvelope, version: number) => {
+      const before = collectSyncData();
+      setMeta({ version, baseFp: dataFingerprint(env.data), modifiedAt: env.modifiedAt });
+      saveBase(env.data);
+      surface(before, env.data, true);
+    };
+
     const doPush = async (baseVersion: number) => {
       if (stopped || busy) return;
       busy = true;
@@ -177,6 +207,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       if (stopped) return;
       if (r.kind === 'ok') {
         setMeta({ version: r.version, baseFp: fp, modifiedAt: env.modifiedAt });
+        saveBase(data); // pushed cleanly → this is now the common ancestor
         setLastSyncedAt(r.updatedAt);
         stat('synced');
       } else if (r.kind === 'conflict') {
@@ -193,24 +224,67 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    // Decide between local and server when they diverge (last-write-wins).
-    const reconcile = (serverEnv: SyncEnvelope, serverVersion: number) => {
-      if (meta.modifiedAt >= serverEnv.modifiedAt) {
-        // The TIE (==) case matters: applyRemote copies the server's modifiedAt,
-        // so when a load-time normalization/migration rewrites a stored value
-        // right after an adopt, content differs while the timestamps still tie.
-        // Preferring the server here re-applies + reloads forever (the "refresh
-        // loop" — the debounced corrective push is always preempted by the
-        // reload). Prefer LOCAL and stamp a FRESH modifiedAt so this push wins
-        // strictly on every other device — without the bump they would tie too
-        // and push their own bytes back (cross-device ping-pong).
-        if (meta.modifiedAt === serverEnv.modifiedAt) {
-          setMeta({ version: meta.version, baseFp: meta.baseFp, modifiedAt: Date.now() });
-        }
-        void doPush(serverVersion); // local is newer (or normalized) → overwrite server
+    // Push a merged snapshot up (server gets the union of both sides), then
+    // apply it locally if it differs from what we currently hold.
+    const pushMerged = async (
+      merged: Record<string, string>,
+      baseVersion: number,
+      before: Record<string, string>,
+    ) => {
+      if (stopped || busy) return;
+      busy = true;
+      stat('syncing');
+      const modifiedAt = Date.now();
+      const env: SyncEnvelope = { v: 1, modifiedAt, data: merged };
+      const r = await pushRemote(env, baseVersion, deviceLabel());
+      busy = false;
+      if (stopped) return;
+      if (r.kind === 'ok') {
+        setMeta({ version: r.version, baseFp: dataFingerprint(merged), modifiedAt });
+        saveBase(merged);
+        setLastSyncedAt(r.updatedAt);
+        surface(before, merged, false); // may reload to re-hydrate stores with the union
+      } else if (r.kind === 'conflict') {
+        reconcile(r.envelope, r.version); // server advanced again → re-merge and retry
+      } else if (r.kind === 'locked') {
+        locked = true;
+        stat('locked');
+      } else if (r.kind === 'offline') {
+        stat('offline');
+      } else if (r.kind === 'unauth') {
+        stat('disabled');
       } else {
-        applyRemote(serverEnv, serverVersion); // server is newer → adopt
+        stat('error');
       }
+    };
+
+    // Reconcile diverged local + server by 3-WAY MERGE against the last-synced
+    // ancestor (per-key). Different keys edited on two devices both survive;
+    // only a genuine same-key conflict falls back to last-write-wins.
+    const reconcile = (serverEnv: SyncEnvelope, serverVersion: number) => {
+      const base = loadBase();
+      const local = collectSyncData();
+      // Same-key conflicts break toward the newer envelope; ties prefer local.
+      const preferServer = serverEnv.modifiedAt > meta.modifiedAt;
+      const { merged } = mergeSyncData(base, local, serverEnv.data, preferServer);
+      const mergedFp = dataFingerprint(merged);
+      const serverFp = dataFingerprint(serverEnv.data);
+      const localFp = dataFingerprint(local);
+
+      if (mergedFp === serverFp) {
+        // Server already holds the merged result (nothing of ours to push).
+        setMeta({ version: serverVersion, baseFp: mergedFp, modifiedAt: serverEnv.modifiedAt });
+        saveBase(merged);
+        if (mergedFp === localFp) {
+          setLastSyncedAt(Date.now());
+          stat('synced');
+        } else {
+          surface(local, merged, true); // adopt the server-side changes locally
+        }
+        return;
+      }
+      // Merged has something the server lacks → push the union up, then adopt.
+      void pushMerged(merged, serverVersion, local);
     };
 
     const pull = async () => {
@@ -243,6 +317,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       const serverFp = dataFingerprint(r.envelope.data);
       if (cur === serverFp) {
         setMeta({ version: r.version, baseFp: serverFp, modifiedAt: r.envelope.modifiedAt });
+        saveBase(r.envelope.data); // agreed with the server → this is the ancestor
         setLastSyncedAt(r.updatedAt);
         return stat('synced');
       }
@@ -251,7 +326,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       if (!localDirty) {
         applyRemote(r.envelope, r.version); // no local edits → cloud is authoritative
       } else {
-        reconcile(r.envelope, r.version);
+        reconcile(r.envelope, r.version); // both moved → 3-way merge
       }
     };
 

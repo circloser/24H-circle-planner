@@ -11,7 +11,7 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 import { ROOT, DIST } from './_helpers.mjs';
 
-const SUITES = ['smoke', 'diary', 'goals', 'memo', 'export', 'settings', 'share', 'weather', 'clocks', 'e2ee', 'weekday', 'mobile'];
+const SUITES = ['smoke', 'diary', 'goals', 'memo', 'export', 'settings', 'share', 'weather', 'clocks', 'e2ee', 'sync', 'weekday', 'mobile'];
 
 const distSingle = join(ROOT, 'dist-single', 'index.html');
 if (!existsSync(join(DIST, 'index.html')) || !existsSync(distSingle)) {
