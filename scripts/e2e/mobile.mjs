@@ -70,6 +70,18 @@ export async function run() {
       await wait(500);
       const timeInputs = editor.locator('input[type="time"]');
       pass('editor has time inputs', (await timeInputs.count()) === 2, `count=${await timeInputs.count()}`);
+      // The inputs must stay INSIDE the editor box (they used to overflow the
+      // 280px editor and hang off the screen edge on Samsung's wide time picker).
+      {
+        const er = await editor.boundingBox();
+        const t0 = await timeInputs.first().boundingBox();
+        const t1 = await timeInputs.nth(1).boundingBox();
+        const fits = !!er && !!t0 && !!t1
+          && t0.x >= er.x - 0.5 && t0.x + t0.width <= er.x + er.width + 0.5
+          && t1.x >= er.x - 0.5 && t1.x + t1.width <= er.x + er.width + 0.5
+          && t1.x + t1.width <= VW - 4;
+        pass('time inputs fit inside editor', fits, t1 ? `endRight=${Math.round(t1.x + t1.width)} editorRight=${Math.round((er?.x ?? 0) + (er?.width ?? 0))} VW=${VW}` : 'no box');
+      }
       // right slice is 02:00–08:00 → move its start to 03:00 (top grows to 22–03).
       await timeInputs.first().fill('03:00');
       await wait(400);

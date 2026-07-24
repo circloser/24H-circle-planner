@@ -251,8 +251,11 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
           values are rejected by the schedule model (no-op). Hidden for a
           single-slice day (no boundaries to move). */}
       {isMobile && sliceCount > 1 && sliceIndex >= 0 && (
-        <div className="flex items-center gap-2">
-          <label className="flex flex-1 flex-col gap-0.5">
+        <div className="flex items-stretch gap-2">
+          {/* min-w-0 lets the flex items shrink below the native time picker's
+              intrinsic width; without it the second input overflows the 280px
+              editor and hangs off the screen edge. */}
+          <label className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="text-[11px] font-medium text-muted-foreground">{t('block.start')}</span>
             <input
               type="time"
@@ -266,10 +269,10 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
                   newHHmm: e.target.value,
                 });
               }}
-              className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+              className="w-full min-w-0 rounded-md border border-border bg-background px-1.5 py-1.5 text-sm text-foreground"
             />
           </label>
-          <label className="flex flex-1 flex-col gap-0.5">
+          <label className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="text-[11px] font-medium text-muted-foreground">{t('block.end')}</span>
             <input
               type="time"
@@ -283,7 +286,7 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
                   newHHmm: e.target.value,
                 });
               }}
-              className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+              className="w-full min-w-0 rounded-md border border-border bg-background px-1.5 py-1.5 text-sm text-foreground"
             />
           </label>
         </div>
