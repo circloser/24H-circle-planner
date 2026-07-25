@@ -185,7 +185,7 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
     <div
       ref={editorRef}
       role="dialog"
-      aria-label="슬라이스 편집"
+      aria-label={t('editor.aria')}
       style={{
         position: 'fixed',
         left: pos ? `${pos.left}px` : '50%',
@@ -230,7 +230,7 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="예: 수면, 오전 업무"
+          placeholder={t('editor.namePlaceholder')}
           aria-invalid={overLimit}
           className={cn(
             'h-8 text-sm',
@@ -307,7 +307,7 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
       <div className="flex items-center gap-1.5">
         <button
           type="button"
-          aria-label="굵게"
+          aria-label={t('editor.bold')}
           aria-pressed={bold}
           onClick={() => setBold((v) => !v)}
           className="opt-chip h-8 w-8 rounded-md text-sm font-bold flex items-center justify-center"
@@ -316,7 +316,7 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
         </button>
         <button
           type="button"
-          aria-label="기울임"
+          aria-label={t('editor.italic')}
           aria-pressed={italic}
           onClick={() => setItalic((v) => !v)}
           className="opt-chip h-8 w-8 rounded-md text-sm italic flex items-center justify-center"
@@ -329,7 +329,7 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
             <button
               key={c}
               type="button"
-              aria-label={`글자색 ${c}`}
+              aria-label={`${t('editor.textColor')} ${c}`}
               data-selected={(textColor || TEXT_DEFAULT) === c}
               onClick={() => setTextColor(c)}
               className="opt-pick h-5 w-5 rounded-full"
