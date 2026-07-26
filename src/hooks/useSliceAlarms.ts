@@ -11,6 +11,34 @@ import { playBeep } from '@/components/ClockTools/clock-utils';
 const LAST_KEY = '24h-circle-planner.last-alarm';
 
 /**
+ * Show a local notification the way each platform allows. Mobile Chrome /
+ * Android (incl. the installed TWA) FORBID the `new Notification()` constructor
+ * — it throws "Illegal constructor" — so alarms silently never fired on phones.
+ * Prefer the service worker's `showNotification()` (works on mobile AND
+ * desktop); fall back to the constructor only where no SW is registered
+ * (e.g. the offline single-file build). `getRegistration()` is used instead of
+ * `.ready` because `.ready` never resolves when there is no SW at all.
+ */
+async function fireNotification(title: string, options: NotificationOptions): Promise<void> {
+  try {
+    if (typeof navigator !== 'undefined' && navigator.serviceWorker) {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) {
+        await reg.showNotification(title, options);
+        return;
+      }
+    }
+  } catch {
+    // SW notification unavailable — fall through to the page-level constructor
+  }
+  try {
+    new Notification(title, options);
+  } catch {
+    // desktop-only API; on mobile the constructor throws — nothing more to do
+  }
+}
+
+/**
  * "The timetable IS the alarm": while the tab is open (foreground or
  * background), crossing into the next slice of the ACTIVE schedule fires a
  * browser notification (+ a soft beep). Gated on the synced `sliceAlarms`
@@ -70,7 +98,7 @@ export function useSliceAlarms(): void {
         localStorage.setItem(LAST_KEY, slot);
         if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
         const title = `${cur.icon ? cur.icon + ' ' : ''}${cur.label || tRef.current('alarm.untitled')}`;
-        new Notification(title, {
+        void fireNotification(title, {
           body: `${cur.startTime}–${cur.endTime}`,
           tag: 'slice-start', // consecutive boundaries replace, never stack
           icon: '/icon-192.png',
