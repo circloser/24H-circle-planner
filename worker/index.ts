@@ -669,6 +669,56 @@ async function handleNotifyTest(request: Request, env: Env): Promise<Response> {
   return json({ ok: true });
 }
 
+/**
+ * Admin-only ANONYMOUS aggregate stats — COUNTS ONLY. Timetable/diary CONTENT
+ * is never stored server-side (the sync blob is opaque / E2EE), so nothing here
+ * can reveal what anyone planned or wrote — only how many signed up, logged in,
+ * or synced. Gated to the ADMIN_EMAILS allowlist.
+ */
+async function handleAdminStats(request: Request, env: Env): Promise<Response> {
+  if (!env.DB) return json({ error: 'unconfigured' }, 503);
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'unauthorized' }, 401);
+  if (!isAdminEmail(env, user.email)) return json({ error: 'forbidden' }, 403);
+
+  const num = async (sql: string, ...b: unknown[]): Promise<number> => {
+    const r = await env.DB!.prepare(sql).bind(...b).first<{ n: number }>();
+    return r?.n ?? 0;
+  };
+
+  const now = Date.now();
+  const DAY = 86_400_000;
+  const since30 = now - 30 * DAY;
+  const since7 = now - 7 * DAY;
+
+  const [users, syncUsers, pushDevices, pushUsers, grantsN, proSubs, active7d] = await Promise.all([
+    num('SELECT COUNT(*) AS n FROM users'),
+    num('SELECT COUNT(*) AS n FROM sync_data'),
+    num('SELECT COUNT(*) AS n FROM push_subs'),
+    num('SELECT COUNT(DISTINCT user_id) AS n FROM push_subs'),
+    num('SELECT COUNT(*) AS n FROM grants'),
+    num("SELECT COUNT(*) AS n FROM subscriptions WHERE status IN ('active','on_trial')"),
+    num('SELECT COUNT(DISTINCT user_id) AS n FROM sessions WHERE created_at >= ?', since7),
+  ]);
+
+  // Daily signups + logins over the last 30 days, bucketed by KST calendar day.
+  const dayExpr = (col: string) => `strftime('%Y-%m-%d', ${col}/1000, 'unixepoch', '+9 hours')`;
+  const rows = async (table: string, col: string) =>
+    (await env.DB!.prepare(`SELECT ${dayExpr(col)} AS d, COUNT(*) AS n FROM ${table} WHERE ${col} >= ? GROUP BY d`)
+      .bind(since30).all<{ d: string; n: number }>()).results ?? [];
+  const [signupRows, loginRows] = await Promise.all([rows('users', 'created_at'), rows('sessions', 'created_at')]);
+  const sMap = new Map(signupRows.map((r) => [r.d, r.n]));
+  const lMap = new Map(loginRows.map((r) => [r.d, r.n]));
+  const kstDay = (ms: number) => new Date(ms + 9 * 3_600_000).toISOString().slice(0, 10);
+  const daily: { day: string; signups: number; logins: number }[] = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = kstDay(now - i * DAY);
+    daily.push({ day: d, signups: sMap.get(d) ?? 0, logins: lMap.get(d) ?? 0 });
+  }
+
+  return json({ totals: { users, syncUsers, pushDevices, pushUsers, grants: grantsN, proSubs }, active7d, daily, generatedAt: now });
+}
+
 // ─── Web Push (Pro closed-tab slice alarms) ──────────────────────────────────
 // The client uploads TODAY-agnostic notification strings per boundary
 // ({t:'HH:MM', title, body}) plus its UTC offset; the minute cron matches each
@@ -848,6 +898,7 @@ export default {
       if (p === '/api/webhooks/polar' && m === 'POST') return handleWebhook(request, env, ctx);
       if (p === '/api/coupon/redeem' && m === 'POST') return handleCouponRedeem(request, env, ctx);
       if (p === '/api/admin/notify-test' && m === 'POST') return handleNotifyTest(request, env);
+      if (p === '/api/admin/stats' && m === 'GET') return handleAdminStats(request, env);
       if (p === '/api/admin/coupons' && (m === 'GET' || m === 'POST')) return handleAdminCoupons(request, env);
       if (p === '/api/push/subscribe' && m === 'POST') return handlePushSubscribe(request, env);
       if (p === '/api/push/subscribe' && m === 'DELETE') return handlePushUnsubscribe(request, env);

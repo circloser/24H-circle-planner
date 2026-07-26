@@ -43,6 +43,7 @@ import { useSyncStatus } from '@/hooks/useSync';
 import { useAuth } from '@/hooks/useAuth';
 import { E2eeDialog } from '@/components/Sync/E2eeDialog';
 import { UpgradeDialog } from '@/components/Billing/UpgradeDialog';
+import { StatsDialog } from '@/components/Admin/StatsDialog';
 import { OPEN_UPGRADE_EVENT } from '@/lib/pro';
 import { WelcomeOverlay } from '@/components/Onboarding/WelcomeOverlay';
 import { readSharedFromHash, clearShareHash } from '@/lib/share-link';
@@ -134,6 +135,7 @@ function App() {
   const [exportOpen, setExportOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [homeOpen, setHomeOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
   const [timeBlockOpen, setTimeBlockOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
@@ -206,7 +208,10 @@ function App() {
   // never hit a gate) to reach the coupon-issuing panel, and for anyone with a code.
   useEffect(() => {
     const onUpgrade = () => setUpgradeOpen(true);
-    const onHash = () => { if (window.location.hash === '#coupons') setUpgradeOpen(true); };
+    const onHash = () => {
+      if (window.location.hash === '#coupons') setUpgradeOpen(true);
+      if (window.location.hash === '#stats') setStatsOpen(true); // admin-only (endpoint 403s others)
+    };
     onHash();
     window.addEventListener(OPEN_UPGRADE_EVENT, onUpgrade);
     window.addEventListener('hashchange', onHash);
@@ -530,6 +535,7 @@ function App() {
       {/* End-to-end encryption for cloud sync (enable / unlock / manage). */}
       <E2eeDialog open={e2eeOpen} onOpenChange={setE2eeOpen} />
       <UpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} />
+      <StatsDialog open={statsOpen} onOpenChange={setStatsOpen} />
       <TimePaletteDialog open={paletteOpen} onOpenChange={setPaletteOpen} />
 
       {/* Assign a saved schedule to each weekday. */}
