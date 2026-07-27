@@ -80,6 +80,7 @@ export function AppHeader({
 
   return (
     <header
+      data-app-header
       className="sticky top-0 z-30 border-b bg-surface/85 border-border/70"
       style={{
         backdropFilter: 'blur(10px)',

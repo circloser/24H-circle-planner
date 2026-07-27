@@ -164,6 +164,19 @@
   --color-accent-foreground: hsl(var(--foreground));
 }
 
+/* ─── Mobile usability (P0) ──────────────────────────────────────────────── */
+/* Stop accidental pull-to-refresh / overscroll bounce inside the installed app. */
+html, body { overscroll-behavior-y: contain; }
+/* Respect the notch / gesture bar on edge-to-edge phones (needs viewport-fit=cover). */
+[data-app-header] { padding-top: env(safe-area-inset-top); }
+[data-app-root] { padding-bottom: env(safe-area-inset-bottom); }
+@media (max-width: 767px) {
+  /* iOS Safari auto-zooms when focusing an input under 16px — pin 16px on phones. */
+  input, textarea, select { font-size: 16px; }
+  /* Comfortable 44px-tall tap targets for the most-tapped top action bar. */
+  [data-app-header] button { min-height: 44px; }
+}
+
 body {
   margin: 0;
   /* background-color (not the `background` shorthand) so pattern/image rules
