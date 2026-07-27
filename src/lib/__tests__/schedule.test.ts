@@ -251,7 +251,7 @@ describe('splitSliceAt', () => {
     expect(newSlice.textPosition).toBe('inside');
   });
 
-  it('throws if split would create <10-min left slice (slice starts at 00:00, split at 00:00 snaps to 00:00 → left=0)', () => {
+  it('throws if split would create a sub-grid left slice (slice starts at 00:00, split at 00:00 snaps to 00:00 → left=0)', () => {
     // A slice 00:00–00:10 split at 00:00: left=0 minutes → throws
     const schedule = makeSchedule([
       makeSlice('00:00', '00:10', { label: 'A' }),
@@ -261,9 +261,8 @@ describe('splitSliceAt', () => {
     expect(() => splitSliceAt(schedule, '00:00')).toThrow(ContiguityError);
   });
 
-  it('throws if split would create <10-min right slice (slice ends at 00:20, split at 00:10 snaps to 00:10 → right=10 min — valid; use 00:10–00:20 split at boundary)', () => {
-    // A 20min slice 00:00–00:20 split at 00:10 gives both halves = 10min — valid.
-    // For <10 right, need split point 10min from end: 00:00–00:20 split at 00:20 snaps to 00:20 → right=0 → throws
+  it('throws if split would create a sub-grid right slice (split lands on the slice end → right=0)', () => {
+    // A 20min slice 00:00–00:20 split at 00:20 snaps to 00:20 → right=0 → throws
     const schedule = makeSchedule([
       makeSlice('00:00', '00:20', { label: 'A' }),
       makeSlice('00:20', '00:00', { label: 'B' }),
@@ -430,17 +429,17 @@ describe('resizeBoundary', () => {
   });
 
   it('survivor-collapse rejection: throw ContiguityError if survivor would also collapse', () => {
-    // [A(00–06:00), B(06:00–06:10), C(06:10–06:20), D(06:20–00:00)]
-    // boundary 0 (at 06:00) CW to 06:15 → snaps to 06:20.
-    // B(06:00–06:10): cwEndDelta=10, snappedDelta=20, isOvertaken → absorb B.
-    // Check C (next survivor): hypo C.start=06:20, C.end=06:20 → width=0 < 10 → THROW.
+    // [A(00–06:00), B(06:00–06:05), C(06:05–06:10), D(06:10–00:00)]
+    // boundary 0 (at 06:00) CW to 06:10 (already on the 5-grid).
+    // B(06:00–06:05): cwEndDelta=5, snappedDelta=10, isOvertaken → absorb B.
+    // Check C (next survivor): hypo C.start=06:10, C.end=06:10 → width=0 < 5 → THROW.
     const schedule = makeSchedule([
       makeSlice('00:00', '06:00', { label: 'A' }),
-      makeSlice('06:00', '06:10', { label: 'B' }),
-      makeSlice('06:10', '06:20', { label: 'C' }),
-      makeSlice('06:20', '00:00', { label: 'D' }),
+      makeSlice('06:00', '06:05', { label: 'B' }),
+      makeSlice('06:05', '06:10', { label: 'C' }),
+      makeSlice('06:10', '00:00', { label: 'D' }),
     ]);
-    expect(() => resizeBoundary(schedule, 0, '06:15')).toThrow(ContiguityError);
+    expect(() => resizeBoundary(schedule, 0, '06:10')).toThrow(ContiguityError);
   });
 
   it('preserves contiguity after boundary resize', () => {
@@ -569,14 +568,14 @@ describe('setBlock', () => {
     expect(sliceWidthMinutes(block)).toBe(480); // 8h across midnight
   });
 
-  it('snaps times to the 10-min grid', () => {
+  it('snaps times to the 5-min grid', () => {
     const out = setBlock(blankDay(), '09:03', '12:07', 'snap-1', {});
     const block = out.slices.find((s) => s.id === 'snap-1')!;
-    expect(block.startTime).toBe('09:00');
-    expect(block.endTime).toBe('12:10');
+    expect(block.startTime).toBe('09:05');
+    expect(block.endTime).toBe('12:05');
   });
 
-  it('throws for a <10-min (or zero-width) block', () => {
+  it('throws for a sub-grid (or zero-width) block', () => {
     expect(() => setBlock(blankDay(), '09:00', '09:00', 'z', {})).toThrow(ContiguityError);
   });
 });

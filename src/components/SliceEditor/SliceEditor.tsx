@@ -259,7 +259,7 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
             <span className="text-[11px] font-medium text-muted-foreground">{t('block.start')}</span>
             <input
               type="time"
-              step={600}
+              step={300}
               value={slice.startTime === '24:00' ? '00:00' : slice.startTime}
               onChange={(e) => {
                 if (!e.target.value) return;
@@ -276,7 +276,7 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
             <span className="text-[11px] font-medium text-muted-foreground">{t('block.end')}</span>
             <input
               type="time"
-              step={600}
+              step={300}
               value={slice.endTime === '24:00' ? '00:00' : slice.endTime}
               onChange={(e) => {
                 if (!e.target.value) return;

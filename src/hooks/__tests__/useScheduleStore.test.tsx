@@ -365,7 +365,7 @@ describe('ScheduleStoreProvider', () => {
 
       const presentBefore = result.current.present;
 
-      // Trigger a SPLIT that creates <10-min slices: split at boundary of a 10-min slice
+      // Trigger a SPLIT that creates a sub-grid slice (zero-width left half).
       // The initial schedule has 00:00–12:00. Split at 00:00 → left width=0 → throws
       act(() => {
         result.current.dispatch({ type: 'SPLIT', hhmm: '00:00' });

@@ -70,11 +70,11 @@ export function TimeBlockDialog({ open, onOpenChange, onCreated }: TimeBlockDial
           <div className="flex gap-3">
             <label className="flex flex-1 flex-col gap-1">
               <span className="text-xs font-medium text-muted-foreground">{t('block.start')}</span>
-              <input type="time" step={600} value={start} onChange={(e) => setStart(e.target.value)} className={timeInputCls} />
+              <input type="time" step={300} value={start} onChange={(e) => setStart(e.target.value)} className={timeInputCls} />
             </label>
             <label className="flex flex-1 flex-col gap-1">
               <span className="text-xs font-medium text-muted-foreground">{t('block.end')}</span>
-              <input type="time" step={600} value={end} onChange={(e) => setEnd(e.target.value)} className={timeInputCls} />
+              <input type="time" step={300} value={end} onChange={(e) => setEnd(e.target.value)} className={timeInputCls} />
             </label>
           </div>
 

@@ -129,15 +129,13 @@ describe('angleToHhmm', () => {
     expect(angleToHhmm(90)).toBe('12:00');
   });
 
-  it('snaps to nearest 10-minute step', () => {
-    // 90.5 degrees slightly past 12:00
-    // (90.5 + 90)/360 * 1440 = 724 minutes → snaps to 720 = 12:00
-    const result = angleToHhmm(90.5);
-    expect(['12:00', '12:10']).toContain(result);
+  it('snaps to nearest 5-minute step', () => {
+    // 90.75 degrees → (90.75 + 90)/360 * 1440 = 723 minutes → snaps to 725 = 12:05
+    expect(angleToHhmm(90.75)).toBe('12:05');
   });
 
-  it('round-trips hhmmToAngle → angleToHhmm for 10-minute-aligned times', () => {
-    const times = ['00:00', '06:00', '12:00', '18:00', '23:50'];
+  it('round-trips hhmmToAngle → angleToHhmm for 5-minute-aligned times', () => {
+    const times = ['00:00', '00:05', '06:00', '12:35', '18:00', '23:50'];
     for (const t of times) {
       expect(angleToHhmm(hhmmToAngle(t))).toBe(t);
     }
@@ -163,16 +161,16 @@ describe('snapMinutes', () => {
     expect(snapMinutes(-5)).toBe(0);
   });
 
-  it('rounds 14 to 10', () => {
-    expect(snapMinutes(14)).toBe(10);
+  it('rounds 12 down to 10', () => {
+    expect(snapMinutes(12)).toBe(10);
   });
 
-  it('rounds 15 to 20', () => {
-    expect(snapMinutes(15)).toBe(20);
+  it('rounds 13 up to 15', () => {
+    expect(snapMinutes(13)).toBe(15);
   });
 
-  it('rounds 25 to 30', () => {
-    expect(snapMinutes(25)).toBe(30);
+  it('rounds 28 up to 30', () => {
+    expect(snapMinutes(28)).toBe(30);
   });
 });
 

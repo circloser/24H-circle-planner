@@ -32,7 +32,7 @@ export function hhmmToAngle(hhmm: string): number {
 
 /**
  * Degrees → "HH:mm", inverse of hhmmToAngle.
- * Snapped to nearest 10-minute step.
+ * Snapped to the nearest SNAP_MINUTES step.
  */
 export function angleToHhmm(deg: number): string {
   // Normalize degrees to [0, 360)
@@ -43,9 +43,13 @@ export function angleToHhmm(deg: number): string {
   return minutesToHhmm(snapped === 1440 ? 0 : snapped);
 }
 
-/** Round to nearest 10-minute step, clamped 0..1430. */
+/** The time grid everything snaps to (drag, split, block, boundary resize) and
+ *  the minimum slice width. One place to change the granularity. */
+export const SNAP_MINUTES = 5;
+
+/** Round to the nearest SNAP_MINUTES step, clamped 0..1430. */
 export function snapMinutes(m: number): number {
-  const snapped = Math.round(m / 10) * 10;
+  const snapped = Math.round(m / SNAP_MINUTES) * SNAP_MINUTES;
   return Math.max(0, Math.min(1430, snapped));
 }
 
@@ -60,7 +64,7 @@ export function compareHHmm(a: string, b: string): number {
  * Width of a slice in minutes, handling midnight wrap.
  * If endMin <= startMin → 1440 - startMin + endMin (wrap-around).
  * Otherwise endMin - startMin.
- * Minimum legal width is 10.
+ * Minimum legal width is SNAP_MINUTES.
  */
 export function sliceWidthMinutes(slice: TimeSlice): number {
   const startMin = hhmmToMinutes(slice.startTime);

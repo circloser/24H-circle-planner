@@ -5,6 +5,7 @@ import {
   hhmmToMinutes,
   minutesToHhmm,
   snapMinutes,
+  SNAP_MINUTES,
   sliceWidthMinutes,
   isContiguous24h,
 } from './time-utils';
@@ -202,7 +203,7 @@ function findSliceIndexAt(slices: TimeSlice[], targetMin: number): number {
  *
  * This lets the "+" affordance always sprout the empty cell adjacent to the
  * division line and push the existing content away, symmetrically on both sides.
- * Throws if the snapped split would create a <10-min slice on either side.
+ * Throws if the snapped split would create a sub-grid (<SNAP_MINUTES) slice on either side.
  */
 export function splitSliceAt(
   schedule: Schedule,
@@ -248,8 +249,8 @@ export function splitSliceAt(
     rightWidth = parentEndMin - snappedMin;
   }
 
-  if (leftWidth < 10) throw new ContiguityError(action, `Split would create a <10-min left slice (width=${leftWidth})`);
-  if (rightWidth < 10) throw new ContiguityError(action, `Split would create a <10-min right slice (width=${rightWidth})`);
+  if (leftWidth < SNAP_MINUTES) throw new ContiguityError(action, `Split would create a sub-grid left slice (width=${leftWidth})`);
+  if (rightWidth < SNAP_MINUTES) throw new ContiguityError(action, `Split would create a sub-grid right slice (width=${rightWidth})`);
 
   // The cells flanking the new empty slot: the parent-kept half (parent.color) on
   // the inner side, and the existing adjacent slice on the outer side. Indices
@@ -325,7 +326,7 @@ export interface BlockContent {
  * midnight) is supported. This is the form-driven "add a time block" primitive
  * used on mobile instead of dragging — type a start and end, get a wedge.
  *
- * Times snap to the 10-minute grid. Throws if the block would be <10 min.
+ * Times snap to the SNAP_MINUTES grid. Throws if the block would be sub-grid.
  */
 export function setBlock(
   schedule: Schedule,
@@ -338,7 +339,7 @@ export function setBlock(
   const s = snapMinutes(hhmmToMinutes(startHhmm)) % 1440;
   const e = snapMinutes(hhmmToMinutes(endHhmm)) % 1440;
   const blockW = (e - s + 1440) % 1440;
-  if (blockW < 10) throw new ContiguityError(action, `block must be ≥10 min (got ${blockW})`);
+  if (blockW < SNAP_MINUTES) throw new ContiguityError(action, `block must be ≥${SNAP_MINUTES} min (got ${blockW})`);
 
   // Original coverage sampler: which slice covers minute t (mod 1440).
   const ranges = schedule.slices.map((sl) => ({
@@ -514,10 +515,10 @@ export function reorderSlices(schedule: Schedule, from: number, to: number): Sch
  * slices[(boundaryIndex+1) % len] (CW side).
  *
  * Iterative fold per C5:
- * - Snap newHHmm to 10-min.
+ * - Snap newHHmm to the SNAP_MINUTES grid.
  * - Determine drag direction (CW vs CCW).
- * - CW drag: boundary moves forward; CW neighbors shrink and are absorbed if <10 min.
- * - CCW drag: boundary moves backward; CCW neighbors shrink and are absorbed if <10 min.
+ * - CW drag: boundary moves forward; CW neighbors shrink and are absorbed if sub-grid.
+ * - CCW drag: boundary moves backward; CCW neighbors shrink and are absorbed if sub-grid.
  * - Throw ContiguityError if the final survivor would collapse.
  */
 export function resizeBoundary(
@@ -578,11 +579,11 @@ export function resizeBoundary(
       // Absorb if the snapped position has overtaken the CW slice's end
       const isOvertaken = snappedDelta >= cwEndDelta && cwEndDelta > 0;
 
-      // Also absorb if remainder would be <10 min (but not overtaken)
+      // Also absorb if the remainder would be a sub-grid sliver (but not overtaken)
       const hypoSlice: TimeSlice = { ...cwSlice, startTime: minutesToHhmm(snappedMin) };
       const newCwWidth = isOvertaken ? 0 : sliceWidthMinutes(hypoSlice);
 
-      if (isOvertaken || newCwWidth < 10) {
+      if (isOvertaken || newCwWidth < SNAP_MINUTES) {
         // Absorbing cwSlice would leave slices.length-1 slices; need at least 2 for a boundary
         if (slices.length <= 2) {
           throw new ContiguityError(action, 'survivor would collapse');
@@ -591,7 +592,7 @@ export function resizeBoundary(
         const nextCwIdx = (cwIdx + 1) % slices.length;
         const nextCwSlice = slices[nextCwIdx];
         const nextHypo: TimeSlice = { ...nextCwSlice, startTime: minutesToHhmm(snappedMin) };
-        if (sliceWidthMinutes(nextHypo) < 10) {
+        if (sliceWidthMinutes(nextHypo) < SNAP_MINUTES) {
           throw new ContiguityError(action, 'survivor would collapse');
         }
 
@@ -633,11 +634,11 @@ export function resizeBoundary(
       // The CCW slice is overtaken when the drag distance equals or exceeds its full width
       const isOvertaken = dragDistance >= ccwWidth;
 
-      // Also absorb if the resulting width would be <10 min
+      // Also absorb if the resulting width would be a sub-grid sliver
       const hypoSlice: TimeSlice = { ...ccwSlice, endTime: minutesToHhmm(snappedMin) };
       const newCcwWidth = isOvertaken ? 0 : sliceWidthMinutes(hypoSlice);
 
-      if (isOvertaken || newCcwWidth < 10) {
+      if (isOvertaken || newCcwWidth < SNAP_MINUTES) {
         // Absorbing ccwSlice would leave slices.length-1 slices; need at least 2 for a boundary
         if (slices.length <= 2) {
           throw new ContiguityError(action, 'survivor would collapse');
@@ -647,7 +648,7 @@ export function resizeBoundary(
         if (prevIdx !== cwIdx) {
           const prevSlice = slices[prevIdx];
           const prevHypo: TimeSlice = { ...prevSlice, endTime: minutesToHhmm(snappedMin) };
-          if (sliceWidthMinutes(prevHypo) < 10) {
+          if (sliceWidthMinutes(prevHypo) < SNAP_MINUTES) {
             throw new ContiguityError(action, 'survivor would collapse');
           }
         }
