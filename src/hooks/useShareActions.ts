@@ -26,7 +26,7 @@ export function useShareActions(svgRef: React.RefObject<SVGSVGElement | null>) {
       return;
     }
     try {
-      const outcome = await shareChartImage(svgRef.current, present.name, t('share.text'));
+      const outcome = await shareChartImage(svgRef.current, present.name || t('shareview.untitled'), t('share.text'));
       track('share', { method: 'image' });
       if (outcome === 'downloaded') toast.success(t('share.saved'));
     } catch (err) {

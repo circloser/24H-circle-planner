@@ -62,12 +62,15 @@ function HubTitleEditorInner({
   }, []);
 
   const commit = useCallback(() => {
+    // Dispatch on any real change — including clearing to empty (the hub then
+    // falls back to today's date). Skip only when unchanged from what opened, so
+    // just viewing an untitled title (empty box) never freezes the date as a name.
     const trimmed = name.trim();
-    if (trimmed !== '') {
+    if (trimmed !== currentName) {
       dispatch({ type: 'SET_SCHEDULE_NAME', name: trimmed });
     }
     onClose();
-  }, [dispatch, name, onClose]);
+  }, [dispatch, name, currentName, onClose]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {

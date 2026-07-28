@@ -168,6 +168,14 @@ function App() {
   // en-GB "Tue, 4 Aug", de "Di., 4. Aug.", ja "8月4日(火)"). Prefer the browser's
   // full regional locale when it shares the chosen UI language's base, else fall
   // back to the UI language so the date never clashes with the surrounding UI.
+  // The real, editable schedule name — empty when the schedule is "untitled"
+  // (blank or a default placeholder). The hub title editor opens with THIS, so an
+  // untitled schedule shows an empty box (not the date) and saving the date as a
+  // frozen name can't happen.
+  const editableTitle = (() => {
+    const nm = present.name?.trim() ?? '';
+    return nm === '내 시간표' || nm === '내 하루' ? '' : nm;
+  })();
   const displayTitle = (() => {
     const nm = present.name?.trim() ?? '';
     if (diaryDate || (nm !== '' && nm !== '내 시간표' && nm !== '내 하루')) return present.name;
@@ -511,7 +519,7 @@ function App() {
       <HubTitleEditor
         open={editingTitle}
         svgRef={svgRef}
-        currentName={displayTitle}
+        currentName={editableTitle}
         onClose={() => setEditingTitle(false)}
       />
 
@@ -523,7 +531,7 @@ function App() {
         open={exportOpen}
         onOpenChange={setExportOpen}
         svgRef={svgRef}
-        scheduleName={present.name}
+        scheduleName={present.name || t('shareview.untitled')}
         schedule={present}
         onImport={(s: Schedule) => dispatch({ type: 'LOAD_SCHEDULE', schedule: s })}
       />

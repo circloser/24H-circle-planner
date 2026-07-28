@@ -19,6 +19,29 @@ export async function run() {
     await page.keyboard.press('Escape');
     await wait(300);
 
+    // Hub title: clearing the name falls back to today's date (seed name was
+    // '테스트 하루'). Regression: an empty save used to be dropped, so the old
+    // name lingered.
+    {
+      const hubText = () => page.evaluate(() =>
+        [...document.querySelectorAll('svg[role="img"] text')].map((t) => t.textContent.trim()));
+      pass('hub shows the schedule name', (await hubText()).includes('테스트 하루'));
+
+      await page.locator('svg[role="img"] circle.glass-hub-disc').first().click();
+      await wait(300);
+      const editor = page.locator('div[aria-label="시간표 제목 편집"]');
+      pass('hub title editor opens', await editor.isVisible().catch(() => false));
+      await editor.locator('input').fill('');
+      await page.keyboard.press('Enter');
+      await wait(400);
+
+      const after = await hubText();
+      const expectedDate = await page.evaluate(() =>
+        new Date().toLocaleDateString('ko', { weekday: 'short', month: 'short', day: 'numeric' }));
+      pass('cleared title removes the old name', !after.includes('테스트 하루'), after.join('|'));
+      pass('cleared title shows today’s date', after.some((s) => s.includes(expectedDate)), `expected=${expectedDate} got=${after.join('|')}`);
+    }
+
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
   } finally {
     await browser.close();

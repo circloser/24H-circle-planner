@@ -215,7 +215,9 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
     case 'SET_SCHEDULE_NAME': {
       const present = state.history.present;
       const name = action.name.trim();
-      if (name === '' || name === present.name) return state; // no-op
+      // Empty is allowed — it clears the title so the hub shows today's date.
+      // Only skip when the value is unchanged.
+      if (name === present.name) return state; // no-op
       return applyMutation(state, (p) => ({
         ...p,
         name,

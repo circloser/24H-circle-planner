@@ -216,6 +216,50 @@ describe('ScheduleStoreProvider', () => {
     });
   });
 
+  // ─── SET_SCHEDULE_NAME ───────────────────────────────────────────────────────
+
+  describe('SET_SCHEDULE_NAME', () => {
+    const renderStore = () =>
+      renderHook(
+        () => ({
+          present: useStoreSelector((s) => s.history.present),
+          dispatch: useStoreDispatch(),
+        }),
+        { wrapper },
+      );
+    const load = (result: { current: { dispatch: (a: unknown) => void } }) =>
+      act(() => {
+        result.current.dispatch({
+          type: 'LOAD_SCHEDULE',
+          schedule: makeSchedule([makeSlice('00:00', '12:00'), makeSlice('12:00', '00:00')]),
+        });
+      });
+
+    it('sets a custom name', () => {
+      const { result } = renderStore();
+      load(result);
+      act(() => result.current.dispatch({ type: 'SET_SCHEDULE_NAME', name: '회의' }));
+      expect(result.current.present.name).toBe('회의');
+    });
+
+    it('clears the name to empty (so the hub can fall back to the date)', () => {
+      const { result } = renderStore();
+      load(result);
+      act(() => result.current.dispatch({ type: 'SET_SCHEDULE_NAME', name: '회의' }));
+      act(() => result.current.dispatch({ type: 'SET_SCHEDULE_NAME', name: '' }));
+      expect(result.current.present.name).toBe('');
+    });
+
+    it('no-ops when the name is unchanged', () => {
+      const { result } = renderStore();
+      load(result);
+      act(() => result.current.dispatch({ type: 'SET_SCHEDULE_NAME', name: '회의' }));
+      const ref = result.current.present;
+      act(() => result.current.dispatch({ type: 'SET_SCHEDULE_NAME', name: '회의' }));
+      expect(result.current.present).toBe(ref); // same reference — no mutation pushed
+    });
+  });
+
   // ─── UNDO/REDO ───────────────────────────────────────────────────────────────
 
   describe('UNDO/REDO', () => {
