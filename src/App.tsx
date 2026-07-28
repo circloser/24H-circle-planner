@@ -35,6 +35,7 @@ import { AboutDialog } from '@/components/About/AboutDialog';
 import { requestPersistentStorage } from '@/lib/persistent-storage';
 import { useTranslation, useChartView } from '@/hooks/usePreferences';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { useDayChange } from '@/hooks/useDayChange';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useSliceInteraction } from '@/hooks/useSliceInteraction';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -162,6 +163,9 @@ function App() {
   const [editingTitle, setEditingTitle] = useState(false);
   const [settingsSection, setSettingsSection] = useState<SettingsSection | null>(null);
   const { t, lang } = useTranslation();
+  // Ticks over at local midnight so an untitled hub date rolls to the new day
+  // while the app is left open (no reload needed); drives displayTitle below.
+  const todayKey = useDayChange();
   // In plain edit mode (no diary loaded), an untitled schedule shows today's date
   // as its hub title, formatted by each country's own convention — Intl decides
   // the field order + separators (ko "8월 4일 (화)", en "Tue, Aug 4",
@@ -181,7 +185,9 @@ function App() {
     if (diaryDate || (nm !== '' && nm !== '내 시간표' && nm !== '내 하루')) return present.name;
     const nav = typeof navigator !== 'undefined' ? navigator.language : '';
     const dateLocale = nav && nav.split('-')[0] === lang ? nav : lang;
-    return new Date().toLocaleDateString(dateLocale, {
+    // Build from todayKey (local YYYY-MM-DD) so the value is reactive to the
+    // midnight tick — parsed with an explicit time so it's local, not UTC.
+    return new Date(`${todayKey}T00:00:00`).toLocaleDateString(dateLocale, {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
