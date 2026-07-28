@@ -163,15 +163,21 @@ function App() {
   const [settingsSection, setSettingsSection] = useState<SettingsSection | null>(null);
   const { t, lang } = useTranslation();
   // In plain edit mode (no diary loaded), an untitled schedule shows today's date
-  // as its hub title — e.g. "7.2.(목)" / "Jul 2 (Thu)".
+  // as its hub title, formatted by each country's own convention — Intl decides
+  // the field order + separators (ko "8월 4일 (화)", en "Tue, Aug 4",
+  // en-GB "Tue, 4 Aug", de "Di., 4. Aug.", ja "8月4日(火)"). Prefer the browser's
+  // full regional locale when it shares the chosen UI language's base, else fall
+  // back to the UI language so the date never clashes with the surrounding UI.
   const displayTitle = (() => {
     const nm = present.name?.trim() ?? '';
     if (diaryDate || (nm !== '' && nm !== '내 시간표' && nm !== '내 하루')) return present.name;
-    const d = new Date();
-    const dow = d.toLocaleDateString(lang, { weekday: 'short' });
-    return lang === 'ko'
-      ? `${d.getMonth() + 1}.${d.getDate()}.(${dow})`
-      : `${d.toLocaleDateString(lang, { month: 'short', day: 'numeric' })} (${dow})`;
+    const nav = typeof navigator !== 'undefined' ? navigator.language : '';
+    const dateLocale = nav && nav.split('-')[0] === lang ? nav : lang;
+    return new Date().toLocaleDateString(dateLocale, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    });
   })();
   const isMobile = useIsMobile();
   const chartView = useChartView();
