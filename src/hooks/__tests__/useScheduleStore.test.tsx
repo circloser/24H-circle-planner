@@ -227,7 +227,7 @@ describe('ScheduleStoreProvider', () => {
         }),
         { wrapper },
       );
-    const load = (result: { current: { dispatch: (a: unknown) => void } }) =>
+    const load = (result: ReturnType<typeof renderStore>['result']) =>
       act(() => {
         result.current.dispatch({
           type: 'LOAD_SCHEDULE',
