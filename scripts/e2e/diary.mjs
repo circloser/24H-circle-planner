@@ -18,12 +18,16 @@ export async function run() {
 
     await loadDiary(page, key);
     pass('now-line hidden while viewing a diary', (await nowLines()) === 0);
+    // A loaded diary marks 00:00 with a bold dashed seam (closed snapshot, not
+    // the live continuous ring).
+    pass('midnight seam shown while viewing a diary', (await page.locator('.midnight-seam').count()) > 0);
     pass('view cursor written on diary load',
       (await page.evaluate((k) => localStorage.getItem(k), VIEW_KEY)) === JSON.stringify({ diaryDate: key }));
     pass('diary exit affordance shown', (await page.locator('text=일기 나가기').count()) > 0);
 
     await exitDiary(page);
     pass('now-line returns after exit', (await nowLines()) > 0);
+    pass('midnight seam gone after exit', (await page.locator('.midnight-seam').count()) === 0);
     pass('view cursor cleared on exit',
       (await page.evaluate((k) => localStorage.getItem(k), VIEW_KEY)) === JSON.stringify({ diaryDate: null }));
 

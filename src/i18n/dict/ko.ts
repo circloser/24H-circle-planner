@@ -229,6 +229,7 @@ export const ko = {
   'editor.bold': '굵게',
   'editor.italic': '기울임',
   'editor.textColor': '글자색',
+  'editor.delete': '항목 삭제',
   'block.color': '색상',
   'block.invalid': '시작과 끝 시간을 다르게 입력하세요.',
   'welcome.title': '하루를 한눈에, 원형 시간표',
@@ -483,6 +484,10 @@ export const ko = {
   'rim.delete': '메모 삭제',
   'rim.move': '테두리 따라 이동',
   'rim.viewTitle': '테두리 메모',
+  'rim.add': '테두리 메모',
+  'rim.addTitle': '테두리 메모 추가',
+  'rim.time': '시간',
+  'rim.content': '내용',
   'about.open': '24Houring 소개 · 사용 안내',
 } as const;
 

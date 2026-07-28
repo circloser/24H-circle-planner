@@ -174,6 +174,36 @@ export async function run() {
       pass('rim delete via popup', left === 2, `dots left=${left}`);
     }
 
+    // ── 6. Rim memo ADD via the "+ 테두리 메모" button + popup ─────────────────
+    {
+      // EXACT name — the rim dot buttons are labelled "테두리 메모 HH:mm", so a
+      // substring match on "테두리 메모" would hit a dot (opening its view popup)
+      // instead of the App add button.
+      await page.getByRole('button', { name: '테두리 메모', exact: true }).click();
+      await wait(400);
+      const addDlg = page.locator('[role="dialog"]', { hasText: '테두리 메모 추가' });
+      await addDlg.locator('input[type="time"]').fill('11:00');
+      await addDlg.getByPlaceholder('메모…').fill('새 테두리 메모');
+      await addDlg.getByRole('button', { name: '저장' }).click();
+      await wait(500);
+      const after = await page.locator('[data-rim-dot]').count();
+      pass('rim memo added via popup', after === 3, `dots=${after}`);
+    }
+
+    // ── 7. Slice delete via the editor's 항목 삭제 (mobile only) ───────────────
+    {
+      const before = await page.locator('[data-label-id]').count();
+      const bb = await page.locator('[data-label-id="bottom"]').first().boundingBox();
+      await page.touchscreen.tap(bb.x + bb.width / 2, bb.y + bb.height / 2);
+      await wait(500);
+      const delBtn = editor.getByRole('button', { name: '항목 삭제' });
+      pass('editor has delete button', await delBtn.isVisible().catch(() => false));
+      await delBtn.click();
+      await wait(500);
+      const after = await page.locator('[data-label-id]').count();
+      pass('slice deleted via editor', after === before - 1, `before=${before} after=${after}`);
+    }
+
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
   } finally {
     await browser.close();

@@ -120,6 +120,16 @@ export function useRimMemos(dayId: string | null) {
     },
     [setList],
   );
+  // Create a memo already carrying its text — the mobile add flow types time +
+  // content up front (desktop creates empty and edits inline instead).
+  const addWithText = useCallback(
+    (minute: number, text: string): string => {
+      const id = uuid();
+      setList((m) => [...m, { id, minute, text, createdAt: Date.now() }]);
+      return id;
+    },
+    [setList],
+  );
   const update = useCallback((id: string, text: string) => {
     setList((m) => m.map((x) => (x.id === id ? { ...x, text } : x)));
   }, [setList]);
@@ -130,5 +140,5 @@ export function useRimMemos(dayId: string | null) {
     setList((m) => m.filter((x) => x.id !== id));
   }, [setList]);
 
-  return { memos, add, update, setMinute, remove };
+  return { memos, add, addWithText, update, setMinute, remove };
 }

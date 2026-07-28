@@ -77,6 +77,9 @@ interface CircleTimelineProps {
   /** Read-only share view: suppress the live now-line and world-clock markers so
    *  the shared chart shows only the schedule itself (not the viewer's clock). */
   hideLiveMarkers?: boolean;
+  /** A saved diary day is loaded — draw a bold dashed seam at 00:00 so the ring
+   *  reads as a closed snapshot, not the live continuously-running clock. */
+  diaryLoaded?: boolean;
 }
 
 // ─── Center hub live clock (HTML overlay, excluded from SVG export) ──────────
@@ -459,6 +462,7 @@ export function CircleTimeline({
   onHubClick,
   mobileNoChartDrag = false,
   hideLiveMarkers = false,
+  diaryLoaded = false,
 }: CircleTimelineProps) {
   const { cx, cy, innerR, outerR } = RING;
   const { t, lang } = useTranslation();
@@ -735,6 +739,24 @@ export function CircleTimeline({
         return (
           <g className="seam-cut" aria-hidden="true" style={{ pointerEvents: 'none' }}>
             {/* Light casing so the dashes read over any slice colour. */}
+            <line x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y}
+              stroke="hsl(var(--background))" strokeWidth={10} strokeLinecap="round" opacity={0.9} />
+            <line x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y}
+              stroke="hsl(var(--foreground) / 0.8)" strokeWidth={6} strokeLinecap="round" strokeDasharray="12 9" />
+          </g>
+        );
+      })() : null}
+
+      {/* Midnight seam: when a saved diary is loaded, a bold dashed cut at 00:00
+          marks the day boundary — the loaded day is a closed snapshot, not the
+          live ring that keeps running past midnight. Only where 00:00 is in the
+          current window (always in 24h; night-window only in 12h). */}
+      {isInteractive && diaryLoaded && isInWindow(0, spec) ? (() => {
+        const ang = angleForMin(0, spec);
+        const inner = polarToCartesian(cx, cy, innerR, ang);
+        const outer = polarToCartesian(cx, cy, outerR + 6, ang);
+        return (
+          <g className="midnight-seam" aria-hidden="true" style={{ pointerEvents: 'none' }}>
             <line x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y}
               stroke="hsl(var(--background))" strokeWidth={10} strokeLinecap="round" opacity={0.9} />
             <line x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y}

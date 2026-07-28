@@ -14,7 +14,9 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useRimMemos, type RimMemo } from './useRimMemos';
+import { hhmmToMinutes } from '@/lib/time-utils';
 import { useChartView, useTranslation } from '@/hooks/usePreferences';
 import { useDays } from '@/hooks/useDays';
 import { useDiary } from '@/hooks/useDiary';
@@ -179,7 +181,7 @@ function RimMemoBox({
 export function RimMemoLayer() {
   const { t } = useTranslation();
   const { activeId } = useDays();
-  const { memos, add, update, setMinute, remove } = useRimMemos(activeId);
+  const { memos, add, addWithText, update, setMinute, remove } = useRimMemos(activeId);
   const { entries } = useDiary();
   const diaryDate = useStoreSelector((s) => s.diaryDate);
   const locked = useStoreSelector((s) => s.locked);
@@ -190,6 +192,10 @@ export function RimMemoLayer() {
   const [editingId, setEditingId] = useState<string | null>(null);
   // Mobile: memo currently open in the view popup.
   const [viewId, setViewId] = useState<string | null>(null);
+  // Mobile: the add popup (time + content) — opened from the button below the chart.
+  const [addOpen, setAddOpen] = useState(false);
+  const [addTime, setAddTime] = useState('12:00');
+  const [addText, setAddText] = useState('');
 
   // When a diary record is loaded, show THAT date's saved rim memos read-only —
   // without touching the active day's own list. Leaving the diary
@@ -238,6 +244,32 @@ export function RimMemoLayer() {
   // Deleting is still allowed on touch (via the view popup).
   const canEdit = !locked && !diaryDate && !isMobile;
   const canModify = !locked && !diaryDate;
+
+  // Mobile: the "+ 테두리 메모" button (below the chart, in App) fires this event.
+  // The add dialog lives here so a single useRimMemos instance stays the source
+  // of truth — a second mount elsewhere would desync its React state.
+  useEffect(() => {
+    if (!isMobile) return;
+    const open = () => {
+      if (locked || diaryDate) return; // no editing a locked diary snapshot
+      const now = new Date();
+      setAddTime(
+        `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+      );
+      setAddText('');
+      setAddOpen(true);
+    };
+    window.addEventListener('rimmemo:add', open);
+    return () => window.removeEventListener('rimmemo:add', open);
+  }, [isMobile, locked, diaryDate]);
+
+  const saveAdd = () => {
+    const text = addText.trim();
+    if (!text) return;
+    addWithText(hhmmToMinutes(addTime), text);
+    setAddOpen(false);
+    setAddText('');
+  };
 
   return (
     <div className="pointer-events-none absolute inset-0" style={{ overflow: 'visible' }}>
@@ -382,6 +414,42 @@ export function RimMemoLayer() {
                 </Button>
               )}
               <Button onClick={() => setViewId(null)}>{t('common.close')}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Mobile add popup — type a time + content, one tap to drop the memo. */}
+      {isMobile && (
+        <Dialog open={addOpen} onOpenChange={setAddOpen}>
+          <DialogContent className="max-w-xs">
+            <DialogHeader>
+              <DialogTitle>{t('rim.addTitle')}</DialogTitle>
+            </DialogHeader>
+            <div className="flex flex-col gap-3">
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-medium text-muted-foreground">{t('rim.time')}</span>
+                <input
+                  type="time"
+                  step={300}
+                  value={addTime}
+                  onChange={(e) => e.target.value && setAddTime(e.target.value)}
+                  className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs font-medium text-muted-foreground">{t('rim.content')}</span>
+                <Input
+                  value={addText}
+                  onChange={(e) => setAddText(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveAdd(); } }}
+                  placeholder={t('rim.placeholder')}
+                />
+              </label>
+            </div>
+            <DialogFooter className="flex-row justify-end gap-2">
+              <Button variant="outline" onClick={() => setAddOpen(false)}>{t('common.cancel')}</Button>
+              <Button onClick={saveAdd} disabled={!addText.trim()}>{t('common.save')}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

@@ -228,6 +228,7 @@ export const de: Record<TKey, string> = {
   'editor.bold': 'Fett',
   'editor.italic': 'Kursiv',
   'editor.textColor': 'Textfarbe',
+  'editor.delete': 'Element löschen',
   'block.color': 'Farbe',
   'block.invalid': 'Start- und Endzeit müssen sich unterscheiden.',
   'welcome.title': 'Ihr ganzer Tag auf einen Blick',
@@ -482,5 +483,9 @@ export const de: Record<TKey, string> = {
   'rim.delete': 'Notiz löschen',
   'rim.move': 'Entlang des Rands ziehen',
   'rim.viewTitle': 'Rand-Notiz',
+  'rim.add': 'Rand-Notiz',
+  'rim.addTitle': 'Rand-Notiz hinzufügen',
+  'rim.time': 'Zeit',
+  'rim.content': 'Inhalt',
   'about.open': 'Über 24Houring · Anleitung',
 };

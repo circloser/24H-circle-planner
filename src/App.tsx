@@ -392,6 +392,8 @@ function App() {
             // Viewing a loaded diary = a past saved day → hide the live now-line
             // (and world-clock lines); "current time" is meaningless there.
             hideLiveMarkers={!!diaryDate}
+            // …and mark 00:00 with a dashed seam so it reads as a closed snapshot.
+            diaryLoaded={!!diaryDate}
           />
           {/* Rim annotation memos (hover near the edge → leader line + note). */}
           <RimMemoLayer />
@@ -427,13 +429,27 @@ function App() {
         {isMobile && chartView !== 'record' && (
           <>
             <div className="-mt-2 flex flex-col items-center gap-1.5">
-              <Button
-                onClick={() => (locked ? toast(t('diary.locked')) : setTimeBlockOpen(true))}
-                className="gap-1.5 bg-primary text-primary-foreground"
-              >
-                <Plus className="h-4 w-4" />
-                {t('block.add')}
-              </Button>
+              <div className="flex items-center justify-center gap-2">
+                <Button
+                  onClick={() => (locked ? toast(t('diary.locked')) : setTimeBlockOpen(true))}
+                  className="gap-1.5 bg-primary text-primary-foreground"
+                >
+                  <Plus className="h-4 w-4" />
+                  {t('block.add')}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    locked
+                      ? toast(t('diary.locked'))
+                      : window.dispatchEvent(new Event('rimmemo:add'))
+                  }
+                  className="gap-1.5"
+                >
+                  <Plus className="h-4 w-4" />
+                  {t('rim.add')}
+                </Button>
+              </div>
               <p className="text-center text-xs text-muted-foreground/85">
                 {t('mobile.editHint')}
               </p>

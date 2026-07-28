@@ -342,6 +342,22 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
       {/* Color swatches */}
       <ColorSwatch selectedColor={color} onPick={setColor} />
 
+      {/* Mobile: delete the tapped item (absorbed by its neighbour). Desktop
+          deletes via the ring's boundary affordances instead. Hidden for a
+          single-slice day — there's nothing to absorb into. Undoable. */}
+      {isMobile && sliceCount > 1 && (
+        <button
+          type="button"
+          onClick={() => {
+            dispatch({ type: 'DELETE_SLICE', id: sliceId });
+            onClose();
+          }}
+          className="mt-0.5 flex h-9 items-center justify-center gap-1.5 rounded-md border border-destructive/40 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
+        >
+          {t('editor.delete')}
+        </button>
+      )}
+
       {/* Icon picker dialog */}
       <IconPickerDialog
         open={pickerOpen}

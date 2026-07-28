@@ -228,6 +228,7 @@ export const en: Record<TKey, string> = {
   'editor.bold': 'Bold',
   'editor.italic': 'Italic',
   'editor.textColor': 'Text color',
+  'editor.delete': 'Delete item',
   'block.color': 'Color',
   'block.invalid': 'Start and end times must differ.',
   'welcome.title': 'Your whole day, at a glance',
@@ -482,5 +483,9 @@ export const en: Record<TKey, string> = {
   'rim.delete': 'Delete memo',
   'rim.move': 'Drag along the rim',
   'rim.viewTitle': 'Edge memo',
+  'rim.add': 'Edge memo',
+  'rim.addTitle': 'Add edge memo',
+  'rim.time': 'Time',
+  'rim.content': 'Content',
   'about.open': 'About 24Houring · guide',
 };
