@@ -72,6 +72,18 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [tzToAdd, setTzToAdd] = useState(TIMEZONES[0].tz);
 
+  // Permission-denied guidance depends on how the app is running: an installed
+  // PWA / Android TWA has NO address bar, so "site settings next to the address
+  // bar" is impossible there — point those users at the OS app-notification
+  // settings instead.
+  const permDeniedMsg = (): string => {
+    const standalone =
+      typeof window !== 'undefined' &&
+      (window.matchMedia?.('(display-mode: standalone)').matches === true ||
+        (window.navigator as { standalone?: boolean }).standalone === true);
+    return t(standalone ? 'settings.alarmPermDeniedApp' : 'settings.alarmPermDenied');
+  };
+
   const addWorldClock = () => {
     const opt = TIMEZONES.find((z) => z.tz === tzToAdd);
     if (!opt) return;
@@ -230,16 +242,16 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
                     onClick={() => {
                       void (async () => {
                         if (typeof Notification === 'undefined') {
-                          toast.error(t('settings.alarmPermDenied'));
+                          toast.error(permDeniedMsg());
                           return;
                         }
                         if (Notification.permission === 'denied') {
-                          toast.error(t('settings.alarmPermDenied'));
+                          toast.error(permDeniedMsg());
                           return;
                         }
                         const p = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
                         if (p === 'granted') setPreference('sliceAlarms', true);
-                        else toast.error(t('settings.alarmPermDenied'));
+                        else toast.error(permDeniedMsg());
                       })();
                     }}
                     aria-pressed={prefs.sliceAlarms}
@@ -265,7 +277,7 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
                       }
                       const p = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
                       if (p !== 'granted') {
-                        toast.error(t('settings.alarmPermDenied'));
+                        toast.error(permDeniedMsg());
                         return;
                       }
                       const ok = await fireNotification('🔔 24Houring', {
@@ -295,12 +307,12 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
                           return;
                         }
                         if (!pushSupported() || typeof Notification === 'undefined' || Notification.permission === 'denied') {
-                          toast.error(t('settings.alarmPermDenied'));
+                          toast.error(permDeniedMsg());
                           return;
                         }
                         const p = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
                         if (p !== 'granted') {
-                          toast.error(t('settings.alarmPermDenied'));
+                          toast.error(permDeniedMsg());
                           return;
                         }
                         if (await enablePush()) setPreference('pushAlarms', true);

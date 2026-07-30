@@ -18,6 +18,7 @@ export const ko = {
   'settings.sliceAlarms': '항목 시작 알림',
   'settings.sliceAlarmsHint': '시간표의 다음 항목이 시작되면 브라우저 알림을 보냅니다. 탭이 열려 있는 동안(백그라운드 포함) 동작해요.',
   'settings.alarmPermDenied': '브라우저 알림 권한이 필요해요. 주소창 옆 사이트 설정에서 알림을 허용해 주세요.',
+  'settings.alarmPermDeniedApp': '앱 알림이 꺼져 있어요. 휴대폰 설정 → 앱 → 24Houring → 알림에서 켜주세요. (설치된 앱에는 주소창이 없어요)',
   'settings.alarmTest': '테스트 알림 보내기',
   'settings.alarmTestSent': '테스트 알림을 보냈어요. 안 보이면 기기 알림 설정·방해금지 모드를 확인해 주세요.',
   'settings.alarmTestFail': '이 기기에서는 알림을 표시할 수 없어요 (권한 또는 미지원).',

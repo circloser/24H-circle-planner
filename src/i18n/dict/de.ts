@@ -15,6 +15,7 @@ export const de: Record<TKey, string> = {
   'settings.sliceAlarms': 'Benachrichtigung bei Blockstart',
   'settings.sliceAlarmsHint': 'Browser-Benachrichtigung, wenn der nächste Block deines Zeitplans beginnt. Funktioniert bei geöffnetem Tab (auch im Hintergrund).',
   'settings.alarmPermDenied': 'Benachrichtigungs-Berechtigung erforderlich — bitte in den Website-Einstellungen neben der Adressleiste erlauben.',
+  'settings.alarmPermDeniedApp': 'App-Benachrichtigungen sind aus. Aktiviere sie unter Einstellungen → Apps → 24Houring → Benachrichtigungen. (Installierte Apps haben keine Adressleiste.)',
   'settings.alarmTest': 'Testbenachrichtigung senden',
   'settings.alarmTestSent': 'Testbenachrichtigung gesendet. Falls nichts erscheint, prüfe die Benachrichtigungseinstellungen / „Nicht stören“.',
   'settings.alarmTestFail': 'Dieses Gerät kann keine Benachrichtigungen anzeigen (Berechtigung oder nicht unterstützt).',

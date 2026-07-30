@@ -15,6 +15,7 @@ export const en: Record<TKey, string> = {
   'settings.sliceAlarms': 'Block-start notifications',
   'settings.sliceAlarmsHint': 'Get a browser notification when the next block of your timetable begins. Works while the tab is open (background included).',
   'settings.alarmPermDenied': 'Browser notification permission is required — allow notifications in the site settings next to the address bar.',
+  'settings.alarmPermDeniedApp': 'App notifications are off. Turn them on in Phone Settings → Apps → 24Houring → Notifications. (Installed apps have no address bar.)',
   'settings.alarmTest': 'Send a test notification',
   'settings.alarmTestSent': 'Test notification sent. If nothing appeared, check your device notification settings / Do Not Disturb.',
   'settings.alarmTestFail': 'This device can’t show notifications (permission or unsupported).',
