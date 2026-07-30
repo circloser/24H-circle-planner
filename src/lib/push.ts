@@ -65,6 +65,21 @@ export async function disablePush(): Promise<void> {
   }
 }
 
+/** Pro self-test: ask the server to push to THIS account's subscribed devices
+ *  right now, so closed-app delivery can be verified (background the app, tap).
+ *  `subs` = how many devices are subscribed, `sent` = how many the push service
+ *  accepted. */
+export async function sendTestPush(): Promise<{ ok: boolean; subs: number; sent: number }> {
+  try {
+    const res = await fetch('/api/push/test', { method: 'POST', credentials: 'include' });
+    if (!res.ok) return { ok: false, subs: 0, sent: 0 };
+    const data = (await res.json()) as { ok?: boolean; subs?: number; sent?: number };
+    return { ok: !!data.ok, subs: data.subs ?? 0, sent: data.sent ?? 0 };
+  } catch {
+    return { ok: false, subs: 0, sent: 0 };
+  }
+}
+
 /** Upload the boundary plan derived from the active schedule. Date-independent
  *  (start times repeat daily); the cron dedupes per local day. */
 export async function uploadPushPlan(slices: readonly TimeSlice[], untitled: string): Promise<boolean> {

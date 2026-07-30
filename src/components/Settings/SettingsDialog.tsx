@@ -25,7 +25,7 @@ import {
 import { fileToBackgroundDataUrl } from '@/lib/image-bg';
 import { useAuth } from '@/hooks/useAuth';
 import { requestUpgrade } from '@/lib/pro';
-import { enablePush, disablePush, pushSupported } from '@/lib/push';
+import { enablePush, disablePush, pushSupported, sendTestPush } from '@/lib/push';
 import { AdSlot } from '@/components/Ads/AdSlot';
 import { useStoreDispatch } from '@/hooks/useScheduleStore';
 import { COLOR_THEMES } from '@/data/color-themes';
@@ -340,6 +340,30 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
                   </button>
                 </div>
                 <p className="text-[11px] text-muted-foreground">{t('settings.pushAlarmsHint')}</p>
+                {/* Pro self-test: send a REAL server push to this account's devices
+                    so closed-app delivery can be verified (background the app, tap). */}
+                {plan === 'pro' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void (async () => {
+                        const r = await sendTestPush();
+                        if (!r.ok) {
+                          toast.error(t('settings.pushTestFail'));
+                        } else if (r.subs === 0) {
+                          toast.error(t('settings.pushTestNoSub'));
+                        } else if (r.sent > 0) {
+                          toast.success(t('settings.pushTestSent'));
+                        } else {
+                          toast.error(t('settings.pushTestFail'));
+                        }
+                      })();
+                    }}
+                    className="w-fit rounded-md border border-border px-2.5 py-1 text-[11px] text-foreground transition-colors hover:bg-black/10"
+                  >
+                    {t('settings.pushTest')}
+                  </button>
+                )}
               </div>
 
               {/* Now line on/off */}

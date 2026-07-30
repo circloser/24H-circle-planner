@@ -669,6 +669,31 @@ async function handleNotifyTest(request: Request, env: Env): Promise<Response> {
   return json({ ok: true });
 }
 
+/** Pro self-test: send a real closed-app push to the CALLER's own devices so
+ *  they can verify delivery (background the app, then tap). Returns how many
+ *  subscriptions this account has and how many pushes the service accepted. */
+async function handlePushTest(request: Request, env: Env): Promise<Response> {
+  if (!env.DB || !env.VAPID_PRIVATE_KEY || !env.VAPID_PUBLIC_KEY) return json({ error: 'unconfigured' }, 503);
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'unauthorized' }, 401);
+  if (!(await isEntitled(env, user))) return json({ error: 'forbidden' }, 403);
+  const vapid = { publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY, subject: env.VAPID_SUBJECT || 'mailto:singlena@gmail.com' };
+  const subs = await env.DB.prepare('SELECT endpoint, p256dh, auth FROM push_subs WHERE user_id=?').bind(user.id).all<{ endpoint: string; p256dh: string; auth: string }>();
+  const rows = subs.results ?? [];
+  const payload = JSON.stringify({ title: '🔔 24Houring', body: '닫힌 앱 알림 테스트 — 이 알림이 보이면 정상입니다', tag: 'slice-start' });
+  let sent = 0;
+  for (const s of rows) {
+    try {
+      const st = await sendWebPush(s, payload, vapid);
+      if (st === 404 || st === 410) await env.DB.prepare('DELETE FROM push_subs WHERE endpoint=?').bind(s.endpoint).run();
+      else if (st >= 200 && st < 300) sent++;
+    } catch {
+      // per-device best effort
+    }
+  }
+  return json({ ok: true, subs: rows.length, sent });
+}
+
 /**
  * Admin-only ANONYMOUS aggregate stats — COUNTS ONLY. Timetable/diary CONTENT
  * is never stored server-side (the sync blob is opaque / E2EE), so nothing here
@@ -904,6 +929,7 @@ export default {
       if (p === '/api/push/subscribe' && m === 'DELETE') return handlePushUnsubscribe(request, env);
       if (p === '/api/push/plan' && m === 'PUT') return handlePushPlanPut(request, env);
       if (p === '/api/push/plan' && m === 'DELETE') return handlePushPlanDelete(request, env);
+      if (p === '/api/push/test' && m === 'POST') return handlePushTest(request, env);
       return json({ error: 'not_found' }, 404);
     }
 
