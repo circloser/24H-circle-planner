@@ -884,7 +884,7 @@ export default {
 
     if (p.startsWith('/api/')) {
       if (p === '/api/health' && m === 'GET') {
-        return json({ ok: true, service: '24houring-api', db: Boolean(env.DB), auth: Boolean(env.GOOGLE_CLIENT_ID), billing: Boolean(env.POLAR_ACCESS_TOKEN), ts: Date.now() });
+        return json({ ok: true, service: '24houring-api', db: Boolean(env.DB), auth: Boolean(env.GOOGLE_CLIENT_ID), billing: Boolean(env.POLAR_ACCESS_TOKEN), push: Boolean(env.VAPID_PRIVATE_KEY && env.VAPID_PUBLIC_KEY), ts: Date.now() });
       }
       if (p === '/api/auth/google/start' && m === 'GET') return handleStart(request, env);
       if (p === '/api/auth/google/callback' && m === 'GET') return handleCallback(request, env, ctx);

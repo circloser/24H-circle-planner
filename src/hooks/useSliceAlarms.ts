@@ -3,40 +3,13 @@ import { useStoreSelector } from '@/hooks/useScheduleStore';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
 import { dateKey } from '@/hooks/useDiary';
 import { currentSliceAt } from '@/lib/sliceAlarm';
+import { fireNotification } from '@/lib/notify';
 import { playBeep } from '@/components/ClockTools/clock-utils';
 
 /** Last boundary we notified for — device-local ON PURPOSE (notification
  *  permission and delivery are per-device; syncing this would suppress alarms
  *  on the other device). `${yyyy-mm-dd}|${startTime}`. */
 const LAST_KEY = '24h-circle-planner.last-alarm';
-
-/**
- * Show a local notification the way each platform allows. Mobile Chrome /
- * Android (incl. the installed TWA) FORBID the `new Notification()` constructor
- * — it throws "Illegal constructor" — so alarms silently never fired on phones.
- * Prefer the service worker's `showNotification()` (works on mobile AND
- * desktop); fall back to the constructor only where no SW is registered
- * (e.g. the offline single-file build). `getRegistration()` is used instead of
- * `.ready` because `.ready` never resolves when there is no SW at all.
- */
-async function fireNotification(title: string, options: NotificationOptions): Promise<void> {
-  try {
-    if (typeof navigator !== 'undefined' && navigator.serviceWorker) {
-      const reg = await navigator.serviceWorker.getRegistration();
-      if (reg) {
-        await reg.showNotification(title, options);
-        return;
-      }
-    }
-  } catch {
-    // SW notification unavailable — fall through to the page-level constructor
-  }
-  try {
-    new Notification(title, options);
-  } catch {
-    // desktop-only API; on mobile the constructor throws — nothing more to do
-  }
-}
 
 /**
  * "The timetable IS the alarm": while the tab is open (foreground or

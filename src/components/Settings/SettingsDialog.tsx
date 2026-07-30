@@ -2,6 +2,7 @@ import { useRef, useState, type ChangeEvent } from 'react';
 import { Trash2, Plus } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import { toast } from 'sonner';
+import { fireNotification } from '@/lib/notify';
 import {
   Dialog,
   DialogContent,
@@ -251,6 +252,34 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
                   </button>
                 </div>
                 <p className="text-[11px] text-muted-foreground">{t('settings.sliceAlarmsHint')}</p>
+                {/* One-tap sanity check: runs the exact notification path the
+                    alarms use, so a user can confirm permission + delivery work
+                    on THIS device (isolates OS/permission from the scheduling). */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    void (async () => {
+                      if (typeof Notification === 'undefined') {
+                        toast.error(t('settings.alarmTestFail'));
+                        return;
+                      }
+                      const p = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
+                      if (p !== 'granted') {
+                        toast.error(t('settings.alarmPermDenied'));
+                        return;
+                      }
+                      const ok = await fireNotification('🔔 24Houring', {
+                        body: t('settings.alarmTest'),
+                        tag: 'slice-start',
+                        icon: '/icon-192.png',
+                      });
+                      toast[ok ? 'success' : 'error'](t(ok ? 'settings.alarmTestSent' : 'settings.alarmTestFail'));
+                    })();
+                  }}
+                  className="w-fit rounded-md border border-border px-2.5 py-1 text-[11px] text-foreground transition-colors hover:bg-black/10"
+                >
+                  {t('settings.alarmTest')}
+                </button>
               </div>
 
               {/* Pro tier: server-sent Web Push — arrives with the tab CLOSED. */}
