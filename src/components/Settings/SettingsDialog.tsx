@@ -2,7 +2,7 @@ import { useRef, useState, type ChangeEvent } from 'react';
 import { Trash2, Plus } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import { toast } from 'sonner';
-import { fireNotification } from '@/lib/notify';
+import { fireNotification, fireSliceAlarmPopup } from '@/lib/notify';
 import {
   Dialog,
   DialogContent,
@@ -271,6 +271,9 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
                   type="button"
                   onClick={() => {
                     void (async () => {
+                      // The in-app popup always works (no OS permission needed) —
+                      // show it first so the test proves the popup regardless.
+                      fireSliceAlarmPopup({ title: '🔔 24Houring', body: t('settings.alarmTest') });
                       if (typeof Notification === 'undefined') {
                         toast.error(t('settings.alarmTestFail'));
                         return;

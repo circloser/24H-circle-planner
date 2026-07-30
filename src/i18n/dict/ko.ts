@@ -23,6 +23,7 @@ export const ko = {
   'settings.alarmTestSent': '테스트 알림을 보냈어요. 안 보이면 기기 알림 설정·방해금지 모드를 확인해 주세요.',
   'settings.alarmTestFail': '이 기기에서는 알림을 표시할 수 없어요 (권한 또는 미지원).',
   'alarm.untitled': '새 항목',
+  'alarm.started': '지금 시작',
   'settings.pushAlarms': '탭을 닫아도 알림 (Pro)',
   'settings.pushAlarmsHint': '서버가 항목 시작 시각에 푸시를 보내 탭·브라우저를 닫아도 알림이 옵니다. 알림 문구(항목 이름·시간)가 발송을 위해 서버에 저장됩니다. iOS는 홈 화면에 추가한 앱에서 수신됩니다.',
   'settings.pushFail': '푸시 구독에 실패했어요. 잠시 후 다시 시도해 주세요.',

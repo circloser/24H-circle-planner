@@ -42,6 +42,19 @@ export async function run() {
       pass('cleared title shows today’s date', after.some((s) => s.includes(expectedDate)), `expected=${expectedDate} got=${after.join('|')}`);
     }
 
+    // In-app slice-start popup: fires on the window event, sits above the app,
+    // auto-dismisses after ~5s. (The alarm hook dispatches this on a boundary.)
+    {
+      await page.evaluate(() =>
+        window.dispatchEvent(new CustomEvent('slice-alarm', { detail: { title: '수면알림', body: '00:00–08:00' } })));
+      await wait(250);
+      const popup = page.locator('[data-slice-alarm]');
+      pass('slice-alarm popup appears', (await popup.count()) > 0);
+      pass('slice-alarm popup shows the block', ((await popup.innerText().catch(() => '')) || '').includes('수면알림'));
+      await wait(5200);
+      pass('slice-alarm popup auto-dismisses (~5s)', (await page.locator('[data-slice-alarm]').count()) === 0);
+    }
+
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
   } finally {
     await browser.close();

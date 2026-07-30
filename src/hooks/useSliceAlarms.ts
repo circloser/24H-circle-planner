@@ -3,7 +3,7 @@ import { useStoreSelector } from '@/hooks/useScheduleStore';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
 import { dateKey } from '@/hooks/useDiary';
 import { currentSliceAt } from '@/lib/sliceAlarm';
-import { fireNotification } from '@/lib/notify';
+import { fireNotification, fireSliceAlarmPopup } from '@/lib/notify';
 import { playBeep } from '@/components/ClockTools/clock-utils';
 
 /** Last boundary we notified for — device-local ON PURPOSE (notification
@@ -69,14 +69,22 @@ export function useSliceAlarms(): void {
         lastRef.current = { sig, start: cur.startTime };
         if (localStorage.getItem(LAST_KEY) === slot) return; // a reload straight after the boundary
         localStorage.setItem(LAST_KEY, slot);
-        if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
         const title = `${cur.icon ? cur.icon + ' ' : ''}${cur.label || tRef.current('alarm.untitled')}`;
-        void fireNotification(title, {
-          body: `${cur.startTime}–${cur.endTime}`,
-          tag: 'slice-start', // consecutive boundaries replace, never stack
-          icon: '/icon-192.png',
-        });
+        const body = `${cur.startTime}–${cur.endTime}`;
+        // In-app popup + beep fire regardless of OS notification permission —
+        // an in-page card can't be blocked by the OS, so the alarm is visible
+        // even when the browser/app notification permission was never granted.
+        fireSliceAlarmPopup({ title, body });
         playBeep(2);
+        // The OS notification additionally reaches a BACKGROUNDED tab / the phone
+        // shade, but only when permission is granted.
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+          void fireNotification(title, {
+            body,
+            tag: 'slice-start', // consecutive boundaries replace, never stack
+            icon: '/icon-192.png',
+          });
+        }
       } catch {
         // notifications are best-effort — never break the app
       }

@@ -1,3 +1,24 @@
+/** Payload for the in-app slice-start popup (SliceAlarmPopup renders it). */
+export interface SliceAlarmDetail {
+  title: string;
+  body: string;
+}
+
+/** Window event name the in-app slice-start popup listens on. */
+export const SLICE_ALARM_EVENT = 'slice-alarm';
+
+/**
+ * Show the in-app slice-start popup — a DOM card the app renders itself, so it
+ * appears even when OS notification permission is off and the OS can't suppress
+ * or reposition it (bottom-right, always-on-top in-page, auto-dismiss). Only
+ * visible while the tab is on screen — the OS notification covers backgrounded
+ * tabs, so the two together give full coverage.
+ */
+export function fireSliceAlarmPopup(detail: SliceAlarmDetail): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent<SliceAlarmDetail>(SLICE_ALARM_EVENT, { detail }));
+}
+
 /**
  * Show a local notification the way each platform allows. Mobile Chrome /
  * Android (incl. the installed TWA) FORBID the `new Notification()` constructor

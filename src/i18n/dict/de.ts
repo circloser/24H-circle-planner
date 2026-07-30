@@ -20,6 +20,7 @@ export const de: Record<TKey, string> = {
   'settings.alarmTestSent': 'Testbenachrichtigung gesendet. Falls nichts erscheint, prüfe die Benachrichtigungseinstellungen / „Nicht stören“.',
   'settings.alarmTestFail': 'Dieses Gerät kann keine Benachrichtigungen anzeigen (Berechtigung oder nicht unterstützt).',
   'alarm.untitled': 'Nächster Block',
+  'alarm.started': 'Beginnt jetzt',
   'settings.pushAlarms': 'Auch bei geschlossenem Tab (Pro)',
   'settings.pushAlarmsHint': 'Der Server sendet zu jedem Blockstart eine Push-Nachricht — auch bei geschlossenem Tab oder Browser. Die Texte (Blockname + Zeiten) werden dafür serverseitig gespeichert. Auf iOS: App zum Home-Bildschirm hinzufügen.',
   'settings.pushFail': 'Push-Abonnement fehlgeschlagen — bitte gleich erneut versuchen.',

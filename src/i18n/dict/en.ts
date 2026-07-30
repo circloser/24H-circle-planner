@@ -20,6 +20,7 @@ export const en: Record<TKey, string> = {
   'settings.alarmTestSent': 'Test notification sent. If nothing appeared, check your device notification settings / Do Not Disturb.',
   'settings.alarmTestFail': 'This device can’t show notifications (permission or unsupported).',
   'alarm.untitled': 'Next block',
+  'alarm.started': 'Now starting',
   'settings.pushAlarms': 'Notify even when closed (Pro)',
   'settings.pushAlarmsHint': 'The server pushes each block start, so notifications arrive with the tab or browser closed. The notification text (block name + times) is stored server-side for delivery. On iOS, install the app to the Home Screen to receive them.',
   'settings.pushFail': 'Push subscription failed — please try again shortly.',

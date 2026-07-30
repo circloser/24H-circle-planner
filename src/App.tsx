@@ -29,6 +29,7 @@ import { ClockToolsLayer } from '@/components/ClockTools/ClockToolsLayer';
 import { MobileClockSection } from '@/components/ClockTools/MobileClockSection';
 import { TimeBlockDialog } from '@/components/TimeBlock/TimeBlockDialog';
 import { RimMemoLayer } from '@/components/RimMemo/RimMemoLayer';
+import { SliceAlarmPopup } from '@/components/SliceAlarmPopup/SliceAlarmPopup';
 import { DayBar } from '@/components/Days/DayBar';
 import { AddToHomeDialog, type BeforeInstallPromptEvent } from '@/components/AddToHomeDialog/AddToHomeDialog';
 import { AboutDialog } from '@/components/About/AboutDialog';
@@ -610,6 +611,11 @@ function App() {
       {!isMobile && <MemoLayer />}
       {!isMobile && <GoalsWidget />}
       {!isMobile && <ClockToolsLayer />}
+
+      {/* In-app slice-start popup (bottom-right / bottom, 5s, above everything).
+          Fires from useSliceAlarms on a block boundary — shows even without OS
+          notification permission. */}
+      <SliceAlarmPopup />
     </div>
   );
 }
