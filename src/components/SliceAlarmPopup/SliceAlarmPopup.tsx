@@ -48,25 +48,23 @@ export function SliceAlarmPopup() {
       aria-live="assertive"
       data-slice-alarm
       style={{ zIndex: 10000 }}
-      className="fixed bottom-4 left-4 right-4 rounded-xl border border-border bg-surface p-3 shadow-2xl duration-200 animate-in fade-in slide-in-from-bottom-4 sm:left-auto sm:right-4 sm:w-80"
+      className="fixed bottom-4 left-1/2 flex h-72 w-72 -translate-x-1/2 flex-col items-center justify-center gap-4 rounded-2xl border border-border bg-surface p-6 text-center shadow-2xl duration-200 animate-in fade-in zoom-in-95 slide-in-from-bottom-4 sm:left-auto sm:right-4 sm:h-80 sm:w-80 sm:translate-x-0"
     >
-      <div className="flex items-start gap-3">
-        <span aria-hidden className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 text-lg">
-          🔔
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{t('alarm.started')}</p>
-          <p className="truncate text-sm font-semibold text-foreground">{alarm.title}</p>
-          <p className="text-xs tabular-nums text-muted-foreground">{alarm.body}</p>
-        </div>
-        <button
-          type="button"
-          aria-label={t('common.close')}
-          onClick={() => setAlarm(null)}
-          className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-black/10"
-        >
-          <X className="h-4 w-4" />
-        </button>
+      <button
+        type="button"
+        aria-label={t('common.close')}
+        onClick={() => setAlarm(null)}
+        className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-black/10"
+      >
+        <X className="h-4 w-4" />
+      </button>
+      <span aria-hidden className="grid h-20 w-20 shrink-0 place-items-center rounded-full bg-primary/15 text-4xl">
+        🔔
+      </span>
+      <div className="min-w-0 max-w-full">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('alarm.started')}</p>
+        <p className="mt-1 line-clamp-2 text-xl font-bold text-foreground">{alarm.title}</p>
+        <p className="mt-1 text-sm tabular-nums text-muted-foreground">{alarm.body}</p>
       </div>
     </div>
   );
