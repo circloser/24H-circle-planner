@@ -4,6 +4,7 @@ import { sliceWidthMinutes, snapMinutes, minutesToHhmm, hhmmToMinutes } from '@/
 import { slicePath, RING, polarToCartesian, labelAnchorInside } from '@/lib/svg-geometry';
 import { useChartView } from '@/hooks/usePreferences';
 import { viewSpec, minForAngle, angleForMin, visibleSegments, FULL_SPEC, type ViewSpec } from '@/lib/chart-view';
+import { resizeBoundary } from '@/lib/schedule';
 import type { TimeSlice } from '@/types/time-slice';
 import type { Schedule } from '@/types/schedule';
 import type { DragRef } from '@/types/drag';
@@ -64,22 +65,6 @@ function clientToSvgPoint(
 function svgPointToAngleDeg(x: number, y: number): number {
   const { cx, cy } = RING;
   return (Math.atan2(y - cy, x - cx) * 180) / Math.PI;
-}
-
-function recomputeAdjacentPaths(
-  slices: TimeSlice[],
-  boundaryIndex: number,
-  newHHmm: string,
-): { ccwD: string; cwD: string } {
-  const len = slices.length;
-  const ccwSlice = slices[boundaryIndex];
-  const cwSlice = slices[(boundaryIndex + 1) % len];
-  const modifiedCcw: TimeSlice = { ...ccwSlice, endTime: newHHmm };
-  const modifiedCw: TimeSlice = { ...cwSlice, startTime: newHHmm };
-  if (sliceWidthMinutes(modifiedCcw) <= 0 || sliceWidthMinutes(modifiedCw) <= 0) {
-    return { ccwD: slicePath(ccwSlice, RING), cwD: slicePath(cwSlice, RING) };
-  }
-  return { ccwD: slicePath(modifiedCcw, RING), cwD: slicePath(modifiedCw, RING) };
 }
 
 // ─── Boundary handle imperative move ─────────────────────────────────────────
@@ -182,39 +167,65 @@ function updateClippedSlicePaths(svg: SVGSVGElement, slice: TimeSlice, spec: Vie
   });
 }
 
+// ─── Full boundary-resize live preview ───────────────────────────────────────
+
+/** `resizeBoundary`, but null instead of throwing on an illegal (would-collapse)
+ *  target — the caller keeps the last valid preview. */
+function tryResize(snapshot: Schedule, boundaryIndex: number, hhmm: string): Schedule | null {
+  try {
+    return resizeBoundary(snapshot, boundaryIndex, hhmm);
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Live preview for a 12h-view boundary drag: redraw the two adjacent slices'
- * clipped areas and re-anchor their labels so the division, areas, and names all
- * track the cursor — matching the full-view behaviour. Fully recomputable from
- * the snapshot, so the cancel path reuses it with the original boundary time.
+ * Render a boundary-drag preview imperatively, straight from the schedule that
+ * `resizeBoundary` would commit for this cursor time. Every surviving slice is
+ * redrawn to its new geometry and its label re-anchored; a slice the drag has
+ * swept PAST is absorbed — its wedge is blanked and its label hidden — so
+ * over-dragging a boundary visibly deletes the neighbour and the division keeps
+ * tracking the cursor, exactly matching the eventual commit. (Replaces the old
+ * 2-adjacent-slices-only preview, which fell apart the moment the boundary
+ * crossed an adjacent slice.) Works in the full 24h and both 12h windows.
+ *
+ * Returns the ids whose labels were hidden, so drag-end can un-hide any that
+ * survive (React won't reset an inline `display` it never set).
  */
-function update12hClippedPreview(
+export function applyResizePreview(
   svg: SVGSVGElement,
   snapshotSlices: TimeSlice[],
-  boundaryIndex: number,
-  hhmm: string,
+  preview: Schedule,
   spec: ViewSpec,
-): void {
-  const len = snapshotSlices.length;
-  const ccwSlice = snapshotSlices[boundaryIndex];
-  const cwIdx = (boundaryIndex + 1) % len;
-  const cwSlice = snapshotSlices[cwIdx];
-  const ccwMod: TimeSlice = { ...ccwSlice, endTime: hhmm };
-  const cwMod: TimeSlice = { ...cwSlice, startTime: hhmm };
-  if (sliceWidthMinutes(ccwMod) <= 0 || sliceWidthMinutes(cwMod) <= 0) return;
-
-  updateClippedSlicePaths(svg, ccwMod, spec);
-  updateClippedSlicePaths(svg, cwMod, spec);
-
-  const ccwLabel = largestVisibleSegment(ccwMod, spec);
-  const cwLabel = largestVisibleSegment(cwMod, spec);
-  // radialOffset 0 → labels stay on the single clean ring (no staggering), matching the render.
-  if (ccwLabel) {
-    moveSliceLabelImperative(svg, ccwLabel, 0, spec);
+): Set<string> {
+  const byId = new Map(preview.slices.map((s) => [s.id, s]));
+  const hidden = new Set<string>();
+  for (const orig of snapshotSlices) {
+    const pv = byId.get(orig.id);
+    // Wedge path(s): survivor → new geometry; absorbed → blanked.
+    if (spec.view === 'full') {
+      svg
+        .querySelector<SVGPathElement>(`path[data-slice-id="${orig.id}"]`)
+        ?.setAttribute('d', pv ? slicePath(pv, RING) : '');
+    } else if (pv) {
+      updateClippedSlicePaths(svg, pv, spec);
+    } else {
+      svg
+        .querySelectorAll<SVGPathElement>(`path[data-slice-id="${orig.id}"]`)
+        .forEach((p) => p.setAttribute('d', ''));
+    }
+    // Label: survivor re-anchored + shown; absorbed hidden.
+    const labelEl = svg.querySelector<SVGGraphicsElement>(`[data-label-id="${orig.id}"]`);
+    if (!pv) {
+      if (labelEl) labelEl.style.display = 'none';
+      hidden.add(orig.id);
+      continue;
+    }
+    if (labelEl) labelEl.style.display = '';
+    const labelSlice = spec.view === 'full' ? pv : largestVisibleSegment(pv, spec);
+    if (labelSlice) moveSliceLabelImperative(svg, labelSlice, 0, spec);
   }
-  if (cwLabel) {
-    moveSliceLabelImperative(svg, cwLabel, 0, spec);
-  }
+  return hidden;
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -237,6 +248,9 @@ export function useSliceInteraction(opts: {
   const liveDragGroupRef = useRef<SVGGElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const scratchRef = useRef<DragScratch | null>(null);
+  // Ids whose labels the live preview has hidden (their slice is being absorbed
+  // by an over-drag). Tracked so drag-end can un-hide any that end up surviving.
+  const hiddenLabelIdsRef = useRef<Set<string>>(new Set());
 
   // Stable refs updated via useEffect — avoid mutating during render
   const presentRef = useRef<Schedule | null>(null);
@@ -286,31 +300,16 @@ export function useSliceInteraction(opts: {
       // paths/labels — restore them to their snapshot geometry imperatively.
       if (dragRef && svgEl) {
         const sp = specRef.current;
-        const len = dragRef.snapshot.slices.length;
         const ccwSlice = dragRef.snapshot.slices[dragRef.boundaryIndex];
-        const cwSlice = dragRef.snapshot.slices[(dragRef.boundaryIndex + 1) % len];
         // Original endTime of the CCW slice defines the original boundary angle.
         const originalHhmm = ccwSlice.endTime === '24:00' ? '00:00' : ccwSlice.endTime;
         moveBoundaryHandleImperative(svgEl, dragRef.boundaryIndex, originalHhmm, sp);
-
-        if (sp.view !== 'full') {
-          // 12h: redraw the clipped areas + labels at the original boundary.
-          update12hClippedPreview(svgEl, dragRef.snapshot.slices, dragRef.boundaryIndex, originalHhmm, sp);
-        } else {
-          // 24h: restore the dragged paths in the live drag group, then the labels.
-          const g = liveDragGroupRef.current;
-          if (g) {
-            g.querySelectorAll<SVGPathElement>('[data-slice-id]').forEach((child) => {
-              const id = child.getAttribute('data-slice-id');
-              if (id && dragRef.originalSlicePaths[id] !== undefined) {
-                child.setAttribute('d', dragRef.originalSlicePaths[id]);
-              }
-            });
-          }
-          moveSliceLabelImperative(svgEl, ccwSlice, 0);
-          moveSliceLabelImperative(svgEl, cwSlice, 0);
-        }
+        // Cancel leaves `present` unchanged, so React won't re-render the paths to
+        // fix them — restore EVERY wedge + label from the snapshot (identity
+        // preview also un-hides any labels an over-drag preview had hidden).
+        applyResizePreview(svgEl, dragRef.snapshot.slices, dragRef.snapshot, sp);
       }
+      hiddenLabelIdsRef.current = new Set();
       dispatch({ type: 'SET_DRAG_REF', value: null });
       dispatch({ type: 'SET_IS_DRAGGING_BOUNDARY', value: false });
       scratchRef.current = null;
@@ -386,44 +385,20 @@ export function useSliceInteraction(opts: {
 
       const sp = specRef.current;
       const svgEl = svgRef.current;
+      if (!svgEl) return;
 
       // The boundary handle (dot) + time pill follow the cursor in EVERY view
       // (view-aware angle), so the division reads correctly while dragging in 12h.
-      if (svgEl) moveBoundaryHandleImperative(svgEl, dragRef.boundaryIndex, hhmm, sp);
+      moveBoundaryHandleImperative(svgEl, dragRef.boundaryIndex, hhmm, sp);
 
-      // 12h views: the slices are rendered window-clipped, so the live preview is
-      // redrawn imperatively here (areas + division + labels), matching the full
-      // view. The final resize still commits on release.
-      if (sp.view !== 'full') {
-        if (svgEl) update12hClippedPreview(svgEl, dragRef.snapshot.slices, dragRef.boundaryIndex, hhmm, sp);
-        return;
-      }
-
-      const { ccwD, cwD } = recomputeAdjacentPaths(
-        dragRef.snapshot.slices,
-        dragRef.boundaryIndex,
-        hhmm,
-      );
-
-      const g = liveDragGroupRef.current;
-      if (!g) return;
-
-      const ccwSlice = dragRef.snapshot.slices[dragRef.boundaryIndex];
-      const cwIdx = (dragRef.boundaryIndex + 1) % dragRef.snapshot.slices.length;
-      const cwSlice = dragRef.snapshot.slices[cwIdx];
-
-      g.querySelector<SVGPathElement>(`[data-slice-id="${ccwSlice.id}"]`)?.setAttribute('d', ccwD);
-      g.querySelector<SVGPathElement>(`[data-slice-id="${cwSlice.id}"]`)?.setAttribute('d', cwD);
-
-      // Re-anchor the two adjacent slice labels so they track their wedge centroid
-      // live, mirroring the path update above (full view only).
-      if (svgEl) {
-        const ccwModified: TimeSlice = { ...ccwSlice, endTime: hhmm };
-        const cwModified: TimeSlice = { ...cwSlice, startTime: hhmm };
-        if (sliceWidthMinutes(ccwModified) > 0 && sliceWidthMinutes(cwModified) > 0) {
-          moveSliceLabelImperative(svgEl, ccwModified, 0);
-          moveSliceLabelImperative(svgEl, cwModified, 0);
-        }
+      // Preview the ACTUAL resize result: dragging past a neighbour absorbs it
+      // live (delete + redraw the division), instead of the old 2-slice-only
+      // preview that broke apart once the boundary crossed an adjacent slice.
+      // Works in the full and both 12h windows. Illegal moves (would collapse)
+      // keep the last valid preview. Commits on release with the same math.
+      const preview = tryResize(dragRef.snapshot, dragRef.boundaryIndex, hhmm);
+      if (preview) {
+        hiddenLabelIdsRef.current = applyResizePreview(svgEl, dragRef.snapshot.slices, preview, sp);
       }
     };
 
@@ -448,6 +423,17 @@ export function useSliceInteraction(opts: {
         const { x, y } = clientToSvgPoint(svg, e.clientX, e.clientY);
         finalHHmm = angleToHhmmView(svgPointToAngleDeg(x, y), specRef.current);
       }
+
+      // Absorbed slices' labels were hidden imperatively; the RESIZE_BOUNDARY
+      // re-render drops the deleted ones but won't reset an inline `display` on a
+      // survivor (e.g. a snap-back drag). Clear the hide before committing.
+      if (svg) {
+        hiddenLabelIdsRef.current.forEach((id) => {
+          const el = svg.querySelector<SVGGraphicsElement>(`[data-label-id="${id}"]`);
+          if (el) el.style.display = '';
+        });
+      }
+      hiddenLabelIdsRef.current = new Set();
 
       // React 18 batches all three
       dispatch({
