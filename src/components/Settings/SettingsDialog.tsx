@@ -353,9 +353,12 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
                         } else if (r.subs === 0) {
                           toast.error(t('settings.pushTestNoSub'));
                         } else if (r.sent > 0) {
-                          toast.success(t('settings.pushTestSent'));
+                          // Server accepted the send → surface the counts so a
+                          // "didn't arrive" is clearly a device-side (battery/DND)
+                          // issue, not a server one.
+                          toast.success(t('settings.pushTestSent', { subs: String(r.subs), sent: String(r.sent) }), { duration: 8000 });
                         } else {
-                          toast.error(t('settings.pushTestFail'));
+                          toast.error(t('settings.pushTestSendFail', { subs: String(r.subs) }), { duration: 8000 });
                         }
                       })();
                     }}
