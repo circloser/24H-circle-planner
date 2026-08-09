@@ -12,7 +12,6 @@ export const en: Record<TKey, string> = {
   'header.export': 'Export',
   'header.settings': 'Settings',
   'header.design': 'Design',
-  'header.records': 'Records',
   'settings.sliceAlarms': 'Block-start notifications',
   'settings.sliceAlarmsHint': 'Get a browser notification when the next block of your timetable begins. Works while the tab is open (background included).',
   'settings.alarmPermDenied': 'Browser notification permission is required — allow notifications in the site settings next to the address bar.',

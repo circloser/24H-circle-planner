@@ -12,7 +12,6 @@ export const de: Record<TKey, string> = {
   'header.export': 'Exportieren',
   'header.settings': 'Einstellungen',
   'header.design': 'Design',
-  'header.records': 'Aufzeichnungen',
   'settings.sliceAlarms': 'Benachrichtigung bei Blockstart',
   'settings.sliceAlarmsHint': 'Browser-Benachrichtigung, wenn der nächste Block deines Zeitplans beginnt. Funktioniert bei geöffnetem Tab (auch im Hintergrund).',
   'settings.alarmPermDenied': 'Benachrichtigungs-Berechtigung erforderlich — bitte in den Website-Einstellungen neben der Adressleiste erlauben.',

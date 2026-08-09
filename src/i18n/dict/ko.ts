@@ -15,7 +15,6 @@ export const ko = {
   'header.export': '내보내기',
   'header.settings': '설정',
   'header.design': '디자인',
-  'header.records': '기록',
   'settings.sliceAlarms': '항목 시작 알림',
   'settings.sliceAlarmsHint': '시간표의 다음 항목이 시작되면 브라우저 알림을 보냅니다. 탭이 열려 있는 동안(백그라운드 포함) 동작해요.',
   'settings.alarmPermDenied': '브라우저 알림 권한이 필요해요. 주소창 옆 사이트 설정에서 알림을 허용해 주세요.',
