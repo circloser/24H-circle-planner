@@ -42,8 +42,9 @@ export interface AppHeaderProps {
 
 /**
  * The sticky app header: brand (→ about), save indicator, centred view toggle,
- * and the four right-side groups (my-schedules / design / export / settings ⚙).
- * Auth + sync status live here; everything it opens is owned by App via props.
+ * and the right-side groups (my-schedules / diary / records / design / export /
+ * settings ⚙). Auth + sync status live here; everything it opens is owned by App
+ * via props.
  */
 export function AppHeader({
   onOpenAbout,
@@ -133,11 +134,32 @@ export function AppHeader({
                 <CalendarClock className="h-4 w-4" />
                 {t('weekday.title')}
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onOpenDiary} className="gap-2">
-                <BookOpen className="h-4 w-4" />
-                {t('diary.open')}
-              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {/* Diary — promoted to its own top-level action: a daily-use freemium
+              feature is far more discoverable here than buried in the schedules
+              menu. Single action → a plain button (like Export), not a dropdown. */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="px-2 sm:px-3"
+            onClick={onOpenDiary}
+            aria-label={t('diary.open')}
+          >
+            <BookOpen className="h-4 w-4 sm:hidden" />
+            <span className="hidden sm:inline">{t('diary.open')}</span>
+          </Button>
+          {/* Records — the insight cluster (time analysis + goals) that used to
+              live under 내 시간표, regrouped now that diary has moved out. */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="px-2 sm:px-3" aria-label={t('header.records')}>
+                <BarChart3 className="h-4 w-4 sm:hidden" />
+                <span className="hidden sm:inline">{t('header.records')}</span>
+                <ChevronDown className="ml-1 hidden h-4 w-4 sm:inline" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={onOpenAnalytics} className="gap-2">
                 <BarChart3 className="h-4 w-4" />
                 {t('analytics.open')}
