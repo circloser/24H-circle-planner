@@ -1,0 +1,137 @@
+{
+  "slug": "movement",
+  "cat": "movement",
+  "title_ko": "앉아 있는 하루에 움직임을 엮어 넣는 법",
+  "title_en": "Weaving Movement Into a Mostly-Sitting Day",
+  "tag_ko": "운동·활동 · 하루 리듬",
+  "tag_en": "Movement · daily rhythm",
+  "lead_ko": "움직임에 관한 조언은 대개 헬스장에 낼 한 시간을 전제로 한다. 하지만 하루 대부분을 앉아서 보내는 사람에게 더 실질적인 지렛대는 훨씬 작고 기계적이다. 앉은 자세를 얼마나 자주 끊어 주는지, 하나뿐인 고정 운동 블록을 수면과 어떤 관계로 배치하는지, 그리고 하루 중 이미 하고 있는 움직임을 얼마나 눈에 보이게 남기는지가 관건이다. 없던 시간을 새로 만들 필요는 없다. 이미 하는 일들을 24시간 원형 위에 다르게 배치하기만 하면, 움직임은 의지력이 아니라 시계에 의존하게 된다.",
+  "lead_en": "Most advice about moving more assumes a free hour for the gym. For a schedule that's mostly sitting, the bigger lever is smaller and more mechanical: how often sitting gets interrupted, when the one fixed exercise block sits relative to sleep, and how much of the day's motion actually gets noticed. None of this requires more free time — it requires placing what you already do differently on the 24-hour circle, so movement stops depending on willpower and starts depending on the clock.",
+  "sections_ko": [
+    {
+      "h": "몰아서 vs 나눠서: NEAT가 만드는 차이",
+      "body": [
+        "두 사람이 같은 점심을 먹고도 오후에 소모하는 에너지 양은 꽤 다를 수 있는데, 그 차이는 대개 운동이 아니라 'NEAT'(비운동성 활동 열생성)에서 온다. 서 있거나, 몸을 뒤척이거나, 프린터까지 걸어가거나, 의자에서 자세를 바꾸는 데 쓰이는 에너지다. 대사 연구에 따르면 비슷한 사무직 업무를 하는 두 사람 사이에서도 하루 NEAT 소모량이 수백 킬로칼로리씩 차이 날 수 있다고 하며, 이는 순전히 '운동'이라 부르지 않는 움직임의 양 차이에서 비롯된다. 이런 배경에서 보면 계획된 30분 걷기 한 번은 그 자체로 의미 있지만, 주변의 8~9시간에 걸친 거의 정지 상태와 구조적으로 경쟁하는 셈이다.",
+        "더 효율적인 방법은 운동을 하나 더 추가하는 것이 아니라, 정지해 있던 시간의 기준선을 살짝 끌어올리는 것이다. 통화 중에 서 있기, 공용 프린터까지 조금 돌아가기, 물을 더 자주 채우러 가기 같은 것들이다. 원형 시간표 위에서는 이것이 하나의 큰 블록이라기보다 원 전체에 흩뿌려진 결처럼 나타난다. 따로 일정을 잡지 않아도 서 있거나 걷는 것이 기본값이 되는 짧은 구간들이다."
+      ]
+    },
+    {
+      "h": "앉은 시간을 잘게 끊어야 하는 이유",
+      "body": [
+        "오래 앉아 있으면 다리 근육에서 지방을 분해하는 효소인 리포단백질 지방분해효소(LPL)의 활성이 떨어져, 식사 후 혈액 속 지방과 당을 처리하는 효율이 낮아진다고 알려져 있다. 20~30분마다 2~3분씩 일어서거나 가볍게 걷도록 한 실험에서는, 몇 시간을 계속 앉아 있던 경우보다 식후 혈당 상승 폭이 눈에 띄게 작게 나타났다. 총 움직인 시간이 같더라도 결과가 달랐는데, 이는 '얼마나 움직였는가'뿐 아니라 '얼마나 자주 끊었는가'가 따로 작용한다는 뜻이다.",
+        "그러니 30분~1시간마다 두는 '일어나기' 신호는 칼로리 소모보다는, 영화 한 편 길이만큼 순환과 혈당 처리를 멈춰 두지 않는 데 목적이 있다고 보는 편이 정확하다. 몰입하면 시간 감각이 사라지므로, 이 신호는 기억에 맡기기보다 시간표에 미리 심어 두는 외부 장치여야 효과가 있다."
+      ]
+    },
+    {
+      "h": "운동을 '결심'이 아니라 '자리'로 만들기",
+      "body": [
+        "운동을 할지 말지 매번 결정하는 데는 운동 자체보다 더 많은 심리적 에너지가 든다. '시간 나면 하자'는 열린 선택지는 지친 뇌와 매번 새로 협상을 벌이는 것과 같고, 지친 뇌는 대개 '안 함'을 고른다. 반대로 운동을 같은 시간, 같은 자리에 고정해 두면 그 협상 자체가 사라지고, 운동은 결정이 아니라 습관이 된다. '습관은 21일이면 만들어진다'는 통념은 근거가 약한 이야기로, 실제 습관 형성을 추적한 연구에서는 사람과 행동에 따라 18일에서 254일까지 걸렸고 평균은 두 달 정도였다고 보고했다.",
+        "평균이 두 달이라는 사실은 실용적인 의미가 있다. 고정 운동 블록을 시작한 첫 몇 주는 아직 습관이 아니라 노력처럼 느껴지는 것이 정상이며, 이것이 곧 실패의 신호는 아니다. 야심 찬 시간대를 잡아 놓고 자꾸 건너뛰느니, 짧더라도 실제로 지킬 수 있는 시간대를 고르는 편이 낫다."
+      ]
+    },
+    {
+      "h": "운동 시간대가 잠에 미치는 영향",
+      "body": [
+        "격렬한 운동은 심부체온과 코르티솔을 끌어올리는데, 이 두 가지는 잠들기 전에 다시 가라앉아야 한다. 잠이 편안하게 오려면 체온이 대략 1도가량 떨어져야 한다고 알려져 있다. 잠자리에 들기 한두 시간 이내에 격렬한 운동을 끝내면 이 냉각 과정이 늦어져 일부 사람에게는 잠들기가 더 어려워질 수 있다. 반면 저녁의 가벼운 산책이나 스트레칭은 이런 영향이 거의 없고, 오히려 긴장을 풀어 주는 경우도 많다.",
+        "아침이나 이른 오후 운동은 이런 충돌 자체를 피할 수 있고, 일정한 기상 시간에 신체 리듬을 맞추는 데도 도움이 될 수 있다. 고정 아침 운동이 고정 저녁 운동보다 대체로 더 오래 유지되는 이유 중 하나이기도 하다. 어느 시간대가 '정답'이라기보다, 저녁 운동 블록이 조용히 수면을 갉아먹고 있지는 않은지 살펴보고, 그렇다면 원형 시간표 위에서 조금 더 이른 시간으로 옮겨 보는 것이 핵심이다."
+      ]
+    },
+    {
+      "h": "생활 속 움직임을 시간표에 남기기",
+      "body": [
+        "계단, 걸어서 다녀오는 짧은 심부름, 틈틈이 하는 집안일은 운동이라 부르기 어렵지만 꽤 큰 몫을 차지한다. 계단 오르기는 한 걸음에 대략 0.15~0.2킬로칼로리를 소모해, 같은 시간 동안 평지를 걷는 것보다 몇 배 밀도 높은 움직임이 된다. 따로 시간을 낼 필요 없이, 이미 오가는 동선 위에 얹히는 움직임이라는 점이 장점이다.",
+        "이런 움직임을 느슨하게라도 기록해 둘 가치가 있는 이유는 피드백 때문이다. 기록되지 않은 움직임은 없었던 일처럼 느껴지기 쉽고, 계단 몇 번과 점심 먹으러 걸어간 것, 빨래를 갠 일이 실제로는 상당한 활동량이었다는 사실이 하루하루 흐릿하게 지나가 버린다. 가벼운 블록이나 메모 한 줄이면, 어제의 움직임을 오늘 계획에 참고할 수 있을 만큼은 보이게 만들 수 있다."
+      ]
+    }
+  ],
+  "sections_en": [
+    {
+      "h": "All at once vs. spread out: what NEAT changes",
+      "body": [
+        "Two people can eat an identical lunch and burn noticeably different amounts of energy over the afternoon, and the gap usually has nothing to do with the gym. It comes from NEAT — non-exercise activity thermogenesis, the energy spent standing, fidgeting, walking to a printer, or shifting in a chair. Metabolic research has found NEAT can differ by several hundred kilocalories a day between two people with similar desk jobs, based purely on how much they move without labeling it exercise. Against that backdrop, a single scheduled 30-minute walk is competing with eight or nine surrounding hours of near-zero movement — worthwhile, but structurally outnumbered.",
+        "The more leveraged move isn't adding another workout; it's nudging the idle hours upward — standing for calls, taking a longer route to a shared printer, refilling water more often. On a circular timetable this shows up less as one block and more as texture spread around the ring: several short, unlabeled segments where standing or walking is simply the default rather than an event to schedule around."
+      ]
+    },
+    {
+      "h": "Why breaking up sitting works",
+      "body": [
+        "Sitting for long stretches lowers the activity of an enzyme called lipoprotein lipase in leg muscles, which slows how efficiently the body clears fat and sugar from the bloodstream after a meal. Studies that had people interrupt sitting every 20 to 30 minutes with two to three minutes of standing or light walking recorded meaningfully smaller post-meal blood sugar spikes than in people who sat continuously for hours, even when total activity time was the same. The interruption itself, not just the total minutes moved, appears to matter.",
+        "That's a useful reframe: a 'stand up' cue every half hour to an hour isn't mainly about burning calories, it's about not letting circulation and glucose handling sit idle for the length of a movie. Because focus makes time disappear, the cue has to be external — placed on the timetable in advance rather than left to memory."
+      ]
+    },
+    {
+      "h": "Turning exercise from a decision into a slot",
+      "body": [
+        "Deciding whether to exercise costs more mental energy than the exercise itself; each open-ended 'I'll go if I have time' choice is a fresh negotiation with a tired brain, and tired brains default to no. Anchoring exercise to a fixed slot — same time, same place, most days — removes the negotiation and turns it into a habit instead of a decision. The often-quoted claim that habits form in 21 days is a myth; a widely cited study tracking real habit formation found it took anywhere from 18 to 254 days, averaging around two months, depending on the person and the behavior.",
+        "The two-month average matters practically: the first few weeks of a fixed exercise block will feel like effort, not routine, and that's expected rather than a sign it isn't working. Choosing a slot you can actually protect — even a short one — beats an ambitious slot you'll skip."
+      ]
+    },
+    {
+      "h": "How exercise timing interacts with sleep",
+      "body": [
+        "Vigorous exercise raises core body temperature and cortisol, both of which need to come back down before sleep onset — the body's temperature typically has to drop by roughly a degree for sleep to feel easy. Finishing an intense session within about one to two hours of bedtime can push that cooling window later and delay sleep onset for some people, though a light walk or gentle stretching in the evening rarely causes the same effect and can even help some people wind down.",
+        "Morning or early-afternoon exercise avoids that conflict entirely and can help anchor the body's circadian rhythm to a consistent wake time, which is part of why a fixed morning block is often easier to sustain than an equally fixed evening one. Neither timing is 'correct' in general — the point is noticing whether an evening block is quietly costing sleep, and moving it earlier on the circle if it is."
+      ]
+    },
+    {
+      "h": "Making everyday movement visible on the timetable",
+      "body": [
+        "Stairs, short errands on foot, and chores done in spare moments rarely get called exercise, but they add up: climbing stairs burns roughly 0.15 to 0.2 kilocalories per step, several times the rate of walking on flat ground for the same time invested, which makes a few flights a meaningfully dense way to move. None of this needs a dedicated slot — it rides on top of trips you're already taking.",
+        "The reason it's worth logging even loosely is feedback: movement that goes unrecorded tends to feel like it didn't happen, and days blur together without a way to see that stairs, a walk to lunch, and folding laundry already added up to real activity. A light block or note is enough to make yesterday's motion visible when planning today's."
+      ]
+    }
+  ],
+  "apply_ko": [
+    "매일 같은 시간에 고정 운동 블록을 하나 두되, 이상적인 길이가 아니라 실제로 지킬 수 있는 길이로 잡으세요.",
+    "저녁 운동 후 잠이 잘 안 온다면, 원형 시간표에서 그 블록을 1~2시간 앞당겨 보고 비교해 보세요.",
+    "집중 블록 사이 30~60분 간격으로 짧은 '일어나기' 구간을 반복해서 끼워 넣으세요, 특히 식사 전후로요.",
+    "계단·심부름·집안일 같은 생활 속 움직임도 가벼운 블록으로 남겨 하루 활동량에 포함시키세요.",
+    "걷거나 운동할 때는 실시간 기록 모드를 켜서 실제 움직인 시간이 원 위에 자동으로 남게 하세요.",
+    "한 주를 돌아보며 움직임 블록이 전혀 없는 긴 구간을 찾아, 그 자리에 신호 하나를 새로 심어 보세요."
+  ],
+  "apply_en": [
+    "Place one fixed exercise block at the same time daily, sized to what you'll actually keep, not what's ideal.",
+    "If it lands in the evening and sleep feels off, try shifting it 1-2 hours earlier on the ring and compare.",
+    "Add short, recurring 'stand up' segments every 30-60 minutes between focus blocks, especially around meals.",
+    "Log everyday movement (stairs, errands, chores) as light blocks so it counts toward the day's visible activity.",
+    "Use real-time tracking mode when you walk or exercise so actual minutes land on the circle automatically.",
+    "Review the week for long stretches with no movement blocks at all, and insert one cue there."
+  ],
+  "faq_ko": [
+    {
+      "q": "매일 제대로 된 운동을 해야 하나요, 아니면 생활 속 움직임도 도움이 되나요?",
+      "a": "생활 속 움직임(NEAT)은 운동 한 번보다 하루 전체 에너지 소모에서 차지하는 비중이 더 클 때가 많은 만큼, 계단이나 심부름, 집안일도 분명히 도움이 됩니다. 고정 운동 블록과 생활 속 움직임은 서로를 대체하기보다 보완하는 관계로 보는 것이 맞습니다."
+    },
+    {
+      "q": "하루 대부분을 앉아서 보낸다면 얼마나 자주 일어나야 하나요?",
+      "a": "앉은 시간을 끊는 실험들은 대체로 20~30분마다 2~3분 정도 서 있거나 가볍게 걷는 방식을 사용했습니다. 이 빈도가 업무 흐름상 어렵다면, 최소한 한 시간에 한 번 정도를 기준으로 삼아도 괜찮습니다."
+    },
+    {
+      "q": "밤에 운동하면 안 좋은가요?",
+      "a": "대부분의 사람에게 저녁의 가벼운 걷기나 스트레칭은 괜찮거나 오히려 도움이 됩니다. 문제가 될 수 있는 쪽은 잠자리에 아주 가까운 시간까지 이어지는 격렬한 운동인데, 수면에 필요한 체온 하강을 늦출 수 있기 때문입니다. 저녁 운동이 수면에 영향을 주는 것 같다면, 최소 한두 시간 정도 더 일찍 끝내 보세요."
+    },
+    {
+      "q": "고정 운동 시간이 실제로 자동화되기까지 얼마나 걸리나요?",
+      "a": "흔히 알려진 '21일'보다 훨씬 깁니다. 습관 형성을 추적한 연구에서는 18일에서 254일까지 폭이 있었고 평균은 약 두 달이었습니다. 새 루틴은 주 단위가 아니라 달 단위로 판단하는 편이 현실적입니다."
+    }
+  ],
+  "faq_en": [
+    {
+      "q": "Do I need a real workout every day, or does everyday movement count?",
+      "a": "Everyday movement (NEAT) is often a larger share of daily energy use than a single workout, so stairs, errands, and chores genuinely count. A fixed exercise block and everyday movement complement each other rather than one replacing the other."
+    },
+    {
+      "q": "How often should I actually get up if I sit most of the day?",
+      "a": "Studies on interrupting sitting generally used intervals of 20 to 30 minutes with a couple of minutes of standing or light walking. If that's too frequent for your work, once an hour is a reasonable minimum."
+    },
+    {
+      "q": "Is it bad to exercise at night?",
+      "a": "For most people, light evening activity like walking or stretching is fine or even helpful. The concern is mainly vigorous exercise finishing very close to bedtime, since it can delay the drop in core temperature that sleep depends on. If evening workouts seem to affect your sleep, try finishing at least an hour or two earlier."
+    },
+    {
+      "q": "How long until a fixed exercise time actually feels automatic?",
+      "a": "Longer than the popular '21 days.' Commonly cited research on habit formation found a range of about 18 to 254 days, averaging roughly two months, so judge a new routine on a monthly timescale rather than a weekly one."
+    }
+  ],
+  "absorbs": ["daily-walk", "avoid-prolonged-sitting", "fixed-exercise-time", "everyday-movement"]
+}
