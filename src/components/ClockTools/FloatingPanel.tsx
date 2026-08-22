@@ -1,5 +1,5 @@
 import { useContext, type ReactNode } from 'react';
-import { X, GripHorizontal } from 'lucide-react';
+import { X } from 'lucide-react';
 import { makeDragStart, anchoredStyle, type Pos } from './clock-utils';
 import { FloatingInlineContext } from './floatingInline';
 
@@ -63,35 +63,42 @@ export function FloatingPanel({
     );
   }
 
+  // Desktop: match the clock/weather widgets — the content floats bare, and the
+  // card box + controls fade in only on hover (transparent by default). Drag from
+  // the body; interactive controls opt out via [data-no-drag].
   return (
     <div
-      style={{ ...anchoredStyle(pos.x, pos.y), width, zIndex: 25 }}
-      className="overflow-hidden rounded-xl shadow-xl"
+      aria-label={title}
+      className="group z-[25] hover:z-[26]"
+      style={{ ...anchoredStyle(pos.x, pos.y), width }}
     >
+      {/* Box — fades in on hover; clean/transparent otherwise. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 rounded-2xl border border-border bg-surface opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+        style={{ boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}
+      />
+
+      {/* Hover controls (extra controls + close), top-right. */}
+      <div
+        data-no-drag
+        className="absolute right-1.5 top-1.5 z-20 flex items-center gap-1 pointer-events-none opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100"
+      >
+        {headerRight}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={closeLabel}
+          className="grid h-5 w-5 place-items-center rounded border border-border bg-background text-muted-foreground transition-colors hover:bg-black/10"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      </div>
+
+      {/* Body — always visible; drag from here. */}
       <div
         onPointerDown={makeDragStart(pos, onMove)}
-        className="flex cursor-grab touch-none select-none items-center gap-1.5 px-2.5 py-1.5 active:cursor-grabbing"
-        style={{ backgroundColor: 'hsl(var(--surface))', borderBottom: '1px solid hsl(var(--border))' }}
-      >
-        <GripHorizontal className="h-3.5 w-3.5 shrink-0" style={{ color: 'hsl(var(--text-muted))' }} />
-        <span className="truncate text-xs font-semibold" style={{ color: 'hsl(var(--foreground))' }}>
-          {title}
-        </span>
-        <div className="ml-auto flex items-center gap-1" data-no-drag>
-          {headerRight}
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={closeLabel}
-            className="grid h-6 w-6 place-items-center rounded transition-colors hover:bg-black/10"
-          >
-            <X className="h-3.5 w-3.5" style={{ color: 'hsl(var(--text-muted))' }} />
-          </button>
-        </div>
-      </div>
-      <div
-        className="px-3 py-3"
-        style={{ backgroundColor: 'hsl(var(--surface))', borderTop: 'none' }}
+        className="relative z-10 cursor-grab touch-none select-none px-3 py-3 active:cursor-grabbing"
       >
         {children}
       </div>
