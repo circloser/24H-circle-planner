@@ -7,7 +7,7 @@ export type ClockMode = 'analog' | 'digital';
 // NB: clock and weather are NOT ToolKinds — unlike the on/off singleton tools,
 // they are LISTS (a clock per timezone, a weather window per city); see
 // addClock/addWeather below.
-export type ToolKind = 'timer' | 'alarm' | 'calendar';
+export type ToolKind = 'timer' | 'alarm' | 'calendar' | 'nownext';
 
 /** One open clock window. tz null = the device's local time. */
 export interface ClockItem {
@@ -56,6 +56,8 @@ export interface ClockToolsState {
   timer: TimerState;
   alarm: AlarmState;
   calendar: CalendarState;
+  /** "Now & Next" schedule widget — same on/pos shape as the calendar singleton. */
+  nownext: CalendarState;
   weathers: WeatherItem[];
 }
 
@@ -91,6 +93,7 @@ function defaultState(): ClockToolsState {
   return {
     clocks: [{ id: uuid(), mode: 'analog', pos: spawnNearCentre(-340, -40, 168, 150), tz: null }],
     calendar: { on: true, pos: spawnNearCentre(-360, -210, 232, 240) },
+    nownext: { on: false, pos: spawnNearCentre(150, -210, 210, 180) },
     timer: { on: false, pos: spawnNearCentre(-340, 130, 200, 160), setSec: 300, remainingSec: 300, running: false, endAt: null },
     weathers: [],
     alarm: { on: false, pos: spawnNearCentre(-340, 210, 200, 140), time: '07:00', enabled: false },
@@ -148,6 +151,7 @@ function loadState(): ClockToolsState {
         const merged: ClockToolsState = {
           clocks: migrateClocks(s),
           calendar: { ...def.calendar, ...s.calendar, pos: { ...def.calendar.pos, ...s.calendar?.pos } },
+          nownext: { ...def.nownext, ...s.nownext, pos: { ...def.nownext.pos, ...s.nownext?.pos } },
           timer: { ...def.timer, ...s.timer, pos: { ...def.timer.pos, ...s.timer?.pos } },
           weathers: migrateWeathers(s),
           alarm: { ...def.alarm, ...s.alarm, pos: { ...def.alarm.pos, ...s.alarm?.pos } },
@@ -159,6 +163,7 @@ function loadState(): ClockToolsState {
         if (parsed.coords !== 'centre') {
           merged.clocks = merged.clocks.map((c) => ({ ...c, pos: migrateLegacyPos(c.pos) }));
           merged.calendar = { ...merged.calendar, pos: migrateLegacyPos(merged.calendar.pos) };
+          merged.nownext = { ...merged.nownext, pos: migrateLegacyPos(merged.nownext.pos) };
           merged.timer = { ...merged.timer, pos: migrateLegacyPos(merged.timer.pos) };
           merged.weathers = merged.weathers.map((w) => ({ ...w, pos: migrateLegacyPos(w.pos) }));
           merged.alarm = { ...merged.alarm, pos: migrateLegacyPos(merged.alarm.pos) };
@@ -167,6 +172,7 @@ function loadState(): ClockToolsState {
         // dragged back (in-range values pass through unchanged → byte-stable).
         merged.clocks = merged.clocks.map((c) => ({ ...c, pos: clampOffset(c.pos, 168, 150) }));
         merged.calendar = { ...merged.calendar, pos: clampOffset(merged.calendar.pos, 232, 240) };
+        merged.nownext = { ...merged.nownext, pos: clampOffset(merged.nownext.pos, 210, 180) };
         merged.timer = { ...merged.timer, pos: clampOffset(merged.timer.pos, 200, 160) };
         merged.weathers = merged.weathers.map((w) => ({ ...w, pos: clampOffset(w.pos, 204, 200) }));
         merged.alarm = { ...merged.alarm, pos: clampOffset(merged.alarm.pos, 200, 140) };
@@ -205,6 +211,7 @@ export interface ClockToolsApi {
   setTimer: (patch: Partial<TimerState>) => void;
   setAlarm: (patch: Partial<AlarmState>) => void;
   setCalendar: (patch: Partial<CalendarState>) => void;
+  setNownext: (patch: Partial<CalendarState>) => void;
   /** Open one more weather window (up to MAX_WEATHERS; no-ops at the cap). */
   addWeather: () => void;
   /** Close ONE weather window (the ✕ on that window). */
@@ -240,7 +247,9 @@ export function useClockTools(): ClockToolsApi {
           ? spawnNearCentre(-340, 130, 200, 160)
           : kind === 'alarm'
             ? spawnNearCentre(-340, 210, 200, 140)
-            : spawnNearCentre(-360, -210, 232, 240); // calendar
+            : kind === 'nownext'
+              ? spawnNearCentre(150, -210, 210, 180)
+              : spawnNearCentre(-360, -210, 232, 240); // calendar
       return { ...s, [kind]: { ...s[kind], on: true, pos } };
     });
   }, []);
@@ -267,6 +276,9 @@ export function useClockTools(): ClockToolsApi {
   const setCalendar = useCallback((patch: Partial<CalendarState>) => {
     setState((s) => ({ ...s, calendar: { ...s.calendar, ...patch } }));
   }, []);
+  const setNownext = useCallback((patch: Partial<CalendarState>) => {
+    setState((s) => ({ ...s, nownext: { ...s.nownext, ...patch } }));
+  }, []);
 
   const addWeather = useCallback(() => {
     setState((s) => {
@@ -282,5 +294,5 @@ export function useClockTools(): ClockToolsApi {
     setState((s) => ({ ...s, weathers: s.weathers.map((w) => (w.id === id ? { ...w, ...patch } : w)) }));
   }, []);
 
-  return { state, toggle, addClock, removeClock, setClock, setTimer, setAlarm, setCalendar, addWeather, removeWeather, setWeather };
+  return { state, toggle, addClock, removeClock, setClock, setTimer, setAlarm, setCalendar, setNownext, addWeather, removeWeather, setWeather };
 }

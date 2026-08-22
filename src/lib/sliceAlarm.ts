@@ -8,8 +8,10 @@ import { hhmmToMinutes } from '@/lib/time-utils';
  */
 export function currentSliceAt(slices: readonly TimeSlice[], minutes: number): TimeSlice | null {
   for (const s of slices) {
-    const start = hhmmToMinutes(s.startTime) % 1440;
-    const end = hhmmToMinutes(s.endTime) % 1440;
+    // A midnight boundary is stored as either "00:00" or "24:00"; normalise
+    // "24:00" (hour 24 is out of hhmmToMinutes's 0–23 range and would throw).
+    const start = hhmmToMinutes(s.startTime === '24:00' ? '00:00' : s.startTime) % 1440;
+    const end = hhmmToMinutes(s.endTime === '24:00' ? '00:00' : s.endTime) % 1440;
     const inside = start < end ? minutes >= start && minutes < end : minutes >= start || minutes < end;
     if (inside) return s;
   }

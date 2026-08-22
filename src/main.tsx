@@ -16,6 +16,7 @@ import { TimePaletteProvider } from './hooks/useTimePalette.tsx'
 import { RecordsProvider } from './hooks/useRecords.tsx'
 import { SpikeRunner } from './components/SpikeRunner.tsx'
 import { SharedView } from './components/SharedView/SharedView.tsx'
+import { WidgetPage } from './components/WidgetPage/WidgetPage.tsx'
 
 // Single-file build: inject base64 fonts at runtime so they work on file://.
 // import.meta.env.VITE_SINGLEFILE is statically 'false' in the normal web build,
@@ -37,6 +38,8 @@ const isSpike = new URLSearchParams(window.location.search).get('spike') === '1'
 // Read-only shared-day viewer (route: /s#d=…). Served via the SPA fallback in
 // wrangler.jsonc (not_found_handling: single-page-application).
 const isShareView = window.location.pathname === '/s' || window.location.pathname === '/s/';
+// Compact desktop-widget window (route: /widget) — SPA-fallback served.
+const isWidget = window.location.pathname === '/widget' || window.location.pathname === '/widget/';
 const root = createRoot(document.getElementById('root')!);
 
 // PWA: register the service worker for offline + installability. Production only
@@ -71,6 +74,21 @@ if (isSpike) {
         <ScheduleStoreProvider>
           <SpikeRunner />
           <Toaster />
+        </ScheduleStoreProvider>
+      </PreferencesProvider>
+    </StrictMode>,
+  );
+} else if (isWidget) {
+  // Read-only compact widget: the schedule store (+ days) for live slices and
+  // Preferences for theme/i18n — no auth/sync (edits happen in the full app).
+  root.render(
+    <StrictMode>
+      <PreferencesProvider>
+        <ScheduleStoreProvider>
+          <DaysProvider>
+            <WidgetPage />
+            <Toaster />
+          </DaysProvider>
         </ScheduleStoreProvider>
       </PreferencesProvider>
     </StrictMode>,

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, Timer, AlarmClock, Calendar, CloudSun, Check, CircleDot, Plus } from 'lucide-react';
+import { Clock, Timer, AlarmClock, Calendar, CloudSun, Check, CircleDot, Plus, Hourglass } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation, usePreferences } from '@/hooks/usePreferences';
 import { useClockTools, MAX_WEATHERS, MAX_CLOCKS, type ToolKind } from './useClockTools';
@@ -9,6 +9,7 @@ import { TimerWidget } from './TimerWidget';
 import { AlarmWidget } from './AlarmWidget';
 import { CalendarWidget } from './CalendarWidget';
 import { WeatherWidget } from './WeatherWidget';
+import { NowNextWidget } from './NowNextWidget';
 
 /**
  * Bottom-left floating cluster mirroring the bottom-right memo FAB. One clock
@@ -16,7 +17,7 @@ import { WeatherWidget } from './WeatherWidget';
  * a countdown timer, and an alarm. State + positions persist to localStorage.
  */
 export function ClockToolsLayer() {
-  const { state, toggle, addClock, removeClock, setClock, setTimer, setAlarm, setCalendar, addWeather, removeWeather, setWeather } = useClockTools();
+  const { state, toggle, addClock, removeClock, setClock, setTimer, setAlarm, setCalendar, setNownext, addWeather, removeWeather, setWeather } = useClockTools();
   const { t } = useTranslation();
   const { prefs, setPreference } = usePreferences();
   const isRecord = (prefs.chartView ?? 'full') === 'record';
@@ -79,6 +80,13 @@ export function ClockToolsLayer() {
           onClose={() => toggle('calendar')}
         />
       )}
+      {state.nownext.on && (
+        <NowNextWidget
+          nownext={state.nownext}
+          onMove={(pos) => setNownext({ pos })}
+          onClose={() => toggle('nownext')}
+        />
+      )}
       {/* Weather windows — one per city, each closable on its own. */}
       {state.weathers.map((w) => (
         <WeatherWidget
@@ -116,6 +124,7 @@ export function ClockToolsLayer() {
             )}
             <Plus className="h-4 w-4 text-muted-foreground" />
           </button>
+          {menuRow('nownext', <Hourglass className="h-4 w-4" />, t('clock.nowNext'))}
           {menuRow('calendar', <Calendar className="h-4 w-4" />, t('clock.calendar'))}
           {/* Weather ADDS a window per click (multi-city) instead of toggling. */}
           <button
