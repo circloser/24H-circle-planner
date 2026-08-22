@@ -12,6 +12,15 @@ describe('sync payload keys', () => {
     expect(PREFS_KEY).toBe(K('prefs'));
   });
 
+  it('syncs the saved-schedule library and the weekday map (cross-device "내 시간표")', () => {
+    expect(SYNC_KEYS).toContain(K('slots'));
+    expect(SYNC_KEYS).toContain(K('weekday-schedules'));
+    // A slots-only remote change reconciles like any other content key.
+    const a = { [K('days')]: 'x', [K('slots')]: '{"version":1,"slots":{}}' };
+    const b = { [K('days')]: 'x', [K('slots')]: '{"version":1,"slots":{"s1":1}}' };
+    expect(changedSyncKeys(a, b)).toEqual([K('slots')]);
+  });
+
   it('applies floating-widget changes LIVE (no reload) so the seed-push is never preempted', () => {
     expect(LIVE_APPLY_KEYS).toContain(K('clocktools'));
     expect(LIVE_APPLY_KEYS).toContain(K('goalswidget'));

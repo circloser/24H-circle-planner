@@ -3,8 +3,9 @@
  * Date.getDay()) to a SAVED SLOT id (see lib/slots.ts). When the app opens on a
  * weekday that has an assignment, App prompts to load that day's schedule.
  *
- * Device-local (not in SYNC_KEYS) — it references slot ids, and slots themselves
- * are not synced, so the mapping stays with the slots on this device.
+ * Synced (in SYNC_KEYS, alongside `slots`) so the per-weekday assignment travels
+ * across a Pro user's devices. Slot ids are uuids preserved in the synced slot
+ * data, so the references stay valid everywhere.
  */
 
 export const STORAGE_KEY_WEEKDAY = '24h-circle-planner.weekday-schedules';

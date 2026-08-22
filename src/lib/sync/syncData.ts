@@ -36,6 +36,15 @@ export const SYNC_KEYS: readonly string[] = [
   'memos',
   'rimmemos',
   'user-presets',
+  // Saved-schedule library ("내 시간표") + the per-weekday→slot-id map. Both are
+  // plain JSON stores keyed by uuid / weekday index; load→save is byte-stable
+  // (and canonicalValue normalises key order anyway), so syncing them is
+  // loop-safe. They ride together because the weekday map references slot ids —
+  // syncing one without the other would leave dangling references. Kept-if-absent
+  // below so an old cloud blob that predates these keys never wipes a device's
+  // saved schedules.
+  'slots',
+  'weekday-schedules',
   'goals',
   'records',
   // Floating widgets. Loop-safe because they are LIVE-APPLIED (no reload),
@@ -55,7 +64,13 @@ export const SYNC_KEYS: readonly string[] = [
 
 /** Keys KEPT when absent from a cloud blob (older blobs must not wipe them);
  *  deletions of every other key still propagate. */
-const KEEP_IF_ABSENT = new Set<string>([CLOCKTOOLS_KEY, GOALSWIDGET_KEY, PREFIX + 'palette']);
+const KEEP_IF_ABSENT = new Set<string>([
+  CLOCKTOOLS_KEY,
+  GOALSWIDGET_KEY,
+  PREFIX + 'palette',
+  PREFIX + 'slots',
+  PREFIX + 'weekday-schedules',
+]);
 
 /** The synced preferences key — applied live (no reload) when it alone changes. */
 export const PREFS_KEY = PREFIX + 'prefs';
