@@ -448,6 +448,7 @@ export const en: Record<TKey, string> = {
   'table.completion': 'Done {done}/{total} · {pct}%',
   'table.markDone': 'Mark done',
   'table.markUndone': 'Mark not done',
+  'table.clearDone': 'Clear all',
   'table.exported': 'Exported',
   'share.button': 'Share',
   'share.text': 'My daily timetable — 24Houring',

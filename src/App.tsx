@@ -12,6 +12,7 @@ import { ShareImportDialog } from '@/components/AppShell/ShareImportDialog';
 import { TimePaletteDialog } from '@/components/TimePalette/TimePaletteDialog';
 import { useSliceAlarms } from '@/hooks/useSliceAlarms';
 import { usePushAlarms } from '@/hooks/usePushAlarms';
+import { useDailyDoneReset } from '@/hooks/useDailyDoneReset';
 import { track } from '@/lib/track';
 import { CircleTimeline } from '@/components/CircleTimeline/CircleTimeline';
 import { ScheduleTable } from '@/components/ScheduleTable/ScheduleTable';
@@ -286,6 +287,8 @@ function App() {
   useSliceAlarms();
   // Pro tier of the same feature: server-sent Web Push, arrives tab-closed.
   usePushAlarms();
+  // New local day → clear the live schedule's completion checks (fresh checklist).
+  useDailyDoneReset();
 
   // Share actions (PNG via native sheet / read-only /s#d= link incl. the note).
   const { shareImage, copyLink } = useShareActions(svgRef);

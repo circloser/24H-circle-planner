@@ -308,6 +308,19 @@ export function splitSliceAt(
   return out;
 }
 
+/** Clear every block's completion flag (a fresh checklist). Times untouched, so
+ *  contiguity is preserved. Returns the same object when nothing was done. */
+export function clearDone(schedule: Schedule): Schedule {
+  let changed = false;
+  const slices = schedule.slices.map((s) => {
+    if (!s.done) return s;
+    changed = true;
+    return { ...s, done: undefined };
+  });
+  if (!changed) return schedule;
+  return { ...schedule, slices, updatedAt: now() };
+}
+
 /** Content applied to the block created by setBlock. */
 export interface BlockContent {
   label?: string;

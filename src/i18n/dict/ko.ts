@@ -449,6 +449,7 @@ export const ko = {
   'table.completion': '완료 {done}/{total} · {pct}%',
   'table.markDone': '완료로 표시',
   'table.markUndone': '완료 해제',
+  'table.clearDone': '체크 해제',
   'table.exported': '내보냈어요',
   'share.button': '공유하기',
   'share.text': '내 하루 시간표 — 24Houring',

@@ -448,6 +448,7 @@ export const de: Record<TKey, string> = {
   'table.completion': 'Erledigt {done}/{total} · {pct}%',
   'table.markDone': 'Als erledigt markieren',
   'table.markUndone': 'Als offen markieren',
+  'table.clearDone': 'Zurücksetzen',
   'table.exported': 'Exportiert',
   'share.button': 'Teilen',
   'share.text': 'Mein Tagesplan — 24Houring',

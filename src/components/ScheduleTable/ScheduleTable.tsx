@@ -159,6 +159,15 @@ export function ScheduleTable({ locked = false, onEditLabel, onAddRow }: Schedul
             <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-black/10">
               <div className="h-full rounded-full bg-primary transition-[width] duration-300" style={{ width: `${c.pct}%` }} />
             </div>
+            {c.done > 0 && !locked && (
+              <button
+                type="button"
+                onClick={() => dispatch({ type: 'RESET_DONE' })}
+                className="shrink-0 rounded px-1.5 py-0.5 text-[11px] text-muted-foreground transition-colors hover:bg-black/5"
+              >
+                {t('table.clearDone')}
+              </button>
+            )}
           </div>
         );
       })()}
