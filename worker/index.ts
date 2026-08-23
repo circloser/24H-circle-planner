@@ -833,6 +833,13 @@ interface PushPlanRow { user_id: string; boundaries: string; tz_offset: number; 
 async function runPushCron(env: Env): Promise<void> {
   if (!env.DB || !env.VAPID_PRIVATE_KEY || !env.VAPID_PUBLIC_KEY) return;
   const nowMs = Date.now();
+  // Heartbeat: every run stamps ops_state so a silent cron outage (like the
+  // weeks it was rejected by the account cron-limit) is detectable via /api/health.
+  try {
+    await env.DB.prepare("INSERT INTO ops_state (key, value) VALUES ('last_cron_run', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind(String(nowMs)).run();
+  } catch {
+    // heartbeat is best-effort — never let it block sending alarms
+  }
   const { results } = await env.DB.prepare('SELECT user_id, boundaries, tz_offset, last_fired FROM push_plans').all<PushPlanRow>();
   const vapid = { publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY, subject: env.VAPID_SUBJECT || 'mailto:singlena@gmail.com' };
   for (const plan of results ?? []) {
@@ -909,7 +916,16 @@ export default {
 
     if (p.startsWith('/api/')) {
       if (p === '/api/health' && m === 'GET') {
-        return json({ ok: true, service: '24houring-api', db: Boolean(env.DB), auth: Boolean(env.GOOGLE_CLIENT_ID), billing: Boolean(env.POLAR_ACCESS_TOKEN), push: Boolean(env.VAPID_PRIVATE_KEY && env.VAPID_PUBLIC_KEY), ts: Date.now() });
+        // Cron liveness: age of the last scheduled run (null if never / DB down).
+        // cronAgeSec > ~120 means the minute cron has stopped firing.
+        let cronLastRun: number | null = null;
+        try {
+          const r = await env.DB?.prepare("SELECT value FROM ops_state WHERE key='last_cron_run'").first<{ value: string }>();
+          cronLastRun = r ? Number(r.value) : null;
+        } catch {
+          // best-effort — health must never fail on a DB hiccup
+        }
+        return json({ ok: true, service: '24houring-api', db: Boolean(env.DB), auth: Boolean(env.GOOGLE_CLIENT_ID), billing: Boolean(env.POLAR_ACCESS_TOKEN), push: Boolean(env.VAPID_PRIVATE_KEY && env.VAPID_PUBLIC_KEY), cronLastRun, cronAgeSec: cronLastRun ? Math.round((Date.now() - cronLastRun) / 1000) : null, ts: Date.now() });
       }
       if (p === '/api/auth/google/start' && m === 'GET') return handleStart(request, env);
       if (p === '/api/auth/google/callback' && m === 'GET') return handleCallback(request, env, ctx);
