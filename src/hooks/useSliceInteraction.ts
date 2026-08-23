@@ -2,17 +2,17 @@ import { useRef, useCallback, useEffect } from 'react';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { sliceWidthMinutes, snapMinutes, minutesToHhmm, hhmmToMinutes } from '@/lib/time-utils';
 import { slicePath, RING, polarToCartesian, labelAnchorInside } from '@/lib/svg-geometry';
-import { useChartView } from '@/hooks/usePreferences';
+import { useChartView, useSnapMinutes } from '@/hooks/usePreferences';
 import { viewSpec, minForAngle, angleForMin, visibleSegments, FULL_SPEC, type ViewSpec } from '@/lib/chart-view';
 import { resizeBoundary } from '@/lib/schedule';
 import type { TimeSlice } from '@/types/time-slice';
 import type { Schedule } from '@/types/schedule';
 import type { DragRef } from '@/types/drag';
 
-/** Chart angle (deg) → snapped "HH:mm" under the active view window. For the full
- *  24h view this matches the legacy angleToHhmm exactly. */
-function angleToHhmmView(deg: number, spec: ViewSpec): string {
-  return minutesToHhmm(snapMinutes(minForAngle(deg, spec)));
+/** Chart angle (deg) → "HH:mm" snapped to `step` minutes under the active view
+ *  window. `step` is the user's snap-grid pref (5/15/30). */
+function angleToHhmmView(deg: number, spec: ViewSpec, step: number): string {
+  return minutesToHhmm(snapMinutes(minForAngle(deg, spec), step));
 }
 
 // ─── Public interface ─────────────────────────────────────────────────────────
@@ -244,6 +244,13 @@ export function useSliceInteraction(opts: {
     specRef.current = spec;
   });
 
+  // User's drag/split snap grid (5/15/30). A ref keeps the pointer handlers current.
+  const snap = useSnapMinutes();
+  const snapRef = useRef<number>(snap);
+  useEffect(() => {
+    snapRef.current = snap;
+  });
+
   // DOM refs
   const liveDragGroupRef = useRef<SVGGElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -351,7 +358,7 @@ export function useSliceInteraction(opts: {
         let initialHHmm: string;
         if (svg) {
           const { x, y } = clientToSvgPoint(svg, e.clientX, e.clientY);
-          initialHHmm = angleToHhmmView(svgPointToAngleDeg(x, y), specRef.current);
+          initialHHmm = angleToHhmmView(svgPointToAngleDeg(x, y), specRef.current, snapRef.current);
         } else {
           initialHHmm = ccwSlice.endTime === '24:00' ? '00:00' : ccwSlice.endTime;
         }
@@ -375,7 +382,7 @@ export function useSliceInteraction(opts: {
       let hhmm: string;
       if (svg) {
         const { x, y } = clientToSvgPoint(svg, e.clientX, e.clientY);
-        hhmm = angleToHhmmView(svgPointToAngleDeg(x, y), specRef.current);
+        hhmm = angleToHhmmView(svgPointToAngleDeg(x, y), specRef.current, snapRef.current);
       } else {
         hhmm = scratch.lastHHmm;
       }
@@ -421,7 +428,7 @@ export function useSliceInteraction(opts: {
       let finalHHmm = scratch.lastHHmm;
       if (svg) {
         const { x, y } = clientToSvgPoint(svg, e.clientX, e.clientY);
-        finalHHmm = angleToHhmmView(svgPointToAngleDeg(x, y), specRef.current);
+        finalHHmm = angleToHhmmView(svgPointToAngleDeg(x, y), specRef.current, snapRef.current);
       }
 
       // Absorbed slices' labels were hidden imperatively; the RESIZE_BOUNDARY
@@ -516,7 +523,7 @@ export function useSliceInteraction(opts: {
       splitTimerRef.current = setTimeout(() => {
         splitTimerRef.current = null;
         const { x, y } = clientToSvgPoint(svg, clientX, clientY);
-        const hhmm = angleToHhmmView(svgPointToAngleDeg(x, y), specRef.current);
+        const hhmm = angleToHhmmView(svgPointToAngleDeg(x, y), specRef.current, snapRef.current);
         // Empty the smaller half so the larger keeps the original name + colour.
         dispatch({ type: 'SPLIT', hhmm, newSlotSide: 'smaller' });
       }, 220);
@@ -532,7 +539,7 @@ export function useSliceInteraction(opts: {
       const svg = svgRef.current;
       if (!svg) return;
       const { x, y } = clientToSvgPoint(svg, e.clientX, e.clientY);
-      const hhmm = angleToHhmmView(svgPointToAngleDeg(x, y), specRef.current);
+      const hhmm = angleToHhmmView(svgPointToAngleDeg(x, y), specRef.current, snapRef.current);
       dispatch({ type: 'SPLIT', hhmm, newSlotSide: 'smaller' });
     },
     [dispatch],

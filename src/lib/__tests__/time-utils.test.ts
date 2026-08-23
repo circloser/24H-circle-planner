@@ -165,6 +165,19 @@ describe('snapMinutes', () => {
     expect(snapMinutes(12)).toBe(10);
   });
 
+  it('honors a custom step (15/30) and stays on that grid', () => {
+    expect(snapMinutes(70, 15)).toBe(75); // nearest 15
+    expect(snapMinutes(72, 15)).toBe(75);
+    expect(snapMinutes(80, 30)).toBe(90); // nearest 30
+    expect(snapMinutes(74, 30)).toBe(60);
+    // 15 & 30 results are multiples of the 5-min base, so downstream 5-snap is a no-op.
+    expect(snapMinutes(snapMinutes(72, 30), 5)).toBe(snapMinutes(72, 30));
+  });
+
+  it('falls back to the 5-min base for a non-positive step', () => {
+    expect(snapMinutes(12, 0)).toBe(10);
+  });
+
   it('rounds 13 up to 15', () => {
     expect(snapMinutes(13)).toBe(15);
   });

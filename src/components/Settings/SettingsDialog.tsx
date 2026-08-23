@@ -19,6 +19,7 @@ import {
   BACKGROUNDS,
   GRADIENT_PRESETS,
   NOW_LINE_DEFAULT_COLOR,
+  SNAP_STEPS,
   type Background,
   type WorldClock,
 } from '@/hooks/usePreferences';
@@ -233,6 +234,24 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
           {/* Timeline: now-line style + world-clock lines */}
           {section === 'timeline' && (
             <div className="flex flex-col gap-4">
+              {/* Snap grid — drag / split / block edits land on this minute step. */}
+              <div className="flex flex-col gap-2">
+                <span className="text-xs text-muted-foreground">{t('settings.snapStep')}</span>
+                <div className="flex gap-1.5">
+                  {SNAP_STEPS.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setPreference('snapMinutes', s)}
+                      aria-pressed={prefs.snapMinutes === s}
+                      className={OPT_CHIP}
+                    >
+                      {t('settings.snapMin', { n: String(s) })}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-muted-foreground">{t('settings.snapHint')}</p>
+              </div>
               {/* Slice-start notifications — the timetable IS the alarm. */}
               <div className="flex flex-col gap-2">
                 <span className="text-xs text-muted-foreground">{t('settings.sliceAlarms')}</span>

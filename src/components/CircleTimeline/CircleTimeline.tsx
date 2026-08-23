@@ -12,7 +12,7 @@ import {
   type ViewSpec,
 } from '@/lib/chart-view';
 import { useSliceSelector, useStoreSelector } from '@/hooks/useScheduleStore';
-import { useTranslation, useShowNowLine, useChartView, useNowLineStyle, useWorldClocks } from '@/hooks/usePreferences';
+import { useTranslation, useShowNowLine, useChartView, useNowLineStyle, useWorldClocks, useSnapMinutes } from '@/hooks/usePreferences';
 import { useCoarsePointer } from '@/hooks/useCoarsePointer';
 import { translatePresetName } from '@/i18n/content';
 import { SliceLabel } from './SliceLabel';
@@ -478,6 +478,12 @@ export function CircleTimeline({
   useEffect(() => {
     specRef.current = spec;
   });
+  // User's snap grid (5/15/30) — ref keeps the imperative cut-preview current.
+  const snapStep = useSnapMinutes();
+  const snapRef = useRef<number>(snapStep);
+  useEffect(() => {
+    snapRef.current = snapStep;
+  });
   // On touch, double-click/double-tap to edit is awkward, so a single tap opens
   // the editor instead. (Boundary handles sit on top, so taps near a division
   // still hit the boundary first — see BoundaryHandles.)
@@ -502,7 +508,7 @@ export function CircleTimeline({
       if (!svg || !line) return;
       const { x, y } = clientToSvgPoint(svg, e.clientX, e.clientY);
       const sp = specRef.current;
-      const ang = angleForMin(snapMinutes(minForAngle(svgPointToAngleDeg(x, y), sp)), sp);
+      const ang = angleForMin(snapMinutes(minForAngle(svgPointToAngleDeg(x, y), sp), snapRef.current), sp);
       const inner = polarToCartesian(RING.cx, RING.cy, RING.innerR, ang);
       const outer = polarToCartesian(RING.cx, RING.cy, RING.outerR, ang);
       line.setAttribute('x1', String(inner.x));

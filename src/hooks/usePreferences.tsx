@@ -82,7 +82,14 @@ export interface Preferences {
    *  CLOSED. Synced intent; each device still subscribes with its own
    *  permission. */
   pushAlarms: boolean;
+  /** Drag/split snap grid in minutes (5/15/30). Coarser = quicker to rough out
+   *  a day; the 5-min minimum slice width is unaffected. */
+  snapMinutes: SnapStep;
 }
+
+/** Allowed snap-grid steps (minutes). All divide the 5-min base grid. */
+export type SnapStep = 5 | 15 | 30;
+export const SNAP_STEPS: readonly SnapStep[] = [5, 15, 30];
 
 const DEFAULT_PREFS: Preferences = {
   language: 'ko',
@@ -97,6 +104,7 @@ const DEFAULT_PREFS: Preferences = {
   chartView: 'full',
   sliceAlarms: false,
   pushAlarms: false,
+  snapMinutes: 5,
   bgType: 'pattern',
   bgColor: '#f4f5f7',
   bgImage: null,
@@ -265,6 +273,11 @@ export function useWorldClocks(): WorldClock[] {
 export function useChartView(): ChartView {
   const ctx = useContext(PreferencesContext);
   return ctx?.prefs.chartView ?? 'full';
+}
+
+export function useSnapMinutes(): SnapStep {
+  const ctx = useContext(PreferencesContext);
+  return ctx?.prefs.snapMinutes ?? 5;
 }
 
 /** Translation hook bound to the current language preference. */

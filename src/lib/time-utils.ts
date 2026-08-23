@@ -47,9 +47,12 @@ export function angleToHhmm(deg: number): string {
  *  the minimum slice width. One place to change the granularity. */
 export const SNAP_MINUTES = 5;
 
-/** Round to the nearest SNAP_MINUTES step, clamped 0..1430. */
-export function snapMinutes(m: number): number {
-  const snapped = Math.round(m / SNAP_MINUTES) * SNAP_MINUTES;
+/** Round to the nearest `step`-minute grid (default SNAP_MINUTES), clamped
+ *  0..1430. `step` is the user-adjustable snap (5/15/30); it must divide into the
+ *  5-min base so downstream schedule.ts snaps (still 5) never shift the result. */
+export function snapMinutes(m: number, step: number = SNAP_MINUTES): number {
+  const s = step > 0 ? step : SNAP_MINUTES;
+  const snapped = Math.round(m / s) * s;
   return Math.max(0, Math.min(1430, snapped));
 }
 
