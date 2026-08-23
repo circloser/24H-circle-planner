@@ -330,6 +330,7 @@ function SlicePath({
     <path
       d={d}
       fill={slice.color}
+      fillOpacity={slice.done ? 0.4 : undefined}
       stroke="hsl(var(--border) / 0.4)"
       strokeWidth={1}
       className={className}

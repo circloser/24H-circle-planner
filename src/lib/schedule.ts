@@ -718,7 +718,7 @@ export function replaceSlice(
   schedule: Schedule,
   id: string,
   patch: Partial<
-    Pick<TimeSlice, 'label' | 'color' | 'icon' | 'textPosition' | 'textColor' | 'bold' | 'italic'>
+    Pick<TimeSlice, 'label' | 'color' | 'icon' | 'textPosition' | 'textColor' | 'bold' | 'italic' | 'done'>
   >,
 ): Schedule {
   const action = 'replaceSlice';

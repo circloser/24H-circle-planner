@@ -9,4 +9,5 @@ export interface TimeSlice {
   textColor?: string; // hex label-text colour; defaults to a fixed dark tone
   bold?: boolean; // label text weight
   italic?: boolean; // label text style
+  done?: boolean; // task-completion check for the day (undefined = not done)
 }

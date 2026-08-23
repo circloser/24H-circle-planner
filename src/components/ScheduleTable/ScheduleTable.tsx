@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { GripVertical, X, Plus } from 'lucide-react';
+import { GripVertical, X, Plus, Check } from 'lucide-react';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useTranslation, useShowIcons, useShowNowLine, useNowLineStyle, useWorldClocks } from '@/hooks/usePreferences';
 import { hhmmToMinutes, minutesToHhmm, sliceWidthMinutes, tzMinutes } from '@/lib/time-utils';
+import { dayCompletion } from '@/lib/completion';
 
 /** End-of-day is stored as "24:00"; show it as "00:00" in fields. */
 const normTime = (hhmm: string) => (hhmm === '24:00' ? '00:00' : hhmm);
@@ -148,6 +149,19 @@ export function ScheduleTable({ locked = false, onEditLabel, onAddRow }: Schedul
 
   return (
     <div className="w-full max-w-[560px]" style={{ fontSize: 'calc(var(--app-font-scale, 1) * 0.875rem)' }}>
+      {/* Daily task-completion — check off blocks in the table to review the day. */}
+      {(() => {
+        const c = dayCompletion(slices);
+        if (!c.total) return null;
+        return (
+          <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="shrink-0 tabular-nums">{t('table.completion', { done: String(c.done), total: String(c.total), pct: String(c.pct) })}</span>
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-black/10">
+              <div className="h-full rounded-full bg-primary transition-[width] duration-300" style={{ width: `${c.pct}%` }} />
+            </div>
+          </div>
+        );
+      })()}
       <ul ref={ulRef} className="flex flex-col" style={{ borderTop: '1px solid hsl(var(--border))' }}>
         {slices.map((s, i) => {
           const sStart = hhmmToMinutes(s.startTime);
@@ -200,6 +214,22 @@ export function ScheduleTable({ locked = false, onEditLabel, onAddRow }: Schedul
                 <GripVertical className="h-4 w-4" />
               </button>
 
+              {/* Task done-check — only for labeled blocks (real tasks). */}
+              {s.label.trim() ? (
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={!!s.done}
+                  aria-label={s.done ? t('table.markUndone') : t('table.markDone')}
+                  disabled={locked}
+                  onClick={() => dispatch({ type: 'REPLACE_SLICE', id: s.id, patch: { done: !s.done } })}
+                  className={`grid h-5 w-5 shrink-0 place-items-center rounded border transition-colors disabled:opacity-40 ${s.done ? 'border-primary bg-primary text-primary-foreground' : 'border-border text-transparent hover:bg-black/5'}`}
+                >
+                  <Check className="h-3.5 w-3.5" />
+                </button>
+              ) : (
+                <span className="w-5 shrink-0" aria-hidden />
+              )}
               <span className="h-3.5 w-3.5 shrink-0 rounded-full" style={{ backgroundColor: s.color }} />
               <div className="flex shrink-0 items-center gap-0.5">
                 <TimeCell value={s.startTime} disabled={locked} label={t('block.start')} onCommit={(hhmm) => resize((i - 1 + len) % len, hhmm)} />
@@ -214,7 +244,7 @@ export function ScheduleTable({ locked = false, onEditLabel, onAddRow }: Schedul
                 style={{ ...INHERIT_FONT }}
               >
                 {showIcons && s.icon && <span aria-hidden className="shrink-0">{s.icon}</span>}
-                <span className="truncate">{s.label.trim() || t('analytics.untitled')}</span>
+                <span className={`truncate ${s.done ? 'text-muted-foreground line-through' : ''}`}>{s.label.trim() || t('analytics.untitled')}</span>
               </button>
 
               <button

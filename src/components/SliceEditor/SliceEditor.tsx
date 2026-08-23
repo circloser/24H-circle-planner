@@ -77,6 +77,7 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
   const [textColor, setTextColor] = useState(slice.textColor ?? '');
   const [bold, setBold] = useState(slice.bold ?? false);
   const [italic, setItalic] = useState(slice.italic ?? false);
+  const [done, setDone] = useState(slice.done ?? false);
   const [pickerOpen, setPickerOpen] = useState(false);
   // Editor centre in viewport px; null until computed (renders centred meanwhile).
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
@@ -138,10 +139,10 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
     dispatch({
       type: 'REPLACE_SLICE',
       id: sliceId,
-      patch: { label: truncated, icon, color, textColor: textColor || undefined, bold, italic },
+      patch: { label: truncated, icon, color, textColor: textColor || undefined, bold, italic, done },
     });
     onClose();
-  }, [dispatch, sliceId, label, icon, color, textColor, bold, italic, onClose]);
+  }, [dispatch, sliceId, label, icon, color, textColor, bold, italic, done, onClose]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -302,6 +303,21 @@ function SliceEditorInner({ slice, sliceId, svgRef, onClose }: SliceEditorInnerP
         }}
         onOpenPicker={() => setPickerOpen(true)}
       />
+
+      {/* Task completion for the day */}
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">{t('editor.done')}</span>
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={done}
+          aria-label={done ? t('table.markUndone') : t('table.markDone')}
+          onClick={() => setDone((v) => !v)}
+          className={`grid h-7 w-7 place-items-center rounded-md border text-sm font-bold transition-colors ${done ? 'border-primary bg-primary text-primary-foreground' : 'border-border text-transparent hover:bg-black/5'}`}
+        >
+          ✓
+        </button>
+      </div>
 
       {/* Text style: bold / italic / colour */}
       <div className="flex items-center gap-1.5">
