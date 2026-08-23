@@ -828,6 +828,18 @@ async function handlePushPlanDelete(request: Request, env: Env): Promise<Respons
 
 interface PushPlanRow { user_id: string; boundaries: string; tz_offset: number; last_fired: string | null }
 
+/** Run `worker` over `items` with at most `limit` in flight at once. */
+async function inPool<T>(items: T[], limit: number, worker: (item: T) => Promise<void>): Promise<void> {
+  let i = 0;
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (i < items.length) {
+      const idx = i++;
+      await worker(items[idx]);
+    }
+  });
+  await Promise.all(runners);
+}
+
 /** Minute cron: fire due boundaries (current minute, or the previous one when
  *  the trigger jittered past it) for entitled users, at most once each. */
 async function runPushCron(env: Env): Promise<void> {
@@ -842,6 +854,11 @@ async function runPushCron(env: Env): Promise<void> {
   }
   const { results } = await env.DB.prepare('SELECT user_id, boundaries, tz_offset, last_fired FROM push_plans').all<PushPlanRow>();
   const vapid = { publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY, subject: env.VAPID_SUBJECT || 'mailto:singlena@gmail.com' };
+  // Collect every due (device, payload) first, then fan them out with bounded
+  // concurrency — so a busy minute (many users due at, say, 09:00) doesn't
+  // serialise into a long chain. last_fired is still marked per-plan BEFORE any
+  // send below, so at-most-once holds regardless of send order/failure.
+  const sends: Array<{ sub: { endpoint: string; p256dh: string; auth: string }; payload: string }> = [];
   for (const plan of results ?? []) {
     try {
       let boundaries: Array<{ t: string; title?: string; body?: string }> = [];
@@ -868,18 +885,29 @@ async function runPushCron(env: Env): Promise<void> {
       if (!userRow || !(await isEntitled(env, userRow))) continue;
       const subs = await env.DB.prepare('SELECT endpoint, p256dh, auth FROM push_subs WHERE user_id=?').bind(plan.user_id).all<{ endpoint: string; p256dh: string; auth: string }>();
       const payload = JSON.stringify({ title: due.b.title || '24Houring', body: due.b.body || '' });
-      for (const s of subs.results ?? []) {
-        try {
-          const status = await sendWebPush(s, payload, vapid);
-          if (status === 404 || status === 410) {
-            await env.DB.prepare('DELETE FROM push_subs WHERE endpoint=?').bind(s.endpoint).run();
-          }
-        } catch {
-          // per-device best effort
-        }
-      }
+      for (const s of subs.results ?? []) sends.push({ sub: s, payload });
     } catch {
       // per-plan best effort — one bad row must not stall the cron
+    }
+  }
+
+  // Fan out the collected sends with bounded concurrency; prune dead subs after.
+  if (sends.length) {
+    const dead: string[] = [];
+    await inPool(sends, 15, async ({ sub, payload }) => {
+      try {
+        const status = await sendWebPush(sub, payload, vapid);
+        if (status === 404 || status === 410) dead.push(sub.endpoint);
+      } catch {
+        // per-device best effort
+      }
+    });
+    if (dead.length) {
+      try {
+        await env.DB.prepare(`DELETE FROM push_subs WHERE endpoint IN (${dead.map(() => '?').join(',')})`).bind(...dead).run();
+      } catch {
+        // pruning is best-effort
+      }
     }
   }
 
