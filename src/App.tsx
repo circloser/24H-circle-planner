@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { Button } from '@/components/ui/button';
 import { AppHeader } from '@/components/AppShell/AppHeader';
+import { EnablePushBanner } from '@/components/EnablePushBanner/EnablePushBanner';
 import { AppFooter } from '@/components/AppShell/AppFooter';
 import { ResetDialog } from '@/components/AppShell/ResetDialog';
 import { ShareImportDialog } from '@/components/AppShell/ShareImportDialog';
@@ -362,6 +363,8 @@ function App() {
         onOpenE2ee={() => setE2eeOpen(true)}
         onOpenUpgrade={() => setUpgradeOpen(true)}
       />
+
+      <EnablePushBanner />
 
       <main
         className={
