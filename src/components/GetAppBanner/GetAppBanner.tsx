@@ -57,6 +57,7 @@ export function GetAppBanner() {
         >
           {t('getapp.bannerCta')}
         </a>
+        <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">{t('getapp.iosSoon')}</span>
         <button
           type="button"
           onClick={close}

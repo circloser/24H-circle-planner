@@ -42,6 +42,8 @@ export const ko = {
   'getapp.menu': 'Google Play에서 앱 받기',
   'getapp.bannerText': '휴대폰에서도 24Houring — 계획은 데스크톱에서, 알림은 폰에서 받아보세요.',
   'getapp.bannerCta': 'Google Play',
+  'getapp.iosDev': 'iOS 앱 (개발 중)',
+  'getapp.iosSoon': 'iOS 준비 중',
   'settings.pushAlarms': '탭을 닫아도 알림 (Pro)',
   'settings.pushAlarmsHint': '서버가 항목 시작 시각에 푸시를 보내 탭·브라우저를 닫아도 알림이 옵니다. 알림 문구(항목 이름·시간)가 발송을 위해 서버에 저장됩니다. iOS는 홈 화면에 추가한 앱에서 수신됩니다.',
   'settings.pushTest': '닫힌 앱 알림 테스트',

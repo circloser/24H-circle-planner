@@ -39,6 +39,8 @@ export const de: Record<TKey, string> = {
   'getapp.menu': 'App bei Google Play holen',
   'getapp.bannerText': '24Houring auch auf dem Handy — am Desktop planen, am Handy Alarme erhalten.',
   'getapp.bannerCta': 'Google Play',
+  'getapp.iosDev': 'iOS-App (in Entwicklung)',
+  'getapp.iosSoon': 'iOS bald',
   'settings.pushAlarms': 'Auch bei geschlossenem Tab (Pro)',
   'settings.pushAlarmsHint': 'Der Server sendet zu jedem Blockstart eine Push-Nachricht — auch bei geschlossenem Tab oder Browser. Die Texte (Blockname + Zeiten) werden dafür serverseitig gespeichert. Auf iOS: App zum Home-Bildschirm hinzufügen.',
   'settings.pushTest': 'Push-Test (geschlossene App)',

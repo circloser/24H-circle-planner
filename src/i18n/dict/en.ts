@@ -39,6 +39,8 @@ export const en: Record<TKey, string> = {
   'getapp.menu': 'Get the app on Google Play',
   'getapp.bannerText': '24Houring on your phone too — plan on desktop, get alarms on mobile.',
   'getapp.bannerCta': 'Google Play',
+  'getapp.iosDev': 'iOS app (in development)',
+  'getapp.iosSoon': 'iOS coming soon',
   'settings.pushAlarms': 'Notify even when closed (Pro)',
   'settings.pushAlarmsHint': 'The server pushes each block start, so notifications arrive with the tab or browser closed. The notification text (block name + times) is stored server-side for delivery. On iOS, install the app to the Home Screen to receive them.',
   'settings.pushTest': 'Test closed-app push',

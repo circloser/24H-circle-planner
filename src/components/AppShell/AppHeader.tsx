@@ -329,13 +329,19 @@ export function AppHeader({
                 {t('home.button')}
               </DropdownMenuItem>
               {canPromoteApp() && (
-                <DropdownMenuItem
-                  onClick={() => window.open(PLAY_STORE_URL, '_blank', 'noopener,noreferrer')}
-                  className="gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  {t('getapp.menu')}
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem
+                    onClick={() => window.open(PLAY_STORE_URL, '_blank', 'noopener,noreferrer')}
+                    className="gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    {t('getapp.menu')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled className="gap-2">
+                    <Smartphone className="h-4 w-4" />
+                    {t('getapp.iosDev')}
+                  </DropdownMenuItem>
+                </>
               )}
               <DropdownMenuItem onClick={onOpenTransfer} className="gap-2">
                 <QrCodeIcon className="h-4 w-4" />
