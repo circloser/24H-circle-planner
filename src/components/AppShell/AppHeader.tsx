@@ -16,6 +16,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/hooks/useAuth';
 import { useSyncStatus } from '@/hooks/useSync';
 import { openBillingPortal } from '@/lib/sync/billing';
+import { canPromoteApp, PLAY_STORE_URL } from '@/lib/twa';
 import type { SettingsSection } from '@/components/Settings/SettingsDialog';
 
 export interface AppHeaderProps {
@@ -327,6 +328,15 @@ export function AppHeader({
                 <Smartphone className="h-4 w-4" />
                 {t('home.button')}
               </DropdownMenuItem>
+              {canPromoteApp() && (
+                <DropdownMenuItem
+                  onClick={() => window.open(PLAY_STORE_URL, '_blank', 'noopener,noreferrer')}
+                  className="gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  {t('getapp.menu')}
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={onOpenTransfer} className="gap-2">
                 <QrCodeIcon className="h-4 w-4" />
                 {t('transfer.menu')}

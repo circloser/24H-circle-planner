@@ -24,3 +24,19 @@ export function isPlayStoreApp(): boolean {
   }
   return false;
 }
+
+/** Public Play Store listing for the Android app. */
+export const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.houring24.app';
+
+/** Should we promote the Android app here? No when we're already INSIDE it, and
+ *  no when running as an installed standalone (they clearly have an app). */
+export function canPromoteApp(): boolean {
+  if (isPlayStoreApp()) return false;
+  try {
+    if (typeof matchMedia !== 'undefined' && matchMedia('(display-mode: standalone)').matches) return false;
+    if (typeof navigator !== 'undefined' && (navigator as { standalone?: boolean }).standalone) return false;
+  } catch {
+    /* matchMedia unavailable → fine to promote */
+  }
+  return true;
+}
