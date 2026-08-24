@@ -22,6 +22,7 @@ import {
   SNAP_STEPS,
   RING_INNER_MIN,
   RING_INNER_MAX,
+  CHIME_OPTIONS,
   type Background,
   type WorldClock,
 } from '@/hooks/usePreferences';
@@ -272,6 +273,28 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
                   ))}
                 </div>
                 <p className="text-[11px] text-muted-foreground">{t('settings.snapHint')}</p>
+              </div>
+              {/* Recurring time chime — every N minutes / on the hour. */}
+              <div className="flex flex-col gap-2">
+                <span className="text-xs text-muted-foreground">{t('chime.label')}</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {CHIME_OPTIONS.map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setPreference('chimeEvery', n)}
+                      aria-pressed={prefs.chimeEvery === n}
+                      className={OPT_CHIP}
+                    >
+                      {n === 0
+                        ? t('chime.off')
+                        : n % 60 === 0
+                          ? t('chime.hours', { n: String(n / 60) })
+                          : t('chime.mins', { n: String(n) })}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-muted-foreground">{t('chime.hint')}</p>
               </div>
               {/* Slice-start notifications — the timetable IS the alarm. */}
               <div className="flex flex-col gap-2">

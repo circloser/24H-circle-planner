@@ -36,6 +36,10 @@ export function usePushAlarms(): void {
   useEffect(() => {
     slicesRef.current = slices;
   }, [slices]);
+  const chimeRef = useRef(prefs.chimeEvery);
+  useEffect(() => {
+    chimeRef.current = prefs.chimeEvery;
+  }, [prefs.chimeEvery]);
 
   // Ensure this device's subscription exists whenever the feature is active
   // (permission may have been granted on another visit; enablePush is
@@ -46,14 +50,14 @@ export function usePushAlarms(): void {
     void enablePush();
   }, [active]);
 
-  // Debounced plan upload on schedule changes.
+  // Debounced plan upload on schedule OR chime-cadence changes.
   useEffect(() => {
     if (!active) return;
     const id = window.setTimeout(() => {
-      void uploadPushPlan(slices, untitledRef.current);
+      void uploadPushPlan(slices, untitledRef.current, prefs.chimeEvery);
     }, 1500);
     return () => window.clearTimeout(id);
-  }, [active, slices]);
+  }, [active, slices, prefs.chimeEvery]);
 
   // Foreground-return self-heal: on every focus / tab-visible, re-assert this
   // device's subscription (push endpoints silently rotate or get pruned on a
@@ -69,7 +73,7 @@ export function usePushAlarms(): void {
       if (now - last < WAKE_REFRESH_MS) return;
       last = now;
       void enablePush().then((ok) => {
-        if (ok) void uploadPushPlan(slicesRef.current, untitledRef.current);
+        if (ok) void uploadPushPlan(slicesRef.current, untitledRef.current, chimeRef.current);
       });
     };
     window.addEventListener('focus', onWake);

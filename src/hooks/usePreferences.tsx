@@ -89,7 +89,15 @@ export interface Preferences {
    *  band (pizza), larger = thinner ring (donut). Drives the on-screen circle
    *  geometry via svg-geometry's RING. */
   ringInnerR: number;
+  /** Recurring time chime every N minutes, aligned to midnight (0 = off; 60 =
+   *  on the hour). In-tab beep + notification for free; Pro closed-app push adds
+   *  these times to the uploaded plan. */
+  chimeEvery: ChimeEvery;
 }
+
+/** Chime cadence (minutes from midnight). 0 = off; 60 = on the hour. */
+export type ChimeEvery = 0 | 30 | 60 | 120;
+export const CHIME_OPTIONS: readonly ChimeEvery[] = [0, 30, 60, 120];
 
 /** Allowed snap-grid steps (minutes). All divide the 5-min base grid. */
 export type SnapStep = 5 | 15 | 30;
@@ -116,6 +124,7 @@ const DEFAULT_PREFS: Preferences = {
   pushAlarms: false,
   snapMinutes: 5,
   ringInnerR: RING_INNER_DEFAULT,
+  chimeEvery: 0,
   bgType: 'pattern',
   bgColor: '#f4f5f7',
   bgImage: null,
@@ -295,6 +304,12 @@ export function useSnapMinutes(): SnapStep {
 export function useRingInnerR(): number {
   const ctx = useContext(PreferencesContext);
   return ctx?.prefs.ringInnerR ?? RING_INNER_DEFAULT;
+}
+
+/** Null-safe read of the recurring-chime cadence (default 0 = off). */
+export function useChimeEvery(): ChimeEvery {
+  const ctx = useContext(PreferencesContext);
+  return ctx?.prefs.chimeEvery ?? 0;
 }
 
 /** Translation hook bound to the current language preference. */
