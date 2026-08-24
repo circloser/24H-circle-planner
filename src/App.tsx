@@ -53,6 +53,7 @@ import { WelcomeOverlay } from '@/components/Onboarding/WelcomeOverlay';
 import { readSharedFromHash, clearShareHash } from '@/lib/share-link';
 import { AnalyticsDialog } from '@/components/Analytics/AnalyticsDialog';
 import { TimeGapDialog } from '@/components/TimeGap/TimeGapDialog';
+import { WeeklyReportDialog } from '@/components/WeeklyReport/WeeklyReportDialog';
 import { DiaryDialog } from '@/components/Diary/DiaryDialog';
 import { DiaryNotePanel } from '@/components/Diary/DiaryNotePanel';
 import { GoalsDialog } from '@/components/Goals/GoalsDialog';
@@ -145,6 +146,7 @@ function App() {
   const [timeBlockOpen, setTimeBlockOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [timeGapOpen, setTimeGapOpen] = useState(false);
+  const [weeklyOpen, setWeeklyOpen] = useState(false);
   const [diaryOpen, setDiaryOpen] = useState(false);
   const [goalsOpen, setGoalsOpen] = useState(false);
   const [e2eeOpen, setE2eeOpen] = useState(false);
@@ -355,6 +357,7 @@ function App() {
         onOpenDiary={() => setDiaryOpen(true)}
         onOpenAnalytics={() => setAnalyticsOpen(true)}
         onOpenTimeGap={() => setTimeGapOpen(true)}
+        onOpenWeekly={() => setWeeklyOpen(true)}
         onOpenGoals={() => setGoalsOpen(true)}
         onOpenWeekday={() => setWeekdayOpen(true)}
         onOpenPresets={() => setPresetOpen(true)}
@@ -572,6 +575,7 @@ function App() {
       {/* Time analysis — categorised daily-average split + per-day trend. */}
       <AnalyticsDialog open={analyticsOpen} onOpenChange={setAnalyticsOpen} />
       <TimeGapDialog open={timeGapOpen} onOpenChange={setTimeGapOpen} />
+      <WeeklyReportDialog open={weeklyOpen} onOpenChange={setWeeklyOpen} />
 
       {/* Diary — month calendar of saved days, each shown as a mini timetable. */}
       <DiaryDialog open={diaryOpen} onOpenChange={setDiaryOpen} />

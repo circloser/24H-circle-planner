@@ -1,4 +1,4 @@
-import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target, Lock, CalendarClock, CreditCard, Tags, Scale } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target, Lock, CalendarClock, CreditCard, Tags, Scale, CalendarRange } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -26,6 +26,7 @@ export interface AppHeaderProps {
   onOpenDiary: () => void;
   onOpenAnalytics: () => void;
   onOpenTimeGap: () => void;
+  onOpenWeekly: () => void;
   onOpenGoals: () => void;
   onOpenWeekday: () => void;
   onOpenPresets: () => void;
@@ -55,6 +56,7 @@ export function AppHeader({
   onOpenDiary,
   onOpenAnalytics,
   onOpenTimeGap,
+  onOpenWeekly,
   onOpenGoals,
   onOpenWeekday,
   onOpenPresets,
@@ -162,6 +164,10 @@ export function AppHeader({
               <DropdownMenuItem onClick={onOpenTimeGap} className="gap-2">
                 <Scale className="h-4 w-4" />
                 {t('timegap.menu')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onOpenWeekly} className="gap-2">
+                <CalendarRange className="h-4 w-4" />
+                {t('weekly.menu')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onOpenGoals} className="gap-2">
                 <Target className="h-4 w-4" />

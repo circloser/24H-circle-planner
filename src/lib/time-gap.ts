@@ -24,7 +24,7 @@ export interface TimeGap {
 const norm = (l: string) => l.trim().toLowerCase();
 
 /** Minutes covered by a record; wrap-aware ("22:00"→"00:30" = 150). */
-function recordMinutes(r: RecordItem): number {
+export function recordMinutes(r: RecordItem): number {
   const s = hhmmToMinutes(r.start === '24:00' ? '00:00' : r.start);
   const e = hhmmToMinutes(r.end === '24:00' ? '00:00' : r.end);
   return (((e - s) % 1440) + 1440) % 1440;

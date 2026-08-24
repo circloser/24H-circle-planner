@@ -61,6 +61,7 @@ function appendItem(s: Stored, date: string, item: RecordItem): Stored {
 
 interface RecordsApi {
   records: RecordItem[]; // today's, chronological
+  byDate: Record<string, RecordItem[]>; // full history, read-only (weekly report)
   active: ActiveRecord | null;
   startLive: (label: string) => void;
   stopLive: () => void;
@@ -119,7 +120,7 @@ export function RecordsProvider({ children }: { children: React.ReactNode }) {
   }, [today, setStored]);
 
   return (
-    <RecordsContext.Provider value={{ records: todays, active: stored.active, startLive, stopLive, cancelLive, addManual, removeRecord, clearToday }}>
+    <RecordsContext.Provider value={{ records: todays, byDate: stored.byDate, active: stored.active, startLive, stopLive, cancelLive, addManual, removeRecord, clearToday }}>
       {children}
     </RecordsContext.Provider>
   );
@@ -128,7 +129,7 @@ export function RecordsProvider({ children }: { children: React.ReactNode }) {
 export function useRecords(): RecordsApi {
   const ctx = useContext(RecordsContext);
   if (!ctx) {
-    return { records: [], active: null, startLive: () => {}, stopLive: () => {}, cancelLive: () => {}, addManual: () => {}, removeRecord: () => {}, clearToday: () => {} };
+    return { records: [], byDate: {}, active: null, startLive: () => {}, stopLive: () => {}, cancelLive: () => {}, addManual: () => {}, removeRecord: () => {}, clearToday: () => {} };
   }
   return ctx;
 }
