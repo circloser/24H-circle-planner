@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { weeklyReport } from '@/lib/weekly-report';
+import { weeklyReport, weeklyInsights } from '@/lib/weekly-report';
 import type { RecordItem } from '@/hooks/useRecords';
 
 const rec = (label: string, start: string, end: string, color = '#000'): RecordItem => ({
@@ -74,5 +74,47 @@ describe('weeklyReport', () => {
     expect(empty.activeDays).toBe(0);
     expect(empty.avgPerActiveDay).toBe(0);
     expect(empty.byLabel).toEqual([]);
+  });
+
+  it('counts distinct active days per label (once per day)', () => {
+    const byDate = {
+      '2026-08-24': [rec('연구', '09:00', '10:00'), rec('연구', '14:00', '15:00')], // same day twice
+      '2026-08-23': [rec('연구', '09:00', '10:00')],
+    };
+    const r = weeklyReport(byDate, '2026-08-24', 7);
+    expect(r.byLabel[0].days).toBe(2); // 2 distinct days, not 3 records
+    expect(r.byLabel[0].minutes).toBe(180);
+  });
+});
+
+describe('weeklyInsights', () => {
+  const base = {
+    '2026-08-24': [rec('연구', '09:00', '12:00'), rec('점심', '12:00', '12:30')], // 180 + 30
+    '2026-08-23': [rec('연구', '10:00', '11:00')], // 60
+    '2026-08-20': [rec('운동', '07:00', '08:00')], // 60
+  };
+
+  it('emits top / consistent / busiestDay / trend in order', () => {
+    const r = weeklyReport(base, '2026-08-24', 7);
+    const ins = weeklyInsights(r, 165); // prev window logged 165 → +100% (330 vs 165)
+    expect(ins.map((i) => i.kind)).toEqual(['top', 'consistent', 'busiestDay', 'trend']);
+
+    expect(ins[0].params).toMatchObject({ label: '연구', minutes: 240 }); // 180+60
+    expect(ins[1].params).toMatchObject({ label: '연구', days: 2, span: 7 }); // logged 2 days
+    expect(ins[2].params).toMatchObject({ date: '08/24', minutes: 210 }); // busiest day
+    expect(ins[3].params).toMatchObject({ dir: 'up', pct: 100 }); // (330-165)/165
+  });
+
+  it('drops the consistent line when nothing repeats, and trend when no prior', () => {
+    const single = { '2026-08-24': [rec('연구', '09:00', '10:00')] };
+    const r = weeklyReport(single, '2026-08-24', 7);
+    const ins = weeklyInsights(r, 0);
+    expect(ins.map((i) => i.kind)).toEqual(['top']); // no consistency (1 day), no busiest (1 active day), no trend (prev 0)
+  });
+
+  it('reports a downward trend and returns nothing for an empty window', () => {
+    const r = weeklyReport(base, '2026-08-24', 7);
+    expect(weeklyInsights(r, 660)[3]).toMatchObject({ kind: 'trend', params: { dir: 'down', pct: 50 } }); // 330 vs 660
+    expect(weeklyInsights(weeklyReport({}, '2026-08-24', 7), 100)).toEqual([]);
   });
 });

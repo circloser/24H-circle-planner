@@ -3,7 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useRecords } from '@/hooks/useRecords';
 import { dateKey } from '@/hooks/useDiary';
 import { useTranslation } from '@/hooks/usePreferences';
-import { weeklyReport } from '@/lib/weekly-report';
+import { weeklyReport, weeklyInsights, shiftKey, type Insight } from '@/lib/weekly-report';
+import { Lightbulb } from 'lucide-react';
 
 function fmtMin(min: number, lang: string): string {
   const h = Math.floor(min / 60);
@@ -34,6 +35,25 @@ export function WeeklyReportDialog({ open, onOpenChange }: WeeklyReportDialogPro
   const r = useMemo(() => weeklyReport(byDate, today, span), [byDate, today, span]);
   const fmt = (m: number) => fmtMin(m, lang);
 
+  // Deterministic observations, plus a trend vs the previous same-length window.
+  const insights = useMemo(() => {
+    const prevTotal = weeklyReport(byDate, shiftKey(today, -span), span).total;
+    return weeklyInsights(r, prevTotal);
+  }, [byDate, today, span, r]);
+
+  const renderInsight = (i: Insight): string => {
+    switch (i.kind) {
+      case 'top':
+        return t('weekly.insTop', { label: String(i.params.label), time: fmt(Number(i.params.minutes)), pct: String(i.params.pct) });
+      case 'consistent':
+        return t('weekly.insConsistent', { label: String(i.params.label), days: String(i.params.days), span: String(i.params.span) });
+      case 'busiestDay':
+        return t('weekly.insBusiest', { date: String(i.params.date), time: fmt(Number(i.params.minutes)) });
+      case 'trend':
+        return t(i.params.dir === 'up' ? 'weekly.insTrendUp' : 'weekly.insTrendDown', { pct: String(i.params.pct) });
+    }
+  };
+
   const seg = (active: boolean): React.CSSProperties =>
     active
       ? { backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))', border: '1px solid hsl(var(--primary))' }
@@ -62,6 +82,18 @@ export function WeeklyReportDialog({ open, onOpenChange }: WeeklyReportDialogPro
             <p className="text-xs text-muted-foreground">
               {t('weekly.totals', { total: fmt(r.total), n: String(r.activeDays), avg: fmt(r.avgPerActiveDay) })}
             </p>
+
+            {/* Deterministic insight lines — neutral observations, no verdict. */}
+            {insights.length > 0 && (
+              <ul className="mt-1 flex flex-col gap-1.5 rounded-lg bg-primary/5 p-3">
+                {insights.map((i, idx) => (
+                  <li key={idx} className="flex items-start gap-2 text-sm text-foreground">
+                    <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                    <span>{renderInsight(i)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
 
             {/* Per-day bar strip — one row per calendar day (empty days show a flat track). */}
             <section className="mt-1">
