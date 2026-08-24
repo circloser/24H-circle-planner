@@ -1,4 +1,4 @@
-import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target, Lock, CalendarClock, CreditCard, Tags, Scale, CalendarRange } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target, Lock, CalendarClock, CreditCard, Tags, Scale, CalendarRange, Sun, Moon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -9,10 +9,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ThemeToggle } from '@/components/ThemeToggle/ThemeToggle';
 import { SaveIndicator } from '@/components/SaveIndicator/SaveIndicator';
 import { ChartViewToggle } from '@/components/ChartViewToggle/ChartViewToggle';
 import { useTranslation } from '@/hooks/usePreferences';
+import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/hooks/useAuth';
 import { useSyncStatus } from '@/hooks/useSync';
 import { openBillingPortal } from '@/lib/sync/billing';
@@ -72,6 +72,7 @@ export function AppHeader({
   onOpenUpgrade,
 }: AppHeaderProps) {
   const { t } = useTranslation();
+  const { theme, setTheme } = useTheme();
   const { user, plan, billingEnabled, login, logout, loading: authLoading } = useAuth();
   const sync = useSyncStatus();
 
@@ -115,7 +116,7 @@ export function AppHeader({
         <div className="flex min-w-0 shrink items-center justify-end gap-1 sm:gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="px-2 sm:px-3" aria-label={t('header.mySchedules')}>
+              <Button variant="ghost" size="sm" className="shrink-0 px-2 sm:px-3" aria-label={t('header.mySchedules')}>
                 <FolderOpen className="h-4 w-4 sm:hidden" />
                 <span className="hidden sm:inline">{t('header.mySchedules')}</span>
                 <ChevronDown className="ml-1 hidden h-4 w-4 sm:inline" />
@@ -145,7 +146,7 @@ export function AppHeader({
               (time analysis, goals) that read from those saved days. */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="px-2 sm:px-3" aria-label={t('diary.open')}>
+              <Button variant="ghost" size="sm" className="shrink-0 px-2 sm:px-3" aria-label={t('diary.open')}>
                 <BookOpen className="h-4 w-4 sm:hidden" />
                 <span className="hidden sm:inline">{t('diary.open')}</span>
                 <ChevronDown className="ml-1 hidden h-4 w-4 sm:inline" />
@@ -177,7 +178,7 @@ export function AppHeader({
           </DropdownMenu>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="px-2 sm:px-3" aria-label={t('header.design')}>
+              <Button variant="ghost" size="sm" className="shrink-0 px-2 sm:px-3" aria-label={t('header.design')}>
                 <Palette className="h-4 w-4 sm:hidden" />
                 <span className="hidden sm:inline">{t('header.design')}</span>
                 <ChevronDown className="ml-1 hidden h-4 w-4 sm:inline" />
@@ -218,7 +219,7 @@ export function AppHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="px-2 sm:px-3"
+            className="shrink-0 px-2 sm:px-3"
             onClick={onOpenExport}
             aria-label={t('header.export')}
           >
@@ -227,7 +228,7 @@ export function AppHeader({
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label={t('header.settings')}>
+              <Button variant="ghost" size="sm" className="shrink-0 px-2 sm:px-3" aria-label={t('header.settings')}>
                 <SettingsIcon className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -306,6 +307,13 @@ export function AppHeader({
                 <Languages className="h-4 w-4" />
                 {t('settings.language')}
               </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="gap-2"
+              >
+                {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                {t(theme === 'dark' ? 'theme.lightMode' : 'theme.darkMode')}
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={onShareImage} className="gap-2">
                 <Share2 className="h-4 w-4" />
@@ -332,7 +340,6 @@ export function AppHeader({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <ThemeToggle />
         </div>
       </div>
     </header>
