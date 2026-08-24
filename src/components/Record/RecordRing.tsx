@@ -1,7 +1,8 @@
 import type { TimeSlice } from '@/types/time-slice';
-import { RING, slicePath, labelAnchorInside, truncateLabel, polarToCartesian } from '@/lib/svg-geometry';
+import { RING, setRingInnerR, slicePath, labelAnchorInside, truncateLabel, polarToCartesian } from '@/lib/svg-geometry';
 import { angleForMin, FULL_SPEC } from '@/lib/chart-view';
 import type { RecordItem, ActiveRecord } from '@/hooks/useRecords';
+import { useRingInnerR } from '@/hooks/usePreferences';
 
 interface RecordRingProps {
   records: RecordItem[];
@@ -23,6 +24,7 @@ const minToHhmm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}
  * growing to the current time.
  */
 export function RecordRing({ records, active, nowMin }: RecordRingProps) {
+  setRingInnerR(useRingInnerR()); // keep the record ring in sync with the thickness pref
   const { cx, cy, innerR, outerR } = RING;
   const midR = (innerR + outerR) / 2;
   const nowHhmm = minToHhmm(nowMin % 1440);

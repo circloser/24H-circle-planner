@@ -8,14 +8,27 @@ import { angleForMin, FULL_SPEC, type ViewSpec } from '@/lib/chart-view';
 // reading visually as pizza slices rather than a thin donut ring.
 // G7 export mask radii must be kept in sync — see src/lib/export/pixelDiff.ts.
 
-export const RING = {
+/**
+ * Ring geometry. `innerR` is the one mutable field — the user's "ring thickness"
+ * preference writes it (via {@link setRingInnerR}) so the whole circle (render,
+ * hit-testing, labels, export) reads one consistent value. outerR/cx/cy are
+ * fixed. Kept as a shared singleton (rather than threaded through every call
+ * site) precisely so rendering and pointer hit-testing can never disagree.
+ */
+export const RING: { innerR: number; outerR: number; cx: number; cy: number } = {
   innerR: 100,
   outerR: 460,
   cx: 500,
   cy: 500,
-} as const;
+};
 
 export type RingGeom = typeof RING;
+
+/** Set the ring's inner radius (ring-thickness preference). Clamped to keep a
+ *  legible hub and a visible band. */
+export function setRingInnerR(innerR: number): void {
+  RING.innerR = Math.max(60, Math.min(380, innerR));
+}
 
 // ─── Polar / Cartesian ────────────────────────────────────────────────────────
 

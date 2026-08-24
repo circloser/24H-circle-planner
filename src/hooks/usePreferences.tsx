@@ -85,11 +85,21 @@ export interface Preferences {
   /** Drag/split snap grid in minutes (5/15/30). Coarser = quicker to rough out
    *  a day; the 5-min minimum slice width is unaffected. */
   snapMinutes: SnapStep;
+  /** Donut ring inner radius (SVG units, outerR fixed at 460). Smaller = thicker
+   *  band (pizza), larger = thinner ring (donut). Drives the on-screen circle
+   *  geometry via svg-geometry's RING. */
+  ringInnerR: number;
 }
 
 /** Allowed snap-grid steps (minutes). All divide the 5-min base grid. */
 export type SnapStep = 5 | 15 | 30;
 export const SNAP_STEPS: readonly SnapStep[] = [5, 15, 30];
+
+/** Ring inner-radius bounds (SVG units). Min keeps a legible centre hub; max
+ *  keeps a visible band. Thickness = 460 (outerR) − innerR. Default innerR 100. */
+export const RING_INNER_MIN = 60;
+export const RING_INNER_MAX = 380;
+export const RING_INNER_DEFAULT = 100;
 
 const DEFAULT_PREFS: Preferences = {
   language: 'ko',
@@ -105,6 +115,7 @@ const DEFAULT_PREFS: Preferences = {
   sliceAlarms: false,
   pushAlarms: false,
   snapMinutes: 5,
+  ringInnerR: RING_INNER_DEFAULT,
   bgType: 'pattern',
   bgColor: '#f4f5f7',
   bgImage: null,
@@ -278,6 +289,12 @@ export function useChartView(): ChartView {
 export function useSnapMinutes(): SnapStep {
   const ctx = useContext(PreferencesContext);
   return ctx?.prefs.snapMinutes ?? 5;
+}
+
+/** Null-safe read of the ring inner radius (default 100 = current geometry). */
+export function useRingInnerR(): number {
+  const ctx = useContext(PreferencesContext);
+  return ctx?.prefs.ringInnerR ?? RING_INNER_DEFAULT;
 }
 
 /** Translation hook bound to the current language preference. */

@@ -20,6 +20,8 @@ import {
   GRADIENT_PRESETS,
   NOW_LINE_DEFAULT_COLOR,
   SNAP_STEPS,
+  RING_INNER_MIN,
+  RING_INNER_MAX,
   type Background,
   type WorldClock,
 } from '@/hooks/usePreferences';
@@ -234,6 +236,25 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
           {/* Timeline: now-line style + world-clock lines */}
           {section === 'timeline' && (
             <div className="flex flex-col gap-4">
+              {/* Donut ring thickness — moves the inner radius (outer rim fixed).
+                  Slider shows thickness (thicker → right); stored as innerR. */}
+              <div className="flex flex-col gap-2">
+                <span className="text-xs text-muted-foreground">{t('settings.ringThickness')}</span>
+                <div className="flex items-center gap-3">
+                  <span className="w-10 shrink-0 text-[11px] text-muted-foreground">{t('settings.ringThin')}</span>
+                  <input
+                    type="range"
+                    min={460 - RING_INNER_MAX}
+                    max={460 - RING_INNER_MIN}
+                    step={10}
+                    value={460 - prefs.ringInnerR}
+                    onChange={(e) => setPreference('ringInnerR', 460 - Number(e.target.value))}
+                    className="flex-1 cursor-pointer accent-[hsl(var(--primary))]"
+                    aria-label={t('settings.ringThickness')}
+                  />
+                  <span className="w-10 shrink-0 text-right text-[11px] text-muted-foreground">{t('settings.ringThick')}</span>
+                </div>
+              </div>
               {/* Snap grid — drag / split / block edits land on this minute step. */}
               <div className="flex flex-col gap-2">
                 <span className="text-xs text-muted-foreground">{t('settings.snapStep')}</span>

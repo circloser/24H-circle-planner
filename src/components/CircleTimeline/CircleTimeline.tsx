@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import type { TimeSlice } from '@/types/time-slice';
-import { RING, polarToCartesian, slicePath, wrapText } from '@/lib/svg-geometry';
+import { RING, setRingInnerR, polarToCartesian, slicePath, wrapText } from '@/lib/svg-geometry';
 import { hhmmToMinutes, minutesToHhmm, snapMinutes, sliceWidthMinutes, tzMinutes } from '@/lib/time-utils';
 import {
   viewSpec,
@@ -12,7 +12,7 @@ import {
   type ViewSpec,
 } from '@/lib/chart-view';
 import { useSliceSelector, useStoreSelector } from '@/hooks/useScheduleStore';
-import { useTranslation, useShowNowLine, useChartView, useNowLineStyle, useWorldClocks, useSnapMinutes } from '@/hooks/usePreferences';
+import { useTranslation, useShowNowLine, useChartView, useNowLineStyle, useWorldClocks, useSnapMinutes, useRingInnerR } from '@/hooks/usePreferences';
 import { useCoarsePointer } from '@/hooks/useCoarsePointer';
 import { translatePresetName } from '@/i18n/content';
 import { SliceLabel } from './SliceLabel';
@@ -473,6 +473,11 @@ export function CircleTimeline({
   // Active view window (24h / 12h day / 12h night). Drives the angle remap below.
   // Preview thumbnails (preset gallery, day strip) always show the full 24h clock.
   const chartView = useChartView();
+  // Ring-thickness preference → shared RING singleton (skip in preset previews so
+  // they keep the canonical geometry). Set in render so this component's own JSX,
+  // its children, and pointer hit-testing all read one consistent innerR.
+  const ringInnerR = useRingInnerR();
+  if (mode !== 'preview') setRingInnerR(ringInnerR);
   const spec = mode === 'preview' ? FULL_SPEC : viewSpec(chartView);
   const is12h = spec.view !== 'full';
   const specRef = useRef<ViewSpec>(spec);
