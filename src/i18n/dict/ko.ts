@@ -506,6 +506,7 @@ export const ko = {
   'nownext.now': '지금',
   'nownext.next': '다음',
   'nownext.left': '{d} 남음',
+  'nownext.elapsed': '{d} 경과',
   'nownext.empty': '표시할 시간표가 없어요.',
   'clock.today': '오늘',
   'clock.weather': '날씨',

@@ -505,6 +505,7 @@ export const en: Record<TKey, string> = {
   'nownext.now': 'Now',
   'nownext.next': 'Next',
   'nownext.left': '{d} left',
+  'nownext.elapsed': '{d} in',
   'nownext.empty': 'No schedule to show.',
   'clock.today': 'Today',
   'clock.weather': 'Weather',

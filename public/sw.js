@@ -4,7 +4,7 @@
  * works offline (data lives in localStorage). Navigations are network-first
  * (fresh on every online visit); same-origin assets are stale-while-revalidate.
  */
-const CACHE = '24h-cache-v8';
+const CACHE = '24h-cache-v9';
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/favicon.svg', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -30,12 +30,16 @@ self.addEventListener('push', (event) => {
   } catch {
     /* non-JSON push → generic notification */
   }
+  const tag = data.tag || 'slice-start';
   event.waitUntil(
     self.registration.showNotification(data.title || '24Houring', {
       body: data.body || '',
-      tag: data.tag || 'slice-start', // same-kind pushes replace; ops keep their own lane
+      tag, // same-kind pushes replace; ops keep their own lane
       icon: '/icon-192.png',
       badge: '/icon-192.png',
+      // Slice-start (and interval) alarms stay pinned until the next boundary
+      // replaces them or the user dismisses; one-off 'ops' pushes don't linger.
+      requireInteraction: tag === 'slice-start' || tag === 'interval',
     }),
   );
 });

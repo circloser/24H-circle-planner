@@ -25,7 +25,7 @@ export function NowNextCard({ slices }: { slices: readonly TimeSlice[] }) {
   const { t, lang } = useTranslation();
   const now = useNow(true);
   const minutes = now.getHours() * 60 + now.getMinutes();
-  const { current, next, remainingMin, progress } = computeNowNext(slices, minutes);
+  const { current, next, elapsedMin, remainingMin, progress } = computeNowNext(slices, minutes);
 
   if (!current) {
     return <p className="text-sm text-muted-foreground">{t('nownext.empty')}</p>;
@@ -47,7 +47,10 @@ export function NowNextCard({ slices }: { slices: readonly TimeSlice[] }) {
         <span className="truncate text-lg font-bold text-foreground">{curLabel}</span>
       </div>
       <p className="mt-0.5 text-xs tabular-nums text-muted-foreground">
-        {hhmm(current.startTime)}–{hhmm(current.endTime)} · {t('nownext.left', { d: fmtDur(remainingMin, lang) })}
+        {hhmm(current.startTime)}–{hhmm(current.endTime)}
+      </p>
+      <p className="text-xs tabular-nums text-muted-foreground">
+        {t('nownext.elapsed', { d: fmtDur(elapsedMin, lang) })} · {t('nownext.left', { d: fmtDur(remainingMin, lang) })}
       </p>
       <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-black/10">
         <div className="h-full rounded-full bg-primary transition-[width] duration-500" style={{ width: `${Math.round(progress * 100)}%` }} />

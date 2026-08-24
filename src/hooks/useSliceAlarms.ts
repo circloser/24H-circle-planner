@@ -83,6 +83,10 @@ export function useSliceAlarms(): void {
             body,
             tag: 'slice-start', // consecutive boundaries replace, never stack
             icon: '/icon-192.png',
+            // Keep the current block pinned in the shade until it's replaced by
+            // the next boundary (same tag) or dismissed — so "what am I doing
+            // now" stays glanceable, not a toast that vanishes in a few seconds.
+            requireInteraction: true,
           });
         }
       } catch {
