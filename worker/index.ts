@@ -934,6 +934,93 @@ async function runPushCron(env: Env): Promise<void> {
   }
 }
 
+// ─── News (keyword headlines, no AI tokens) ──────────────────────────────────
+/** Country code → Google News locale params (hl/gl/ceid). The frontend sends a
+ *  country code + keyword; we only ever build the fixed Google-News search URL
+ *  from a whitelisted locale + the URL-encoded keyword (no SSRF surface). */
+const NEWS_LOCALES: Record<string, { hl: string; gl: string; ceid: string }> = {
+  KR: { hl: 'ko', gl: 'KR', ceid: 'KR:ko' },
+  US: { hl: 'en-US', gl: 'US', ceid: 'US:en' },
+  GB: { hl: 'en-GB', gl: 'GB', ceid: 'GB:en' },
+  JP: { hl: 'ja', gl: 'JP', ceid: 'JP:ja' },
+  CN: { hl: 'zh-CN', gl: 'CN', ceid: 'CN:zh-Hans' },
+  TW: { hl: 'zh-TW', gl: 'TW', ceid: 'TW:zh-Hant' },
+  FR: { hl: 'fr', gl: 'FR', ceid: 'FR:fr' },
+  DE: { hl: 'de', gl: 'DE', ceid: 'DE:de' },
+  ES: { hl: 'es', gl: 'ES', ceid: 'ES:es' },
+  IT: { hl: 'it', gl: 'IT', ceid: 'IT:it' },
+  IN: { hl: 'en-IN', gl: 'IN', ceid: 'IN:en' },
+  BR: { hl: 'pt-BR', gl: 'BR', ceid: 'BR:pt-419' },
+  RU: { hl: 'ru', gl: 'RU', ceid: 'RU:ru' },
+  CA: { hl: 'en-CA', gl: 'CA', ceid: 'CA:en' },
+  AU: { hl: 'en-AU', gl: 'AU', ceid: 'AU:en' },
+};
+
+/** Minimal XML-entity decode for RSS <title> text (no HTML in titles). */
+function decodeEntities(s: string): string {
+  return s
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+    .replace(/&#0?39;/g, "'").replace(/&apos;/g, "'").replace(/&amp;/g, '&')
+    .trim();
+}
+
+interface NewsItem { title: string; link: string; source: string; pubDate: string }
+
+/** Parse up to 10 <item>s out of a Google-News RSS document (no XML lib). */
+function parseRss(xml: string): NewsItem[] {
+  const items: NewsItem[] = [];
+  const re = /<item>([\s\S]*?)<\/item>/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(xml)) && items.length < 10) {
+    const block = m[1];
+    const pick = (tag: string) => {
+      const r = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`).exec(block);
+      return r ? decodeEntities(r[1]) : '';
+    };
+    let title = pick('title');
+    const link = pick('link');
+    const source = pick('source');
+    const pubDate = pick('pubDate');
+    // Google News titles read "Headline - Source"; drop the trailing source.
+    if (source && title.endsWith(` - ${source}`)) title = title.slice(0, -(source.length + 3)).trim();
+    if (title && link) items.push({ title, link, source, pubDate });
+  }
+  return items;
+}
+
+/** GET /api/news?q=<keyword>&country=<code> → up to 10 headline titles+links
+ *  from Google News RSS. No API key, no AI tokens. Edge-cached ~2h so the same
+ *  keyword doesn't refetch on every open while staying fresh through the day. */
+async function handleNews(request: Request, env: Env, ctx?: Waiter): Promise<Response> {
+  void env;
+  const url = new URL(request.url);
+  const q = (url.searchParams.get('q') || '').trim().slice(0, 120);
+  const country = (url.searchParams.get('country') || 'KR').toUpperCase();
+  const loc = NEWS_LOCALES[country] ?? NEWS_LOCALES.KR;
+  if (!q) return json({ error: 'missing_query' }, 400);
+
+  // Edge cache keyed by normalized country+query.
+  const cacheKey = new Request(`https://news.cache/${country}/${encodeURIComponent(q.toLowerCase())}`);
+  const cache = (caches as unknown as { default: Cache }).default;
+  const hit = await cache.match(cacheKey);
+  if (hit) return hit;
+
+  const feed = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=${loc.hl}&gl=${loc.gl}&ceid=${encodeURIComponent(loc.ceid)}`;
+  let items: NewsItem[] = [];
+  try {
+    const res = await fetch(feed, { headers: { 'user-agent': 'Mozilla/5.0 (compatible; 24Houring/1.0)' } });
+    if (res.ok) items = parseRss(await res.text());
+  } catch {
+    return json({ error: 'fetch_failed' }, 502);
+  }
+
+  const out = json({ q, country, items, fetchedAt: Date.now() }, 200, { 'cache-control': 'public, max-age=7200' });
+  const store = out.clone();
+  if (ctx?.waitUntil) ctx.waitUntil(cache.put(cacheKey, store)); else await cache.put(cacheKey, store);
+  return out;
+}
+
 // ─── Router ──────────────────────────────────────────────────────────────────
 
 export default {
@@ -974,6 +1061,7 @@ export default {
       if (p === '/api/push/plan' && m === 'PUT') return handlePushPlanPut(request, env);
       if (p === '/api/push/plan' && m === 'DELETE') return handlePushPlanDelete(request, env);
       if (p === '/api/push/test' && m === 'POST') return handlePushTest(request, env);
+      if (p === '/api/news' && m === 'GET') return handleNews(request, env, ctx);
       return json({ error: 'not_found' }, 404);
     }
 

@@ -65,6 +65,7 @@ import { DiaryDialog } from '@/components/Diary/DiaryDialog';
 import { DiaryNotePanel } from '@/components/Diary/DiaryNotePanel';
 import { GoalsDialog } from '@/components/Goals/GoalsDialog';
 import { GoalsWidget } from '@/components/Goals/GoalsWidget';
+import { NewsWidget } from '@/components/News/NewsWidget';
 import { DiaryViewSync } from '@/components/DiaryViewSync';
 import { RecordView } from '@/components/Record/RecordView';
 import { WeekdayScheduleDialog } from '@/components/Weekday/WeekdayScheduleDialog';
@@ -639,6 +640,8 @@ function App() {
       {!isMobile && <MemoLayer />}
       {!isMobile && <GoalsWidget />}
       {!isMobile && <ClockToolsLayer />}
+      {/* Keyword news headlines (floating; no AI tokens — server-side RSS). */}
+      <NewsWidget />
       {/* Background pet — desktop pets roam the window; on mobile they live
           inside the console LCD (isMobile switches the layer's render mode). */}
       <TamagotchiProvider>
