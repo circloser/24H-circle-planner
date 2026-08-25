@@ -27,6 +27,7 @@ import {
   type WorldClock,
 } from '@/hooks/usePreferences';
 import { fileToBackgroundDataUrl } from '@/lib/image-bg';
+import { track } from '@/lib/track';
 import { useAuth } from '@/hooks/useAuth';
 import { requestUpgrade } from '@/lib/pro';
 import { enablePush, disablePush, pushSupported, sendTestPush } from '@/lib/push';
@@ -282,7 +283,10 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
                     <button
                       key={n}
                       type="button"
-                      onClick={() => setPreference('chimeEvery', n)}
+                      onClick={() => {
+                        setPreference('chimeEvery', n);
+                        if (n > 0) track('alarm_enable', { type: 'chime' });
+                      }}
                       aria-pressed={prefs.chimeEvery === n}
                       className={OPT_CHIP}
                     >
@@ -313,8 +317,11 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
                           return;
                         }
                         const p = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
-                        if (p === 'granted') setPreference('sliceAlarms', true);
-                        else toast.error(permDeniedMsg());
+                        track('notif_permission', { result: p });
+                        if (p === 'granted') {
+                          setPreference('sliceAlarms', true);
+                          track('alarm_enable', { type: 'slice' });
+                        } else toast.error(permDeniedMsg());
                       })();
                     }}
                     aria-pressed={prefs.sliceAlarms}
@@ -377,12 +384,15 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
                           return;
                         }
                         const p = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
+                        track('notif_permission', { result: p });
                         if (p !== 'granted') {
                           toast.error(permDeniedMsg());
                           return;
                         }
-                        if (await enablePush()) setPreference('pushAlarms', true);
-                        else toast.error(t('settings.pushFail'));
+                        if (await enablePush()) {
+                          setPreference('pushAlarms', true);
+                          track('alarm_enable', { type: 'push' });
+                        } else toast.error(t('settings.pushFail'));
                       })();
                     }}
                     aria-pressed={prefs.pushAlarms}

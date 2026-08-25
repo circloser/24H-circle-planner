@@ -14,6 +14,13 @@
  *  - share            {method}          — image | link
  *  - preset_load      {preset}          — built-in persona id or 'user'
  *  - schedule_import  {name}            — #p= link accepted (incl. template CTAs)
+ *
+ * Activation funnel (view → edit → alarm → return; GA4 gives page_view/first_visit):
+ *  - schedule_edit                      — first undoable edit this session (made it theirs)
+ *  - home_open        {os}              — add-to-home guide shown (ios | other)
+ *  - installed                          — PWA install prompt accepted
+ *  - notif_permission {result}          — granted | denied | default
+ *  - alarm_enable     {type}            — slice | push | chime  ← the aha moment
  */
 
 type Gtag = (command: 'event', eventName: string, params?: Record<string, string | number | boolean>) => void;

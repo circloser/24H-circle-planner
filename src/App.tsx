@@ -14,6 +14,7 @@ import { ShareImportDialog } from '@/components/AppShell/ShareImportDialog';
 import { TimePaletteDialog } from '@/components/TimePalette/TimePaletteDialog';
 import { useSliceAlarms } from '@/hooks/useSliceAlarms';
 import { useChimes } from '@/hooks/useChimes';
+import { useActivationTracking } from '@/hooks/useActivationTracking';
 import { usePushAlarms } from '@/hooks/usePushAlarms';
 import { useDailyDoneReset } from '@/hooks/useDailyDoneReset';
 import { track } from '@/lib/track';
@@ -292,6 +293,8 @@ function App() {
   // "시간표가 곧 알람": crossing into the next slice fires a browser notification
   // (opt-in via 설정 → 타임라인; needs this device's Notification permission).
   useSliceAlarms();
+  // Activation funnel: fire schedule_edit once on the first real edit.
+  useActivationTracking();
   // Recurring time chime (매 정각 / 주기) while the tab is open — opt-in via 설정.
   useChimes();
   // Pro tier of the same feature: server-sent Web Push, arrives tab-closed.

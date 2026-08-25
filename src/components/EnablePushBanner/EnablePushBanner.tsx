@@ -5,6 +5,7 @@ import { usePushDeviceStatus } from '@/hooks/usePushDeviceStatus';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
 import { useAuth } from '@/hooks/useAuth';
 import { enablePush, pushSupported } from '@/lib/push';
+import { track } from '@/lib/track';
 
 /**
  * A slim banner shown only when the user has an alarm turned on but THIS device
@@ -35,10 +36,12 @@ export function EnablePushBanner() {
     try {
       const p =
         Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
+      track('notif_permission', { result: p });
       if (p !== 'granted') {
         toast(deniedMsg);
         return;
       }
+      track('alarm_enable', { type: prefs.pushAlarms && plan === 'pro' ? 'push' : 'slice' });
       // Pro closed-app push: register this device so the minute-cron can reach it.
       if (prefs.pushAlarms && plan === 'pro' && user && pushSupported()) {
         await enablePush();

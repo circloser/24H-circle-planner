@@ -6,9 +6,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/usePreferences';
 import { isIOS, isStandalone } from '@/lib/twa';
+import { track } from '@/lib/track';
 
 /** Chrome/Edge's non-standard install-prompt event (not in the DOM lib types). */
 export interface BeforeInstallPromptEvent extends Event {
@@ -39,12 +41,20 @@ export function AddToHomeDialog({
   const { t } = useTranslation();
   const showIosSteps = isIOS() && !isStandalone();
 
+  // Activation funnel: the add-to-home guide was shown (a step toward the aha).
+  useEffect(() => {
+    if (open) track('home_open', { os: isIOS() ? 'ios' : 'other' });
+  }, [open]);
+
   async function handleInstall() {
     if (!installPrompt) return;
     try {
       await installPrompt.prompt();
       const choice = await installPrompt.userChoice;
-      if (choice.outcome === 'accepted') toast.success(t('home.installed'));
+      if (choice.outcome === 'accepted') {
+        track('installed');
+        toast.success(t('home.installed'));
+      }
     } catch {
       // user dismissed or prompt failed — nothing to do
     }
