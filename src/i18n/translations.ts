@@ -6,7 +6,8 @@
 import { ko, type TKey } from './dict/ko';
 import { en } from './dict/en';
 import { de } from './dict/de';
-import { ja, zh, fr, es, ru } from './dict/extra';
+import { ja } from './dict/ja';
+import { zh, fr, es, ru } from './dict/extra';
 
 export type { TKey };
 

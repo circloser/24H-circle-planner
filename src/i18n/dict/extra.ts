@@ -4,19 +4,6 @@
  */
 import type { TKey } from './ko';
 
-export const ja: Partial<Record<TKey, string>> = {
-  'header.mySchedules': 'マイ時間割',
-  'header.presets': 'プリセット',
-  'header.export': 'エクスポート',
-  'header.settings': '設定',
-  'settings.title': '設定',
-  'settings.language': '言語',
-  'settings.font': 'フォント',
-  'settings.fontFamily': '書体',
-  'settings.fontSize': '文字サイズ',
-  'settings.background': '背景',
-};
-
 export const zh: Partial<Record<TKey, string>> = {
   'header.mySchedules': '我的时间表',
   'header.presets': '预设',
