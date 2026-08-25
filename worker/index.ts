@@ -1007,25 +1007,26 @@ async function handleNews(request: Request, env: Env, ctx?: Waiter): Promise<Res
   if (hit) return hit;
 
   const feed = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=${loc.hl}&gl=${loc.gl}&ceid=${loc.ceid}`;
+  const headers = {
+    // A real browser UA + matching accept-language; the CONSENT cookie skips
+    // Google's EU consent interstitial that datacenter IPs otherwise hit.
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Safari/537.36',
+    'accept-language': `${loc.hl},${loc.hl.split('-')[0]};q=0.9`,
+    'accept': 'application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.8',
+    'cookie': 'CONSENT=YES+cb',
+  };
+  // Google throttles datacenter egress with intermittent 5xx — retry a few times
+  // with a short backoff before giving up.
   let items: NewsItem[] = [];
   let upstreamStatus = 0;
   let raw = '';
-  try {
-    const res = await fetch(feed, {
-      headers: {
-        // A real browser UA + matching accept-language; the CONSENT cookie skips
-        // Google's EU consent interstitial that datacenter IPs otherwise hit.
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Safari/537.36',
-        'accept-language': `${loc.hl},${loc.hl.split('-')[0]};q=0.9`,
-        'accept': 'application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.8',
-        'cookie': 'CONSENT=YES+cb',
-      },
-    });
-    upstreamStatus = res.status;
-    raw = await res.text();
-    if (res.ok) items = parseRss(raw);
-  } catch {
-    return json({ error: 'fetch_failed' }, 502);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt) await new Promise((r) => setTimeout(r, 350 * attempt));
+    try {
+      const res = await fetch(feed, { headers });
+      upstreamStatus = res.status;
+      if (res.ok) { raw = await res.text(); items = parseRss(raw); if (items.length) break; }
+    } catch { /* retry */ }
   }
 
   // Temporary diagnostics (?debug=1): inspect what the edge fetch received.
@@ -1033,10 +1034,15 @@ async function handleNews(request: Request, env: Env, ctx?: Waiter): Promise<Res
     return json({ q, country, feed, upstreamStatus, itemCount: items.length, snippet: raw.slice(0, 800) }, 200, { 'cache-control': 'no-store' });
   }
 
-  const out = json({ q, country, items, fetchedAt: Date.now() }, 200, { 'cache-control': 'public, max-age=7200' });
-  const store = out.clone();
-  if (ctx?.waitUntil) ctx.waitUntil(cache.put(cacheKey, store)); else await cache.put(cacheKey, store);
-  return out;
+  // Only cache a good (non-empty) result — never poison the cache with an empty
+  // list from a throttled fetch, so the next open can retry.
+  if (items.length) {
+    const out = json({ q, country, items, fetchedAt: Date.now() }, 200, { 'cache-control': 'public, max-age=7200' });
+    const store = out.clone();
+    if (ctx?.waitUntil) ctx.waitUntil(cache.put(cacheKey, store)); else await cache.put(cacheKey, store);
+    return out;
+  }
+  return json({ q, country, items: [], fetchedAt: Date.now() }, 200, { 'cache-control': 'no-store' });
 }
 
 // ─── Router ──────────────────────────────────────────────────────────────────
