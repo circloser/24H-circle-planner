@@ -1,4 +1,4 @@
-import { Smartphone, Copy, Download } from 'lucide-react';
+import { Smartphone, Copy, Download, Share, BellRing } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/usePreferences';
+import { isIOS, isStandalone } from '@/lib/twa';
 
 /** Chrome/Edge's non-standard install-prompt event (not in the DOM lib types). */
 export interface BeforeInstallPromptEvent extends Event {
@@ -36,6 +37,7 @@ export function AddToHomeDialog({
   onConsumePrompt,
 }: AddToHomeDialogProps) {
   const { t } = useTranslation();
+  const showIosSteps = isIOS() && !isStandalone();
 
   async function handleInstall() {
     if (!installPrompt) return;
@@ -72,6 +74,29 @@ export function AddToHomeDialog({
         <p className="text-sm leading-relaxed text-muted-foreground">
           {t('home.body')}
         </p>
+
+        {showIosSteps && (
+          <div className="mt-1 flex flex-col gap-2 rounded-lg border border-primary/25 bg-primary/5 p-3">
+            <p className="flex items-center gap-1.5 text-xs font-medium text-primary">
+              <BellRing className="h-3.5 w-3.5 shrink-0" />
+              {t('home.iosAlarmNote')}
+            </p>
+            <ol className="flex flex-col gap-1.5 text-sm text-foreground">
+              <li className="flex items-center gap-1.5">
+                <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary/15 text-xs font-semibold text-primary">1</span>
+                <span className="flex items-center gap-1">{t('home.iosStep1')}<Share className="h-4 w-4 text-primary" /></span>
+              </li>
+              <li className="flex items-center gap-1.5">
+                <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary/15 text-xs font-semibold text-primary">2</span>
+                {t('home.iosStep2')}
+              </li>
+              <li className="flex items-center gap-1.5">
+                <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary/15 text-xs font-semibold text-primary">3</span>
+                {t('home.iosStep3')}
+              </li>
+            </ol>
+          </div>
+        )}
 
         <div className="flex flex-col gap-2 pt-1">
           {installPrompt ? (

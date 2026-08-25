@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { AppHeader } from '@/components/AppShell/AppHeader';
 import { EnablePushBanner } from '@/components/EnablePushBanner/EnablePushBanner';
 import { GetAppBanner } from '@/components/GetAppBanner/GetAppBanner';
+import { IosInstallBanner } from '@/components/IosInstallBanner/IosInstallBanner';
 import { AppFooter } from '@/components/AppShell/AppFooter';
 import { ResetDialog } from '@/components/AppShell/ResetDialog';
 import { ShareImportDialog } from '@/components/AppShell/ShareImportDialog';
@@ -379,6 +380,7 @@ function App() {
 
       <EnablePushBanner />
       <GetAppBanner />
+      <IosInstallBanner onOpen={() => setHomeOpen(true)} />
 
       <main
         className={
