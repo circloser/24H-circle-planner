@@ -4,7 +4,7 @@ import { formatHatch, fireTamaFx } from './tama-utils';
 import { useTamagotchi, type Pet } from '@/hooks/useTamagotchi';
 import { useTranslation } from '@/hooks/usePreferences';
 
-const SIZE: Record<string, number> = { egg: 46, amoeba: 40, baby: 54, adult: 66, dead: 52 };
+const SIZE: Record<string, number> = { egg: 46, amoeba: 40, baby: 54, adult: 40, dead: 52 };
 
 /** State glyph bubble shown above the creature. Hygiene is shared across pets. */
 function stateGlyph(p: Pet, hygiene: number): string | null {

@@ -5,7 +5,7 @@ import { MOBILE_LCD } from './tama-utils';
 import { useTamagotchi, type Pet } from '@/hooks/useTamagotchi';
 import { useTranslation } from '@/hooks/usePreferences';
 
-const SIZE: Record<string, number> = { egg: 34, amoeba: 30, baby: 40, adult: 46, dead: 38 };
+const SIZE: Record<string, number> = { egg: 34, amoeba: 30, baby: 40, adult: 28, dead: 38 };
 
 /** State glyph above the pet (shared hygiene). Mirrors Creature.stateGlyph. */
 function glyphFor(p: Pet, hygiene: number): string | null {

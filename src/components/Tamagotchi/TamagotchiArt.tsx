@@ -13,7 +13,7 @@ const eye = (x: number, y: number, r = 1.6) => <circle key={`e${x}`} cx={x} cy={
 
 /** Two soft diagonal cheek-blush strokes — a light, cute accent. */
 const blush = (x: number, y: number) => (
-  <path key={`b${x}`} d={`M${x} ${y} l-2.4 1.3 M${x + 2.2} ${y + 1.5} l-2.4 1.3`} opacity={0.45} strokeWidth={1.2} />
+  <path key={`b${x}`} d={`M${x} ${y} l-2.4 1.3 M${x + 2.2} ${y + 1.5} l-2.4 1.3`} opacity={0.45} strokeWidth={0.6} />
 );
 
 function Egg() {
@@ -158,12 +158,12 @@ function AdultBear({ walk }: { walk: boolean }) {
   return (
     <g>
       <path d="M14 36 q-3.5 .5 -2.5 4" />{/* stubby tail */}
-      <Leg x={26.5} top={44} len={10} cls="tama-legR" walk={walk} far w={2.6} />
-      <Leg x={42} top={44} len={10} cls="tama-legL" walk={walk} far w={2.6} />
+      <Leg x={26.5} top={44} len={10} cls="tama-legR" walk={walk} far w={1.3} />
+      <Leg x={42} top={44} len={10} cls="tama-legL" walk={walk} far w={1.3} />
       {/* big round body */}
       <path d="M42 27 C33 21 18 23 13.5 32 C11 39 15 45 22 46.5 C30 48 38 47 42 44" />
-      <Leg x={21} top={44} len={10} cls="tama-legL" walk={walk} w={2.6} />
-      <Leg x={37} top={44} len={10} cls="tama-legR" walk={walk} w={2.6} />
+      <Leg x={21} top={44} len={10} cls="tama-legL" walk={walk} w={1.3} />
+      <Leg x={37} top={44} len={10} cls="tama-legR" walk={walk} w={1.3} />
       {/* big chibi head */}
       <circle cx={45} cy={21} r={11} />
       <circle cx={37.5} cy={12} r={3.4} />
@@ -291,7 +291,7 @@ export function PetArt({ species, phase, size = 56, className = '', walk = true 
       className={className}
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.8}
+      strokeWidth={phase === 'adult' ? 0.9 : 1.8}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden
