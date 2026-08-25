@@ -2,6 +2,7 @@ import { Creature } from './Creature';
 import { PoopArt } from './TamagotchiArt';
 import { TamagotchiDevice } from './TamagotchiDevice';
 import { useTamagotchi } from '@/hooks/useTamagotchi';
+import { useTranslation } from '@/hooks/usePreferences';
 
 const CSS = `
 @keyframes tama-bob { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-3px) } }
@@ -20,7 +21,8 @@ const CSS = `
  * full-screen catcher, so the app stays fully clickable underneath.
  */
 export function TamagotchiLayer() {
-  const { on, menuOpen, pets, toggleMenu, selectedId } = useTamagotchi();
+  const { on, menuOpen, pets, toggleMenu, removePoop, selectedId } = useTamagotchi();
+  const { t } = useTranslation();
 
   return (
     <>
@@ -32,8 +34,8 @@ export function TamagotchiLayer() {
         type="button"
         onClick={toggleMenu}
         aria-pressed={menuOpen}
-        title="다마고치"
-        aria-label="다마고치 메뉴"
+        title={t('tama.title')}
+        aria-label={t('tama.menu')}
         className="fixed bottom-5 left-[76px] z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 border"
         style={{
           background: menuOpen ? 'hsl(var(--primary))' : 'hsl(var(--surface))',
@@ -51,12 +53,16 @@ export function TamagotchiLayer() {
         <>
           {pets.flatMap((p) =>
             p.poops.map((poop) => (
-              <div
+              <button
                 key={poop.id}
-                style={{ position: 'fixed', left: poop.x, top: poop.y, transform: 'translate(-50%,-50%)', zIndex: 69, color: '#7c5a3a', pointerEvents: 'none' }}
+                type="button"
+                title={t('tama.cleanPoop')}
+                aria-label={t('tama.cleanPoop')}
+                onClick={(e) => { e.stopPropagation(); removePoop(p.id, poop.id); }}
+                style={{ position: 'fixed', left: poop.x, top: poop.y, transform: 'translate(-50%,-50%)', zIndex: 69, color: '#7c5a3a', pointerEvents: 'auto', cursor: 'pointer', background: 'transparent', border: 'none', padding: 4, lineHeight: 0 }}
               >
                 <PoopArt size={18} />
-              </div>
+              </button>
             )),
           )}
           {pets.map((p) => (

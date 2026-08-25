@@ -48,12 +48,21 @@ interface Stored {
 }
 
 const KEY = '24h-tamagotchi';
-export const MAX_PETS = 3;
+export const MAX_PETS = 7;
 
 // ── Timings (ms) ────────────────────────────────────────────────────────────
-/** Egg → amoeba delay by birth order: 1st egg 1 min, 2nd 10 min, 3rd 1 hour.
- *  Later eggs (after a release frees a slot) reuse the last, longest delay. */
-export const HATCH_DELAYS = [60 * 1000, 10 * 60 * 1000, 60 * 60 * 1000];
+/** Egg → amoeba delay by birth order — progressively longer for later pets
+ *  (1min · 10min · 1h · 3h · 6h · 12h · 24h). A later egg past the list reuses
+ *  the last, longest delay. */
+export const HATCH_DELAYS = [
+  60 * 1000,
+  10 * 60 * 1000,
+  60 * 60 * 1000,
+  3 * 60 * 60 * 1000,
+  6 * 60 * 60 * 1000,
+  12 * 60 * 60 * 1000,
+  24 * 60 * 60 * 1000,
+];
 const AMOEBA_MS = 20 * 60 * 1000; // amoeba → baby
 const BABY_MS = 2 * 60 * 60 * 1000; // baby → adult
 const POOP_EVERY = 3 * 60 * 1000; // 3 min → poop (-20 hygiene)
@@ -176,7 +185,8 @@ interface TamagotchiApi {
   release: (id: string) => void;
   feed: (id: string) => void;
   play: (id: string) => void;
-  clean: (id: string) => void;
+  /** Remove one poop (tap-to-clean) and nudge hygiene back up. */
+  removePoop: (petId: string, poopId: string) => void;
   toggleSleep: (id: string) => void;
   moveTo: (id: string, x: number, y: number) => void;
   setDragging: (id: string, on: boolean) => void;
@@ -258,7 +268,11 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
     }), []),
     feed: useCallback((id) => mutate(id, (p) => (p.phase === 'egg' || p.phase === 'dead' || p.sleeping ? p : { ...p, hunger: clamp(p.hunger + 25) })), [mutate]),
     play: useCallback((id) => mutate(id, (p) => (p.phase === 'egg' || p.phase === 'dead' || p.sleeping || p.energy < 10 ? p : { ...p, happiness: clamp(p.happiness + 20), energy: clamp(p.energy - 10) })), [mutate]),
-    clean: useCallback((id) => mutate(id, (p) => ({ ...p, hygiene: 100, poops: [] })), [mutate]),
+    removePoop: useCallback((petId, poopId) => mutate(petId, (p) => ({
+      ...p,
+      poops: p.poops.filter((q) => q.id !== poopId),
+      hygiene: clamp(p.hygiene + 20), // each poop cost 20 → tapping it restores 20
+    })), [mutate]),
     toggleSleep: useCallback((id) => mutate(id, (p) => (p.phase === 'egg' || p.phase === 'dead' ? p : { ...p, sleeping: !p.sleeping })), [mutate]),
     moveTo: useCallback((id, x, y) => mutate(id, (p) => ({ ...p, x, y })), [mutate]),
     setDragging: useCallback((id, dragging) => {

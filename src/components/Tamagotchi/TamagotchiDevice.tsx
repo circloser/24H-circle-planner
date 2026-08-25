@@ -1,11 +1,7 @@
 import { PetArt } from './TamagotchiArt';
+import { formatHatch } from './tama-utils';
 import { useTamagotchi, MAX_PETS, type Pet } from '@/hooks/useTamagotchi';
-
-function hatchLabel(ms: number): string {
-  const s = Math.max(0, Math.round(ms / 1000));
-  const m = Math.floor(s / 60);
-  return m > 0 ? `${m}분` : `${s}초`;
-}
+import { useTranslation } from '@/hooks/usePreferences';
 
 function Stat({ emoji, value }: { emoji: string; value: number }) {
   const color = value < 20 ? '#ef4444' : value < 40 ? '#f59e0b' : '#22c55e';
@@ -40,7 +36,8 @@ function DeviceBtn({ label, title, onClick, disabled }: { label: string; title: 
 }
 
 export function TamagotchiDevice() {
-  const { pets, selectedId, on, toggle, closeMenu, select, addEgg, release, feed, play, clean, toggleSleep } = useTamagotchi();
+  const { pets, selectedId, on, toggle, closeMenu, select, addEgg, release, feed, toggleSleep } = useTamagotchi();
+  const { t } = useTranslation();
 
   const pet: Pet | undefined = pets.find((p) => p.id === selectedId) ?? pets[0];
   const isCreature = pet && pet.phase !== 'egg' && pet.phase !== 'dead';
@@ -50,7 +47,7 @@ export function TamagotchiDevice() {
     <div
       className="tama-pop"
       role="dialog"
-      aria-label="다마고치 콘솔"
+      aria-label={t('tama.title')}
       style={{
         position: 'fixed', left: 16, bottom: 84, zIndex: 80, width: 216,
         borderRadius: 26, padding: 12,
@@ -59,14 +56,14 @@ export function TamagotchiDevice() {
         fontFamily: "'Pretendard',system-ui,sans-serif",
       }}
     >
-      {/* Header: title + power (돌아다니기 on/off) + close */}
+      {/* Header: title + power (roam on/off) + close */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-        <span style={{ fontSize: 13, fontWeight: 800, color: '#9d174d' }}>🐣 다마고치</span>
+        <span style={{ fontSize: 13, fontWeight: 800, color: '#9d174d' }}>🐣 {t('tama.title')}</span>
         <button
           type="button"
           onClick={toggle}
-          title={on ? '끄기 (돌아다니기 멈춤)' : '켜기 (돌아다니기 시작)'}
-          aria-label={on ? '다마고치 끄기' : '다마고치 켜기'}
+          title={t(on ? 'tama.turnOff' : 'tama.turnOn')}
+          aria-label={t(on ? 'tama.turnOff' : 'tama.turnOn')}
           style={{ marginLeft: 'auto', width: 24, height: 24, borderRadius: 999, cursor: 'pointer', fontSize: 12, lineHeight: 1, fontWeight: 800, border: '2px solid #e58aa8', background: on ? '#fff0f5' : '#be185d', color: on ? '#be185d' : '#fff' }}
         >
           {on ? '⏸' : '▶'}
@@ -74,22 +71,22 @@ export function TamagotchiDevice() {
         <button
           type="button"
           onClick={closeMenu}
-          title="닫기"
-          aria-label="닫기"
+          title={t('tama.close')}
+          aria-label={t('tama.close')}
           style={{ width: 24, height: 24, borderRadius: 999, cursor: 'pointer', fontSize: 12, lineHeight: 1, fontWeight: 800, border: '2px solid #e58aa8', background: '#fff0f5', color: '#be185d' }}
         >
           ✕
         </button>
       </div>
 
-      {/* Pet tabs + new egg */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+      {/* Pet tabs + new egg — wraps to multiple rows for up to 7 pets */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6, rowGap: 6, marginBottom: 8 }}>
         {pets.map((p, i) => (
           <button
             key={p.id}
             type="button"
             onClick={() => select(p.id)}
-            title={`${i + 1}번`}
+            title={t('tama.pet', { n: String(i + 1) })}
             style={{
               width: 22, height: 22, borderRadius: 999, fontSize: 11, cursor: 'pointer',
               border: p.id === pet?.id ? '2px solid #be185d' : '2px solid #f0a5c0',
@@ -100,7 +97,7 @@ export function TamagotchiDevice() {
           </button>
         ))}
         {pets.length < MAX_PETS && (
-          <button type="button" onClick={addEgg} title="새 알 낳기" aria-label="새 알 낳기"
+          <button type="button" onClick={addEgg} title={t('tama.newEgg')} aria-label={t('tama.newEgg')}
             style={{ width: 22, height: 22, borderRadius: 999, border: '2px dashed #be185d', background: 'transparent', color: '#be185d', fontWeight: 800, cursor: 'pointer', lineHeight: 1 }}>
             +
           </button>
@@ -116,17 +113,17 @@ export function TamagotchiDevice() {
       }}>
         {!pet ? (
           <div style={{ textAlign: 'center', fontSize: 12, color: '#3a5a3e' }}>
-            <div style={{ fontSize: 26 }}>🥚</div>아래 <b>+</b> 로 알을 낳아<br />친구를 키워보세요
+            <div style={{ fontSize: 26 }}>🥚</div>{t('tama.emptyHint')}
           </div>
         ) : pet.phase === 'egg' ? (
           <div style={{ textAlign: 'center' }}>
             <PetArt species={pet.species} phase="egg" size={54} />
-            <div style={{ fontSize: 11, fontWeight: 700, marginTop: 2 }}>부화까지 {hatchLabel(pet.hatchAt - Date.now())}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, marginTop: 2 }}>{t('tama.hatchIn', { t: formatHatch(pet.hatchAt - Date.now(), t) })}</div>
           </div>
         ) : pet.phase === 'dead' ? (
           <div style={{ textAlign: 'center', fontSize: 12 }}>
             <PetArt species={pet.species} phase="dead" size={48} />
-            <div style={{ marginTop: 2 }}>별이 되었어요…</div>
+            <div style={{ marginTop: 2 }}>{t('tama.died')}</div>
           </div>
         ) : (
           <div className={sleeping ? '' : 'tama-bob'} style={{ display: 'grid', placeItems: 'center' }}>
@@ -136,7 +133,8 @@ export function TamagotchiDevice() {
         )}
       </div>
 
-      {/* Stats */}
+      {/* Stats — hunger / happiness / hygiene / energy graphs stay (happiness &
+          hygiene are now raised by tapping the pet / its poop directly). */}
       {pet && pet.phase !== 'egg' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 8 }}>
           <Stat emoji="🍖" value={pet.hunger} />
@@ -146,22 +144,23 @@ export function TamagotchiDevice() {
         </div>
       )}
 
-      {/* Actions */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10 }}>
-        <DeviceBtn label="🍽️" title="밥주기 (포만감 +25)" onClick={() => pet && feed(pet.id)} disabled={!isCreature || sleeping} />
-        <DeviceBtn label="🎮" title="놀기 (행복 +20, 에너지 -10)" onClick={() => pet && play(pet.id)} disabled={!isCreature || sleeping || (pet?.energy ?? 0) < 10} />
-        <DeviceBtn label="🧼" title="청소 (청결 100)" onClick={() => pet && clean(pet.id)} disabled={!pet || pet.phase === 'egg'} />
-        <DeviceBtn label={sleeping ? '☀️' : '😴'} title={sleeping ? '깨우기' : '재우기 (에너지 회복)'} onClick={() => pet && toggleSleep(pet.id)} disabled={!isCreature && pet?.phase !== 'baby' && pet?.phase !== 'adult'} />
+      {/* Actions — feed + sleep (play/clean moved onto the pet & its poop). */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 10 }}>
+        <DeviceBtn label="🍽️" title={t('tama.feed')} onClick={() => pet && feed(pet.id)} disabled={!isCreature || sleeping} />
+        <DeviceBtn label={sleeping ? '☀️' : '😴'} title={t(sleeping ? 'tama.wake' : 'tama.sleep')} onClick={() => pet && toggleSleep(pet.id)} disabled={!isCreature && pet?.phase !== 'baby' && pet?.phase !== 'adult'} />
       </div>
+
+      {/* How-to hint for the buttonless play/clean. */}
+      <p style={{ margin: '8px 0 0', fontSize: 10, lineHeight: 1.35, textAlign: 'center', color: '#9d174d' }}>{t('tama.hint')}</p>
 
       {/* Release */}
       {pet && (
         <button
           type="button"
-          onClick={() => { if (confirm(pet.phase === 'dead' ? '떠나보낼까요?' : '이 친구를 풀어줄까요?')) release(pet.id); }}
+          onClick={() => { if (confirm(t(pet.phase === 'dead' ? 'tama.sendOffConfirm' : 'tama.releaseConfirm'))) release(pet.id); }}
           style={{ width: '100%', marginTop: 8, padding: '5px 0', borderRadius: 999, fontSize: 11, fontWeight: 700, cursor: 'pointer', border: '2px solid #e58aa8', background: '#fff0f5', color: '#be185d' }}
         >
-          👋 {pet.phase === 'dead' ? '떠나보내기' : '풀어주기'}
+          👋 {t(pet.phase === 'dead' ? 'tama.sendOff' : 'tama.release')}
         </button>
       )}
     </div>

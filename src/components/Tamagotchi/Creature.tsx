@@ -1,14 +1,10 @@
 import { useRef, useState } from 'react';
 import { PetArt } from './TamagotchiArt';
+import { formatHatch } from './tama-utils';
 import { useTamagotchi, type Pet } from '@/hooks/useTamagotchi';
+import { useTranslation } from '@/hooks/usePreferences';
 
 const SIZE: Record<string, number> = { egg: 46, amoeba: 40, baby: 54, adult: 66, dead: 52 };
-
-function hatchLabel(ms: number): string {
-  const s = Math.max(0, Math.round(ms / 1000));
-  const m = Math.floor(s / 60);
-  return m > 0 ? `${m}m` : `${s}s`;
-}
 
 /** State glyph bubble shown above the creature. */
 function stateGlyph(p: Pet): string | null {
@@ -20,7 +16,8 @@ function stateGlyph(p: Pet): string | null {
 }
 
 export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
-  const { select, moveTo, setDragging } = useTamagotchi();
+  const { select, play, moveTo, setDragging, menuOpen } = useTamagotchi();
+  const { t } = useTranslation();
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
   const drag = useRef<{ ox: number; oy: number; moved: boolean } | null>(null);
 
@@ -48,12 +45,15 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
   }
   function onPointerUp() {
     if (!drag.current) return;
-    const moved = drag.current.moved;
     if (dragPos) moveTo(pet.id, dragPos.x, dragPos.y);
     setDragging(pet.id, false);
     setDragPos(null);
     drag.current = null;
-    if (!moved) select(pet.id); // a tap selects
+    // Tapping OR dragging a pet is how you play with it now (the play button is
+    // gone). select() also shows it in the console; play() raises happiness and
+    // no-ops on eggs/dead/sleeping/low-energy.
+    select(pet.id);
+    play(pet.id);
   }
 
   return (
@@ -71,7 +71,9 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
         color: 'hsl(var(--foreground))',
         opacity: pet.sleeping ? 0.55 : pet.phase === 'dead' ? 0.5 : 1,
         pointerEvents: 'auto',
-        filter: selected ? 'drop-shadow(0 0 6px hsl(var(--primary)/0.7))' : 'drop-shadow(0 1px 1px rgba(0,0,0,0.25))',
+        // The selected-glow only shows while the console popup is open, so a lone
+        // roaming pet isn't permanently highlighted.
+        filter: selected && menuOpen ? 'drop-shadow(0 0 6px hsl(var(--primary)/0.7))' : 'drop-shadow(0 1px 1px rgba(0,0,0,0.25))',
       }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -94,7 +96,7 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
               border: '1px solid hsl(var(--border))', pointerEvents: 'none',
             }}
           >
-            🥚 {hatchLabel(remaining)}
+            🥚 {formatHatch(remaining, t)}
           </span>
         )}
       </div>
