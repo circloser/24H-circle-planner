@@ -33,6 +33,8 @@ import { SettingsDialog, type SettingsSection } from '@/components/Settings/Sett
 import { MemoLayer } from '@/components/Memo/MemoLayer';
 import { MobileMemoSection } from '@/components/Memo/MobileMemoSection';
 import { ClockToolsLayer } from '@/components/ClockTools/ClockToolsLayer';
+import { TamagotchiProvider } from '@/hooks/useTamagotchi';
+import { TamagotchiLayer } from '@/components/Tamagotchi/TamagotchiLayer';
 import { MobileClockSection } from '@/components/ClockTools/MobileClockSection';
 import { TimeBlockDialog } from '@/components/TimeBlock/TimeBlockDialog';
 import { RimMemoLayer } from '@/components/RimMemo/RimMemoLayer';
@@ -637,6 +639,11 @@ function App() {
       {!isMobile && <MemoLayer />}
       {!isMobile && <GoalsWidget />}
       {!isMobile && <ClockToolsLayer />}
+      {!isMobile && (
+        <TamagotchiProvider>
+          <TamagotchiLayer />
+        </TamagotchiProvider>
+      )}
 
       {/* In-app slice-start popup (bottom-right / bottom, 5s, above everything).
           Fires from useSliceAlarms on a block boundary — shows even without OS
