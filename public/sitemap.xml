@@ -217,6 +217,30 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://24houring.com/templates/college-student</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://24houring.com/templates/shift-worker</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://24houring.com/templates/toddler-routine</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://24houring.com/templates/winter-vacation</loc>
+    <lastmod>2026-08-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://24houring.com/blog/</loc>
     <lastmod>2026-07-17</lastmod>
     <changefreq>weekly</changefreq>
