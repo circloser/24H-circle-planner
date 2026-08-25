@@ -51,7 +51,9 @@ const KEY = '24h-tamagotchi';
 export const MAX_PETS = 3;
 
 // ── Timings (ms) ────────────────────────────────────────────────────────────
-export const HATCH_MS = 60 * 60 * 1000; // egg → amoeba: 1 hour (spec)
+/** Egg → amoeba delay by birth order: 1st egg 1 min, 2nd 10 min, 3rd 1 hour.
+ *  Later eggs (after a release frees a slot) reuse the last, longest delay. */
+export const HATCH_DELAYS = [60 * 1000, 10 * 60 * 1000, 60 * 60 * 1000];
 const AMOEBA_MS = 20 * 60 * 1000; // amoeba → baby
 const BABY_MS = 2 * 60 * 60 * 1000; // baby → adult
 const POOP_EVERY = 3 * 60 * 1000; // 3 min → poop (-20 hygiene)
@@ -70,18 +72,20 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 function spawnXY() {
   const w = typeof window !== 'undefined' ? window.innerWidth : 1200;
   const h = typeof window !== 'undefined' ? window.innerHeight : 800;
-  return { x: rand(120, Math.max(160, w - 160)), y: rand(120, Math.max(180, h - 160)) };
+  // Spawn anywhere across the whole viewport (small edge margin).
+  return { x: rand(50, Math.max(80, w - 50)), y: rand(80, Math.max(120, h - 50)) };
 }
 
-export function newEgg(): Pet {
+export function newEgg(order = 0): Pet {
   const now = Date.now();
   const { x, y } = spawnXY();
+  const delay = HATCH_DELAYS[order] ?? HATCH_DELAYS[HATCH_DELAYS.length - 1];
   return {
     id: uid(),
     species: SPECIES[Math.floor(Math.random() * SPECIES.length)],
     phase: 'egg',
     bornAt: now,
-    hatchAt: now + HATCH_MS,
+    hatchAt: now + delay,
     hatchedAt: null,
     x, y,
     heading: rand(0, Math.PI * 2),
@@ -160,9 +164,13 @@ function load(): Stored {
 
 interface TamagotchiApi {
   on: boolean;
+  /** Whether the control console popup is open (transient UI, not persisted). */
+  menuOpen: boolean;
   pets: Pet[];
   selectedId: string | null;
   toggle: () => void;
+  toggleMenu: () => void;
+  closeMenu: () => void;
   select: (id: string) => void;
   addEgg: () => void;
   release: (id: string) => void;
@@ -178,6 +186,9 @@ const Ctx = createContext<TamagotchiApi | null>(null);
 
 export function TamagotchiProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<Stored>(load);
+  // Console popup visibility — transient UI, deliberately NOT persisted so the
+  // menu never reopens itself on reload; the roaming pets (state.on) do persist.
+  const [menuOpen, setMenuOpen] = useState(false);
   const stateRef = useRef(state);
   stateRef.current = state;
   // Skip the wander step on the tick right after a user drag so it doesn't fight.
@@ -209,7 +220,8 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
             const speed = p.phase === 'amoeba' ? 8 : 13;
             let nx = p.x + Math.cos(p.heading) * speed;
             let ny = p.y + Math.sin(p.heading) * speed;
-            const minX = 60, maxX = Math.max(80, w - 90), minY = 90, maxY = Math.max(120, h - 90);
+            // Roam the whole browser window (edge margins only clear the sticky header + edges).
+            const minX = 36, maxX = Math.max(60, w - 36), minY = 70, maxY = Math.max(110, h - 36);
             if (nx < minX || nx > maxX) { p.heading = Math.PI - p.heading; nx = Math.max(minX, Math.min(maxX, nx)); }
             if (ny < minY || ny > maxY) { p.heading = -p.heading; ny = Math.max(minY, Math.min(maxY, ny)); }
             p = { ...p, x: nx, y: ny };
@@ -228,13 +240,16 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
 
   const api: TamagotchiApi = {
     on: state.on,
+    menuOpen,
     pets: state.pets,
     selectedId: state.selectedId,
     toggle: useCallback(() => setState((s) => ({ ...s, on: !s.on })), []),
+    toggleMenu: useCallback(() => setMenuOpen((o) => !o), []),
+    closeMenu: useCallback(() => setMenuOpen(false), []),
     select: useCallback((id) => setState((s) => ({ ...s, selectedId: id })), []),
     addEgg: useCallback(() => setState((s) => {
       if (s.pets.length >= MAX_PETS) return s;
-      const egg = newEgg();
+      const egg = newEgg(s.pets.length); // birth order → hatch delay (1min/10min/1h)
       return { ...s, pets: [...s.pets, egg], selectedId: egg.id, on: true };
     }), []),
     release: useCallback((id) => setState((s) => {

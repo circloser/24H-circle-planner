@@ -40,8 +40,7 @@ function DeviceBtn({ label, title, onClick, disabled }: { label: string; title: 
 }
 
 export function TamagotchiDevice() {
-  const { pets, selectedId, on, select, addEgg, release, feed, play, clean, toggleSleep } = useTamagotchi();
-  if (!on) return null;
+  const { pets, selectedId, on, toggle, closeMenu, select, addEgg, release, feed, play, clean, toggleSleep } = useTamagotchi();
 
   const pet: Pet | undefined = pets.find((p) => p.id === selectedId) ?? pets[0];
   const isCreature = pet && pet.phase !== 'egg' && pet.phase !== 'dead';
@@ -49,14 +48,40 @@ export function TamagotchiDevice() {
 
   return (
     <div
+      className="tama-pop"
+      role="dialog"
+      aria-label="다마고치 콘솔"
       style={{
-        position: 'fixed', left: 20, bottom: 132, zIndex: 80, width: 216,
+        position: 'fixed', left: 16, bottom: 84, zIndex: 80, width: 216,
         borderRadius: 26, padding: 12,
         background: 'linear-gradient(160deg,#ffd7e6,#ffc6a8)',
         border: '3px solid #e58aa8', boxShadow: '0 10px 26px rgba(0,0,0,0.22)',
         fontFamily: "'Pretendard',system-ui,sans-serif",
       }}
     >
+      {/* Header: title + power (돌아다니기 on/off) + close */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+        <span style={{ fontSize: 13, fontWeight: 800, color: '#9d174d' }}>🐣 다마고치</span>
+        <button
+          type="button"
+          onClick={toggle}
+          title={on ? '끄기 (돌아다니기 멈춤)' : '켜기 (돌아다니기 시작)'}
+          aria-label={on ? '다마고치 끄기' : '다마고치 켜기'}
+          style={{ marginLeft: 'auto', width: 24, height: 24, borderRadius: 999, cursor: 'pointer', fontSize: 12, lineHeight: 1, fontWeight: 800, border: '2px solid #e58aa8', background: on ? '#fff0f5' : '#be185d', color: on ? '#be185d' : '#fff' }}
+        >
+          {on ? '⏸' : '▶'}
+        </button>
+        <button
+          type="button"
+          onClick={closeMenu}
+          title="닫기"
+          aria-label="닫기"
+          style={{ width: 24, height: 24, borderRadius: 999, cursor: 'pointer', fontSize: 12, lineHeight: 1, fontWeight: 800, border: '2px solid #e58aa8', background: '#fff0f5', color: '#be185d' }}
+        >
+          ✕
+        </button>
+      </div>
+
       {/* Pet tabs + new egg */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
         {pets.map((p, i) => (
