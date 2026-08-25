@@ -6,20 +6,21 @@ import { useTranslation } from '@/hooks/usePreferences';
 
 const SIZE: Record<string, number> = { egg: 46, amoeba: 40, baby: 54, adult: 66, dead: 52 };
 
-/** State glyph bubble shown above the creature. */
-function stateGlyph(p: Pet): string | null {
+/** State glyph bubble shown above the creature. Hygiene is shared across pets. */
+function stateGlyph(p: Pet, hygiene: number): string | null {
   if (p.phase === 'dead') return '💀';
   if (p.sleeping) return '💤';
-  if (p.hygiene < 20) return '🤒';
+  if (hygiene < 20) return '🤒';
   if (p.hunger < 30) return '🍽️';
   return null;
 }
 
 export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
-  const { select, play, moveTo, setDragging, menuOpen } = useTamagotchi();
+  const { select, play, moveTo, setDragging, menuOpen, hygiene } = useTamagotchi();
   const { t } = useTranslation();
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
   const [reacting, setReacting] = useState(false); // brief happy wiggle after a play
+  const [dropping, setDropping] = useState(false); // little drop-settle when released
   const drag = useRef<{ ox: number; oy: number; moved: boolean } | null>(null);
 
   // Overfeeding puffs the pet up a little (pet.bloat, eases back over time).
@@ -27,7 +28,7 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
   const x = dragPos?.x ?? pet.x;
   const y = dragPos?.y ?? pet.y;
   const dragging = dragPos != null;
-  const glyph = reacting ? '😄' : stateGlyph(pet); // happy face while being played with
+  const glyph = reacting ? '😄' : stateGlyph(pet, hygiene); // happy face while being played with
   const remaining = pet.phase === 'egg' ? pet.hatchAt - Date.now() : 0;
 
   function onPointerDown(e: React.PointerEvent) {
@@ -48,10 +49,13 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
   function onPointerUp() {
     if (!drag.current) return;
     const end = dragPos ?? { x: pet.x, y: pet.y };
+    const moved = drag.current.moved;
     if (dragPos) moveTo(pet.id, dragPos.x, dragPos.y);
     setDragging(pet.id, false);
     setDragPos(null);
     drag.current = null;
+    // A drag-and-drop gets a little "drop and settle" bounce.
+    if (moved) { setDropping(true); window.setTimeout(() => setDropping(false), 420); }
     // Tapping OR dragging a pet is how you play with it (the play button is
     // gone). select() shows it in the console; play() raises happiness, makes it
     // dash off, and no-ops on eggs/dead/sleeping/low-energy.
@@ -88,7 +92,7 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
     >
-      <div style={{ position: 'relative', display: 'grid', placeItems: 'center' }}>
+      <div className={dropping ? 'tama-drop' : undefined} style={{ position: 'relative', display: 'grid', placeItems: 'center' }}>
         {glyph && (
           <span style={{ position: 'absolute', top: -18, fontSize: 14, pointerEvents: 'none' }}>{glyph}</span>
         )}

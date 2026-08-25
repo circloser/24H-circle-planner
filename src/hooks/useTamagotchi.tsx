@@ -31,11 +31,9 @@ export interface Pet {
   heading: number; // radians, for wandering
   hunger: number; // 0–100
   happiness: number;
-  hygiene: number;
   energy: number;
   sleeping: boolean;
-  poops: Poop[];
-  lastPoopAt: number; // ms
+  lastPoopAt: number; // ms — this pet's own poop timer (poops go to the shared pile)
   hungerZeroSince: number | null; // death timer
   bloat: number; // 0..MAX_BLOAT — temporary size bump from overfeeding, decays
   boostUntil: number; // ms — dashes away faster until this time (play reaction)
@@ -46,6 +44,8 @@ interface Stored {
   on: boolean;
   pets: Pet[];
   selectedId: string | null;
+  hygiene: number; // SHARED across all pets (0–100)
+  poops: Poop[]; // SHARED pile — any pet drops into it; each poop lowers hygiene
   savedAt: number;
 }
 
@@ -115,10 +115,8 @@ export function newEgg(order = 0): Pet {
     heading: rand(0, Math.PI * 2),
     hunger: 80,
     happiness: 80,
-    hygiene: 100,
     energy: 100,
     sleeping: false,
-    poops: [],
     lastPoopAt: now,
     hungerZeroSince: null,
     bloat: 0,
@@ -153,14 +151,7 @@ function advance(pet: Pet, now: number, dt: number): Pet {
   // Overfeed bloat eases back toward normal size (live + offline catch-up).
   if ((p.bloat ?? 0) > 0) p.bloat = Math.max(0, (p.bloat ?? 0) - BLOAT_DECAY * dt);
 
-  // Poop generation (discrete, catches up across long gaps but caps count).
-  while (now - p.lastPoopAt >= POOP_EVERY) {
-    p.lastPoopAt += POOP_EVERY;
-    if (p.poops.length < 6) {
-      p.poops = [...p.poops, { id: uid(), x: p.x + rand(-26, 26), y: p.y + rand(18, 40) }];
-      p.hygiene = clamp(p.hygiene - 20);
-    }
-  }
+  // (Poop + hygiene are SHARED — handled by poopStep, not per pet.)
 
   // Death: hunger at 0 for DEATH_AFTER.
   if (p.hunger <= 0) {
@@ -173,18 +164,46 @@ function advance(pet: Pet, now: number, dt: number): Pet {
   return p;
 }
 
+const POOP_CAP = 8; // shared pile cap
+
+/** SHARED poop generation: each awake pet drops into the ONE shared pile on its
+ *  own ~3min timer, and every poop lowers the ONE shared hygiene. Runs live and
+ *  for offline catch-up. Returns updated pets (lastPoopAt) + shared hygiene/poops. */
+function poopStep(pets: Pet[], hygiene: number, poops: Poop[], now: number): { pets: Pet[]; hygiene: number; poops: Poop[] } {
+  let h = hygiene;
+  let pp = poops;
+  const next = pets.map((pet) => {
+    if (pet.phase === 'egg' || pet.phase === 'dead') return pet;
+    let lastPoopAt = pet.lastPoopAt;
+    while (now - lastPoopAt >= POOP_EVERY) {
+      lastPoopAt += POOP_EVERY;
+      if (pp.length < POOP_CAP) {
+        pp = [...pp, { id: uid(), x: pet.x + rand(-26, 26), y: pet.y + rand(18, 40) }];
+        h = clamp(h - 20);
+      }
+    }
+    return lastPoopAt === pet.lastPoopAt ? pet : { ...pet, lastPoopAt };
+  });
+  return { pets: next, hygiene: h, poops: pp };
+}
+
 function load(): Stored {
-  const base: Stored = { version: 1, on: false, pets: [], selectedId: null, savedAt: Date.now() };
+  const base: Stored = { version: 1, on: false, pets: [], selectedId: null, hygiene: 100, poops: [], savedAt: Date.now() };
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return base;
     const s = JSON.parse(raw) as Stored;
     if (!s || s.version !== 1 || !Array.isArray(s.pets)) return base;
-    // Offline correction: advance every pet by the elapsed closed time.
     const now = Date.now();
     const dt = Math.max(0, now - (s.savedAt || now));
-    const pets = s.pets.map((pet) => advance(pet, now, dt));
-    return { ...s, pets, savedAt: now };
+    // Migrate legacy per-pet hygiene/poops (old storage shape) → shared globals.
+    const legacy = s.pets as Array<Pet & { hygiene?: number; poops?: Poop[] }>;
+    const hygiene0 = typeof s.hygiene === 'number' ? s.hygiene
+      : (legacy.length ? Math.round(legacy.reduce((a, p) => a + (p.hygiene ?? 100), 0) / legacy.length) : 100);
+    const poops0 = Array.isArray(s.poops) ? s.poops : legacy.flatMap((p) => p.poops ?? []);
+    const advanced = s.pets.map((pet) => advance(pet, now, dt));
+    const stepped = poopStep(advanced, hygiene0, poops0.slice(0, POOP_CAP), now);
+    return { version: 1, on: !!s.on, selectedId: s.selectedId ?? null, pets: stepped.pets, hygiene: stepped.hygiene, poops: stepped.poops, savedAt: now };
   } catch {
     return base;
   }
@@ -195,6 +214,9 @@ interface TamagotchiApi {
   /** Whether the control console popup is open (transient UI, not persisted). */
   menuOpen: boolean;
   pets: Pet[];
+  /** Shared across all pets — one hygiene level, one poop pile. */
+  hygiene: number;
+  poops: Poop[];
   selectedId: string | null;
   toggle: () => void;
   toggleMenu: () => void;
@@ -204,8 +226,8 @@ interface TamagotchiApi {
   release: (id: string) => void;
   feed: (id: string) => void;
   play: (id: string) => void;
-  /** Remove one poop (tap-to-clean) and nudge hygiene back up. */
-  removePoop: (petId: string, poopId: string) => void;
+  /** Remove one poop from the shared pile (tap-to-clean) → shared hygiene +20. */
+  removePoop: (poopId: string) => void;
   toggleSleep: (id: string) => void;
   moveTo: (id: string, x: number, y: number) => void;
   setDragging: (id: string, on: boolean) => void;
@@ -277,7 +299,8 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
           if (ny < minY || ny > maxY) { heading = -heading; ny = Math.max(minY, Math.min(maxY, ny)); }
           return { ...p, x: nx, y: ny, heading };
         });
-        return { ...s, pets };
+        const stepped = poopStep(pets, s.hygiene, s.poops, now); // shared hygiene/poops
+        return { ...s, pets: stepped.pets, hygiene: stepped.hygiene, poops: stepped.poops };
       });
     }, TICK);
     return () => clearInterval(timer);
@@ -291,6 +314,8 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
     on: state.on,
     menuOpen,
     pets: state.pets,
+    hygiene: state.hygiene,
+    poops: state.poops,
     selectedId: state.selectedId,
     toggle: useCallback(() => setState((s) => ({ ...s, on: !s.on })), []),
     toggleMenu: useCallback(() => setMenuOpen((o) => !o), []),
@@ -310,11 +335,11 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
     // Playing also makes the pet dash off to the side for a moment (boostUntil +
     // a fresh random heading) — the "runs away happily" reaction.
     play: useCallback((id) => mutate(id, (p) => (p.phase === 'egg' || p.phase === 'dead' || p.sleeping || p.energy < 10 ? p : { ...p, happiness: clamp(p.happiness + 20), energy: clamp(p.energy - 10), heading: rand(0, Math.PI * 2), boostUntil: Date.now() + 1400 })), [mutate]),
-    removePoop: useCallback((petId, poopId) => mutate(petId, (p) => ({
-      ...p,
-      poops: p.poops.filter((q) => q.id !== poopId),
-      hygiene: clamp(p.hygiene + 20), // each poop cost 20 → tapping it restores 20
-    })), [mutate]),
+    removePoop: useCallback((poopId) => setState((s) => ({
+      ...s,
+      poops: s.poops.filter((q) => q.id !== poopId),
+      hygiene: clamp(s.hygiene + 20), // each poop cost 20 shared hygiene → restore 20
+    })), []),
     toggleSleep: useCallback((id) => mutate(id, (p) => (p.phase === 'egg' || p.phase === 'dead' ? p : { ...p, sleeping: !p.sleeping })), [mutate]),
     moveTo: useCallback((id, x, y) => mutate(id, (p) => ({ ...p, x, y })), [mutate]),
     setDragging: useCallback((id, dragging) => {

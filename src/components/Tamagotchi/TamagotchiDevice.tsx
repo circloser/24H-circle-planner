@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { PetArt } from './TamagotchiArt';
 import { formatHatch, fireTamaFx } from './tama-utils';
-import { useTamagotchi, MAX_PETS, type Pet } from '@/hooks/useTamagotchi';
+import { useTamagotchi, MAX_PETS, SPECIES, type Pet } from '@/hooks/useTamagotchi';
 import { useTranslation } from '@/hooks/usePreferences';
 
 /** One stat as a donut ring (2×2 grid). Hover shows what it means + the value. */
@@ -42,8 +43,9 @@ function DeviceBtn({ label, title, onClick, disabled }: { label: string; title: 
 }
 
 export function TamagotchiDevice() {
-  const { pets, selectedId, on, toggle, closeMenu, select, addEgg, release, feed, toggleSleep } = useTamagotchi();
+  const { pets, hygiene, selectedId, on, toggle, closeMenu, select, addEgg, release, feed, toggleSleep } = useTamagotchi();
   const { t } = useTranslation();
+  const [showPreview, setShowPreview] = useState(false); // adult-forms gallery
 
   const pet: Pet | undefined = pets.find((p) => p.id === selectedId) ?? pets[0];
   const isCreature = pet && pet.phase !== 'egg' && pet.phase !== 'dead';
@@ -74,10 +76,19 @@ export function TamagotchiDevice() {
         <span style={{ fontSize: 13, fontWeight: 800, color: '#9d174d' }}>🐣 {t('tama.title')}</span>
         <button
           type="button"
+          onClick={() => setShowPreview((v) => !v)}
+          title={t('tama.preview')}
+          aria-label={t('tama.preview')}
+          style={{ marginLeft: 'auto', width: 24, height: 24, borderRadius: 999, cursor: 'pointer', fontSize: 12, lineHeight: 1, border: '2px solid #e58aa8', background: showPreview ? '#be185d' : '#fff0f5', color: showPreview ? '#fff' : '#be185d' }}
+        >
+          👀
+        </button>
+        <button
+          type="button"
           onClick={toggle}
           title={t(on ? 'tama.turnOff' : 'tama.turnOn')}
           aria-label={t(on ? 'tama.turnOff' : 'tama.turnOn')}
-          style={{ marginLeft: 'auto', width: 24, height: 24, borderRadius: 999, cursor: 'pointer', fontSize: 12, lineHeight: 1, fontWeight: 800, border: '2px solid #e58aa8', background: on ? '#fff0f5' : '#be185d', color: on ? '#be185d' : '#fff' }}
+          style={{ width: 24, height: 24, borderRadius: 999, cursor: 'pointer', fontSize: 12, lineHeight: 1, fontWeight: 800, border: '2px solid #e58aa8', background: on ? '#fff0f5' : '#be185d', color: on ? '#be185d' : '#fff' }}
         >
           {on ? '⏸' : '▶'}
         </button>
@@ -153,7 +164,7 @@ export function TamagotchiDevice() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 8, justifyItems: 'center' }}>
           <DonutStat emoji="🍖" value={pet.hunger} label={t('tama.statHunger')} />
           <DonutStat emoji="😊" value={pet.happiness} label={t('tama.statHappiness')} />
-          <DonutStat emoji="🧼" value={pet.hygiene} label={t('tama.statHygiene')} />
+          <DonutStat emoji="🧼" value={hygiene} label={t('tama.statHygiene')} />
           <DonutStat emoji="⚡" value={pet.energy} label={t('tama.statEnergy')} />
         </div>
       )}
@@ -176,6 +187,21 @@ export function TamagotchiDevice() {
         >
           👋 {t(pet.phase === 'dead' ? 'tama.sendOff' : 'tama.release')}
         </button>
+      )}
+
+      {/* Adult-forms preview gallery (👀) — overlays the console so you can see
+          what each species grows into without waiting hours. */}
+      {showPreview && (
+        <div style={{ position: 'absolute', inset: 0, borderRadius: 26, background: '#fff', padding: 12, zIndex: 2, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#9d174d' }}>{t('tama.previewTitle')}</span>
+            <button type="button" onClick={() => setShowPreview(false)} title={t('tama.back')} aria-label={t('tama.back')}
+              style={{ marginLeft: 'auto', width: 24, height: 24, borderRadius: 999, cursor: 'pointer', fontSize: 12, lineHeight: 1, fontWeight: 800, border: '2px solid #e58aa8', background: '#fff0f5', color: '#be185d' }}>✕</button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, placeItems: 'center', color: '#374151', flex: 1, alignContent: 'center' }}>
+            {SPECIES.map((sp) => <PetArt key={sp} species={sp} phase="adult" size={40} />)}
+          </div>
+        </div>
       )}
     </div>
   );
