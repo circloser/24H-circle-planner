@@ -935,69 +935,47 @@ async function runPushCron(env: Env): Promise<void> {
 }
 
 // ─── News (keyword headlines, no AI tokens) ──────────────────────────────────
-/** Country code → Google News locale params (hl/gl/ceid). The frontend sends a
- *  country code + keyword; we only ever build the fixed Google-News search URL
- *  from a whitelisted locale + the URL-encoded keyword (no SSRF surface). */
-const NEWS_LOCALES: Record<string, { hl: string; gl: string; ceid: string }> = {
-  KR: { hl: 'ko', gl: 'KR', ceid: 'KR:ko' },
-  US: { hl: 'en-US', gl: 'US', ceid: 'US:en' },
-  GB: { hl: 'en-GB', gl: 'GB', ceid: 'GB:en' },
-  JP: { hl: 'ja', gl: 'JP', ceid: 'JP:ja' },
-  CN: { hl: 'zh-CN', gl: 'CN', ceid: 'CN:zh-Hans' },
-  TW: { hl: 'zh-TW', gl: 'TW', ceid: 'TW:zh-Hant' },
-  FR: { hl: 'fr', gl: 'FR', ceid: 'FR:fr' },
-  DE: { hl: 'de', gl: 'DE', ceid: 'DE:de' },
-  ES: { hl: 'es', gl: 'ES', ceid: 'ES:es' },
-  IT: { hl: 'it', gl: 'IT', ceid: 'IT:it' },
-  IN: { hl: 'en-IN', gl: 'IN', ceid: 'IN:en' },
-  BR: { hl: 'pt-BR', gl: 'BR', ceid: 'BR:pt-419' },
-  RU: { hl: 'ru', gl: 'RU', ceid: 'RU:ru' },
-  CA: { hl: 'en-CA', gl: 'CA', ceid: 'CA:en' },
-  AU: { hl: 'en-AU', gl: 'AU', ceid: 'AU:en' },
+/** Country code → GDELT `sourcecountry` FIPS 10-4 code. We use GDELT's free Doc
+ *  API (built for programmatic access, so it works from datacenter/edge egress —
+ *  unlike Google News RSS, which 503s Cloudflare IPs). The frontend sends a
+ *  country code + keyword; we only ever build the fixed GDELT URL from a
+ *  whitelisted country code + the encoded keyword (no SSRF surface). */
+const NEWS_COUNTRY_FIPS: Record<string, string> = {
+  KR: 'KS', US: 'US', GB: 'UK', JP: 'JA', CN: 'CH', TW: 'TW', FR: 'FR', DE: 'GM',
+  ES: 'SP', IT: 'IT', IN: 'IN', BR: 'BR', RU: 'RS', CA: 'CA', AU: 'AS',
 };
-
-/** Minimal XML-entity decode for RSS <title> text (no HTML in titles). */
-function decodeEntities(s: string): string {
-  return s
-    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
-    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
-    .replace(/&#0?39;/g, "'").replace(/&apos;/g, "'").replace(/&amp;/g, '&')
-    .trim();
-}
 
 interface NewsItem { title: string; link: string; source: string; pubDate: string }
 
-/** Parse up to 10 <item>s out of a Google-News RSS document (no XML lib). */
-function parseRss(xml: string): NewsItem[] {
+interface GdeltArticle { title?: string; url?: string; domain?: string; seendate?: string }
+
+/** Map GDELT's ArtList JSON → up to 10 unique headline items (newest first). */
+function parseGdelt(body: string): NewsItem[] {
+  let data: { articles?: GdeltArticle[] };
+  try { data = JSON.parse(body); } catch { return []; } // rate-limit / error → plain text
+  const arts = Array.isArray(data.articles) ? data.articles : [];
   const items: NewsItem[] = [];
-  const re = /<item>([\s\S]*?)<\/item>/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(xml)) && items.length < 10) {
-    const block = m[1];
-    const pick = (tag: string) => {
-      const r = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`).exec(block);
-      return r ? decodeEntities(r[1]) : '';
-    };
-    let title = pick('title');
-    const link = pick('link');
-    const source = pick('source');
-    const pubDate = pick('pubDate');
-    // Google News titles read "Headline - Source"; drop the trailing source.
-    if (source && title.endsWith(` - ${source}`)) title = title.slice(0, -(source.length + 3)).trim();
-    if (title && link) items.push({ title, link, source, pubDate });
+  const seen = new Set<string>();
+  for (const a of arts) {
+    const title = (a.title || '').trim();
+    const link = a.url || '';
+    if (!title || !link || seen.has(title)) continue;
+    seen.add(title);
+    items.push({ title, link, source: a.domain || '', pubDate: a.seendate || '' });
+    if (items.length >= 10) break;
   }
   return items;
 }
 
 /** GET /api/news?q=<keyword>&country=<code> → up to 10 headline titles+links
- *  from Google News RSS. No API key, no AI tokens. Edge-cached ~2h so the same
- *  keyword doesn't refetch on every open while staying fresh through the day. */
+ *  from GDELT. No API key, no AI tokens. Edge-cached ~2h so the same keyword
+ *  doesn't refetch on every open while staying fresh through the day. */
 async function handleNews(request: Request, env: Env, ctx?: Waiter): Promise<Response> {
   void env;
   const url = new URL(request.url);
   const q = (url.searchParams.get('q') || '').trim().slice(0, 120);
   const country = (url.searchParams.get('country') || 'KR').toUpperCase();
-  const loc = NEWS_LOCALES[country] ?? NEWS_LOCALES.KR;
+  const fips = NEWS_COUNTRY_FIPS[country] ?? NEWS_COUNTRY_FIPS.KR;
   if (!q) return json({ error: 'missing_query' }, 400);
 
   // Edge cache keyed by normalized country+query.
@@ -1006,32 +984,26 @@ async function handleNews(request: Request, env: Env, ctx?: Waiter): Promise<Res
   const hit = await cache.match(cacheKey);
   if (hit) return hit;
 
-  const feed = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=${loc.hl}&gl=${loc.gl}&ceid=${loc.ceid}`;
-  const headers = {
-    // A real browser UA + matching accept-language; the CONSENT cookie skips
-    // Google's EU consent interstitial that datacenter IPs otherwise hit.
-    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Safari/537.36',
-    'accept-language': `${loc.hl},${loc.hl.split('-')[0]};q=0.9`,
-    'accept': 'application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.8',
-    'cookie': 'CONSENT=YES+cb',
-  };
-  // Google throttles datacenter egress with intermittent 5xx — retry a few times
-  // with a short backoff before giving up.
+  // GDELT Doc API: keyword AND a country filter, newest first, JSON.
+  const query = `${q} sourcecountry:${fips}`;
+  const feed = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query)}&mode=ArtList&maxrecords=10&sort=DateDesc&format=json`;
+  // GDELT rate-limits to ~1 request / 5s (returns a plain-text notice) — retry a
+  // few times with a short backoff before giving up.
   let items: NewsItem[] = [];
   let upstreamStatus = 0;
   let raw = '';
   for (let attempt = 0; attempt < 3; attempt++) {
-    if (attempt) await new Promise((r) => setTimeout(r, 350 * attempt));
+    if (attempt) await new Promise((r) => setTimeout(r, 400 * attempt));
     try {
-      const res = await fetch(feed, { headers });
+      const res = await fetch(feed, { headers: { 'user-agent': '24Houring/1.0 (news widget)', 'accept': 'application/json' } });
       upstreamStatus = res.status;
-      if (res.ok) { raw = await res.text(); items = parseRss(raw); if (items.length) break; }
+      if (res.ok) { raw = await res.text(); items = parseGdelt(raw); if (items.length) break; }
     } catch { /* retry */ }
   }
 
   // Temporary diagnostics (?debug=1): inspect what the edge fetch received.
   if (url.searchParams.get('debug') === '1') {
-    return json({ q, country, feed, upstreamStatus, itemCount: items.length, snippet: raw.slice(0, 800) }, 200, { 'cache-control': 'no-store' });
+    return json({ q, country, fips, feed, upstreamStatus, itemCount: items.length, snippet: raw.slice(0, 500) }, 200, { 'cache-control': 'no-store' });
   }
 
   // Only cache a good (non-empty) result — never poison the cache with an empty
