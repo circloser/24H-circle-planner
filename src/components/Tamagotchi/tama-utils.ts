@@ -1,5 +1,22 @@
 import type { TKey } from '@/i18n/translations';
 
+// ── Transient play/feed effects (floating emojis) ────────────────────────────
+export type TamaFxKind = 'heart' | 'yum';
+export const TAMA_FX_EVENT = 'tama-fx';
+export interface TamaFxDetail { x: number; y: number; kind: TamaFxKind }
+
+/** Little emoji pools for each reaction — TamaFx renders one, floating up. */
+export const TAMA_FX_EMOJI: Record<TamaFxKind, string[]> = {
+  heart: ['❤️', '💕', '💖', '💨'],
+  yum: ['😋', '🍖', '💗'],
+};
+
+/** Spawn a floating reaction emoji at a viewport point (TamaFx listens). */
+export function fireTamaFx(x: number, y: number, kind: TamaFxKind): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent<TamaFxDetail>(TAMA_FX_EVENT, { detail: { x, y, kind } }));
+}
+
 /** Localized hatch countdown: 30s · 5m · 2h 10m · 1d 3h. Units come from the
  *  tama.sec/min/hr/day keys, so it reads right in every language and copes with
  *  the longer (up to 24h) delays the later eggs now use. */

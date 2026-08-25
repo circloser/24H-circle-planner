@@ -37,6 +37,8 @@ export interface Pet {
   poops: Poop[];
   lastPoopAt: number; // ms
   hungerZeroSince: number | null; // death timer
+  bloat: number; // 0..MAX_BLOAT — temporary size bump from overfeeding, decays
+  boostUntil: number; // ms — dashes away faster until this time (play reaction)
 }
 
 interface Stored {
@@ -48,12 +50,14 @@ interface Stored {
 }
 
 const KEY = '24h-tamagotchi';
-export const MAX_PETS = 7;
+export const MAX_PETS = 6;
+/** A new egg can only be laid once every existing egg has hatched. */
+export const hasUnhatchedEgg = (pets: Pet[]): boolean => pets.some((p) => p.phase === 'egg');
 
 // ── Timings (ms) ────────────────────────────────────────────────────────────
 /** Egg → amoeba delay by birth order — progressively longer for later pets
- *  (1min · 10min · 1h · 3h · 6h · 12h · 24h). A later egg past the list reuses
- *  the last, longest delay. */
+ *  (1min · 10min · 1h · 3h · 6h · 12h). A new egg can only be laid once the
+ *  previous one has hatched, so the list only needs MAX_PETS entries. */
 export const HATCH_DELAYS = [
   60 * 1000,
   10 * 60 * 1000,
@@ -61,18 +65,29 @@ export const HATCH_DELAYS = [
   3 * 60 * 60 * 1000,
   6 * 60 * 60 * 1000,
   12 * 60 * 60 * 1000,
-  24 * 60 * 60 * 1000,
 ];
 const AMOEBA_MS = 20 * 60 * 1000; // amoeba → baby
 const BABY_MS = 2 * 60 * 60 * 1000; // baby → adult
 const POOP_EVERY = 3 * 60 * 1000; // 3 min → poop (-20 hygiene)
-const DEATH_AFTER = 30 * 60 * 1000; // hunger 0 sustained → dead
+const DEATH_AFTER = 3 * 24 * 60 * 60 * 1000; // hunger 0 sustained 3 days → dead
 const TICK = 1000; // ms
 
 // ── Rates (per ms) ──────────────────────────────────────────────────────────
 const HUNGER_RATE = 2 / 60000; // -2 / min
 const HAPPY_RATE = 1 / 60000; // -1 / min
 const ENERGY_RECOVER = 2 / 1000; // +2 / s while sleeping
+
+// ── Overfeed "bloat" (temporary size bump) ───────────────────────────────────
+const MAX_BLOAT = 0.3; // up to +30% size when very full
+const BLOAT_PER_FEED = 0.06; // each feeding puffs up a little…
+const BLOAT_DECAY = MAX_BLOAT / (12 * 60 * 1000); // …and eases back over ~12 min
+
+// ── Flocking (boids-lite): pets herd together as they roam ───────────────────
+const NEIGHBOR_R = 200; // consider pets within this radius
+const SEP_R = 54; // but push apart when closer than this
+const COH_W = 0.35; // cohesion — steer toward the group centre
+const ALI_W = 0.5; // alignment — match the group heading
+const SEP_W = 1.4; // separation — avoid crowding (strongest)
 
 const clamp = (n: number) => Math.max(0, Math.min(100, n));
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
@@ -106,6 +121,8 @@ export function newEgg(order = 0): Pet {
     poops: [],
     lastPoopAt: now,
     hungerZeroSince: null,
+    bloat: 0,
+    boostUntil: 0,
   };
 }
 
@@ -133,6 +150,8 @@ function advance(pet: Pet, now: number, dt: number): Pet {
   p.hunger = clamp(p.hunger - HUNGER_RATE * dt);
   p.happiness = clamp(p.happiness - HAPPY_RATE * dt);
   if (p.sleeping) p.energy = clamp(p.energy + ENERGY_RECOVER * dt);
+  // Overfeed bloat eases back toward normal size (live + offline catch-up).
+  if ((p.bloat ?? 0) > 0) p.bloat = Math.max(0, (p.bloat ?? 0) - BLOAT_DECAY * dt);
 
   // Poop generation (discrete, catches up across long gaps but caps count).
   while (now - p.lastPoopAt >= POOP_EVERY) {
@@ -213,30 +232,50 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
     }
   }, [state]);
 
-  // Live tick: decay + growth + wander, only while ON.
+  // Live tick: decay + growth + flocking wander, only while ON.
   useEffect(() => {
     if (!state.on) return;
-    const bounds = () => ({ w: window.innerWidth, h: window.innerHeight });
+    const canMove = (p: Pet) => p.phase !== 'egg' && p.phase !== 'dead' && !p.sleeping && !draggingRef.current.has(p.id);
     const timer = setInterval(() => {
       const now = Date.now();
+      // Movement pauses entirely while the tab is hidden — no drifting or big
+      // straight-line "catch-up" jump when you come back. Stats still advance.
+      const moving = typeof document === 'undefined' || !document.hidden;
+      const w = window.innerWidth, h = window.innerHeight;
       setState((s) => {
-        const { w, h } = bounds();
+        const flock = s.pets.filter(canMove); // pre-step positions for the herd
         const pets = s.pets.map((pet) => {
-          let p = advance(pet, now, TICK);
-          // Wander: adults/babies/amoebas drift; eggs, sleepers, dead, dragged stay put.
-          const canMove = p.phase !== 'egg' && p.phase !== 'dead' && !p.sleeping && !draggingRef.current.has(p.id);
-          if (canMove) {
-            if (Math.random() < 0.15) p.heading = rand(0, Math.PI * 2);
-            const speed = p.phase === 'amoeba' ? 8 : 13;
-            let nx = p.x + Math.cos(p.heading) * speed;
-            let ny = p.y + Math.sin(p.heading) * speed;
-            // Roam the whole browser window (edge margins only clear the sticky header + edges).
-            const minX = 36, maxX = Math.max(60, w - 36), minY = 70, maxY = Math.max(110, h - 36);
-            if (nx < minX || nx > maxX) { p.heading = Math.PI - p.heading; nx = Math.max(minX, Math.min(maxX, nx)); }
-            if (ny < minY || ny > maxY) { p.heading = -p.heading; ny = Math.max(minY, Math.min(maxY, ny)); }
-            p = { ...p, x: nx, y: ny };
+          const p = advance(pet, now, TICK);
+          if (!moving || !canMove(p)) return p;
+          // ── Flocking: steer by nearby pets (cohesion + alignment + separation) ──
+          let hx = Math.cos(p.heading), hy = Math.sin(p.heading);
+          let cohX = 0, cohY = 0, aliX = 0, aliY = 0, sepX = 0, sepY = 0, n = 0, sn = 0;
+          for (const o of flock) {
+            if (o.id === p.id) continue;
+            const dx = o.x - p.x, dy = o.y - p.y;
+            const d = Math.hypot(dx, dy);
+            if (d < NEIGHBOR_R) {
+              cohX += o.x; cohY += o.y; aliX += Math.cos(o.heading); aliY += Math.sin(o.heading); n++;
+              if (d > 0 && d < SEP_R) { sepX -= dx / d; sepY -= dy / d; sn++; }
+            }
           }
-          return p;
+          if (n > 0) {
+            const cx = cohX / n - p.x, cy = cohY / n - p.y, cl = Math.hypot(cx, cy) || 1;
+            const al = Math.hypot(aliX, aliY) || 1;
+            hx += (cx / cl) * COH_W + (aliX / al) * ALI_W;
+            hy += (cy / cl) * COH_W + (aliY / al) * ALI_W;
+          }
+          if (sn > 0) { const sl = Math.hypot(sepX, sepY) || 1; hx += (sepX / sl) * SEP_W; hy += (sepY / sl) * SEP_W; }
+          hx += (Math.random() - 0.5) * 0.35; hy += (Math.random() - 0.5) * 0.35; // wander jitter
+          let heading = Math.atan2(hy, hx);
+          const speed = (p.phase === 'amoeba' ? 8 : 13) * (now < (p.boostUntil ?? 0) ? 2.4 : 1);
+          let nx = p.x + Math.cos(heading) * speed;
+          let ny = p.y + Math.sin(heading) * speed;
+          // Roam the whole browser window (edge margins clear the sticky header + edges).
+          const minX = 36, maxX = Math.max(60, w - 36), minY = 70, maxY = Math.max(110, h - 36);
+          if (nx < minX || nx > maxX) { heading = Math.PI - heading; nx = Math.max(minX, Math.min(maxX, nx)); }
+          if (ny < minY || ny > maxY) { heading = -heading; ny = Math.max(minY, Math.min(maxY, ny)); }
+          return { ...p, x: nx, y: ny, heading };
         });
         return { ...s, pets };
       });
@@ -258,16 +297,19 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
     closeMenu: useCallback(() => setMenuOpen(false), []),
     select: useCallback((id) => setState((s) => ({ ...s, selectedId: id })), []),
     addEgg: useCallback(() => setState((s) => {
-      if (s.pets.length >= MAX_PETS) return s;
-      const egg = newEgg(s.pets.length); // birth order → hatch delay (1min/10min/1h)
+      // Only one egg at a time: must wait for the current egg to hatch.
+      if (s.pets.length >= MAX_PETS || hasUnhatchedEgg(s.pets)) return s;
+      const egg = newEgg(s.pets.length); // birth order → hatch delay (1min/10min/1h…)
       return { ...s, pets: [...s.pets, egg], selectedId: egg.id, on: true };
     }), []),
     release: useCallback((id) => setState((s) => {
       const pets = s.pets.filter((p) => p.id !== id);
       return { ...s, pets, selectedId: s.selectedId === id ? (pets[0]?.id ?? null) : s.selectedId };
     }), []),
-    feed: useCallback((id) => mutate(id, (p) => (p.phase === 'egg' || p.phase === 'dead' || p.sleeping ? p : { ...p, hunger: clamp(p.hunger + 25) })), [mutate]),
-    play: useCallback((id) => mutate(id, (p) => (p.phase === 'egg' || p.phase === 'dead' || p.sleeping || p.energy < 10 ? p : { ...p, happiness: clamp(p.happiness + 20), energy: clamp(p.energy - 10) })), [mutate]),
+    feed: useCallback((id) => mutate(id, (p) => (p.phase === 'egg' || p.phase === 'dead' || p.sleeping ? p : { ...p, hunger: clamp(p.hunger + 25), bloat: Math.min(MAX_BLOAT, (p.bloat ?? 0) + BLOAT_PER_FEED) })), [mutate]),
+    // Playing also makes the pet dash off to the side for a moment (boostUntil +
+    // a fresh random heading) — the "runs away happily" reaction.
+    play: useCallback((id) => mutate(id, (p) => (p.phase === 'egg' || p.phase === 'dead' || p.sleeping || p.energy < 10 ? p : { ...p, happiness: clamp(p.happiness + 20), energy: clamp(p.energy - 10), heading: rand(0, Math.PI * 2), boostUntil: Date.now() + 1400 })), [mutate]),
     removePoop: useCallback((petId, poopId) => mutate(petId, (p) => ({
       ...p,
       poops: p.poops.filter((q) => q.id !== poopId),

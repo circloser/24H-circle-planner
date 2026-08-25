@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { PetArt } from './TamagotchiArt';
-import { formatHatch } from './tama-utils';
+import { formatHatch, fireTamaFx } from './tama-utils';
 import { useTamagotchi, type Pet } from '@/hooks/useTamagotchi';
 import { useTranslation } from '@/hooks/usePreferences';
 
@@ -19,13 +19,15 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
   const { select, play, moveTo, setDragging, menuOpen } = useTamagotchi();
   const { t } = useTranslation();
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
+  const [reacting, setReacting] = useState(false); // brief happy wiggle after a play
   const drag = useRef<{ ox: number; oy: number; moved: boolean } | null>(null);
 
-  const size = SIZE[pet.phase] ?? 54;
+  // Overfeeding puffs the pet up a little (pet.bloat, eases back over time).
+  const size = Math.round((SIZE[pet.phase] ?? 54) * (1 + (pet.bloat ?? 0)));
   const x = dragPos?.x ?? pet.x;
   const y = dragPos?.y ?? pet.y;
   const dragging = dragPos != null;
-  const glyph = stateGlyph(pet);
+  const glyph = reacting ? '😄' : stateGlyph(pet); // happy face while being played with
   const remaining = pet.phase === 'egg' ? pet.hatchAt - Date.now() : 0;
 
   function onPointerDown(e: React.PointerEvent) {
@@ -45,15 +47,21 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
   }
   function onPointerUp() {
     if (!drag.current) return;
+    const end = dragPos ?? { x: pet.x, y: pet.y };
     if (dragPos) moveTo(pet.id, dragPos.x, dragPos.y);
     setDragging(pet.id, false);
     setDragPos(null);
     drag.current = null;
-    // Tapping OR dragging a pet is how you play with it now (the play button is
-    // gone). select() also shows it in the console; play() raises happiness and
-    // no-ops on eggs/dead/sleeping/low-energy.
+    // Tapping OR dragging a pet is how you play with it (the play button is
+    // gone). select() shows it in the console; play() raises happiness, makes it
+    // dash off, and no-ops on eggs/dead/sleeping/low-energy.
     select(pet.id);
-    play(pet.id);
+    if (pet.phase !== 'egg' && pet.phase !== 'dead' && !pet.sleeping) {
+      play(pet.id);
+      fireTamaFx(end.x, end.y - size / 2, 'heart'); // floating hearts
+      setReacting(true);
+      window.setTimeout(() => setReacting(false), 700); // brief happy wiggle
+    }
   }
 
   return (
@@ -84,7 +92,7 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
         {glyph && (
           <span style={{ position: 'absolute', top: -18, fontSize: 14, pointerEvents: 'none' }}>{glyph}</span>
         )}
-        <div className={dragging ? 'tama-wiggle' : pet.sleeping ? '' : 'tama-bob'}>
+        <div className={dragging || reacting ? 'tama-wiggle' : pet.sleeping ? '' : 'tama-bob'}>
           <PetArt species={pet.species} phase={pet.phase} size={size} />
         </div>
         {pet.phase === 'egg' && (

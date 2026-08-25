@@ -1,6 +1,7 @@
 import { Creature } from './Creature';
 import { PoopArt } from './TamagotchiArt';
 import { TamagotchiDevice } from './TamagotchiDevice';
+import { TamaFx } from './TamaFx';
 import { useTamagotchi } from '@/hooks/useTamagotchi';
 import { useTranslation } from '@/hooks/usePreferences';
 
@@ -8,9 +9,11 @@ const CSS = `
 @keyframes tama-bob { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-3px) } }
 @keyframes tama-wiggle { 0%,100%{ transform: rotate(-9deg) } 50%{ transform: rotate(9deg) } }
 @keyframes tama-pop { from { opacity:0; transform: translateY(10px) scale(.96) } to { opacity:1; transform: none } }
+@keyframes tama-fx { 0% { opacity:0; transform: translate(-50%,-20%) scale(.6) } 25% { opacity:1; transform: translate(-50%,-70%) scale(1.15) } 100% { opacity:0; transform: translate(-50%,-170%) scale(1) } }
 .tama-bob { animation: tama-bob 1.6s ease-in-out infinite; }
 .tama-wiggle { animation: tama-wiggle .12s linear infinite; }
 .tama-pop { animation: tama-pop .18s ease-out; }
+.tama-fx { animation: tama-fx .9s ease-out forwards; }
 `;
 
 /**
@@ -68,6 +71,7 @@ export function TamagotchiLayer() {
           {pets.map((p) => (
             <Creature key={p.id} pet={p} selected={p.id === selectedId} />
           ))}
+          <TamaFx />
         </>
       )}
 

@@ -1,16 +1,22 @@
 import { PetArt } from './TamagotchiArt';
-import { formatHatch } from './tama-utils';
+import { formatHatch, fireTamaFx } from './tama-utils';
 import { useTamagotchi, MAX_PETS, type Pet } from '@/hooks/useTamagotchi';
 import { useTranslation } from '@/hooks/usePreferences';
 
-function Stat({ emoji, value }: { emoji: string; value: number }) {
+/** One stat as a donut ring (2×2 grid). Hover shows what it means + the value. */
+function DonutStat({ emoji, value, label }: { emoji: string; value: number; label: string }) {
   const color = value < 20 ? '#ef4444' : value < 40 ? '#f59e0b' : '#22c55e';
+  const R = 15;
+  const C = 2 * Math.PI * R;
+  const off = C * (1 - Math.max(0, Math.min(100, value)) / 100);
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-      <span style={{ fontSize: 11, width: 16, textAlign: 'center' }}>{emoji}</span>
-      <div style={{ flex: 1, height: 6, borderRadius: 999, background: 'rgba(0,0,0,0.18)', overflow: 'hidden' }}>
-        <div style={{ width: `${Math.round(value)}%`, height: '100%', background: color, transition: 'width .4s' }} />
-      </div>
+    <div title={`${label} · ${Math.round(value)}%`} style={{ position: 'relative', display: 'grid', placeItems: 'center', cursor: 'help' }}>
+      <svg width={40} height={40} viewBox="0 0 40 40" aria-hidden>
+        <circle cx="20" cy="20" r={R} fill="none" stroke="rgba(0,0,0,0.12)" strokeWidth="5" />
+        <circle cx="20" cy="20" r={R} fill="none" stroke={color} strokeWidth="5" strokeLinecap="round"
+          strokeDasharray={C} strokeDashoffset={off} transform="rotate(-90 20 20)" style={{ transition: 'stroke-dashoffset .4s' }} />
+      </svg>
+      <span style={{ position: 'absolute', fontSize: 13 }}>{emoji}</span>
     </div>
   );
 }
@@ -42,6 +48,13 @@ export function TamagotchiDevice() {
   const pet: Pet | undefined = pets.find((p) => p.id === selectedId) ?? pets[0];
   const isCreature = pet && pet.phase !== 'egg' && pet.phase !== 'dead';
   const sleeping = !!pet?.sleeping;
+  const hasEgg = pets.some((p) => p.phase === 'egg'); // can't lay a new egg until it hatches
+
+  const onFeed = () => {
+    if (!pet) return;
+    feed(pet.id);
+    fireTamaFx(pet.x, pet.y - 20, 'yum'); // eating reaction floats over the pet
+  };
 
   return (
     <div
@@ -51,8 +64,8 @@ export function TamagotchiDevice() {
       style={{
         position: 'fixed', left: 16, bottom: 84, zIndex: 80, width: 216,
         borderRadius: 26, padding: 12,
-        background: 'linear-gradient(160deg,#ffd7e6,#ffc6a8)',
-        border: '3px solid #e58aa8', boxShadow: '0 10px 26px rgba(0,0,0,0.22)',
+        background: '#ffffff',
+        border: '3px solid #e5e7eb', boxShadow: '0 10px 26px rgba(0,0,0,0.22)',
         fontFamily: "'Pretendard',system-ui,sans-serif",
       }}
     >
@@ -79,7 +92,7 @@ export function TamagotchiDevice() {
         </button>
       </div>
 
-      {/* Pet tabs + new egg — wraps to multiple rows for up to 7 pets */}
+      {/* Pet tabs + new egg — wraps to multiple rows for up to 6 pets */}
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6, rowGap: 6, marginBottom: 8 }}>
         {pets.map((p, i) => (
           <button
@@ -97,8 +110,9 @@ export function TamagotchiDevice() {
           </button>
         ))}
         {pets.length < MAX_PETS && (
-          <button type="button" onClick={addEgg} title={t('tama.newEgg')} aria-label={t('tama.newEgg')}
-            style={{ width: 22, height: 22, borderRadius: 999, border: '2px dashed #be185d', background: 'transparent', color: '#be185d', fontWeight: 800, cursor: 'pointer', lineHeight: 1 }}>
+          <button type="button" onClick={addEgg} disabled={hasEgg}
+            title={t(hasEgg ? 'tama.waitHatch' : 'tama.newEgg')} aria-label={t(hasEgg ? 'tama.waitHatch' : 'tama.newEgg')}
+            style={{ width: 22, height: 22, borderRadius: 999, border: '2px dashed #be185d', background: 'transparent', color: '#be185d', fontWeight: 800, cursor: hasEgg ? 'not-allowed' : 'pointer', opacity: hasEgg ? 0.4 : 1, lineHeight: 1 }}>
             +
           </button>
         )}
@@ -108,11 +122,11 @@ export function TamagotchiDevice() {
       {/* LCD screen */}
       <div style={{
         borderRadius: 16, padding: 10, minHeight: 92, display: 'grid', placeItems: 'center',
-        background: sleeping ? '#20304a' : '#c7e7c9', border: '3px solid #7a5a2e',
-        color: sleeping ? '#8fb0e8' : '#1f3a24', position: 'relative', transition: 'background .4s',
+        background: sleeping ? '#20304a' : '#eceef1', border: '3px solid #cbd5e1',
+        color: sleeping ? '#8fb0e8' : '#374151', position: 'relative', transition: 'background .4s',
       }}>
         {!pet ? (
-          <div style={{ textAlign: 'center', fontSize: 12, color: '#3a5a3e' }}>
+          <div style={{ textAlign: 'center', fontSize: 12 }}>
             <div style={{ fontSize: 26 }}>🥚</div>{t('tama.emptyHint')}
           </div>
         ) : pet.phase === 'egg' ? (
@@ -133,20 +147,20 @@ export function TamagotchiDevice() {
         )}
       </div>
 
-      {/* Stats — hunger / happiness / hygiene / energy graphs stay (happiness &
-          hygiene are now raised by tapping the pet / its poop directly). */}
+      {/* Stats — 2×2 donut rings; hover explains each + shows the value. Happiness
+          & hygiene are raised by tapping the pet / its poop directly. */}
       {pet && pet.phase !== 'egg' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 8 }}>
-          <Stat emoji="🍖" value={pet.hunger} />
-          <Stat emoji="😊" value={pet.happiness} />
-          <Stat emoji="🧼" value={pet.hygiene} />
-          <Stat emoji="⚡" value={pet.energy} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 8, justifyItems: 'center' }}>
+          <DonutStat emoji="🍖" value={pet.hunger} label={t('tama.statHunger')} />
+          <DonutStat emoji="😊" value={pet.happiness} label={t('tama.statHappiness')} />
+          <DonutStat emoji="🧼" value={pet.hygiene} label={t('tama.statHygiene')} />
+          <DonutStat emoji="⚡" value={pet.energy} label={t('tama.statEnergy')} />
         </div>
       )}
 
       {/* Actions — feed + sleep (play/clean moved onto the pet & its poop). */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 10 }}>
-        <DeviceBtn label="🍽️" title={t('tama.feed')} onClick={() => pet && feed(pet.id)} disabled={!isCreature || sleeping} />
+        <DeviceBtn label="🍽️" title={t('tama.feed')} onClick={onFeed} disabled={!isCreature || sleeping} />
         <DeviceBtn label={sleeping ? '☀️' : '😴'} title={t(sleeping ? 'tama.wake' : 'tama.sleep')} onClick={() => pet && toggleSleep(pet.id)} disabled={!isCreature && pet?.phase !== 'baby' && pet?.phase !== 'adult'} />
       </div>
 
