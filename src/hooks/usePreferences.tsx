@@ -159,18 +159,34 @@ interface PrefsEnvelope {
   prefs: Preferences;
 }
 
+/** A localized landing route (`/ko/`, `/de/`, `/ja/`) pins the initial UI
+ *  language so the interactive app matches the page the visitor opened. Only
+ *  locales with a real localized route are recognised here. */
+function pathLocale(): Lang | null {
+  try {
+    const m = /^\/(ko|de|ja)(?:\/|$)/.exec(window.location.pathname);
+    return m ? (m[1] as Lang) : null;
+  } catch {
+    return null;
+  }
+}
+
 function loadPrefs(): Preferences {
+  const pinned = pathLocale();
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     // No saved prefs → genuine first launch: pick the language from the browser.
-    if (!raw) return { ...DEFAULT_PREFS, language: detectInitialLanguage() };
+    if (!raw) return { ...DEFAULT_PREFS, language: pinned ?? detectInitialLanguage() };
     const parsed = JSON.parse(raw) as PrefsEnvelope;
     if (parsed && parsed.version === 1 && parsed.prefs) {
-      return { ...DEFAULT_PREFS, ...parsed.prefs };
+      const base = { ...DEFAULT_PREFS, ...parsed.prefs };
+      // A localized URL wins over the saved language for this load, so the app
+      // renders in the language of the page that was opened/shared.
+      return pinned ? { ...base, language: pinned } : base;
     }
-    return { ...DEFAULT_PREFS, language: detectInitialLanguage() };
+    return { ...DEFAULT_PREFS, language: pinned ?? detectInitialLanguage() };
   } catch {
-    return DEFAULT_PREFS;
+    return pinned ? { ...DEFAULT_PREFS, language: pinned } : DEFAULT_PREFS;
   }
 }
 
