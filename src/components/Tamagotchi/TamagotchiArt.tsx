@@ -3,7 +3,10 @@ import type { Species, Phase } from '@/hooks/useTamagotchi';
 /**
  * Line-only creature art (stroke = currentColor, no fills except tiny eye dots),
  * so it reads clearly over any background and barely occludes what's beneath.
- * viewBox 0 0 64 64. Baby = rounder/smaller; adult adds a body + a species tell.
+ * viewBox 0 0 64 64. Baby = rounder/smaller face form; adults are per-species
+ * side-view walkers (cat/puppy/bear/rabbit trot on four legs, chick/duck strut
+ * on two, mole burrows along the ground), drawn facing right and mirrored by
+ * the Creature to match their heading.
  */
 
 const eye = (x: number, y: number, r = 1.6) => <circle key={`e${x}`} cx={x} cy={y} r={r} fill="currentColor" stroke="none" />;
@@ -77,67 +80,190 @@ function BabyBody({ species }: { species: Species }) {
   );
 }
 
-// Species tell drawn on the ADULT head (circle cx32 cy16 r9).
-function adultFeature(species: Species) {
-  switch (species) {
-    case 'chick':
-      return (<>
-        <path d="M29 18 l3 3 l3 -3 Z" fill="currentColor" stroke="none" />{/* beak */}
-        <path d="M32 6 v-3 M29 6 l-2 -3 M35 6 l2 -3" />{/* tuft */}
-      </>);
-    case 'duck':
-      return <path d="M27 18 q5 4 10 0 q-5 3 -10 0 Z" />;/* bill */
-    case 'rabbit':
-      return (<>
-        <path d="M28 9 C26 -4 23 -2 26 9 M36 9 C38 -4 41 -2 38 9" />{/* long ears */}
-        <path d="M30 20 q2 2 4 0" />
-      </>);
-    case 'bear':
-      return (<>
-        <circle cx={24} cy={8} r={3} /><circle cx={40} cy={8} r={3} />{/* round ears */}
-        <circle cx={32} cy={19} r={1.8} />
-      </>);
-    case 'puppy':
-      return (<>
-        <path d="M24 10 q-6 3 -3 11 M40 10 q6 3 3 11" />{/* floppy ears */}
-        <path d="M32 19 v2 M30 21 q2 2 4 0" />
-      </>);
-    case 'cat':
-      return (<>
-        <path d="M25 9 l-3 -7 l7 4 M39 9 l3 -7 l-7 4" />{/* pointy ears */}
-        <path d="M18 16 h6 M40 16 h6" />{/* whiskers */}
-      </>);
-    case 'mole':
-      return <path d="M27 19 q5 4 10 0" />;/* long snout */
-  }
-}
+/* ── Adult: side-view walking characters, one per species. All are drawn facing
+   RIGHT; Creature mirrors the whole sprite by heading. Quadrupeds trot with
+   diagonal leg pairs (legL/legR keyframes), far-side limbs are half-opacity for
+   depth, tails wag, bird wings flap on the arm keyframes. ─────────────────── */
+const pivotTop = { transformBox: 'fill-box', transformOrigin: 'top' } as const;
+const pivotRump = { transformBox: 'fill-box', transformOrigin: 'right bottom' } as const;
 
-// ── Adult: a full body — head, torso, swinging arms, walking legs, (cat) tail ─
-function AdultBody({ species, walk }: { species: Species; walk: boolean }) {
-  const legPivot = { transformBox: 'fill-box' as const, transformOrigin: 'top' };
+/** One walking leg with a little forward paw. Diagonal pairs share a class. */
+function Leg({ x, top, len, cls, walk, far = false, w }: { x: number; top: number; len: number; cls: 'tama-legL' | 'tama-legR'; walk: boolean; far?: boolean; w?: number }) {
   return (
-    <g>
-      {/* Cat tail (behind body), wags. */}
-      {species === 'cat' && (
-        <g className={walk ? 'tama-tail' : undefined} style={{ transformBox: 'fill-box', transformOrigin: 'left' }}>
-          <path d="M40 40 q12 -1 8 -13" />
-        </g>
-      )}
-      {/* Legs (behind), alternating walk. */}
-      <g className={walk ? 'tama-legL' : undefined} style={legPivot}><path d="M28 43 l-2 11 M22 54 h6" /></g>
-      <g className={walk ? 'tama-legR' : undefined} style={legPivot}><path d="M36 43 l2 11 M35 54 h6" /></g>
-      {/* Torso. */}
-      <path d="M23 27 q9 -4 18 0 q3 12 -1 18 q-8 5 -16 0 q-4 -6 -1 -18 Z" />
-      {/* Arms, swing opposite to legs. */}
-      <g className={walk ? 'tama-armL' : undefined} style={legPivot}><path d="M24 30 q-5 5 -6 11" /></g>
-      <g className={walk ? 'tama-armR' : undefined} style={legPivot}><path d="M40 30 q5 5 6 11" /></g>
-      {/* Head + eyes + species tell. */}
-      <circle cx={32} cy={16} r={9} />
-      {eye(29, 15)}
-      {eye(35, 15)}
-      {adultFeature(species)}
+    <g className={walk ? cls : undefined} style={{ ...pivotTop, opacity: far ? 0.5 : 1 }}>
+      <path d={`M${x} ${top} v${len} q0 1.2 3 1.2`} strokeWidth={w} />
     </g>
   );
+}
+
+function AdultCat({ walk }: { walk: boolean }) {
+  return (
+    <g>
+      {/* fluffy raised tail (one tapered outline), wags from the rump */}
+      <g className={walk ? 'tama-tail' : undefined} style={pivotRump}>
+        <path d="M16 34 C5 31 2 19 9 12.5 C10.5 11.2 12.6 12.4 11.8 14.6 C7 20.5 9.5 27 17 29.5" />
+      </g>
+      <Leg x={26} top={42} len={12} cls="tama-legR" walk={walk} far />
+      <Leg x={41} top={42} len={12} cls="tama-legL" walk={walk} far />
+      {/* arched back + belly */}
+      <path d="M40 30 C33 25.5 22 26 17 31.5 C13 36.5 15 41.5 20 43 C27 45 36 45 40.5 43" />
+      <Leg x={21} top={42} len={12} cls="tama-legL" walk={walk} />
+      <Leg x={36} top={42} len={12} cls="tama-legR" walk={walk} />
+      {/* big chibi head */}
+      <circle cx={45} cy={20.5} r={10.5} />
+      <path d="M38.5 12.5 L37 3.5 L45 8.5 M48.5 8.5 L53.5 2.5 L55.5 11.5" />
+      {eye(42.5, 21, 2)}
+      {eye(49, 21, 2)}
+      <circle cx={45.8} cy={24.8} r={1.2} fill="currentColor" stroke="none" />
+      <path d="M43.4 26.8 q1.2 1.6 2.4 0 M45.8 26.8 q1.2 1.6 2.4 0" />
+      <path d="M55.5 21.5 l6.5 -1.2 M55.5 25 l6.5 1" />
+    </g>
+  );
+}
+
+function AdultPuppy({ walk }: { walk: boolean }) {
+  return (
+    <g>
+      {/* shiba tail curled over the back */}
+      <g className={walk ? 'tama-tail' : undefined} style={pivotRump}>
+        <path d="M18.5 29.5 C14 20.5 25 15.5 26.5 23 C27.3 27.5 21.5 29.5 20 26" />
+      </g>
+      <Leg x={26} top={42} len={12} cls="tama-legR" walk={walk} far />
+      <Leg x={41} top={42} len={12} cls="tama-legL" walk={walk} far />
+      <path d="M40 30 C32 25.5 21 26 17 32 C14 37 16 42 21 43.5 C28 45.5 37 45 40.5 43" />
+      <Leg x={21} top={42} len={12} cls="tama-legL" walk={walk} />
+      <Leg x={36} top={42} len={12} cls="tama-legR" walk={walk} />
+      {/* big chibi head */}
+      <circle cx={45} cy={20.5} r={10.5} />
+      <path d="M39 11.5 L38 2.5 L45.5 8 M48.5 8 L51.5 1.5 L54.5 10" />
+      {eye(42.5, 20.5, 2)}
+      {eye(48.5, 20.5, 2)}
+      {/* nose + smile + happy tongue */}
+      <circle cx={45.5} cy={24.4} r={1.3} fill="currentColor" stroke="none" />
+      <path d="M43 26.6 q2.5 2.2 5 0 M45.5 28.3 q0 2.6 -1.9 2.8" />
+    </g>
+  );
+}
+
+function AdultBear({ walk }: { walk: boolean }) {
+  return (
+    <g>
+      <path d="M14 36 q-3.5 .5 -2.5 4" />{/* stubby tail */}
+      <Leg x={26.5} top={44} len={10} cls="tama-legR" walk={walk} far w={3.4} />
+      <Leg x={42} top={44} len={10} cls="tama-legL" walk={walk} far w={3.4} />
+      {/* big round body */}
+      <path d="M42 27 C33 21 18 23 13.5 32 C11 39 15 45 22 46.5 C30 48 38 47 42 44" />
+      <Leg x={21} top={44} len={10} cls="tama-legL" walk={walk} w={3.4} />
+      <Leg x={37} top={44} len={10} cls="tama-legR" walk={walk} w={3.4} />
+      {/* big chibi head */}
+      <circle cx={45} cy={21} r={11} />
+      <circle cx={37.5} cy={12} r={3.4} />
+      <circle cx={52} cy={11.4} r={3.4} />
+      {eye(41.5, 20.5, 2)}
+      {eye(48, 20.5, 2)}
+      {/* round muzzle */}
+      <circle cx={48.2} cy={25.2} r={3.2} />
+      <circle cx={48.2} cy={24} r={1.4} fill="currentColor" stroke="none" />
+    </g>
+  );
+}
+
+function AdultRabbit({ walk }: { walk: boolean }) {
+  return (
+    <g>
+      <circle cx={13.8} cy={36.5} r={2.6} />{/* cotton tail */}
+      <Leg x={27} top={44.5} len={10.5} cls="tama-legR" walk={walk} far />
+      <Leg x={40} top={44} len={11} cls="tama-legL" walk={walk} far />
+      <path d="M39 30 C32 27 24 28 20 32 C14 36 14 43 21 45.5 C29 47.5 37 46 40 43" />
+      <path d="M30 44.5 C22.5 45 19.5 37 25.5 32.5" />{/* big haunch */}
+      <Leg x={22} top={45} len={10} cls="tama-legL" walk={walk} />
+      <Leg x={36} top={44.5} len={10.5} cls="tama-legR" walk={walk} />
+      {/* big chibi head */}
+      <circle cx={44.5} cy={23} r={10} />
+      {/* long ears swept back */}
+      <path d="M40 14.5 C35.5 3 42 -.5 44.5 11.5 M47 12.5 C48.5 -1 55.5 1.5 51 15" />
+      {eye(41.5, 23, 2)}
+      {eye(47.5, 23, 2)}
+      <circle cx={44.5} cy={26.6} r={1.2} fill="currentColor" stroke="none" />
+      <path d="M42.8 28.6 q1.7 1.7 3.4 0" />
+    </g>
+  );
+}
+
+function AdultChick({ walk }: { walk: boolean }) {
+  return (
+    <g>
+      {/* trident feet on stick legs */}
+      <g className={walk ? 'tama-legL' : undefined} style={pivotTop}><path d="M29.5 46.5 v9 m-3 2 l3 -2 l3 2" /></g>
+      <g className={walk ? 'tama-legR' : undefined} style={pivotTop}><path d="M37 46 v9.5 m-3 2 l3 -2 l3 2" /></g>
+      <circle cx={33} cy={34} r={14} />
+      <path d="M31 20.5 v-4.5 M26.5 21.5 l-2.5 -4 M35.5 21 l2.5 -4" />{/* tuft */}
+      <path d="M20 28.5 l-5.5 -3.5 M19.5 32 l-6 -.5" />{/* tail feathers */}
+      {/* tiny folded wing, low on the flank so it can't read as a mouth */}
+      <g className={walk ? 'tama-armL' : undefined} style={pivotTop}>
+        <path d="M22.5 38.5 q5.5 3 10.5 .8" />
+      </g>
+      {eye(37.5, 26.5, 2)}
+      {eye(43.5, 26.5, 2)}
+      <path d="M47 28.5 l6.5 2.6 l-6.5 2.6 Z" fill="currentColor" stroke="none" />{/* beak */}
+    </g>
+  );
+}
+
+function AdultDuck({ walk }: { walk: boolean }) {
+  return (
+    <g>
+      {/* webbed waddling feet */}
+      <g className={walk ? 'tama-legL' : undefined} style={pivotTop}><path d="M27.5 45.5 v8 q4 0 5 2 h-6.5" /></g>
+      <g className={walk ? 'tama-legR' : undefined} style={pivotTop}><path d="M35 45 v8.5 q4 0 5 2 h-6.5" /></g>
+      {/* horizontal body + upturned tail */}
+      <path d="M40 31 C46 33.5 47 42 39 45.5 C29 48.5 17 46.5 14.5 39.5 C12.5 33.5 20 29.5 28 29.5" />
+      <path d="M15 33.5 l-4.5 -4" />
+      {/* neck + head */}
+      <path d="M40.5 22.5 C40 26.5 39.5 28.5 38.5 30.5 M50.5 21 C50 25.5 48 28.5 45.5 31" />
+      <circle cx={45.5} cy={16} r={8} />
+      {/* flat bill */}
+      <path d="M53 14 q7 .5 7 3 q0 2.5 -7 2.8 M53.4 17 h6" />
+      {eye(43, 14.5, 2)}
+      {eye(48.5, 14.5, 2)}
+      {/* folded wing, flaps */}
+      <g className={walk ? 'tama-armL' : undefined} style={pivotTop}>
+        <path d="M20.5 37.5 q7.5 -4.5 13.5 -.5" />
+      </g>
+    </g>
+  );
+}
+
+function AdultMole({ walk }: { walk: boolean }) {
+  return (
+    <g>
+      <path d="M15.5 46 q-4.5 -.5 -4 3.5" />{/* skinny tail */}
+      <g className={walk ? 'tama-legR' : undefined} style={{ ...pivotTop, opacity: 0.5 }}><path d="M29 53.5 v3.5" /></g>
+      {/* low burrowing body with a pointy snout */}
+      <path d="M55.5 44.5 C59 46.5 57 50.5 51 51.5 C40 54.5 24 54.5 17 50 C11.5 46 14.5 38.5 23 36.5 C35 33.5 49 36.5 55.5 44.5 Z" />
+      <g className={walk ? 'tama-legL' : undefined} style={pivotTop}><path d="M23 53 v4" /></g>
+      {/* big digging mitt with two claw ticks */}
+      <g className={walk ? 'tama-armL' : undefined} style={pivotTop}>
+        <path d="M46 51 q5 0 5.5 4 M51.5 55 l3 1 M50.8 56.3 l2.6 1.8" />
+      </g>
+      {/* blissful closed eyes */}
+      <path d="M39.5 42 q2.2 -2.6 4.4 0 M46 43 q2.2 -2.6 4.4 0" />
+      <circle cx={56.5} cy={44.5} r={1.7} fill="currentColor" stroke="none" />
+      <path d="M56 41.5 l5.5 -1.5 M57 45 l5.5 .8" />{/* whiskers */}
+    </g>
+  );
+}
+
+function AdultBody({ species, walk }: { species: Species; walk: boolean }) {
+  switch (species) {
+    case 'cat': return <AdultCat walk={walk} />;
+    case 'puppy': return <AdultPuppy walk={walk} />;
+    case 'bear': return <AdultBear walk={walk} />;
+    case 'rabbit': return <AdultRabbit walk={walk} />;
+    case 'chick': return <AdultChick walk={walk} />;
+    case 'duck': return <AdultDuck walk={walk} />;
+    case 'mole': return <AdultMole walk={walk} />;
+  }
 }
 
 export function PetArt({ species, phase, size = 56, className = '', walk = true }: { species: Species; phase: Phase; size?: number; className?: string; walk?: boolean }) {
