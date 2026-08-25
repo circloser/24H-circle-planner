@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, X, Copy, FileText, LayoutGrid, Lock, Unlock, CalendarDays, ChevronLeft, ChevronRight, LogOut, Pencil, Undo2 } from 'lucide-react';
+import { Plus, X, Copy, FileText, LayoutGrid, Lock, Unlock, CalendarDays, ChevronLeft, ChevronRight, LogOut, Pencil, Undo2, BookMarked } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import { toast } from 'sonner';
 import {
@@ -55,7 +55,7 @@ function DayThumb({ schedule, size }: { schedule: Schedule; size: number }) {
  *    and a "Day M of N" indicator at bottom-centre.
  * The + asks whether to duplicate the current schedule or start empty.
  */
-export function DayBar() {
+export function DayBar({ onOpenDiary }: { onOpenDiary?: () => void }) {
   const { days, activeId, activeIndex, switchTo, addDay, addDayFromSlices, deleteDay } = useDays();
   const { t, lang } = useTranslation();
   const coarse = useCoarsePointer();
@@ -298,6 +298,23 @@ export function DayBar() {
             <Pencil className="h-3 w-3" />
             {t('diary.editMode')}
           </span>
+          {/* Save today's schedule as a diary entry — opens the diary window
+              (where "오늘 저장" lives) so the day can be logged. */}
+          {onOpenDiary && (
+            <>
+              <span className="h-3 w-px bg-border" />
+              <button
+                type="button"
+                onClick={onOpenDiary}
+                aria-label={t('edit.saveDiary')}
+                title={t('edit.saveDiary')}
+                className="flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-1 font-semibold transition-colors hover:bg-black/10 text-foreground"
+              >
+                <BookMarked className="h-3 w-3" />
+                {t('edit.saveDiary')}
+              </button>
+            </>
+          )}
           {/* Undo — steps back through the edit history (shares Ctrl+Z's stack,
               HISTORY_DEPTH steps). Disabled when there is nothing to undo. */}
           <span className="h-3 w-px bg-border" />

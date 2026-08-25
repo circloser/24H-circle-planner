@@ -451,6 +451,7 @@ export const ko = {
   'diary.exited': '시간표 편집 모드로 돌아왔어요',
   'diary.editMode': '편집 모드',
   'edit.undo': '되돌리기',
+  'edit.saveDiary': '일기 저장',
   'analytics.scopeCurrent': '현재 시간표',
   'analytics.scopeAll': '전체 일정',
   'analytics.scopeDiary': '일기',

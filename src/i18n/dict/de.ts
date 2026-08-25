@@ -450,6 +450,7 @@ export const de: Record<TKey, string> = {
   'diary.exited': 'Zurück zur Zeitplanbearbeitung',
   'diary.editMode': 'Bearbeitungsmodus',
   'edit.undo': 'Rückgängig',
+  'edit.saveDiary': 'Tagebuch speichern',
   'analytics.scopeCurrent': 'Aktuell',
   'analytics.scopeAll': 'Alle Tage',
   'analytics.scopeDiary': 'Tagebuch',

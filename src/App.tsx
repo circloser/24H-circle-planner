@@ -395,7 +395,7 @@ function App() {
         }
       >
         {/* Multi-day switcher — pinned at the top in-flow on mobile, floating on desktop. */}
-        {chartView !== 'record' && <DayBar />}
+        {chartView !== 'record' && <DayBar onOpenDiary={() => setDiaryOpen(true)} />}
         <div className="flex w-full flex-col items-center gap-4">
         {chartView === 'record' ? (
           <RecordView />
