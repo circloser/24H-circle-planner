@@ -11,11 +11,21 @@ const CSS = `
 @keyframes tama-pop { from { opacity:0; transform: translateY(10px) scale(.96) } to { opacity:1; transform: none } }
 @keyframes tama-fx { 0% { opacity:0; transform: translate(-50%,-20%) scale(.6) } 25% { opacity:1; transform: translate(-50%,-70%) scale(1.15) } 100% { opacity:0; transform: translate(-50%,-170%) scale(1) } }
 @keyframes tama-drop { 0% { transform: translateY(-7px) } 55% { transform: translateY(3px) } 78% { transform: translateY(-1px) } 100% { transform: translateY(0) } }
+@keyframes tama-legA { 0%,100% { transform: rotate(16deg) } 50% { transform: rotate(-16deg) } }
+@keyframes tama-legB { 0%,100% { transform: rotate(-16deg) } 50% { transform: rotate(16deg) } }
+@keyframes tama-armA { 0%,100% { transform: rotate(-20deg) } 50% { transform: rotate(20deg) } }
+@keyframes tama-armB { 0%,100% { transform: rotate(20deg) } 50% { transform: rotate(-20deg) } }
+@keyframes tama-tailw { 0%,100% { transform: rotate(-9deg) } 50% { transform: rotate(11deg) } }
 .tama-bob { animation: tama-bob 1.6s ease-in-out infinite; }
 .tama-wiggle { animation: tama-wiggle .12s linear infinite; }
 .tama-pop { animation: tama-pop .18s ease-out; }
 .tama-fx { animation: tama-fx .9s ease-out forwards; }
 .tama-drop { animation: tama-drop .42s ease-out; }
+.tama-legL { animation: tama-legA .5s ease-in-out infinite; }
+.tama-legR { animation: tama-legB .5s ease-in-out infinite; }
+.tama-armL { animation: tama-armB .5s ease-in-out infinite; }
+.tama-armR { animation: tama-armA .5s ease-in-out infinite; }
+.tama-tail { animation: tama-tailw .6s ease-in-out infinite; }
 `;
 
 /**

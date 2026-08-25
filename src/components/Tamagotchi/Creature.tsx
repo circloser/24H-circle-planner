@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type CSSProperties } from 'react';
 import { PetArt } from './TamagotchiArt';
 import { formatHatch, fireTamaFx } from './tama-utils';
 import { useTamagotchi, type Pet } from '@/hooks/useTamagotchi';
@@ -30,6 +30,14 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
   const dragging = dragPos != null;
   const glyph = reacting ? '😄' : stateGlyph(pet, hygiene); // happy face while being played with
   const remaining = pet.phase === 'egg' ? pet.hatchAt - Date.now() : 0;
+
+  // Adults face the way they walk (mirror by horizontal heading) and lean
+  // forward for a dynamic, diagonal look. Younger forms stay upright/front-on.
+  const faceDir = Math.cos(pet.heading) >= 0 ? 1 : -1;
+  const flipStyle: CSSProperties | undefined =
+    pet.phase === 'adult'
+      ? { transform: `scaleX(${faceDir}) rotate(6deg)`, transition: 'transform .2s ease' }
+      : undefined;
 
   function onPointerDown(e: React.PointerEvent) {
     if (pet.phase === 'dead') { select(pet.id); return; }
@@ -96,8 +104,10 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
         {glyph && (
           <span style={{ position: 'absolute', top: -18, fontSize: 14, pointerEvents: 'none' }}>{glyph}</span>
         )}
-        <div className={dragging || reacting ? 'tama-wiggle' : pet.sleeping ? '' : 'tama-bob'}>
-          <PetArt species={pet.species} phase={pet.phase} size={size} />
+        <div style={flipStyle}>
+          <div className={dragging || reacting ? 'tama-wiggle' : pet.sleeping ? '' : 'tama-bob'}>
+            <PetArt species={pet.species} phase={pet.phase} size={size} walk={pet.phase === 'adult' && !pet.sleeping} />
+          </div>
         </div>
         {pet.phase === 'egg' && (
           <span
