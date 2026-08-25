@@ -164,7 +164,7 @@ interface PrefsEnvelope {
  *  locales with a real localized route are recognised here. */
 function pathLocale(): Lang | null {
   try {
-    const m = /^\/(ko|de|ja)(?:\/|$)/.exec(window.location.pathname);
+    const m = /^\/(ko|de|ja|zh|fr|es|ru)(?:\/|$)/.exec(window.location.pathname);
     return m ? (m[1] as Lang) : null;
   } catch {
     return null;

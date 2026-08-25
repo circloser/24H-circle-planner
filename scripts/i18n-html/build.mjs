@@ -21,7 +21,7 @@ const indexPath = join(dist, 'index.html');
 const ORIGIN = 'https://24houring.com';
 // Locales that get an indexed page. `en` is the root (/). Add a code here only
 // once its landing content module + (ideally) app dict are complete.
-const LOCALES = ['en', 'ko', 'de', 'ja'];
+const LOCALES = ['en', 'ko', 'de', 'ja', 'zh', 'fr', 'es', 'ru'];
 const localeHref = (l) => (l === 'en' ? `${ORIGIN}/` : `${ORIGIN}/${l}/`);
 
 const hreflangBlock = [

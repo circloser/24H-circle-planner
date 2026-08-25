@@ -7,7 +7,10 @@ import { ko, type TKey } from './dict/ko';
 import { en } from './dict/en';
 import { de } from './dict/de';
 import { ja } from './dict/ja';
-import { zh, fr, es, ru } from './dict/extra';
+import { zh } from './dict/zh';
+import { fr } from './dict/fr';
+import { es } from './dict/es';
+import { ru } from './dict/ru';
 
 export type { TKey };
 
@@ -26,7 +29,7 @@ export type Lang = (typeof LANGUAGES)[number]['code'];
 
 type Dict = Record<TKey, string>;
 
-// de is a FULL translation (Record<TKey,string>); ja/zh/fr/es/ru are partial.
+// All eight are now FULL translations (each dict/*.ts is a Record<TKey,string>).
 export const TRANSLATIONS: Record<Lang, Partial<Dict>> = { ko, en, de, ja, zh, fr, es, ru };
 
 /**
