@@ -21,6 +21,8 @@
  *  - installed                          — PWA install prompt accepted
  *  - notif_permission {result}          — granted | denied | default
  *  - alarm_enable     {type}            — slice | push | chime  ← the aha moment
+ *  - aha_nudge_shown  {device}          — post-first-edit activation nudge shown
+ *  - aha_nudge_action {action}          — alarm | phone (nudge CTA tapped)
  */
 
 type Gtag = (command: 'event', eventName: string, params?: Record<string, string | number | boolean>) => void;
