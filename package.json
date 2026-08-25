@@ -15,6 +15,7 @@
     "spike:export": "node scripts/run-export-spike.mjs",
     "spike": "node scripts/run-export-spike.mjs",
     "build:single": "vite build --config vite.config.singlefile.ts",
+    "social": "node scripts/social/build.mjs",
     "e2e": "node scripts/e2e/run.mjs"
   },
   "dependencies": {
