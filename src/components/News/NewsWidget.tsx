@@ -87,8 +87,12 @@ export function NewsWidget() {
       const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query)}&mode=ArtList&maxrecords=10&sort=DateDesc&format=json`;
       const res = await fetch(url);
       const text = await res.text();
-      let parsed: GdeltArticle[] = [];
-      try { parsed = (JSON.parse(text).articles ?? []) as GdeltArticle[]; } catch { /* rate-limit / non-JSON */ }
+      let parsed: GdeltArticle[];
+      // GDELT answers a rate-limit / overload with 429 or a plain-text notice
+      // (not JSON). Treat that as an error (prompt a retry) — distinct from a
+      // valid JSON response that simply has no matching headlines.
+      try { parsed = (JSON.parse(text).articles ?? []) as GdeltArticle[]; }
+      catch { setItems([]); setStatus('error'); return; }
       const seen = new Set<string>();
       const next: NewsItem[] = [];
       for (const a of parsed) {
