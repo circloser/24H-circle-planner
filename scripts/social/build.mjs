@@ -60,16 +60,33 @@ const CARDS = [
   ] },
 ];
 
+// Palettes mirror src/data/color-themes.ts (sunset 노을 / forest 숲). Slices are
+// recoloured by cycling the palette (slice[i] → colors[i % len]), like the app's
+// "apply palette". Each theme carries a matching card background gradient.
+const THEMES = {
+  sunset: {
+    ko: '노을',
+    colors: ['#fecaca', '#fca5a5', '#fda4af', '#fdba74', '#fcd34d', '#fde68a', '#f9a8d4', '#f0abfc', '#e9d5ff', '#ddd6fe'],
+    bg: 'linear-gradient(160deg,#fff1f2 0%,#fff7ed 48%,#fdf2f8 100%)',
+  },
+  forest: {
+    ko: '숲',
+    colors: ['#d9f99d', '#bef264', '#a3e635', '#86efac', '#6ee7b7', '#5eead4', '#99f6e4', '#fde68a', '#fcd34d', '#d6d3d1'],
+    bg: 'linear-gradient(160deg,#ecfdf5 0%,#f7fee7 48%,#f0fdfa 100%)',
+  },
+};
+const recolor = (slices, palette) => slices.map(([st, l, , i], idx) => [st, l, palette[idx % palette.length], i]);
+
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 /** Compose one social card as a standalone HTML page sized to (w x h). */
-function cardHtml({ circleDataUri, title, tagline, w, h, square }) {
-  const circleMax = square ? Math.round(w * 0.82) : Math.round(w * 0.9);
+function cardHtml({ circleDataUri, title, tagline, w, h, square, bg }) {
+  const circleMax = square ? Math.round(w * 0.68) : Math.round(w * 0.9);
   return `<!doctype html><html><head><meta charset="utf-8"><style>
     *{margin:0;padding:0;box-sizing:border-box}
     html,body{width:${w}px;height:${h}px}
     body{font-family:system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
-      background:linear-gradient(160deg,#eef2ff 0%,#f8fafc 45%,#fdf2f8 100%);
+      background:${bg};
       display:flex;flex-direction:column;align-items:center;
       justify-content:${square ? 'center' : 'flex-start'};
       padding:${square ? '48px' : '72px 56px 56px'};color:#1f2430;text-align:center}
@@ -77,7 +94,7 @@ function cardHtml({ circleDataUri, title, tagline, w, h, square }) {
     .brandtop span{color:#FF4D4D}
     .title{font-size:${square ? 40 : 60}px;font-weight:800;line-height:1.12;letter-spacing:-1px;margin-top:${square ? 6 : 18}px}
     .tagline{font-size:${square ? 22 : 28}px;color:#4b5563;margin-top:14px;max-width:${Math.round(w*0.86)}px;line-height:1.4}
-    .circle{width:${circleMax}px;height:${circleMax}px;margin:${square ? '18px 0 10px' : '28px 0 auto'}}
+    .circle{width:${circleMax}px;height:${circleMax}px;margin:${square ? '14px 0 8px' : '28px 0 auto'}}
     .circle img{width:100%;height:100%;object-fit:contain}
     .footer{margin-top:${square ? 10 : 8}px;display:flex;flex-direction:column;gap:6px;align-items:center}
     .url{font-size:${square ? 26 : 32}px;font-weight:700;color:#111827}
@@ -121,10 +138,14 @@ const { base, close } = await serveDist();
 const { browser, page } = await launchPage({ deviceScaleFactor: 2 });
 try {
   for (const t of CARDS) {
-    const uri = await circleDataUri(page, base, t);
-    await render(page, base, cardHtml({ circleDataUri: uri, title: t.title, tagline: t.tagline, w: 1000, h: 1500, square: false }), 1000, 1500, join(OUT, `${t.slug}-pin.png`));
-    await render(page, base, cardHtml({ circleDataUri: uri, title: t.title, tagline: t.tagline, w: 1080, h: 1080, square: true }), 1080, 1080, join(OUT, `${t.slug}-sq.png`));
-    console.log('made', t.slug, '(pin + sq)');
+    for (const [themeId, theme] of Object.entries(THEMES)) {
+      const themed = { ...t, slices: recolor(t.slices, theme.colors) };
+      const uri = await circleDataUri(page, base, themed);
+      const common = { circleDataUri: uri, title: t.title, tagline: t.tagline, bg: theme.bg };
+      await render(page, base, cardHtml({ ...common, w: 1000, h: 1500, square: false }), 1000, 1500, join(OUT, `${t.slug}-${themeId}-pin.png`));
+      await render(page, base, cardHtml({ ...common, w: 1080, h: 1080, square: true }), 1080, 1080, join(OUT, `${t.slug}-${themeId}-sq.png`));
+      console.log('made', `${t.slug}-${themeId}`, '(pin + sq)');
+    }
   }
 } finally {
   await browser.close();
