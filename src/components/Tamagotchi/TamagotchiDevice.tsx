@@ -11,7 +11,7 @@ function DonutStat({ emoji, value, label }: { emoji: string; value: number; labe
   const off = C * (1 - Math.max(0, Math.min(100, value)) / 100);
   return (
     <div title={`${label} · ${Math.round(value)}%`} style={{ position: 'relative', display: 'grid', placeItems: 'center', cursor: 'help' }}>
-      <svg width={40} height={40} viewBox="0 0 40 40" aria-hidden>
+      <svg width={38} height={38} viewBox="0 0 40 40" aria-hidden>
         <circle cx="20" cy="20" r={R} fill="none" stroke="rgba(0,0,0,0.12)" strokeWidth="5" />
         <circle cx="20" cy="20" r={R} fill="none" stroke={color} strokeWidth="5" strokeLinecap="round"
           strokeDasharray={C} strokeDashoffset={off} transform="rotate(-90 20 20)" style={{ transition: 'stroke-dashoffset .4s' }} />
@@ -150,7 +150,7 @@ export function TamagotchiDevice() {
       {/* Stats — 2×2 donut rings; hover explains each + shows the value. Happiness
           & hygiene are raised by tapping the pet / its poop directly. */}
       {pet && pet.phase !== 'egg' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginTop: 8, justifyItems: 'center' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 2, marginTop: 8, justifyItems: 'center' }}>
           <DonutStat emoji="🍖" value={pet.hunger} label={t('tama.statHunger')} />
           <DonutStat emoji="😊" value={pet.happiness} label={t('tama.statHappiness')} />
           <DonutStat emoji="🧼" value={hygiene} label={t('tama.statHygiene')} />

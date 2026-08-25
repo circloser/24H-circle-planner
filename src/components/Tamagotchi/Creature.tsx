@@ -9,6 +9,7 @@ const SIZE: Record<string, number> = { egg: 46, amoeba: 40, baby: 54, adult: 66,
 /** State glyph bubble shown above the creature. Hygiene is shared across pets. */
 function stateGlyph(p: Pet, hygiene: number): string | null {
   if (p.phase === 'dead') return '💀';
+  if (p.energy < 20) return '⚡'; // exhausted → auto-napping / recharging
   if (p.sleeping) return '💤';
   if (hygiene < 20) return '🤒';
   if (p.hunger < 30) return '🍽️';

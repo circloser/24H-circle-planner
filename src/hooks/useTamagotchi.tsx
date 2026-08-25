@@ -76,6 +76,7 @@ const TICK = 1000; // ms
 const HUNGER_RATE = 2 / 60000; // -2 / min
 const HAPPY_RATE = 1 / 60000; // -1 / min
 const ENERGY_RECOVER = 2 / 1000; // +2 / s while sleeping
+const LOW_ENERGY = 20; // below this → auto-nap (+ ⚡); recharges to 100 → auto-wake
 
 // ── Overfeed "bloat" (temporary size bump) ───────────────────────────────────
 const MAX_BLOAT = 0.3; // up to +30% size when very full
@@ -148,6 +149,10 @@ function advance(pet: Pet, now: number, dt: number): Pet {
   p.hunger = clamp(p.hunger - HUNGER_RATE * dt);
   p.happiness = clamp(p.happiness - HAPPY_RATE * dt);
   if (p.sleeping) p.energy = clamp(p.energy + ENERGY_RECOVER * dt);
+  // Auto sleep when exhausted (stops moving, shows ⚡), auto-wake once fully
+  // recharged → resumes activity.
+  if (!p.sleeping && p.energy < LOW_ENERGY) p.sleeping = true;
+  else if (p.sleeping && p.energy >= 100) p.sleeping = false;
   // Overfeed bloat eases back toward normal size (live + offline catch-up).
   if ((p.bloat ?? 0) > 0) p.bloat = Math.max(0, (p.bloat ?? 0) - BLOAT_DECAY * dt);
 
@@ -290,7 +295,7 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
           if (sn > 0) { const sl = Math.hypot(sepX, sepY) || 1; hx += (sepX / sl) * SEP_W; hy += (sepY / sl) * SEP_W; }
           hx += (Math.random() - 0.5) * 0.35; hy += (Math.random() - 0.5) * 0.35; // wander jitter
           let heading = Math.atan2(hy, hx);
-          const speed = (p.phase === 'amoeba' ? 8 : 13) * (now < (p.boostUntil ?? 0) ? 2.4 : 1);
+          const speed = (p.phase === 'amoeba' ? 8 : 13) * (now < (p.boostUntil ?? 0) ? 3.8 : 1);
           let nx = p.x + Math.cos(heading) * speed;
           let ny = p.y + Math.sin(heading) * speed;
           // Roam the whole browser window (edge margins clear the sticky header + edges).
@@ -334,7 +339,7 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
     feed: useCallback((id) => mutate(id, (p) => (p.phase === 'egg' || p.phase === 'dead' || p.sleeping ? p : { ...p, hunger: clamp(p.hunger + 25), bloat: Math.min(MAX_BLOAT, (p.bloat ?? 0) + BLOAT_PER_FEED) })), [mutate]),
     // Playing also makes the pet dash off to the side for a moment (boostUntil +
     // a fresh random heading) — the "runs away happily" reaction.
-    play: useCallback((id) => mutate(id, (p) => (p.phase === 'egg' || p.phase === 'dead' || p.sleeping || p.energy < 10 ? p : { ...p, happiness: clamp(p.happiness + 20), energy: clamp(p.energy - 10), heading: rand(0, Math.PI * 2), boostUntil: Date.now() + 1400 })), [mutate]),
+    play: useCallback((id) => mutate(id, (p) => (p.phase === 'egg' || p.phase === 'dead' || p.sleeping || p.energy < 10 ? p : { ...p, happiness: clamp(p.happiness + 20), energy: clamp(p.energy - 10), heading: rand(0, Math.PI * 2), boostUntil: Date.now() + 2400 })), [mutate]),
     removePoop: useCallback((poopId) => setState((s) => ({
       ...s,
       poops: s.poops.filter((q) => q.id !== poopId),
