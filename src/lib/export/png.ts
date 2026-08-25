@@ -1,10 +1,13 @@
 import { injectFontFaceStyle } from './inlineFonts';
 import { inlineComputedPaint } from './inlineComputedPaint';
-import { addWatermark } from './watermark';
+import { addWatermark, addShareQr } from './watermark';
 
 export interface PngExportOptions {
   size: 1080 | 2160 | 3840;
   transparent: boolean;
+  /** When set, stamp a scannable QR (→ this URL) into the bottom-right corner —
+   *  used by the share flow to make the image directly actionable. */
+  qrUrl?: string;
 }
 
 /**
@@ -19,7 +22,7 @@ export async function exportPng(
   sourceSvg: SVGSVGElement,
   opts: PngExportOptions,
 ): Promise<Blob> {
-  const { size, transparent } = opts;
+  const { size, transparent, qrUrl } = opts;
 
   // 1. Deep-clone the SVG
   const clone = sourceSvg.cloneNode(true) as SVGSVGElement;
@@ -53,6 +56,8 @@ export async function exportPng(
 
   // 2b. Stamp the brand wordmark into the bottom margin (viral loop; free tier).
   addWatermark(clone);
+  // 2c. Share flow only: a scannable QR in the corner so the image is actionable.
+  if (qrUrl) addShareQr(clone, qrUrl);
 
   // 3. Set explicit width/height for rasterization at target resolution. The live
   // chart carries an inline style of width/height:100% (+ max-width / aspect-ratio)

@@ -489,7 +489,7 @@ export const de: Record<TKey, string> = {
   'table.clearDone': 'Zurücksetzen',
   'table.exported': 'Exportiert',
   'share.button': 'Teilen',
-  'share.text': 'Mein Tagesplan — 24Houring',
+  'share.text': 'Ich habe meinen Tag als Kreis-Zeitplan geplant 🕒 kostenlos auf 24houring.com',
   'share.saved': 'Zeitplanbild gespeichert — teilen Sie es auf Instagram und anderswo!',
   'share.noChart': 'Es konnte kein Zeitplan zum Teilen gefunden werden.',
   'share.fail': 'Teilen fehlgeschlagen',

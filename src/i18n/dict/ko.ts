@@ -490,7 +490,7 @@ export const ko = {
   'table.clearDone': '체크 해제',
   'table.exported': '내보냈어요',
   'share.button': '공유하기',
-  'share.text': '내 하루 시간표 — 24Houring',
+  'share.text': '내 하루를 원형 시간표로 계획했어요 🕒 24houring.com 에서 무료로 만들어보세요',
   'share.saved': '시간표 이미지를 저장했어요. 인스타그램 등에 올려보세요!',
   'share.noChart': '공유할 시간표를 찾을 수 없습니다.',
   'share.fail': '공유에 실패했습니다',

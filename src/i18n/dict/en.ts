@@ -489,7 +489,7 @@ export const en: Record<TKey, string> = {
   'table.clearDone': 'Clear all',
   'table.exported': 'Exported',
   'share.button': 'Share',
-  'share.text': 'My daily timetable — 24Houring',
+  'share.text': 'I planned my day as a circular timetable 🕒 make yours free at 24houring.com',
   'share.saved': 'Saved the timetable image — post it to Instagram and beyond!',
   'share.noChart': 'Could not find a timetable to share.',
   'share.fail': 'Share failed',

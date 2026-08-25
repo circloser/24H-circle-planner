@@ -1,5 +1,6 @@
 import { exportPng } from './export/png';
 import { slug } from './export/_internal';
+import { APP_URL } from './export/watermark';
 
 export type ShareOutcome = 'shared' | 'downloaded';
 
@@ -17,7 +18,7 @@ export async function shareChartImage(
   scheduleName: string,
   shareText: string,
 ): Promise<ShareOutcome> {
-  const blob = await exportPng(svg, { size: 1080, transparent: false });
+  const blob = await exportPng(svg, { size: 1080, transparent: false, qrUrl: APP_URL });
   const filename = `24h-${slug(scheduleName) || 'timetable'}.png`;
   const file = new File([blob], filename, { type: 'image/png' });
 
