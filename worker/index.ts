@@ -934,89 +934,6 @@ async function runPushCron(env: Env): Promise<void> {
   }
 }
 
-// ─── News (keyword headlines, no AI tokens) ──────────────────────────────────
-/** Country code → GDELT `sourcecountry` FIPS 10-4 code. We use GDELT's free Doc
- *  API (built for programmatic access, so it works from datacenter/edge egress —
- *  unlike Google News RSS, which 503s Cloudflare IPs). The frontend sends a
- *  country code + keyword; we only ever build the fixed GDELT URL from a
- *  whitelisted country code + the encoded keyword (no SSRF surface). */
-const NEWS_COUNTRY_FIPS: Record<string, string> = {
-  KR: 'KS', US: 'US', GB: 'UK', JP: 'JA', CN: 'CH', TW: 'TW', FR: 'FR', DE: 'GM',
-  ES: 'SP', IT: 'IT', IN: 'IN', BR: 'BR', RU: 'RS', CA: 'CA', AU: 'AS',
-};
-
-interface NewsItem { title: string; link: string; source: string; pubDate: string }
-
-interface GdeltArticle { title?: string; url?: string; domain?: string; seendate?: string }
-
-/** Map GDELT's ArtList JSON → up to 10 unique headline items (newest first). */
-function parseGdelt(body: string): NewsItem[] {
-  let data: { articles?: GdeltArticle[] };
-  try { data = JSON.parse(body); } catch { return []; } // rate-limit / error → plain text
-  const arts = Array.isArray(data.articles) ? data.articles : [];
-  const items: NewsItem[] = [];
-  const seen = new Set<string>();
-  for (const a of arts) {
-    const title = (a.title || '').trim();
-    const link = a.url || '';
-    if (!title || !link || seen.has(title)) continue;
-    seen.add(title);
-    items.push({ title, link, source: a.domain || '', pubDate: a.seendate || '' });
-    if (items.length >= 10) break;
-  }
-  return items;
-}
-
-/** GET /api/news?q=<keyword>&country=<code> → up to 10 headline titles+links
- *  from GDELT. No API key, no AI tokens. Edge-cached ~2h so the same keyword
- *  doesn't refetch on every open while staying fresh through the day. */
-async function handleNews(request: Request, env: Env, ctx?: Waiter): Promise<Response> {
-  void env;
-  const url = new URL(request.url);
-  const q = (url.searchParams.get('q') || '').trim().slice(0, 120);
-  const country = (url.searchParams.get('country') || 'KR').toUpperCase();
-  const fips = NEWS_COUNTRY_FIPS[country] ?? NEWS_COUNTRY_FIPS.KR;
-  if (!q) return json({ error: 'missing_query' }, 400);
-
-  // Edge cache keyed by normalized country+query.
-  const cacheKey = new Request(`https://news.cache/${country}/${encodeURIComponent(q.toLowerCase())}`);
-  const cache = (caches as unknown as { default: Cache }).default;
-  const hit = await cache.match(cacheKey);
-  if (hit) return hit;
-
-  // GDELT Doc API: keyword AND a country filter, newest first, JSON.
-  const query = `${q} sourcecountry:${fips}`;
-  const feed = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query)}&mode=ArtList&maxrecords=10&sort=DateDesc&format=json`;
-  // GDELT rate-limits to ~1 request / 5s (returns a plain-text notice) — retry a
-  // few times with a short backoff before giving up.
-  let items: NewsItem[] = [];
-  let upstreamStatus = 0;
-  let raw = '';
-  for (let attempt = 0; attempt < 3; attempt++) {
-    if (attempt) await new Promise((r) => setTimeout(r, 400 * attempt));
-    try {
-      const res = await fetch(feed, { headers: { 'user-agent': '24Houring/1.0 (news widget)', 'accept': 'application/json' } });
-      upstreamStatus = res.status;
-      if (res.ok) { raw = await res.text(); items = parseGdelt(raw); if (items.length) break; }
-    } catch { /* retry */ }
-  }
-
-  // Temporary diagnostics (?debug=1): inspect what the edge fetch received.
-  if (url.searchParams.get('debug') === '1') {
-    return json({ q, country, fips, feed, upstreamStatus, itemCount: items.length, snippet: raw.slice(0, 500) }, 200, { 'cache-control': 'no-store' });
-  }
-
-  // Only cache a good (non-empty) result — never poison the cache with an empty
-  // list from a throttled fetch, so the next open can retry.
-  if (items.length) {
-    const out = json({ q, country, items, fetchedAt: Date.now() }, 200, { 'cache-control': 'public, max-age=7200' });
-    const store = out.clone();
-    if (ctx?.waitUntil) ctx.waitUntil(cache.put(cacheKey, store)); else await cache.put(cacheKey, store);
-    return out;
-  }
-  return json({ q, country, items: [], fetchedAt: Date.now() }, 200, { 'cache-control': 'no-store' });
-}
-
 // ─── Router ──────────────────────────────────────────────────────────────────
 
 export default {
@@ -1057,7 +974,6 @@ export default {
       if (p === '/api/push/plan' && m === 'PUT') return handlePushPlanPut(request, env);
       if (p === '/api/push/plan' && m === 'DELETE') return handlePushPlanDelete(request, env);
       if (p === '/api/push/test' && m === 'POST') return handlePushTest(request, env);
-      if (p === '/api/news' && m === 'GET') return handleNews(request, env, ctx);
       return json({ error: 'not_found' }, 404);
     }
 

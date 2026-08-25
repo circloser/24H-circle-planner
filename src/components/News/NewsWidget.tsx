@@ -8,9 +8,17 @@ const CFG_KEY = '24h-news.config';
 const CACHE_KEY = '24h-news.cache';
 const CARD_W = 320;
 
-/** Countries offered in the picker — must match the worker's NEWS_LOCALES keys.
- *  Labels are localized at render time via Intl.DisplayNames (no dict churn). */
-const COUNTRIES = ['KR', 'US', 'GB', 'JP', 'CN', 'TW', 'FR', 'DE', 'ES', 'IT', 'IN', 'BR', 'RU', 'CA', 'AU'];
+/** ISO country code → GDELT `sourcecountry` FIPS 10-4 code. We call GDELT's free
+ *  Doc API directly from the browser (it sends `Access-Control-Allow-Origin: *`),
+ *  so each user hits it from their own IP — no shared-datacenter throttling, no
+ *  proxy, and no AI tokens. Labels are localized via Intl.DisplayNames. */
+const COUNTRY_FIPS: Record<string, string> = {
+  KR: 'KS', US: 'US', GB: 'UK', JP: 'JA', CN: 'CH', TW: 'TW', FR: 'FR', DE: 'GM',
+  ES: 'SP', IT: 'IT', IN: 'IN', BR: 'BR', RU: 'RS', CA: 'CA', AU: 'AS',
+};
+const COUNTRIES = Object.keys(COUNTRY_FIPS);
+
+interface GdeltArticle { title?: string; url?: string; domain?: string; seendate?: string }
 
 interface NewsItem { title: string; link: string; source: string; pubDate: string }
 interface Config { q: string; country: string }
@@ -68,17 +76,38 @@ export function NewsWidget() {
   }, [lang]);
 
   const fetchNews = useCallback(async (q: string, country: string) => {
-    if (!q.trim()) { setItems([]); return; }
+    const kw = q.trim();
+    if (!kw) { setItems([]); return; }
     setStatus('loading');
     try {
-      const res = await fetch(`/api/news?q=${encodeURIComponent(q.trim())}&country=${country}`);
-      const j = await res.json();
-      if (res.ok && Array.isArray(j.items)) {
-        setItems(j.items);
+      // GDELT Doc API: keyword AND a country filter, newest first, JSON. Called
+      // straight from the browser (CORS-enabled) — no server, no AI tokens.
+      const fips = COUNTRY_FIPS[country] ?? 'US';
+      const query = `${kw} sourcecountry:${fips}`;
+      const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query)}&mode=ArtList&maxrecords=10&sort=DateDesc&format=json`;
+      const res = await fetch(url);
+      const text = await res.text();
+      let parsed: GdeltArticle[] = [];
+      try { parsed = (JSON.parse(text).articles ?? []) as GdeltArticle[]; } catch { /* rate-limit / non-JSON */ }
+      const seen = new Set<string>();
+      const next: NewsItem[] = [];
+      for (const a of parsed) {
+        const title = (a.title || '').trim();
+        const link = a.url || '';
+        if (!title || !link || seen.has(title)) continue;
+        seen.add(title);
+        next.push({ title, link, source: a.domain || '', pubDate: a.seendate || '' });
+        if (next.length >= 10) break;
+      }
+      if (next.length) {
+        setItems(next);
         setStatus('idle');
         fetchedAtRef.current = Date.now();
-        try { localStorage.setItem(CACHE_KEY, JSON.stringify({ q, country, items: j.items, fetchedAt: fetchedAtRef.current })); } catch { /* */ }
-      } else setStatus('error');
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify({ q: kw, country, items: next, fetchedAt: fetchedAtRef.current })); } catch { /* */ }
+      } else {
+        setItems([]);
+        setStatus('idle'); // valid response, just no headlines → show the "none" state
+      }
     } catch { setStatus('error'); }
   }, []);
 
