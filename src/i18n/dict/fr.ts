@@ -38,6 +38,7 @@ export const fr: Record<TKey, string> = {
   'tama.hint': 'Touchez ou glissez l’animal pour jouer · touchez 💩 pour nettoyer',
   'tama.cleanPoop': 'Toucher pour nettoyer',
   'tama.waitHatch': 'Attendez que l’œuf éclose',
+  'tama.intro': 'Un œuf éclot — touchez pour le rencontrer ! 🐣',
   'tama.statHunger': 'Faim — nourrissez pour remplir',
   'tama.statHappiness': 'Bonheur — jouez pour augmenter',
   'tama.statHygiene': 'Hygiène — touchez 💩 pour nettoyer',

@@ -38,6 +38,7 @@ export const zh: Record<TKey, string> = {
   'tama.hint': '点按或拖动宠物即可玩耍 · 点按 💩 即可清理',
   'tama.cleanPoop': '点按清理',
   'tama.waitHatch': '等蛋孵化后再放',
+  'tama.intro': '有颗蛋正在孵化 — 点一下来认识它吧！🐣',
   'tama.statHunger': '饥饿 — 喂食可恢复',
   'tama.statHappiness': '幸福 — 玩耍可提升',
   'tama.statHygiene': '清洁 — 点按 💩 清理',

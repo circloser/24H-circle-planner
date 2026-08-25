@@ -1,9 +1,13 @@
+import { useEffect, useState } from 'react';
 import { Creature } from './Creature';
 import { PoopArt } from './TamagotchiArt';
 import { TamagotchiDevice } from './TamagotchiDevice';
 import { TamaFx } from './TamaFx';
+import { MOBILE_LCD } from './tama-utils';
 import { useTamagotchi } from '@/hooks/useTamagotchi';
 import { useTranslation } from '@/hooks/usePreferences';
+
+const INTRO_KEY = '24h-tama-intro';
 
 const CSS = `
 @keyframes tama-bob { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-3px) } }
@@ -35,9 +39,30 @@ const CSS = `
  * window), and — only while the popup is open — the retro control device. No
  * full-screen catcher, so the app stays fully clickable underneath.
  */
-export function TamagotchiLayer() {
-  const { on, menuOpen, pets, poops, toggleMenu, removePoop, selectedId } = useTamagotchi();
+export function TamagotchiLayer({ isMobile = false }: { isMobile?: boolean }) {
+  const { on, menuOpen, pets, poops, toggleMenu, removePoop, selectedId, setWorld } = useTamagotchi();
   const { t } = useTranslation();
+
+  // Confine the pet world to the console LCD on mobile (pets live in the box);
+  // roam the whole window on desktop.
+  useEffect(() => {
+    setWorld(isMobile ? MOBILE_LCD : null);
+    return () => setWorld(null);
+  }, [isMobile, setWorld]);
+
+  // One-time discovery coachmark: new visitors get a hatching egg (seeded in the
+  // hook) — this points them at the FAB so the feature isn't missed. Dismissed
+  // on first open or explicit close, remembered in localStorage.
+  const [introSeen, setIntroSeen] = useState(() => {
+    try { return localStorage.getItem(INTRO_KEY) === '1'; } catch { return true; }
+  });
+  const dismissIntro = () => {
+    setIntroSeen(true);
+    try { localStorage.setItem(INTRO_KEY, '1'); } catch { /* storage unavailable */ }
+  };
+  const showIntro = !introSeen && on && pets.length > 0 && !menuOpen;
+
+  const openMenu = () => { if (!introSeen) dismissIntro(); toggleMenu(); };
 
   return (
     <>
@@ -47,11 +72,11 @@ export function TamagotchiLayer() {
           Opens/closes the console popup; roaming pets keep going underneath. */}
       <button
         type="button"
-        onClick={toggleMenu}
+        onClick={openMenu}
         aria-pressed={menuOpen}
         title={t('tama.title')}
         aria-label={t('tama.menu')}
-        className="fixed bottom-5 left-[76px] z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 border"
+        className={`fixed bottom-5 z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 border ${isMobile ? 'left-5' : 'left-[76px]'}`}
         style={{
           background: menuOpen ? 'hsl(var(--primary))' : 'hsl(var(--surface))',
           color: menuOpen ? 'hsl(var(--primary-foreground))' : 'hsl(var(--muted-foreground))',
@@ -62,9 +87,28 @@ export function TamagotchiLayer() {
         🐣
       </button>
 
-      {/* Roaming pets + poops — persist across the WHOLE window whenever the
-          feature is on, independent of whether the console popup is open. */}
-      {on && (
+      {/* First-visit coachmark pointing at the FAB. */}
+      {showIntro && (
+        <div
+          className="tama-pop"
+          style={{
+            position: 'fixed', bottom: 74, left: isMobile ? 16 : 72, zIndex: 40, maxWidth: 224,
+            display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', borderRadius: 14,
+            background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))',
+            boxShadow: '0 8px 22px rgba(0,0,0,0.24)', fontSize: 12, fontWeight: 600, lineHeight: 1.35,
+          }}
+        >
+          <button type="button" onClick={openMenu} style={{ background: 'transparent', border: 'none', color: 'inherit', textAlign: 'left', cursor: 'pointer', padding: 0, font: 'inherit' }}>
+            {t('tama.intro')}
+          </button>
+          <button type="button" onClick={dismissIntro} aria-label={t('tama.close')} style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: 13, lineHeight: 1, opacity: 0.8, padding: 0, marginTop: -1 }}>✕</button>
+        </div>
+      )}
+
+      {/* Roaming pets + poops — DESKTOP ONLY: they wander the whole window. On
+          mobile the pets live inside the console LCD (see TamagotchiDevice), so
+          nothing is drawn over the page here. */}
+      {on && !isMobile && (
         <>
           {/* Shared poop pile — any pet drops into it; tap to clean (shared hygiene). */}
           {poops.map((poop) => (
@@ -87,7 +131,7 @@ export function TamagotchiLayer() {
       )}
 
       {/* Console — a popup, shown only while the menu is open. */}
-      {menuOpen && <TamagotchiDevice />}
+      {menuOpen && <TamagotchiDevice isMobile={isMobile} />}
     </>
   );
 }

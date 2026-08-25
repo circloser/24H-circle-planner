@@ -38,6 +38,7 @@ export const ja: Record<TKey, string> = {
   'tama.hint': 'ペットをタップ・ドラッグで遊ぶ · 💩をタップで掃除',
   'tama.cleanPoop': 'タップで掃除',
   'tama.waitHatch': '卵がふ化するまで待ってね',
+  'tama.intro': '卵がかえります — タップして会いに行こう！🐣',
   'tama.statHunger': '空腹 — ごはんで回復',
   'tama.statHappiness': '幸福 — 遊ぶと上がる',
   'tama.statHygiene': '清潔 — 💩をタップで掃除',

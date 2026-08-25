@@ -639,11 +639,11 @@ function App() {
       {!isMobile && <MemoLayer />}
       {!isMobile && <GoalsWidget />}
       {!isMobile && <ClockToolsLayer />}
-      {!isMobile && (
-        <TamagotchiProvider>
-          <TamagotchiLayer />
-        </TamagotchiProvider>
-      )}
+      {/* Background pet — desktop pets roam the window; on mobile they live
+          inside the console LCD (isMobile switches the layer's render mode). */}
+      <TamagotchiProvider>
+        <TamagotchiLayer isMobile={isMobile} />
+      </TamagotchiProvider>
 
       {/* In-app slice-start popup (bottom-right / bottom, 5s, above everything).
           Fires from useSliceAlarms on a block boundary — shows even without OS

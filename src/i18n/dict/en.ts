@@ -41,6 +41,7 @@ export const en: Record<TKey, string> = {
   'tama.hint': 'Tap or drag a pet to play · tap 💩 to clean',
   'tama.cleanPoop': 'Tap to clean',
   'tama.waitHatch': 'Wait for the egg to hatch',
+  'tama.intro': 'A pet egg is hatching — tap to meet it! 🐣',
   'tama.statHunger': 'Hunger — feed to refill',
   'tama.statHappiness': 'Happiness — play to raise',
   'tama.statHygiene': 'Hygiene — tap 💩 to clean',

@@ -41,6 +41,7 @@ export const de: Record<TKey, string> = {
   'tama.hint': 'Tier antippen/ziehen zum Spielen · 💩 antippen zum Putzen',
   'tama.cleanPoop': 'Zum Putzen antippen',
   'tama.waitHatch': 'Warte, bis das Ei schlüpft',
+  'tama.intro': 'Ein Ei schlüpft — tippe, um es kennenzulernen! 🐣',
   'tama.statHunger': 'Hunger — füttern zum Auffüllen',
   'tama.statHappiness': 'Glück — spielen zum Steigern',
   'tama.statHygiene': 'Sauberkeit — 💩 antippen zum Putzen',

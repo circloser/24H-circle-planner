@@ -196,7 +196,13 @@ function load(): Stored {
   const base: Stored = { version: 1, on: false, pets: [], selectedId: null, hygiene: 100, poops: [], savedAt: Date.now() };
   try {
     const raw = localStorage.getItem(KEY);
-    if (!raw) return base;
+    // First-ever visit (no stored state): auto-grant one egg and turn the pet on
+    // so every new user meets a hatching companion — a soft retention hook. The
+    // first egg hatches in ~1 min (HATCH_DELAYS[0]).
+    if (!raw) {
+      const egg = newEgg(0);
+      return { ...base, on: true, pets: [egg], selectedId: egg.id };
+    }
     const s = JSON.parse(raw) as Stored;
     if (!s || s.version !== 1 || !Array.isArray(s.pets)) return base;
     const now = Date.now();
@@ -236,6 +242,9 @@ interface TamagotchiApi {
   toggleSleep: (id: string) => void;
   moveTo: (id: string, x: number, y: number) => void;
   setDragging: (id: string, on: boolean) => void;
+  /** Constrain roaming to a small w×h box (mobile: pets live inside the LCD),
+   *  or null for the full browser window (desktop). */
+  setWorld: (world: { w: number; h: number } | null) => void;
 }
 
 const Ctx = createContext<TamagotchiApi | null>(null);
@@ -249,6 +258,9 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
   stateRef.current = state;
   // Skip the wander step on the tick right after a user drag so it doesn't fight.
   const draggingRef = useRef<Set<string>>(new Set());
+  // null = roam the full browser window (desktop). Otherwise a small {w,h} box
+  // the pets are confined to — mobile keeps them inside the console LCD.
+  const worldRef = useRef<{ w: number; h: number } | null>(null);
 
   // Persist on every change.
   useEffect(() => {
@@ -268,7 +280,9 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
       // Movement pauses entirely while the tab is hidden — no drifting or big
       // straight-line "catch-up" jump when you come back. Stats still advance.
       const moving = typeof document === 'undefined' || !document.hidden;
-      const w = window.innerWidth, h = window.innerHeight;
+      const world = worldRef.current; // null = full window, else a small LCD box
+      const w = world ? world.w : window.innerWidth;
+      const h = world ? world.h : window.innerHeight;
       setState((s) => {
         const flock = s.pets.filter(canMove); // pre-step positions for the herd
         const pets = s.pets.map((pet) => {
@@ -295,11 +309,15 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
           if (sn > 0) { const sl = Math.hypot(sepX, sepY) || 1; hx += (sepX / sl) * SEP_W; hy += (sepY / sl) * SEP_W; }
           hx += (Math.random() - 0.5) * 0.35; hy += (Math.random() - 0.5) * 0.35; // wander jitter
           let heading = Math.atan2(hy, hx);
-          const speed = (p.phase === 'amoeba' ? 8 : 13) * (now < (p.boostUntil ?? 0) ? 3.8 : 1);
+          // Confined worlds (mobile LCD) are tiny, so pets move slower there.
+          const speed = (p.phase === 'amoeba' ? 8 : 13) * (now < (p.boostUntil ?? 0) ? 3.8 : 1) * (world ? 0.45 : 1);
           let nx = p.x + Math.cos(heading) * speed;
           let ny = p.y + Math.sin(heading) * speed;
-          // Roam the whole browser window (edge margins clear the sticky header + edges).
-          const minX = 36, maxX = Math.max(60, w - 36), minY = 70, maxY = Math.max(110, h - 36);
+          // Bounds: a small margin inside the LCD box, or the whole window (with
+          // edge margins that clear the sticky header + screen edges) on desktop.
+          const m = world ? 20 : 0;
+          const minX = world ? m : 36, maxX = world ? w - m : Math.max(60, w - 36);
+          const minY = world ? m : 70, maxY = world ? h - m : Math.max(110, h - 36);
           if (nx < minX || nx > maxX) { heading = Math.PI - heading; nx = Math.max(minX, Math.min(maxX, nx)); }
           if (ny < minY || ny > maxY) { heading = -heading; ny = Math.max(minY, Math.min(maxY, ny)); }
           return { ...p, x: nx, y: ny, heading };
@@ -329,7 +347,9 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
     addEgg: useCallback(() => setState((s) => {
       // Only one egg at a time: must wait for the current egg to hatch.
       if (s.pets.length >= MAX_PETS || hasUnhatchedEgg(s.pets)) return s;
-      const egg = newEgg(s.pets.length); // birth order → hatch delay (1min/10min/1h…)
+      let egg = newEgg(s.pets.length); // birth order → hatch delay (1min/10min/1h…)
+      const world = worldRef.current; // confined? spawn the egg inside the box
+      if (world) egg = { ...egg, x: rand(20, world.w - 20), y: rand(20, world.h - 20) };
       return { ...s, pets: [...s.pets, egg], selectedId: egg.id, on: true };
     }), []),
     release: useCallback((id) => setState((s) => {
@@ -351,6 +371,7 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
       if (dragging) draggingRef.current.add(id);
       else draggingRef.current.delete(id);
     }, []),
+    setWorld: useCallback((world) => { worldRef.current = world; }, []),
   };
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;

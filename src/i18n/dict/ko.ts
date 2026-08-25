@@ -44,6 +44,7 @@ export const ko = {
   'tama.hint': '펫을 탭·드래그하면 놀기 · 💩을 탭하면 청소',
   'tama.cleanPoop': '탭해서 청소',
   'tama.waitHatch': '알이 부화할 때까지 기다려요',
+  'tama.intro': '펫 알이 부화하고 있어요 — 눌러서 만나보세요! 🐣',
   'tama.statHunger': '배고픔 — 밥을 주면 채워져요',
   'tama.statHappiness': '행복 — 놀아주면 올라요',
   'tama.statHygiene': '청결 — 똥을 탭하면 깨끗해져요',

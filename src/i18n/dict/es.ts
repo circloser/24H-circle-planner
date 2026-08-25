@@ -38,6 +38,7 @@ export const es: Record<TKey, string> = {
   'tama.hint': 'Toca o arrastra la mascota para jugar · toca 💩 para limpiar',
   'tama.cleanPoop': 'Tocar para limpiar',
   'tama.waitHatch': 'Espera a que eclosione el huevo',
+  'tama.intro': 'Un huevo está eclosionando: ¡tócalo para conocerlo! 🐣',
   'tama.statHunger': 'Hambre — alimenta para rellenar',
   'tama.statHappiness': 'Felicidad — juega para subir',
   'tama.statHygiene': 'Higiene — toca 💩 para limpiar',

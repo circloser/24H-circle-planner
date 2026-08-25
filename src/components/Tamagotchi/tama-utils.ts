@@ -1,5 +1,10 @@
 import type { TKey } from '@/i18n/translations';
 
+/** Mobile LCD "terrarium" size (px). The pet world is confined to this box on
+ *  phones — the console LCD is rendered at exactly this size so pet coordinates
+ *  map 1:1 into it (see useTamagotchi.setWorld). */
+export const MOBILE_LCD = { w: 240, h: 150 };
+
 // ── Transient play/feed effects (floating emojis) ────────────────────────────
 export type TamaFxKind = 'heart' | 'yum';
 export const TAMA_FX_EVENT = 'tama-fx';

@@ -1,5 +1,6 @@
 import { PetArt } from './TamagotchiArt';
-import { formatHatch, fireTamaFx } from './tama-utils';
+import { MobileLcd } from './MobileLcd';
+import { formatHatch, fireTamaFx, MOBILE_LCD } from './tama-utils';
 import { useTamagotchi, MAX_PETS, type Pet } from '@/hooks/useTamagotchi';
 import { useTranslation } from '@/hooks/usePreferences';
 
@@ -41,7 +42,7 @@ function DeviceBtn({ label, title, onClick, disabled }: { label: string; title: 
   );
 }
 
-export function TamagotchiDevice() {
+export function TamagotchiDevice({ isMobile = false }: { isMobile?: boolean }) {
   const { pets, hygiene, selectedId, on, toggle, closeMenu, select, addEgg, release, feed, toggleSleep } = useTamagotchi();
   const { t } = useTranslation();
 
@@ -62,7 +63,8 @@ export function TamagotchiDevice() {
       role="dialog"
       aria-label={t('tama.title')}
       style={{
-        position: 'fixed', left: 16, bottom: 84, zIndex: 80, width: 216,
+        position: 'fixed', left: 16, bottom: 84, zIndex: 80,
+        width: isMobile ? MOBILE_LCD.w + 24 : 216,
         borderRadius: 26, padding: 12,
         background: '#ffffff',
         border: '3px solid #e5e7eb', boxShadow: '0 10px 26px rgba(0,0,0,0.22)',
@@ -119,7 +121,11 @@ export function TamagotchiDevice() {
         <span style={{ marginLeft: 'auto', fontSize: 10, color: '#9d174d', fontWeight: 700 }}>{pets.length}/{MAX_PETS}</span>
       </div>
 
-      {/* LCD screen */}
+      {/* LCD screen — on mobile it becomes a little terrarium the pets roam
+          inside (they don't wander the page); on desktop it shows the selected
+          pet's portrait (they roam the whole window instead). */}
+      {isMobile && <MobileLcd pets={pets} hygiene={hygiene} sleeping={sleeping} />}
+      {!isMobile && (
       <div style={{
         borderRadius: 16, padding: 10, minHeight: 92, display: 'grid', placeItems: 'center',
         background: sleeping ? '#20304a' : '#eceef1', border: '3px solid #cbd5e1',
@@ -146,6 +152,7 @@ export function TamagotchiDevice() {
           </div>
         )}
       </div>
+      )}
 
       {/* Stats — 2×2 donut rings; hover explains each + shows the value. Happiness
           & hygiene are raised by tapping the pet / its poop directly. */}
