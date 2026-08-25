@@ -15,10 +15,15 @@ import { writeFileSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { join } from 'path';
 import { launchPage, serveDist, wait } from '../e2e/_helpers.mjs';
+import deTpl from './i18n/de.mjs';
+import jaTpl from './i18n/ja.mjs';
 
 const ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..', '..');
 const OUT = join(ROOT, 'public', 'templates');
 const IMG = join(OUT, 'img');
+const ORIGIN = 'https://24houring.com';
+// Localized template routes (/{loc}/templates/…) beyond the ko/en default page.
+const LOCALES = { de: deTpl, ja: jaTpl };
 
 const hm = (s) => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
 
@@ -354,15 +359,16 @@ const HEAD_NAV = `
     </nav>
   </header>`;
 
-function shell({ title, desc, canonical, ogImage, jsonld, body }) {
+function shell({ title, desc, canonical, ogImage, jsonld, body, lang = 'ko', hreflang = '' }) {
   return `<!doctype html>
-<html lang="ko">
+<html lang="${lang}">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>${title}</title>
 <meta name="description" content="${desc}" />
 <link rel="canonical" href="${canonical}" />
+${hreflang}
 <meta name="robots" content="index, follow" />
 <meta property="og:title" content="${title}" />
 <meta property="og:description" content="${desc}" />
@@ -483,7 +489,7 @@ ${tipsEn}
       </div>
     </div>`;
 
-  return shell({ title: `${t.ko.title} · 24Houring`, desc: t.ko.desc, canonical, ogImage: img, jsonld, body });
+  return shell({ title: `${t.ko.title} · 24Houring`, desc: t.ko.desc, canonical, ogImage: img, jsonld, body, hreflang: hreflangFor(t.slug) });
 }
 
 function hubPage() {
@@ -527,8 +533,132 @@ ${cards}
     desc: '방학 계획표, 생활 계획표, 하루 일과표, 미라클모닝, 직장인·수험생·프리랜서 하루 시간표 템플릿 모음. 원형 시간표로 미리 보고 클릭 한 번으로 가져와 수정하세요.',
     canonical: 'https://24houring.com/templates/',
     ogImage: `https://24houring.com/templates/img/${TEMPLATES[0].slug}.png`,
-    jsonld, body,
+    jsonld, body, hreflang: hreflangFor(''),
   });
+}
+
+// ─── Localized template routes (/{loc}/templates/…) — single-language SEO ─────
+
+function hreflangFor(slug) {
+  const path = slug ? `templates/${slug}` : 'templates/';
+  const href = (loc) => (loc === 'root' ? `${ORIGIN}/${path}` : `${ORIGIN}/${loc}/${path}`);
+  return [
+    `<link rel="alternate" hreflang="ko" href="${href('root')}" />`,
+    `<link rel="alternate" hreflang="en" href="${href('root')}" />`,
+    ...Object.keys(LOCALES).map((l) => `<link rel="alternate" hreflang="${l}" href="${href(l)}" />`),
+    `<link rel="alternate" hreflang="x-default" href="${href('root')}" />`,
+  ].join('\n');
+}
+
+function locNav(loc, c) {
+  return `
+  <header class="site">
+    <a class="logo" href="/${loc}/">24Hou<b>ring</b></a>
+    <nav class="site-nav">
+      <a href="/${loc}/templates/">${c.hubTitle}</a>
+      <a href="/${loc}/">Home</a>
+    </nav>
+  </header>`;
+}
+function locFoot(loc) {
+  return `
+  <footer class="site">
+    <nav>
+      <a href="/${loc}/">Home</a>
+      <a href="/${loc}/templates/">Templates</a>
+      <a href="/about">About</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/contact">Contact</a>
+    </nav>
+    <p class="copy">© 2026 Circloser · 24houring.com</p>
+  </footer>`;
+}
+function locShell({ title, desc, canonical, ogImage, jsonld, body, lang, hreflang, nav, foot }) {
+  return `<!doctype html>
+<html lang="${lang}">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>${title}</title>
+<meta name="description" content="${desc}" />
+<link rel="canonical" href="${canonical}" />
+${hreflang}
+<meta name="robots" content="index, follow" />
+<meta property="og:title" content="${title}" />
+<meta property="og:description" content="${desc}" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="${canonical}" />
+<meta property="og:image" content="${ogImage}" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="stylesheet" href="/guides/guide.css" />
+${jsonld}
+</head>
+<body>
+<div class="wrap">${nav}
+  <main class="article">
+${body}
+  </main>${foot}
+</div>
+</body>
+</html>
+`;
+}
+
+function localeTemplatePage(t, loc) {
+  const tr = LOCALES[loc], c = tr.chrome, tt = tr.templates[t.slug];
+  const canonical = `${ORIGIN}/${loc}/templates/${t.slug}`;
+  const img = `${ORIGIN}/templates/img/${t.slug}.png`;
+  const p = importCode(t), d = viewCode(t);
+  const jsonld = `<script type="application/ld+json">
+${JSON.stringify({ '@context': 'https://schema.org', '@type': 'Article', headline: tt.title, description: tt.desc, inLanguage: loc, image: img, datePublished: '2026-08-25', dateModified: '2026-08-25', author: { '@type': 'Organization', name: '24Houring', url: `${ORIGIN}/` }, publisher: { '@type': 'Organization', name: '24Houring', url: `${ORIGIN}/` }, mainEntityOfPage: canonical }, null, 1)}
+</${'script'}>`;
+  const tips = tt.tips.map((x) => `      <li>${x}</li>`).join('\n');
+  const body = `    <p class="crumb"><a href="/${loc}/templates/">${c.allTemplates}</a></p>
+    <h1>${tt.title}</h1>
+    <p class="lead">${tt.desc}</p>
+    <p style="text-align:center;margin:18px 0">
+      <img src="/templates/img/${t.slug}.png" alt="${tt.title}" width="520" style="max-width:100%;height:auto;border-radius:16px" loading="lazy" />
+    </p>
+    <p style="text-align:center;margin:0 0 6px"><a class="btn" href="/${loc}/#p=${p}">${c.startCta}</a></p>
+    <p style="text-align:center;margin:0 0 22px;font-size:13px"><a href="/s#d=${d}" style="color:#6b7280">${c.preview}</a><span style="color:#9aa3b2"> · </span><span style="color:#9aa3b2">${c.editable}</span></p>
+    <h2>${c.scheduleH}</h2>
+    <ul>
+${schedList(t)}
+    </ul>
+    <h2>${c.tipsH}</h2>
+    <ul>
+${tips}
+    </ul>
+    <div class="cta card">
+      <p style="margin:0 0 4px"><strong>${c.makeYoursT}</strong></p>
+      <p style="margin:0">${c.makeYoursB}</p>
+      <p style="margin:8px 0 0"><a class="btn" href="/${loc}/#p=${p}">${c.loadCta}</a></p>
+    </div>`;
+  return locShell({ title: `${tt.title} · 24Houring`, desc: tt.desc, canonical, ogImage: img, jsonld, body, lang: loc, hreflang: hreflangFor(t.slug), nav: locNav(loc, c), foot: locFoot(loc) });
+}
+
+function localeHubPage(loc) {
+  const tr = LOCALES[loc], c = tr.chrome;
+  const canonical = `${ORIGIN}/${loc}/templates/`;
+  const cards = TEMPLATES.map((t) => `      <a class="gcard" href="/${loc}/templates/${t.slug}">
+        <img src="/templates/img/${t.slug}.png" alt="${tr.templates[t.slug].title}" width="240" style="width:100%;height:auto;border-radius:10px;margin-bottom:8px" loading="lazy" />
+        <h3>${tr.templates[t.slug].title}</h3>
+        <p>${tr.templates[t.slug].desc.split(/[.。]/)[0]}.</p>
+      </a>`).join('\n');
+  const jsonld = `<script type="application/ld+json">
+${JSON.stringify({ '@context': 'https://schema.org', '@type': 'CollectionPage', name: c.hubTitle, url: canonical, description: c.hubDesc, inLanguage: loc }, null, 1)}
+</${'script'}>`;
+  const body = `    <h1>${c.hubTitle}</h1>
+    <p class="lead">${c.hubLead}</p>
+    <div class="grid">
+${cards}
+    </div>
+    <div class="cta card">
+      <p style="margin:0 0 4px"><strong>${c.blankT}</strong></p>
+      <p style="margin:0">${c.blankB}</p>
+      <p style="margin:8px 0 0"><a class="btn" href="/${loc}/">${c.openCta}</a></p>
+    </div>`;
+  return locShell({ title: `${c.hubTitle} · 24Houring`, desc: c.hubDesc, canonical, ogImage: `${ORIGIN}/templates/img/${TEMPLATES[0].slug}.png`, jsonld, body, lang: loc, hreflang: hreflangFor(''), nav: locNav(loc, c), foot: locFoot(loc) });
 }
 
 // ─── Screenshots via the /s read-only viewer ─────────────────────────────────
@@ -562,4 +692,13 @@ for (const t of TEMPLATES) {
 }
 writeFileSync(join(OUT, 'index.html'), hubPage());
 console.log('page  index.html');
-console.log(`done — ${TEMPLATES.length} templates`);
+
+// Localized template routes (/{loc}/templates/…) reusing the same screenshots.
+for (const loc of Object.keys(LOCALES)) {
+  const dir = join(ROOT, 'public', loc, 'templates');
+  mkdirSync(dir, { recursive: true });
+  for (const t of TEMPLATES) writeFileSync(join(dir, `${t.slug}.html`), localeTemplatePage(t, loc));
+  writeFileSync(join(dir, 'index.html'), localeHubPage(loc));
+  console.log(`locale ${loc}: ${TEMPLATES.length} pages + hub`);
+}
+console.log(`done — ${TEMPLATES.length} templates × ${1 + Object.keys(LOCALES).length} locales`);
