@@ -43,7 +43,7 @@ import { DayBar } from '@/components/Days/DayBar';
 import { AddToHomeDialog, type BeforeInstallPromptEvent } from '@/components/AddToHomeDialog/AddToHomeDialog';
 import { AboutDialog } from '@/components/About/AboutDialog';
 import { requestPersistentStorage } from '@/lib/persistent-storage';
-import { useTranslation, useChartView } from '@/hooks/usePreferences';
+import { useTranslation, useChartView, usePreferences } from '@/hooks/usePreferences';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useDayChange } from '@/hooks/useDayChange';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
@@ -105,6 +105,7 @@ function markOnboarded(): void {
 
 function App() {
   const present = useStoreSelector((s) => s.history.present);
+  const { prefs } = usePreferences();
   const locked = useStoreSelector((s) => s.locked);
   const diaryDate = useStoreSelector((s) => s.diaryDate);
   const dispatch = useStoreDispatch();
@@ -523,10 +524,10 @@ function App() {
                 {t('mobile.editHint')}
               </p>
             </div>
-            <MobileMemoSection />
+            {prefs.showMemos && <MobileMemoSection />}
             <MobileClockSection />
             {/* News headlines — a plain section at the very bottom on mobile. */}
-            <NewsWidget isMobile />
+            {prefs.showNews && <NewsWidget isMobile />}
           </>
         )}
       </main>
@@ -673,12 +674,12 @@ function App() {
           (bottom-left). On mobile these move into the stacked sections under the
           chart (MobileMemoSection / MobileClockSection inside <main>). */}
       <DiaryViewSync />
-      {!isMobile && <MemoLayer />}
+      {!isMobile && prefs.showMemos && <MemoLayer />}
       {!isMobile && <GoalsWidget onSetup={() => setGoalsOpen(true)} />}
       {!isMobile && <ClockToolsLayer />}
       {/* Keyword news headlines — desktop: floating FAB; mobile: a bottom
           section inside <main> (above). No AI tokens (server-side RSS). */}
-      {!isMobile && <NewsWidget />}
+      {!isMobile && prefs.showNews && <NewsWidget />}
       {/* Background pet — desktop only (removed on mobile). */}
       {!isMobile && (
         <TamagotchiProvider>

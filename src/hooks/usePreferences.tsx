@@ -72,6 +72,8 @@ export interface Preferences {
   bgImage: string | null; // data URL, used when bgType === 'image'
   gradient: GradientBg; // start/middle/end + angle, used when bgType === 'gradient'
   showIcons: boolean; // global toggle for slice icons in the chart
+  showMemos: boolean; // show the floating post-it memo layer (desktop)
+  showNews: boolean; // show the floating news widget (desktop)
   showNowLine: boolean; // current-time indicator line
   nowLineColor: string; // colour of the current-time line
   nowLineWidth: number; // stroke width of the current-time line
@@ -117,6 +119,8 @@ const DEFAULT_PREFS: Preferences = {
   fontScale: 1,
   background: 'none',
   showIcons: true,
+  showMemos: true,
+  showNews: true,
   showNowLine: true,
   nowLineColor: NOW_LINE_DEFAULT_COLOR,
   nowLineWidth: NOW_LINE_DEFAULT_WIDTH,

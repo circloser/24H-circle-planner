@@ -7,6 +7,10 @@ import {
 } from '@/hooks/usePreferences';
 import { useTranslation } from '@/hooks/usePreferences';
 import { makeDragStart, spawnNearCentre, type Pos } from '@/components/ClockTools/clock-utils';
+import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
+import { useClockTools } from '@/components/ClockTools/useClockTools';
+import { CLOCKTOOLS_SYNC_EVENT } from '@/lib/sync/widgetSync';
+import { COLOR_THEMES } from '@/data/color-themes';
 
 interface DesignMagicianProps {
   open: boolean;
@@ -24,8 +28,34 @@ interface DesignMagicianProps {
  */
 export function DesignMagician({ open, onClose, onFinish }: DesignMagicianProps) {
   const { prefs, setPreference } = usePreferences();
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
+  const dispatch = useStoreDispatch();
+  const present = useStoreSelector((s) => s.history.present);
+  const clock = useClockTools();
   const [step, setStep] = useState(0);
+
+  // Recolour the current schedule to a palette (slice[i] → colors[i % n]).
+  const applyTheme = (colors: string[]) => {
+    dispatch({ type: 'LOAD_SCHEDULE', schedule: { ...present, slices: present.slices.map((s, i) => ({ ...s, color: colors[i % colors.length] })) } });
+  };
+  // Our useClockTools is a separate instance from ClockToolsLayer's — after a
+  // toggle, nudge the shared sync event (once it's persisted) so the live layer
+  // adopts the change immediately.
+  const syncClocks = () => window.setTimeout(() => window.dispatchEvent(new Event(CLOCKTOOLS_SYNC_EVENT)), 0);
+  const clockOn = clock.state.clocks.length > 0;
+  const weatherOn = clock.state.weathers.length > 0;
+
+  /** A reusable On/Off pair. */
+  const onOff = (on: boolean, set: (v: boolean) => void) => (
+    <div className="flex gap-1.5">
+      {[true, false].map((v) => (
+        <button key={String(v)} type="button" onClick={() => set(v)} aria-pressed={on === v}
+          className="opt-chip flex-1 rounded-md px-2 py-1.5 text-xs">
+          {v ? t('magician.on') : t('magician.off')}
+        </button>
+      ))}
+    </div>
+  );
   // The panel drifts to a new corner each step so it never hides what changed.
   const spots: Pos[] = [
     spawnNearCentre(-300, 160, 300, 260), spawnNearCentre(300, -180, 300, 260),
@@ -41,6 +71,23 @@ export function DesignMagician({ open, onClose, onFinish }: DesignMagicianProps)
   const swatch = (from: string, via: string, to: string) => `linear-gradient(135deg, ${from}, ${via}, ${to})`;
 
   const steps = [
+    // ── Colour theme (recolours the schedule) ────────────────────────────────
+    {
+      title: t('magician.stepTheme'),
+      body: (
+        <div className="grid grid-cols-2 gap-1.5">
+          {COLOR_THEMES.map((th) => (
+            <button key={th.id} type="button" onClick={() => applyTheme(th.colors)}
+              className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1.5 text-xs hover:ring-1 hover:ring-primary">
+              <span className="flex gap-0.5">
+                {th.colors.slice(0, 4).map((c, i) => <span key={i} className="h-3 w-3 rounded-full" style={{ background: c }} />)}
+              </span>
+              <span className="truncate">{lang === 'ko' ? th.ko : th.en}</span>
+            </button>
+          ))}
+        </div>
+      ),
+    },
     // ── Background ──────────────────────────────────────────────────────────
     {
       title: t('magician.stepBg'),
@@ -140,6 +187,12 @@ export function DesignMagician({ open, onClose, onFinish }: DesignMagicianProps)
         </div>
       ),
     },
+    // ── Widget on/off ─────────────────────────────────────────────────────────
+    { title: t('magician.stepClock'), body: onOff(clockOn, (v) => { if (v && !clockOn) clock.addClock(); else if (!v) clock.state.clocks.forEach((c) => clock.removeClock(c.id)); syncClocks(); }) },
+    { title: t('magician.stepCalendar'), body: onOff(clock.state.calendar.on, (v) => { if (v !== clock.state.calendar.on) clock.toggle('calendar'); syncClocks(); }) },
+    { title: t('magician.stepWeather'), body: onOff(weatherOn, (v) => { if (v && !weatherOn) clock.addWeather(); else if (!v) clock.state.weathers.forEach((w) => clock.removeWeather(w.id)); syncClocks(); }) },
+    { title: t('magician.stepMemos'), body: onOff(prefs.showMemos, (v) => setPreference('showMemos', v)) },
+    { title: t('magician.stepNews'), body: onOff(prefs.showNews, (v) => setPreference('showNews', v)) },
   ];
 
   const last = step === steps.length - 1;
