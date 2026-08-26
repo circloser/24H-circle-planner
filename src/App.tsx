@@ -619,6 +619,7 @@ function App() {
       <WelcomeOverlay
         open={welcomeOpen}
         onOpenChange={(o) => { if (!o) dismissWelcome(); }}
+        onLoadPreset={(name) => handlePresetLoad(name, null)}
         onPickPreset={() => setPresetOpen(true)}
         isMobile={isMobile}
       />
