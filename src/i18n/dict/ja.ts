@@ -48,6 +48,7 @@ export const ja: Record<TKey, string> = {
   'news.empty': '国とキーワードを設定すると毎日の見出しが表示されます',
   'news.error': 'ニュースを読み込めませんでした',
   'news.none': '見出しが見つかりません',
+  'news.settings': '設定',
   'tama.statHunger': '空腹 — ごはんで回復',
   'tama.statHappiness': '幸福 — 遊ぶと上がる',
   'tama.statHygiene': '清潔 — 💩をタップで掃除',

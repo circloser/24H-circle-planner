@@ -48,6 +48,7 @@ export const ru: Record<TKey, string> = {
   'news.empty': 'Выберите страну и ключевое слово, чтобы видеть заголовки дня',
   'news.error': 'Не удалось загрузить новости',
   'news.none': 'Заголовки не найдены',
+  'news.settings': 'Настройки',
   'tama.statHunger': 'Голод — покормите, чтобы восполнить',
   'tama.statHappiness': 'Счастье — играйте, чтобы поднять',
   'tama.statHygiene': 'Чистота — нажмите 💩, чтобы убрать',

@@ -48,6 +48,7 @@ export const es: Record<TKey, string> = {
   'news.empty': 'Elige país y palabra clave para ver titulares diarios',
   'news.error': 'No se pudieron cargar las noticias',
   'news.none': 'Sin titulares',
+  'news.settings': 'Ajustes',
   'tama.statHunger': 'Hambre — alimenta para rellenar',
   'tama.statHappiness': 'Felicidad — juega para subir',
   'tama.statHygiene': 'Higiene — toca 💩 para limpiar',

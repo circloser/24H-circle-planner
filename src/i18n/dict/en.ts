@@ -51,6 +51,7 @@ export const en: Record<TKey, string> = {
   'news.empty': 'Set a country and keyword to see daily headlines',
   'news.error': 'Couldn’t load news',
   'news.none': 'No headlines found',
+  'news.settings': 'Settings',
   'tama.statHunger': 'Hunger — feed to refill',
   'tama.statHappiness': 'Happiness — play to raise',
   'tama.statHygiene': 'Hygiene — tap 💩 to clean',

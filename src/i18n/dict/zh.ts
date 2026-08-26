@@ -48,6 +48,7 @@ export const zh: Record<TKey, string> = {
   'news.empty': '设置国家和关键词即可查看每日新闻标题',
   'news.error': '无法加载新闻',
   'news.none': '未找到标题',
+  'news.settings': '设置',
   'tama.statHunger': '饥饿 — 喂食可恢复',
   'tama.statHappiness': '幸福 — 玩耍可提升',
   'tama.statHygiene': '清洁 — 点按 💩 清理',

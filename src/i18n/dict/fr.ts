@@ -48,6 +48,7 @@ export const fr: Record<TKey, string> = {
   'news.empty': 'Choisissez un pays et un mot-clé pour voir les titres du jour',
   'news.error': 'Impossible de charger les actualités',
   'news.none': 'Aucun titre trouvé',
+  'news.settings': 'Réglages',
   'tama.statHunger': 'Faim — nourrissez pour remplir',
   'tama.statHappiness': 'Bonheur — jouez pour augmenter',
   'tama.statHygiene': 'Hygiène — touchez 💩 pour nettoyer',

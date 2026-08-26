@@ -1,7 +1,34 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Newspaper, X, Search, RefreshCw, Loader2, ExternalLink } from 'lucide-react';
+import { Newspaper, X, Search, RefreshCw, Loader2, Settings } from 'lucide-react';
 import { useTranslation } from '@/hooks/usePreferences';
 import { makeDragStart, anchoredStyle, spawnNearCentre, clampOffset, type Pos } from '@/components/ClockTools/clock-utils';
+
+/** A single-line headline that, on hover, scrolls left to reveal the part cut
+ *  off by the ellipsis (marquee), then eases back on leave. Duration scales with
+ *  how much is hidden. */
+function MarqueeTitle({ text }: { text: string }) {
+  const inner = useRef<HTMLSpanElement>(null);
+  function onEnter() {
+    const el = inner.current;
+    if (!el) return;
+    const overflow = el.scrollWidth - (el.parentElement?.clientWidth ?? el.scrollWidth);
+    if (overflow > 4) {
+      el.style.transition = `transform ${Math.max(1.2, overflow / 45).toFixed(2)}s linear`;
+      el.style.transform = `translateX(-${overflow}px)`;
+    }
+  }
+  function onLeave() {
+    const el = inner.current;
+    if (!el) return;
+    el.style.transition = 'transform .3s ease';
+    el.style.transform = 'translateX(0)';
+  }
+  return (
+    <span className="block overflow-hidden" onMouseEnter={onEnter} onMouseLeave={onLeave}>
+      <span ref={inner} className="inline-block whitespace-nowrap align-bottom will-change-transform">{text}</span>
+    </span>
+  );
+}
 
 const POS_KEY = '24h-circle-planner.newswidget';
 const CFG_KEY = '24h-news.config';
@@ -60,6 +87,9 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
   const [hover, setHover] = useState(false);
   const [cfg, setCfg] = useState<Config>(loadConfig);
   const [draft, setDraft] = useState<Config>(cfg);
+  // Country + keyword live behind a settings toggle (gear); open by default only
+  // until the user has configured a keyword.
+  const [showSettings, setShowSettings] = useState<boolean>(() => !loadConfig().q.trim());
   const cached = loadCache();
   const [items, setItems] = useState<NewsItem[]>(cached?.items ?? []);
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle');
@@ -112,6 +142,7 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
     const next = { q: draft.q.trim(), country: draft.country };
     setCfg(next);
     try { localStorage.setItem(CFG_KEY, JSON.stringify(next)); } catch { /* */ }
+    if (next.q) setShowSettings(false); // collapse to the clean headline list
     void fetchNews(next.q, next.country);
   }
 
@@ -131,6 +162,12 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
             <RefreshCw className={`h-3.5 w-3.5 text-muted-foreground ${status === 'loading' ? 'animate-spin' : ''}`} />
           </button>
         )}
+        {/* Settings (country + keyword) live behind this gear. */}
+        <button type="button" data-no-drag aria-label={t('news.settings')} title={t('news.settings')}
+          aria-pressed={showSettings} onClick={() => { setDraft(cfg); setShowSettings((v) => !v); }}
+          className="grid h-6 w-6 place-items-center rounded transition-colors hover:bg-black/10">
+          <Settings className={`h-3.5 w-3.5 ${showSettings ? 'text-foreground' : 'text-muted-foreground'}`} />
+        </button>
         {!inline && (
           <button type="button" data-no-drag aria-label={t('common.cancel')} onClick={() => setOpen(false)}
             className="grid h-6 w-6 place-items-center rounded transition-colors hover:bg-black/10">
@@ -139,34 +176,36 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
         )}
       </div>
 
-      {/* Config: country + keyword. */}
-      <form data-no-drag onSubmit={applySearch} className="flex items-center gap-1.5 px-3 pb-2 pt-2">
-        <select
-          value={draft.country}
-          onChange={(e) => setDraft((d) => ({ ...d, country: e.target.value }))}
-          aria-label={t('news.country')}
-          className="shrink-0 rounded-md px-1.5 py-1.5 text-xs"
-          style={inputStyle}
-        >
-          {COUNTRIES.map((c) => <option key={c} value={c}>{countryName(c)}</option>)}
-        </select>
-        <input
-          type="text"
-          value={draft.q}
-          onChange={(e) => setDraft((d) => ({ ...d, q: e.target.value }))}
-          placeholder={t('news.keyword')}
-          aria-label={t('news.keyword')}
-          className="min-w-0 flex-1 rounded-md px-2 py-1.5 text-sm"
-          style={inputStyle}
-        />
-        <button type="submit" aria-label={t('news.search')} title={t('news.search')}
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-md transition-colors hover:bg-black/10" style={inputStyle}>
-          <Search className="h-4 w-4" />
-        </button>
-      </form>
+      {/* Config: country + keyword — only when the gear is on. */}
+      {showSettings && (
+        <form data-no-drag onSubmit={applySearch} className="flex items-center gap-1.5 px-3 pb-1 pt-2">
+          <select
+            value={draft.country}
+            onChange={(e) => setDraft((d) => ({ ...d, country: e.target.value }))}
+            aria-label={t('news.country')}
+            className="shrink-0 rounded-md px-1.5 py-1.5 text-xs"
+            style={inputStyle}
+          >
+            {COUNTRIES.map((c) => <option key={c} value={c}>{countryName(c)}</option>)}
+          </select>
+          <input
+            type="text"
+            value={draft.q}
+            onChange={(e) => setDraft((d) => ({ ...d, q: e.target.value }))}
+            placeholder={t('news.keyword')}
+            aria-label={t('news.keyword')}
+            className="min-w-0 flex-1 rounded-md px-2 py-1.5 text-sm"
+            style={inputStyle}
+          />
+          <button type="submit" aria-label={t('news.search')} title={t('news.search')}
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-md transition-colors hover:bg-black/10" style={inputStyle}>
+            <Search className="h-4 w-4" />
+          </button>
+        </form>
+      )}
 
-      {/* Headlines. */}
-      <div className={`overflow-y-auto px-1.5 pb-2 ${inline ? 'max-h-[60vh]' : 'min-h-0 flex-1'}`}>
+      {/* Headlines — single-line titles (marquee on hover), no scrollbar. */}
+      <div className="px-1.5 pb-2 pt-1">
         {!cfg.q.trim() ? (
           <p className="px-2 py-6 text-center text-xs text-muted-foreground">{t('news.empty')}</p>
         ) : status === 'loading' && items.length === 0 ? (
@@ -184,14 +223,12 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
                   href={it.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex gap-2 rounded-lg px-2 py-2 transition-colors hover:bg-black/[0.06]"
+                  className="group flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-black/[0.06]"
                 >
-                  <span className="w-4 shrink-0 pt-0.5 text-right text-[11px] tabular-nums text-muted-foreground">{i + 1}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[13px] leading-snug text-foreground">{it.title}</span>
-                    {it.source && <span className="mt-0.5 block truncate text-[10px] text-muted-foreground">{it.source}</span>}
+                  <span className="w-4 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">{i + 1}</span>
+                  <span className="min-w-0 flex-1 text-[13px] leading-snug text-foreground">
+                    <MarqueeTitle text={it.title} />
                   </span>
-                  <ExternalLink className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
                 </a>
               </li>
             ))}
@@ -219,15 +256,19 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
       {open && (
         <div
           data-news-card="1"
+          data-hover={hover ? '1' : '0'}
           onPointerDown={makeDragStart(pos, setPos)}
           onPointerMove={() => { if (!hover) setHover(true); }}
           onPointerLeave={() => setHover(false)}
-          className="fixed z-30 flex max-h-[68vh] w-[320px] cursor-grab touch-none flex-col overflow-hidden rounded-xl active:cursor-grabbing"
+          className="fixed z-30 w-[300px] cursor-grab touch-none overflow-hidden rounded-xl active:cursor-grabbing"
           style={{
             ...anchoredStyle(pos.x, pos.y),
-            backgroundColor: 'hsl(var(--surface))',
-            border: `1px solid ${hover ? 'hsl(var(--border))' : 'hsl(var(--border) / 0.7)'}`,
-            boxShadow: hover ? '0 20px 25px -5px rgb(0 0 0 / 0.14), 0 8px 10px -6px rgb(0 0 0 / 0.12)' : '0 10px 20px -8px rgb(0 0 0 / 0.12)',
+            // Transparent at rest like the other floating widgets; on hover the
+            // same surface + border + shadow so the list is easy to read.
+            backgroundColor: hover ? 'hsl(var(--surface) / 0.92)' : 'transparent',
+            border: `1px solid ${hover ? 'hsl(var(--border))' : 'transparent'}`,
+            boxShadow: hover ? '0 20px 25px -5px rgb(0 0 0 / 0.14), 0 8px 10px -6px rgb(0 0 0 / 0.12)' : 'none',
+            transition: 'background-color 120ms ease',
           }}
         >
           {panel(false)}

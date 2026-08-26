@@ -51,6 +51,7 @@ export const de: Record<TKey, string> = {
   'news.empty': 'Land und Stichwort wählen, um tägliche Schlagzeilen zu sehen',
   'news.error': 'Nachrichten konnten nicht geladen werden',
   'news.none': 'Keine Schlagzeilen gefunden',
+  'news.settings': 'Einstellungen',
   'tama.statHunger': 'Hunger — füttern zum Auffüllen',
   'tama.statHappiness': 'Glück — spielen zum Steigern',
   'tama.statHygiene': 'Sauberkeit — 💩 antippen zum Putzen',

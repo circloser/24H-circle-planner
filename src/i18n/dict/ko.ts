@@ -54,6 +54,7 @@ export const ko = {
   'news.empty': '국가와 키워드를 설정하면 매일 뉴스 제목을 보여드려요',
   'news.error': '뉴스를 불러오지 못했어요',
   'news.none': '검색 결과가 없어요',
+  'news.settings': '설정',
   'tama.statHunger': '배고픔 — 밥을 주면 채워져요',
   'tama.statHappiness': '행복 — 놀아주면 올라요',
   'tama.statHygiene': '청결 — 똥을 탭하면 깨끗해져요',
