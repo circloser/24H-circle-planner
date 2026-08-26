@@ -948,8 +948,11 @@ const NEWS_MARKETS: Record<string, string> = {
 function decodeEntities(s: string): string {
   return s
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
-    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
-    .replace(/&#0?39;/g, "'").replace(/&apos;/g, "'").replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+    // Numeric HTML entities (common in Bing CJK titles, e.g. &#183; → ·).
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => { try { return String.fromCodePoint(parseInt(h, 16)); } catch { return _; } })
+    .replace(/&#(\d+);/g, (_, n) => { try { return String.fromCodePoint(+n); } catch { return _; } })
+    .replace(/&amp;/g, '&') // last, so decoded entities aren't re-decoded
     .trim();
 }
 
@@ -1005,7 +1008,7 @@ async function handleNews(request: Request, env: Env, ctx?: Waiter): Promise<Res
   const freshKey = new Request(base);
   const staleKey = new Request(base + '#stale');
   const hit = await cache.match(freshKey);
-  if (hit && url.searchParams.get('debug') !== '1') return hit;
+  if (hit) return hit;
 
   const feed = `https://www.bing.com/news/search?q=${encodeURIComponent(q)}&format=RSS&setmkt=${mkt}`;
   const headers = {
@@ -1013,18 +1016,12 @@ async function handleNews(request: Request, env: Env, ctx?: Waiter): Promise<Res
     'accept': 'application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.8',
   };
   let items: NewsItem[] = [];
-  let upstreamStatus = 0;
   for (let attempt = 0; attempt < 3; attempt++) {
     if (attempt) await new Promise((r) => setTimeout(r, 300 * attempt));
     try {
       const res = await fetch(feed, { headers });
-      upstreamStatus = res.status;
       if (res.ok) { items = parseRss(await res.text()); if (items.length) break; }
     } catch { /* retry */ }
-  }
-
-  if (url.searchParams.get('debug') === '1') {
-    return json({ q, country, mkt, feed, upstreamStatus, itemCount: items.length }, 200, { 'cache-control': 'no-store' });
   }
 
   if (items.length) {
