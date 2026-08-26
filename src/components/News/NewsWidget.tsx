@@ -243,7 +243,7 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
     return (
       <section
         data-news-card="1"
-        className="mt-4 flex flex-col overflow-hidden rounded-xl border border-border bg-surface"
+        className="mt-4 w-full max-w-full overflow-hidden rounded-xl border border-border bg-surface"
       >
         {panel(true)}
       </section>
