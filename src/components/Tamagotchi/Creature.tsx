@@ -17,7 +17,7 @@ function stateGlyph(p: Pet, hygiene: number): string | null {
 }
 
 export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
-  const { select, play, moveTo, setDragging, menuOpen, hygiene } = useTamagotchi();
+  const { select, play, moveTo, setDragging, toggleSleep, menuOpen, hygiene } = useTamagotchi();
   const { t } = useTranslation();
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
   const [reacting, setReacting] = useState(false); // brief happy wiggle after a play
@@ -45,6 +45,19 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
   function onPointerDown(e: React.PointerEvent) {
     if (pet.phase === 'dead') { select(pet.id); return; }
     e.preventDefault();
+    // Playful dodge: ~20% of grab attempts, an awake pet darts ~140px away
+    // instead of being caught (no drag starts).
+    if (pet.phase !== 'egg' && !pet.sleeping && Math.random() < 0.2) {
+      const ang = Math.random() * Math.PI * 2;
+      const w = window.innerWidth, h = window.innerHeight;
+      const tx = Math.max(36, Math.min(w - 36, pet.x + Math.cos(ang) * 140));
+      const ty = Math.max(70, Math.min(h - 36, pet.y + Math.sin(ang) * 140));
+      moveTo(pet.id, tx, ty);
+      setFlinging(true);
+      window.setTimeout(() => setFlinging(false), 480);
+      fireTamaFx(pet.x, pet.y - size / 2, 'heart');
+      return;
+    }
     (e.target as Element).setPointerCapture?.(e.pointerId);
     drag.current = { ox: e.clientX - pet.x, oy: e.clientY - pet.y, moved: false, lx: e.clientX, ly: e.clientY, lt: performance.now(), vx: 0, vy: 0 };
     setDragPos({ x: pet.x, y: pet.y });
@@ -100,11 +113,12 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
       return;
     }
 
-    // A plain tap (no drag) is how you play with it: select + play (happiness up,
-    // dash off), no-ops on eggs/dead/sleeping/low-energy.
+    // A plain tap (no drag): a sleeping pet is woken by the tap; otherwise it's
+    // how you play (select + play: happiness up, dash off).
     setDragPos(null);
     select(pet.id);
-    if (pet.phase !== 'egg' && pet.phase !== 'dead' && !pet.sleeping) {
+    if (pet.sleeping) { toggleSleep(pet.id); return; }
+    if (pet.phase !== 'egg' && pet.phase !== 'dead') {
       play(pet.id);
       fireTamaFx(end.x, end.y - size / 2, 'heart'); // floating hearts
       setReacting(true);

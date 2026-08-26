@@ -151,8 +151,9 @@ function advance(pet: Pet, now: number, dt: number): Pet {
   if (p.sleeping) p.energy = clamp(p.energy + ENERGY_RECOVER * dt);
   // Auto sleep when exhausted (stops moving, shows ⚡), auto-wake once fully
   // recharged → resumes activity.
+  // Exhausted → auto-nap. It recharges to full but STAYS asleep until the user
+  // taps it awake (no auto-wake).
   if (!p.sleeping && p.energy < LOW_ENERGY) p.sleeping = true;
-  else if (p.sleeping && p.energy >= 100) p.sleeping = false;
   // Overfeed bloat eases back toward normal size (live + offline catch-up).
   if ((p.bloat ?? 0) > 0) p.bloat = Math.max(0, (p.bloat ?? 0) - BLOAT_DECAY * dt);
 
