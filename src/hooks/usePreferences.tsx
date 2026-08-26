@@ -32,12 +32,14 @@ export type Background = (typeof BACKGROUNDS)[number];
 /** Which background mode is active (mutually exclusive). */
 export type BgType = 'pattern' | 'color' | 'image' | 'gradient';
 
-/** Custom multi-stop background gradient (start · middle · end + angle°). */
+/** Custom multi-stop background gradient (start · middle · end + angle°). Shape
+ *  is 'linear' (angled) or 'radial' (from the centre outwards). */
 export interface GradientBg {
   from: string;
   via: string;
   to: string;
   angle: number;
+  shape?: 'linear' | 'radial';
 }
 
 /** Ready-made soft gradients — kept light so chart labels stay readable over them. */
@@ -128,7 +130,7 @@ const DEFAULT_PREFS: Preferences = {
   bgType: 'pattern',
   bgColor: '#f4f5f7',
   bgImage: null,
-  gradient: { from: '#a1c4fd', via: '#c2e9fb', to: '#fbc2eb', angle: 135 },
+  gradient: { from: '#a1c4fd', via: '#c2e9fb', to: '#fbc2eb', angle: 135, shape: 'linear' },
 };
 
 const STORAGE_KEY = '24h-circle-planner.prefs';
@@ -218,7 +220,10 @@ function applyPrefs(prefs: Preferences): void {
   } else if (prefs.bgType === 'gradient') {
     const g = prefs.gradient;
     root.setAttribute('data-bg', 'gradient-fill');
-    root.style.setProperty('--app-bg-gradient', `linear-gradient(${g.angle}deg, ${g.from}, ${g.via}, ${g.to})`);
+    const css = g.shape === 'radial'
+      ? `radial-gradient(circle at 50% 50%, ${g.from}, ${g.via}, ${g.to})`
+      : `linear-gradient(${g.angle}deg, ${g.from}, ${g.via}, ${g.to})`;
+    root.style.setProperty('--app-bg-gradient', css);
     root.style.removeProperty('--app-bg-color');
     root.style.removeProperty('--app-bg-image');
   } else {

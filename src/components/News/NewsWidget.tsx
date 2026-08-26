@@ -91,6 +91,12 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
   const [hover, setHover] = useState(false);
   const [cfg, setCfg] = useState<Config>(loadConfig);
   const [draft, setDraft] = useState<Config>(cfg);
+  // Up to 3 separate keyword boxes; combined into a comma list the worker ORs.
+  const splitKw = (q: string): [string, string, string] => {
+    const p = q.split(',').map((s) => s.trim());
+    return [p[0] ?? '', p[1] ?? '', p[2] ?? ''];
+  };
+  const [kw, setKw] = useState<[string, string, string]>(() => splitKw(loadConfig().q));
   // Country + keyword live behind a settings toggle (gear); open by default only
   // until the user has configured a keyword.
   const [showSettings, setShowSettings] = useState<boolean>(() => !loadConfig().q.trim());
@@ -146,7 +152,8 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
 
   function applySearch(e: React.FormEvent) {
     e.preventDefault();
-    const next: Config = { q: draft.q.trim(), country: draft.country, intervalH: draft.intervalH ?? 24 };
+    const q = kw.map((s) => s.trim()).filter(Boolean).join(', ');
+    const next: Config = { q, country: draft.country, intervalH: draft.intervalH ?? 24 };
     setCfg(next);
     try { localStorage.setItem(CFG_KEY, JSON.stringify(next)); } catch { /* */ }
     if (next.q) setShowSettings(false); // collapse to the clean headline list
@@ -174,9 +181,9 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
             <RefreshCw className={`h-3.5 w-3.5 text-muted-foreground ${status === 'loading' ? 'animate-spin' : ''}`} />
           </button>
         )}
-        {/* Settings (country + keyword + interval) live behind this gear — always available. */}
+        {/* Settings (country + keyword + interval) behind this gear — hover-only. */}
         <button type="button" data-no-drag aria-label={t('news.settings')} title={t('news.settings')}
-          aria-pressed={showSettings} onClick={() => { setDraft(cfg); setShowSettings((v) => !v); }}
+          aria-pressed={showSettings} onClick={() => { setDraft(cfg); setKw(splitKw(cfg.q)); setShowSettings((v) => !v); }} style={hoverCtrl}
           className="grid h-6 w-6 place-items-center rounded transition-colors hover:bg-black/10">
           <Settings className={`h-3.5 w-3.5 ${showSettings ? 'text-foreground' : 'text-muted-foreground'}`} />
         </button>
@@ -213,17 +220,22 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
             </select>
           </div>
           <div className="flex items-center gap-1.5">
-            <input
-              type="text"
-              value={draft.q}
-              onChange={(e) => setDraft((d) => ({ ...d, q: e.target.value }))}
-              placeholder={t('news.keywordPh')}
-              aria-label={t('news.keyword')}
-              className="min-w-0 flex-1 rounded-md px-2 py-1.5 text-sm"
-              style={inputStyle}
-            />
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              {[0, 1, 2].map((i) => (
+                <input
+                  key={i}
+                  type="text"
+                  value={kw[i]}
+                  onChange={(e) => setKw((k) => { const n = [...k] as [string, string, string]; n[i] = e.target.value; return n; })}
+                  placeholder={`${t('news.keyword')} ${i + 1}`}
+                  aria-label={`${t('news.keyword')} ${i + 1}`}
+                  className="min-w-0 rounded-md px-2 py-1.5 text-sm"
+                  style={inputStyle}
+                />
+              ))}
+            </div>
             <button type="submit" aria-label={t('news.search')} title={t('news.search')}
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-md transition-colors hover:bg-black/10" style={inputStyle}>
+              className="grid h-8 w-8 shrink-0 place-items-center self-end rounded-md transition-colors hover:bg-black/10" style={inputStyle}>
               <Search className="h-4 w-4" />
             </button>
           </div>

@@ -118,7 +118,7 @@ export function TamagotchiLayer({ isMobile = false }: { isMobile?: boolean }) {
               title={t('tama.cleanPoop')}
               aria-label={t('tama.cleanPoop')}
               onClick={(e) => { e.stopPropagation(); removePoop(poop.id); }}
-              style={{ position: 'fixed', left: poop.x, top: poop.y, transform: 'translate(-50%,-50%)', zIndex: 69, color: '#7c5a3a', pointerEvents: 'auto', cursor: 'pointer', background: 'transparent', border: 'none', padding: 4, lineHeight: 0 }}
+              style={{ position: 'fixed', left: poop.x, top: poop.y, transform: 'translate(-50%,-50%)', zIndex: 19, color: '#7c5a3a', pointerEvents: 'auto', cursor: 'pointer', background: 'transparent', border: 'none', padding: 4, lineHeight: 0 }}
             >
               <PoopArt size={18} />
             </button>

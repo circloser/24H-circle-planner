@@ -100,12 +100,12 @@ export function ClockToolsLayer() {
 
       {/* Click-away backdrop for the popup menu. */}
       {menuOpen && (
-        <div className="fixed inset-0 z-20" onClick={() => setMenuOpen(false)} aria-hidden="true" />
+        <div className="fixed inset-0 z-[39]" onClick={() => setMenuOpen(false)} aria-hidden="true" />
       )}
 
       {/* Popup menu — stacked above the FAB (bottom-left). */}
       {menuOpen && (
-        <div className="fixed bottom-[76px] left-5 z-30 flex flex-col items-start gap-2">
+        <div className="fixed bottom-[76px] left-5 z-40 flex flex-col items-start gap-2">
           {/* Clock ADDS a window per click (multi-timezone) instead of toggling. */}
           <button
             type="button"

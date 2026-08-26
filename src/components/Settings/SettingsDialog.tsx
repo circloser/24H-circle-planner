@@ -112,7 +112,7 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
   };
 
   const selectGradientPreset = (p: (typeof GRADIENT_PRESETS)[number]) => {
-    setPreference('gradient', { from: p.from, via: p.via, to: p.to, angle: p.angle });
+    setPreference('gradient', { from: p.from, via: p.via, to: p.to, angle: p.angle, shape: prefs.gradient.shape ?? 'linear' });
     setPreference('bgType', 'gradient');
   };
   const setGradientStop = (stop: 'from' | 'via' | 'to', hex: string) => {
@@ -120,7 +120,11 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
     setPreference('bgType', 'gradient');
   };
   const setGradientAngle = (angle: number) => {
-    setPreference('gradient', { ...prefs.gradient, angle });
+    setPreference('gradient', { ...prefs.gradient, angle, shape: 'linear' });
+    setPreference('bgType', 'gradient');
+  };
+  const setGradientShape = (shape: 'linear' | 'radial') => {
+    setPreference('gradient', { ...prefs.gradient, shape });
     setPreference('bgType', 'gradient');
   };
   // CSS gradient angle: 0°=up, increasing clockwise. Arrow points toward the end colour.
@@ -616,24 +620,48 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
                     ),
                   )}
                 </div>
-                {/* Direction */}
+                {/* Shape: linear (angled) vs radial (from the centre). */}
                 <div className="flex items-center gap-2 pt-1">
-                  <span className="text-xs text-muted-foreground">{t('settings.gradDirection')}</span>
-                  <div className="flex flex-wrap gap-1">
-                    {GRAD_DIRECTIONS.map(([angle, arrow]) => (
-                      <button
-                        key={angle}
-                        type="button"
-                        onClick={() => setGradientAngle(angle)}
-                        aria-pressed={prefs.bgType === 'gradient' && prefs.gradient.angle === angle}
-                        aria-label={`${angle}°`}
-                        className="opt-chip grid h-7 w-7 place-items-center rounded-md text-sm leading-none"
-                      >
-                        {arrow}
-                      </button>
-                    ))}
+                  <span className="text-xs text-muted-foreground">{t('settings.gradShape')}</span>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setGradientShape('linear')}
+                      aria-pressed={prefs.bgType === 'gradient' && (prefs.gradient.shape ?? 'linear') === 'linear'}
+                      className="opt-chip rounded-md px-2.5 py-1 text-xs"
+                    >
+                      {t('settings.gradLinear')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGradientShape('radial')}
+                      aria-pressed={prefs.bgType === 'gradient' && prefs.gradient.shape === 'radial'}
+                      className="opt-chip rounded-md px-2.5 py-1 text-xs"
+                    >
+                      {t('settings.gradRadial')}
+                    </button>
                   </div>
                 </div>
+                {/* Direction — only meaningful for a linear gradient. */}
+                {(prefs.gradient.shape ?? 'linear') === 'linear' && (
+                  <div className="flex items-center gap-2 pt-1">
+                    <span className="text-xs text-muted-foreground">{t('settings.gradDirection')}</span>
+                    <div className="flex flex-wrap gap-1">
+                      {GRAD_DIRECTIONS.map(([angle, arrow]) => (
+                        <button
+                          key={angle}
+                          type="button"
+                          onClick={() => setGradientAngle(angle)}
+                          aria-pressed={prefs.bgType === 'gradient' && prefs.gradient.angle === angle}
+                          aria-label={`${angle}°`}
+                          className="opt-chip grid h-7 w-7 place-items-center rounded-md text-sm leading-none"
+                        >
+                          {arrow}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Image upload */}

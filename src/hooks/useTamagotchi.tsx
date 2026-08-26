@@ -68,7 +68,7 @@ export const HATCH_DELAYS = [
 ];
 const AMOEBA_MS = 20 * 60 * 1000; // amoeba → baby
 const BABY_MS = 2 * 60 * 60 * 1000; // baby → adult
-const POOP_EVERY = 3 * 60 * 1000; // 3 min → poop (-20 hygiene)
+const POOP_EVERY = 20 * 60 * 1000; // 20 min → poop (-20 hygiene)
 const DEATH_AFTER = 3 * 24 * 60 * 60 * 1000; // hunger 0 sustained 3 days → dead
 const TICK = 1000; // ms
 

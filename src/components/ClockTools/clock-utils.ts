@@ -160,9 +160,10 @@ export function formatHMS(totalSec: number): string {
  * `onChange`. Skips elements marked `[data-no-drag]` so header controls still work.
  * Mirrors the memo-note drag so behaviour is consistent across the app.
  */
-/** Widgets snap to this px grid (centre-relative) when dropped, so a cluster of
- *  tools lines up tidily. Hold Shift while releasing to place freely. */
-export const WIDGET_SNAP_GRID = 8;
+/** Widgets snap to this px grid (centre-relative) so tools line up tidily. The
+ *  snap is LIVE (the widget jumps cell-to-cell as you drag); hold Shift to place
+ *  freely. */
+export const WIDGET_SNAP_GRID = 20;
 
 export function makeDragStart(pos: Pos, onChange: (p: Pos) => void) {
   return (e: ReactPointerEvent<HTMLElement>) => {
@@ -175,25 +176,18 @@ export function makeDragStart(pos: Pos, onChange: (p: Pos) => void) {
     const origX = pos.x;
     const origY = pos.y;
     const { minX, minY } = dragFloor();
-    let lastX = origX;
-    let lastY = origY;
+    // Snap a value to the grid (unless Shift = free placement), floored on-screen.
+    const snap = (v: number, min: number, free: boolean) =>
+      free ? Math.max(min, v) : Math.max(min, Math.round(v / WIDGET_SNAP_GRID) * WIDGET_SNAP_GRID);
     const onMove = (ev: PointerEvent) => {
-      lastX = Math.max(minX, origX + (ev.clientX - startX));
-      lastY = Math.max(minY, origY + (ev.clientY - startY));
-      onChange({ x: lastX, y: lastY });
+      const x = snap(origX + (ev.clientX - startX), minX, ev.shiftKey);
+      const y = snap(origY + (ev.clientY - startY), minY, ev.shiftKey);
+      onChange({ x, y });
     };
-    const onUp = (ev: PointerEvent) => {
+    const onUp = () => {
       el.releasePointerCapture(e.pointerId);
       el.removeEventListener('pointermove', onMove);
       el.removeEventListener('pointerup', onUp);
-      // Grid-snap on drop for tidy alignment; Shift = free placement. The snapped
-      // value is deterministic, so re-saving it stays byte-stable (no sync churn).
-      if (!ev.shiftKey) {
-        const snap = (v: number, min: number) => Math.max(min, Math.round(v / WIDGET_SNAP_GRID) * WIDGET_SNAP_GRID);
-        const sx = snap(lastX, minX);
-        const sy = snap(lastY, minY);
-        if (sx !== lastX || sy !== lastY) onChange({ x: sx, y: sy });
-      }
     };
     el.addEventListener('pointermove', onMove);
     el.addEventListener('pointerup', onUp);

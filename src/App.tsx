@@ -657,7 +657,7 @@ function App() {
           chart (MobileMemoSection / MobileClockSection inside <main>). */}
       <DiaryViewSync />
       {!isMobile && <MemoLayer />}
-      {!isMobile && <GoalsWidget />}
+      {!isMobile && <GoalsWidget onSetup={() => setGoalsOpen(true)} />}
       {!isMobile && <ClockToolsLayer />}
       {/* Keyword news headlines — desktop: floating FAB; mobile: a bottom
           section inside <main> (above). No AI tokens (server-side RSS). */}

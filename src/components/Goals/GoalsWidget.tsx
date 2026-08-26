@@ -39,7 +39,7 @@ function loadPos(): Pos {
  * (accumulated vs target). The card floats with a TRANSPARENT background and can
  * be dragged anywhere (grab cursor on hover); its position persists.
  */
-export function GoalsWidget() {
+export function GoalsWidget({ onSetup }: { onSetup: () => void }) {
   const { goals } = useGoals();
   const { entries } = useDiary();
   const { t } = useTranslation();
@@ -65,14 +65,11 @@ export function GoalsWidget() {
     return () => window.removeEventListener(GOALS_WIDGET_SYNC_EVENT, onSync);
   }, []);
 
-  // The feature only shows up once the user has set a goal/mission.
-  if (goals.length === 0) return null;
-
   const fmt = (m: number) => t('goals.hm', { h: String(Math.floor(m / 60)), m: String(m % 60) });
 
   return (
     <>
-      {open && (
+      {open && goals.length > 0 && (
         <div
           data-goals-card="1"
           data-hover={hover ? '1' : '0'}
@@ -136,7 +133,7 @@ export function GoalsWidget() {
 
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => { if (goals.length === 0) onSetup(); else setOpen((v) => !v); }}
         aria-label={t('goals.open')}
         aria-expanded={open}
         title={t('goals.open')}

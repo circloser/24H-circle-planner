@@ -81,10 +81,10 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
       const speed = Math.hypot(vx, vy); // px/ms
       let tx = end.x, ty = end.y;
       if (speed > 0.35) {
-        tx = end.x + (vx / speed) * 100;
-        ty = end.y + (vy / speed) * 100;
+        tx = end.x + (vx / speed) * 300; // throw ~300px along the flick
+        ty = end.y + (vy / speed) * 300;
       } else {
-        ty = end.y + 30; // gentle drop
+        ty = end.y + 90; // gentle drop ~90px
       }
       const w = window.innerWidth, h = window.innerHeight;
       tx = Math.max(36, Math.min(w - 36, tx));
@@ -127,7 +127,7 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
             : 'left 1s linear, top 1s linear',
         cursor: dragging ? 'grabbing' : 'grab',
         touchAction: 'none',
-        zIndex: selected ? 71 : 70,
+        zIndex: selected ? 21 : 20, // a background pet — below widgets, menus & popups
         color: 'hsl(var(--foreground))',
         opacity: pet.sleeping ? 0.55 : pet.phase === 'dead' ? 0.5 : 1,
         pointerEvents: 'auto',
