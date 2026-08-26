@@ -8,17 +8,11 @@ const CFG_KEY = '24h-news.config';
 const CACHE_KEY = '24h-news.cache';
 const CARD_W = 320;
 
-/** ISO country code → GDELT `sourcecountry` FIPS 10-4 code. We call GDELT's free
- *  Doc API directly from the browser (it sends `Access-Control-Allow-Origin: *`),
- *  so each user hits it from their own IP — no shared-datacenter throttling, no
- *  proxy, and no AI tokens. Labels are localized via Intl.DisplayNames. */
-const COUNTRY_FIPS: Record<string, string> = {
-  KR: 'KS', US: 'US', GB: 'UK', JP: 'JA', CN: 'CH', TW: 'TW', FR: 'FR', DE: 'GM',
-  ES: 'SP', IT: 'IT', IN: 'IN', BR: 'BR', RU: 'RS', CA: 'CA', AU: 'AS',
-};
-const COUNTRIES = Object.keys(COUNTRY_FIPS);
-
-interface GdeltArticle { title?: string; url?: string; domain?: string; seendate?: string }
+/** Countries offered in the picker — must match the worker's NEWS_MARKETS keys.
+ *  Labels are localized at render time via Intl.DisplayNames (no dict churn). The
+ *  fetch goes through our own Worker (/api/news), which proxies Bing News RSS —
+ *  reliable from any client (incl. shared mobile IPs), cached, no AI tokens. */
+const COUNTRIES = ['KR', 'US', 'GB', 'JP', 'CN', 'TW', 'FR', 'DE', 'ES', 'IT', 'IN', 'BR', 'RU', 'CA', 'AU'];
 
 interface NewsItem { title: string; link: string; source: string; pubDate: string }
 interface Config { q: string; country: string }
@@ -53,11 +47,13 @@ function loadCache(): Cache | null {
 const dayStamp = (t: number) => new Date(t).toDateString();
 
 /**
- * Floating news-headline reader. Set a country + keyword; it pulls ~10 fresh
- * headline titles (links) from Google News once a day (cached), refreshable on
- * demand. Uses NO AI tokens — a plain server-side RSS fetch via /api/news.
+ * News-headline reader. Set a country + keyword; it pulls ~10 fresh headline
+ * titles (links) once a day (cached), refreshable on demand. NO AI tokens — a
+ * server-side Bing News RSS fetch via /api/news. On desktop it's a floating FAB
+ * + draggable card; on mobile (isMobile) it renders as a static section placed
+ * at the very bottom of the stacked layout (no button).
  */
-export function NewsWidget() {
+export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
   const { t, lang } = useTranslation();
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<Pos>(loadPos);
@@ -80,50 +76,36 @@ export function NewsWidget() {
     if (!kw) { setItems([]); return; }
     setStatus('loading');
     try {
-      // GDELT Doc API: keyword AND a country filter, newest first, JSON. Called
-      // straight from the browser (CORS-enabled) — no server, no AI tokens.
-      const fips = COUNTRY_FIPS[country] ?? 'US';
-      const query = `${kw} sourcecountry:${fips}`;
-      const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query)}&mode=ArtList&maxrecords=10&sort=DateDesc&format=json`;
-      const res = await fetch(url);
-      const text = await res.text();
-      let parsed: GdeltArticle[];
-      // GDELT answers a rate-limit / overload with 429 or a plain-text notice
-      // (not JSON). Treat that as an error (prompt a retry) — distinct from a
-      // valid JSON response that simply has no matching headlines.
-      try { parsed = (JSON.parse(text).articles ?? []) as GdeltArticle[]; }
-      catch { setItems([]); setStatus('error'); return; }
-      const seen = new Set<string>();
-      const next: NewsItem[] = [];
-      for (const a of parsed) {
-        const title = (a.title || '').trim();
-        const link = a.url || '';
-        if (!title || !link || seen.has(title)) continue;
-        seen.add(title);
-        next.push({ title, link, source: a.domain || '', pubDate: a.seendate || '' });
-        if (next.length >= 10) break;
-      }
+      // Our Worker proxies Bing News RSS (cached, retried, stale-served) — same
+      // origin, so it works from any client incl. shared mobile IPs. No tokens.
+      const res = await fetch(`/api/news?q=${encodeURIComponent(kw)}&country=${country}`);
+      const j = await res.json();
+      const next: NewsItem[] = Array.isArray(j.items) ? j.items : [];
       if (next.length) {
         setItems(next);
         setStatus('idle');
         fetchedAtRef.current = Date.now();
         try { localStorage.setItem(CACHE_KEY, JSON.stringify({ q: kw, country, items: next, fetchedAt: fetchedAtRef.current })); } catch { /* */ }
+      } else if (res.ok) {
+        setItems([]);
+        setStatus('idle'); // valid response, just no headlines → "none" state
       } else {
         setItems([]);
-        setStatus('idle'); // valid response, just no headlines → show the "none" state
+        setStatus('error');
       }
     } catch { setStatus('error'); }
   }, []);
 
-  // On open: refetch if the config changed or the cache is from a previous day
-  // (so headlines refresh daily) — otherwise reuse the cached list.
+  // Refetch (when visible) if the config changed or the cache is from a previous
+  // day (headlines refresh daily) — otherwise reuse the cached list. On mobile
+  // the panel is always visible, so it loads on mount.
   useEffect(() => {
-    if (!open || !cfg.q.trim()) return;
+    if ((!open && !isMobile) || !cfg.q.trim()) return;
     const c = loadCache();
     const stale = !c || c.q !== cfg.q || c.country !== cfg.country || dayStamp(c.fetchedAt) !== dayStamp(Date.now());
     if (stale) void fetchNews(cfg.q, cfg.country);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, cfg.q, cfg.country]);
+  }, [open, isMobile, cfg.q, cfg.country]);
 
   function applySearch(e: React.FormEvent) {
     e.preventDefault();
@@ -135,6 +117,103 @@ export function NewsWidget() {
 
   const inputStyle: React.CSSProperties = { backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--foreground))', border: '1px solid hsl(var(--border))' };
 
+  // Shared inner content (header + config form + headline list). `inline` = the
+  // static mobile section (no drag, no close button); otherwise the floating card.
+  const panel = (inline: boolean) => (
+    <>
+      <div className="flex items-center gap-1.5 px-3 pt-3">
+        <Newspaper className="h-4 w-4 text-foreground" />
+        <span className="flex-1 text-sm font-semibold text-foreground">{t('news.title')}</span>
+        {cfg.q.trim() && (
+          <button type="button" data-no-drag aria-label={t('news.refresh')} title={t('news.refresh')}
+            onClick={() => void fetchNews(cfg.q, cfg.country)}
+            className="grid h-6 w-6 place-items-center rounded transition-colors hover:bg-black/10">
+            <RefreshCw className={`h-3.5 w-3.5 text-muted-foreground ${status === 'loading' ? 'animate-spin' : ''}`} />
+          </button>
+        )}
+        {!inline && (
+          <button type="button" data-no-drag aria-label={t('common.cancel')} onClick={() => setOpen(false)}
+            className="grid h-6 w-6 place-items-center rounded transition-colors hover:bg-black/10">
+            <X className="h-4 w-4 text-muted-foreground" />
+          </button>
+        )}
+      </div>
+
+      {/* Config: country + keyword. */}
+      <form data-no-drag onSubmit={applySearch} className="flex items-center gap-1.5 px-3 pb-2 pt-2">
+        <select
+          value={draft.country}
+          onChange={(e) => setDraft((d) => ({ ...d, country: e.target.value }))}
+          aria-label={t('news.country')}
+          className="shrink-0 rounded-md px-1.5 py-1.5 text-xs"
+          style={inputStyle}
+        >
+          {COUNTRIES.map((c) => <option key={c} value={c}>{countryName(c)}</option>)}
+        </select>
+        <input
+          type="text"
+          value={draft.q}
+          onChange={(e) => setDraft((d) => ({ ...d, q: e.target.value }))}
+          placeholder={t('news.keyword')}
+          aria-label={t('news.keyword')}
+          className="min-w-0 flex-1 rounded-md px-2 py-1.5 text-sm"
+          style={inputStyle}
+        />
+        <button type="submit" aria-label={t('news.search')} title={t('news.search')}
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-md transition-colors hover:bg-black/10" style={inputStyle}>
+          <Search className="h-4 w-4" />
+        </button>
+      </form>
+
+      {/* Headlines. */}
+      <div className={`overflow-y-auto px-1.5 pb-2 ${inline ? 'max-h-[60vh]' : 'min-h-0 flex-1'}`}>
+        {!cfg.q.trim() ? (
+          <p className="px-2 py-6 text-center text-xs text-muted-foreground">{t('news.empty')}</p>
+        ) : status === 'loading' && items.length === 0 ? (
+          <div className="grid place-items-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+        ) : status === 'error' && items.length === 0 ? (
+          <p className="px-2 py-6 text-center text-xs text-muted-foreground">{t('news.error')}</p>
+        ) : items.length === 0 ? (
+          <p className="px-2 py-6 text-center text-xs text-muted-foreground">{t('news.none')}</p>
+        ) : (
+          <ol className="flex flex-col">
+            {items.map((it, i) => (
+              <li key={i}>
+                <a
+                  data-no-drag
+                  href={it.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex gap-2 rounded-lg px-2 py-2 transition-colors hover:bg-black/[0.06]"
+                >
+                  <span className="w-4 shrink-0 pt-0.5 text-right text-[11px] tabular-nums text-muted-foreground">{i + 1}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[13px] leading-snug text-foreground">{it.title}</span>
+                    {it.source && <span className="mt-0.5 block truncate text-[10px] text-muted-foreground">{it.source}</span>}
+                  </span>
+                  <ExternalLink className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                </a>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+    </>
+  );
+
+  // Mobile: a plain static section at the bottom of the stacked layout (no FAB).
+  if (isMobile) {
+    return (
+      <section
+        data-news-card="1"
+        className="mt-4 flex flex-col overflow-hidden rounded-xl border border-border bg-surface"
+      >
+        {panel(true)}
+      </section>
+    );
+  }
+
+  // Desktop: floating FAB toggles a draggable card.
   return (
     <>
       {open && (
@@ -151,81 +230,7 @@ export function NewsWidget() {
             boxShadow: hover ? '0 20px 25px -5px rgb(0 0 0 / 0.14), 0 8px 10px -6px rgb(0 0 0 / 0.12)' : '0 10px 20px -8px rgb(0 0 0 / 0.12)',
           }}
         >
-          <div className="flex items-center gap-1.5 px-3 pt-3">
-            <Newspaper className="h-4 w-4 text-foreground" />
-            <span className="flex-1 text-sm font-semibold text-foreground">{t('news.title')}</span>
-            {cfg.q.trim() && (
-              <button type="button" data-no-drag aria-label={t('news.refresh')} title={t('news.refresh')}
-                onClick={() => void fetchNews(cfg.q, cfg.country)}
-                className="grid h-6 w-6 place-items-center rounded transition-colors hover:bg-black/10">
-                <RefreshCw className={`h-3.5 w-3.5 text-muted-foreground ${status === 'loading' ? 'animate-spin' : ''}`} />
-              </button>
-            )}
-            <button type="button" data-no-drag aria-label={t('common.cancel')} onClick={() => setOpen(false)}
-              className="grid h-6 w-6 place-items-center rounded transition-colors hover:bg-black/10">
-              <X className="h-4 w-4 text-muted-foreground" />
-            </button>
-          </div>
-
-          {/* Config: country + keyword. */}
-          <form data-no-drag onSubmit={applySearch} className="flex items-center gap-1.5 px-3 pb-2 pt-2">
-            <select
-              value={draft.country}
-              onChange={(e) => setDraft((d) => ({ ...d, country: e.target.value }))}
-              aria-label={t('news.country')}
-              className="shrink-0 rounded-md px-1.5 py-1.5 text-xs"
-              style={inputStyle}
-            >
-              {COUNTRIES.map((c) => <option key={c} value={c}>{countryName(c)}</option>)}
-            </select>
-            <input
-              type="text"
-              value={draft.q}
-              onChange={(e) => setDraft((d) => ({ ...d, q: e.target.value }))}
-              placeholder={t('news.keyword')}
-              aria-label={t('news.keyword')}
-              className="min-w-0 flex-1 rounded-md px-2 py-1.5 text-sm"
-              style={inputStyle}
-            />
-            <button type="submit" aria-label={t('news.search')} title={t('news.search')}
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-md transition-colors hover:bg-black/10" style={inputStyle}>
-              <Search className="h-4 w-4" />
-            </button>
-          </form>
-
-          {/* Headlines. */}
-          <div className="min-h-0 flex-1 overflow-y-auto px-1.5 pb-2">
-            {!cfg.q.trim() ? (
-              <p className="px-2 py-6 text-center text-xs text-muted-foreground">{t('news.empty')}</p>
-            ) : status === 'loading' && items.length === 0 ? (
-              <div className="grid place-items-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-            ) : status === 'error' && items.length === 0 ? (
-              <p className="px-2 py-6 text-center text-xs text-muted-foreground">{t('news.error')}</p>
-            ) : items.length === 0 ? (
-              <p className="px-2 py-6 text-center text-xs text-muted-foreground">{t('news.none')}</p>
-            ) : (
-              <ol className="flex flex-col">
-                {items.map((it, i) => (
-                  <li key={i}>
-                    <a
-                      data-no-drag
-                      href={it.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group flex gap-2 rounded-lg px-2 py-2 transition-colors hover:bg-black/[0.06]"
-                    >
-                      <span className="w-4 shrink-0 pt-0.5 text-right text-[11px] tabular-nums text-muted-foreground">{i + 1}</span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-[13px] leading-snug text-foreground">{it.title}</span>
-                        {it.source && <span className="mt-0.5 block truncate text-[10px] text-muted-foreground">{it.source}</span>}
-                      </span>
-                      <ExternalLink className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                    </a>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </div>
+          {panel(false)}
         </div>
       )}
 

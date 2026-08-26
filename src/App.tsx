@@ -515,6 +515,8 @@ function App() {
             </div>
             <MobileMemoSection />
             <MobileClockSection />
+            {/* News headlines — a plain section at the very bottom on mobile. */}
+            <NewsWidget isMobile />
           </>
         )}
       </main>
@@ -657,13 +659,15 @@ function App() {
       {!isMobile && <MemoLayer />}
       {!isMobile && <GoalsWidget />}
       {!isMobile && <ClockToolsLayer />}
-      {/* Keyword news headlines (floating; no AI tokens — server-side RSS). */}
-      <NewsWidget />
-      {/* Background pet — desktop pets roam the window; on mobile they live
-          inside the console LCD (isMobile switches the layer's render mode). */}
-      <TamagotchiProvider>
-        <TamagotchiLayer isMobile={isMobile} />
-      </TamagotchiProvider>
+      {/* Keyword news headlines — desktop: floating FAB; mobile: a bottom
+          section inside <main> (above). No AI tokens (server-side RSS). */}
+      {!isMobile && <NewsWidget />}
+      {/* Background pet — desktop only (removed on mobile). */}
+      {!isMobile && (
+        <TamagotchiProvider>
+          <TamagotchiLayer />
+        </TamagotchiProvider>
+      )}
 
       {/* In-app slice-start popup (bottom-right / bottom, 5s, above everything).
           Fires from useSliceAlarms on a block boundary — shows even without OS

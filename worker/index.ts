@@ -934,6 +934,113 @@ async function runPushCron(env: Env): Promise<void> {
   }
 }
 
+// ─── News (keyword headlines, no AI tokens) ──────────────────────────────────
+/** Country code → Bing News market (mkt). Bing News RSS tolerates datacenter/
+ *  edge egress (unlike Google News, which 503s CF IPs) and returns clean,
+ *  localized headlines. We build only the fixed Bing URL from a whitelisted
+ *  market + the encoded keyword (no SSRF surface). */
+const NEWS_MARKETS: Record<string, string> = {
+  KR: 'ko-KR', US: 'en-US', GB: 'en-GB', JP: 'ja-JP', CN: 'zh-CN', TW: 'zh-TW',
+  FR: 'fr-FR', DE: 'de-DE', ES: 'es-ES', IT: 'it-IT', IN: 'en-IN', BR: 'pt-BR',
+  RU: 'ru-RU', CA: 'en-CA', AU: 'en-AU',
+};
+
+function decodeEntities(s: string): string {
+  return s
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+    .replace(/&#0?39;/g, "'").replace(/&apos;/g, "'").replace(/&amp;/g, '&')
+    .trim();
+}
+
+interface NewsItem { title: string; link: string; source: string; pubDate: string }
+
+/** Bing wraps each link in an apiclick.aspx redirect carrying the real article
+ *  URL in its `url=` param — unwrap it, and derive the source from its host. */
+function unwrapBingLink(raw: string): { link: string; source: string } {
+  let link = raw;
+  const m = /[?&]url=([^&]+)/.exec(raw);
+  if (m) { try { link = decodeURIComponent(m[1]); } catch { /* keep raw */ } }
+  let source = '';
+  try { source = new URL(link).host.replace(/^www\./, ''); } catch { /* none */ }
+  return { link, source };
+}
+
+/** Parse up to 10 <item>s out of a Bing News RSS document (no XML lib). */
+function parseRss(xml: string): NewsItem[] {
+  const items: NewsItem[] = [];
+  const seen = new Set<string>();
+  const re = /<item>([\s\S]*?)<\/item>/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(xml)) && items.length < 10) {
+    const block = m[1];
+    const pick = (tag: string) => {
+      const r = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`).exec(block);
+      return r ? decodeEntities(r[1]) : '';
+    };
+    const title = pick('title');
+    const { link, source } = unwrapBingLink(pick('link'));
+    const pubDate = pick('pubDate');
+    if (!title || !link || seen.has(title)) continue;
+    seen.add(title);
+    items.push({ title, link, source, pubDate });
+  }
+  return items;
+}
+
+/** GET /api/news?q=<keyword>&country=<code> → up to 10 headline titles+links
+ *  from Bing News RSS. No API key, no AI tokens. Edge-cached ~3h (so repeated
+ *  opens don't refetch and one success serves everyone) with a 7-day stale copy
+ *  served if a later fetch is throttled/fails. */
+async function handleNews(request: Request, env: Env, ctx?: Waiter): Promise<Response> {
+  void env;
+  const url = new URL(request.url);
+  const q = (url.searchParams.get('q') || '').trim().slice(0, 120);
+  const country = (url.searchParams.get('country') || 'KR').toUpperCase();
+  const mkt = NEWS_MARKETS[country] ?? NEWS_MARKETS.KR;
+  if (!q) return json({ error: 'missing_query' }, 400);
+
+  const cache = (caches as unknown as { default: Cache }).default;
+  const base = `https://news.cache/${country}/${encodeURIComponent(q.toLowerCase())}`;
+  const freshKey = new Request(base);
+  const staleKey = new Request(base + '#stale');
+  const hit = await cache.match(freshKey);
+  if (hit && url.searchParams.get('debug') !== '1') return hit;
+
+  const feed = `https://www.bing.com/news/search?q=${encodeURIComponent(q)}&format=RSS&setmkt=${mkt}`;
+  const headers = {
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Safari/537.36',
+    'accept': 'application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.8',
+  };
+  let items: NewsItem[] = [];
+  let upstreamStatus = 0;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt) await new Promise((r) => setTimeout(r, 300 * attempt));
+    try {
+      const res = await fetch(feed, { headers });
+      upstreamStatus = res.status;
+      if (res.ok) { items = parseRss(await res.text()); if (items.length) break; }
+    } catch { /* retry */ }
+  }
+
+  if (url.searchParams.get('debug') === '1') {
+    return json({ q, country, mkt, feed, upstreamStatus, itemCount: items.length }, 200, { 'cache-control': 'no-store' });
+  }
+
+  if (items.length) {
+    const payload = { q, country, items, fetchedAt: Date.now() };
+    const fresh = json(payload, 200, { 'cache-control': 'public, max-age=10800' });   // 3h
+    const stale = json(payload, 200, { 'cache-control': 'public, max-age=604800' });   // 7d fallback
+    const put = Promise.all([cache.put(freshKey, fresh.clone()), cache.put(staleKey, stale.clone())]);
+    if (ctx?.waitUntil) ctx.waitUntil(put); else await put;
+    return fresh;
+  }
+  // Fetch failed/empty → serve the last good result if we have one.
+  const stale = await cache.match(staleKey);
+  if (stale) return stale;
+  return json({ q, country, items: [], fetchedAt: Date.now() }, 200, { 'cache-control': 'no-store' });
+}
+
 // ─── Router ──────────────────────────────────────────────────────────────────
 
 export default {
@@ -974,6 +1081,7 @@ export default {
       if (p === '/api/push/plan' && m === 'PUT') return handlePushPlanPut(request, env);
       if (p === '/api/push/plan' && m === 'DELETE') return handlePushPlanDelete(request, env);
       if (p === '/api/push/test' && m === 'POST') return handlePushTest(request, env);
+      if (p === '/api/news' && m === 'GET') return handleNews(request, env, ctx);
       return json({ error: 'not_found' }, 404);
     }
 
