@@ -57,6 +57,7 @@ import { UpgradeDialog } from '@/components/Billing/UpgradeDialog';
 import { StatsDialog } from '@/components/Admin/StatsDialog';
 import { OPEN_UPGRADE_EVENT } from '@/lib/pro';
 import { WelcomeOverlay } from '@/components/Onboarding/WelcomeOverlay';
+import { FirstInsightCard } from '@/components/Onboarding/FirstInsightCard';
 import { readSharedFromHash, clearShareHash } from '@/lib/share-link';
 import { AnalyticsDialog } from '@/components/Analytics/AnalyticsDialog';
 import { TimeGapDialog } from '@/components/TimeGap/TimeGapDialog';
@@ -82,6 +83,7 @@ import type { Preset } from '@/types/preset';
 // (the day-1 schedule is seeded with a demo example by useDays so the circle is
 // never empty). Set once the welcome is dismissed.
 const ONBOARDED_KEY = '24h-circle-planner.onboarded';
+const INSIGHT_KEY = '24h-circle-planner.first-insight';
 
 function isFirstVisit(): boolean {
   try {
@@ -114,6 +116,15 @@ function App() {
   const dismissWelcome = () => {
     markOnboarded();
     setWelcomeOpen(false);
+  };
+  // First "aha" card — the biggest slice of the day — shown once after the first
+  // real schedule exists (right after the welcome, or for returning users).
+  const [insightDone, setInsightDone] = useState<boolean>(() => {
+    try { return localStorage.getItem(INSIGHT_KEY) !== null; } catch { return true; }
+  });
+  const dismissInsight = () => {
+    try { localStorage.setItem(INSIGHT_KEY, '1'); } catch { /* storage unavailable */ }
+    setInsightDone(true);
   };
 
   // Apply the chosen colour theme (if any) to a preset and load it, so content +
@@ -623,6 +634,11 @@ function App() {
         onPickPreset={() => setPresetOpen(true)}
         isMobile={isMobile}
       />
+
+      {/* First-insight card — the day's biggest slice, once the schedule is real. */}
+      {!welcomeOpen && !isEmptyState && !insightDone && (
+        <FirstInsightCard slices={present.slices} onClose={dismissInsight} />
+      )}
 
       {/* Incoming share link (#p=…) → confirm before replacing the schedule. */}
       <ShareImportDialog
