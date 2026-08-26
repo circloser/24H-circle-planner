@@ -35,14 +35,20 @@ const CFG_KEY = '24h-news.config';
 const CACHE_KEY = '24h-news.cache';
 const CARD_W = 320;
 
-/** Countries offered in the picker — must match the worker's NEWS_MARKETS keys.
- *  Labels are localized at render time via Intl.DisplayNames (no dict churn). The
- *  fetch goes through our own Worker (/api/news), which proxies Bing News RSS —
- *  reliable from any client (incl. shared mobile IPs), cached, no AI tokens. */
-const COUNTRIES = ['KR', 'US', 'GB', 'JP', 'CN', 'TW', 'FR', 'DE', 'ES', 'IT', 'IN', 'BR', 'RU', 'CA', 'AU'];
+/** Countries offered in the picker — 'WW' = worldwide (no market filter); the
+ *  rest must match the worker's NEWS_MARKETS keys. Labels are localized via
+ *  Intl.DisplayNames (WW is special-cased). The fetch goes through our Worker
+ *  (/api/news → Bing News RSS): reliable from any client, cached, no AI tokens. */
+const COUNTRIES = ['WW', 'KR', 'US', 'GB', 'JP', 'CN', 'TW', 'HK', 'IN', 'CA', 'AU', 'NZ', 'IE', 'SG',
+  'FR', 'DE', 'ES', 'IT', 'PT', 'NL', 'BE', 'AT', 'CH', 'SE', 'NO', 'DK', 'FI', 'PL', 'TR', 'RU',
+  'BR', 'MX', 'AR', 'CL', 'ID', 'MY', 'PH', 'ZA', 'SA', 'TH'];
+/** Refresh-interval options (hours; 0 = manual only). */
+const INTERVALS: { h: number; label: string }[] = [
+  { h: 0, label: 'manual' }, { h: 1, label: '1h' }, { h: 6, label: '6h' }, { h: 24, label: '24h' },
+];
 
 interface NewsItem { title: string; link: string; source: string; pubDate: string }
-interface Config { q: string; country: string }
+interface Config { q: string; country: string; intervalH?: number }
 interface Cache extends Config { items: NewsItem[]; fetchedAt: number }
 
 function defaultPos(): Pos { return spawnNearCentre(40, 120, CARD_W, 340); }
@@ -61,17 +67,15 @@ function loadPos(): Pos {
 function loadConfig(): Config {
   try {
     const raw = localStorage.getItem(CFG_KEY);
-    if (raw) { const c = JSON.parse(raw) as Config; if (c && typeof c.q === 'string') return { q: c.q, country: c.country || 'KR' }; }
+    if (raw) { const c = JSON.parse(raw) as Config; if (c && typeof c.q === 'string') return { q: c.q, country: c.country || 'KR', intervalH: typeof c.intervalH === 'number' ? c.intervalH : 24 }; }
   } catch { /* ignore */ }
-  return { q: '', country: 'KR' };
+  return { q: '', country: 'KR', intervalH: 24 };
 }
 
 function loadCache(): Cache | null {
   try { const raw = localStorage.getItem(CACHE_KEY); if (raw) return JSON.parse(raw) as Cache; } catch { /* ignore */ }
   return null;
 }
-
-const dayStamp = (t: number) => new Date(t).toDateString();
 
 /**
  * News-headline reader. Set a country + keyword; it pulls ~10 fresh headline
@@ -98,8 +102,9 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
   useEffect(() => { try { localStorage.setItem(POS_KEY, JSON.stringify({ x: pos.x, y: pos.y, c: 1 })); } catch { /* */ } }, [pos]);
 
   const countryName = useCallback((code: string) => {
+    if (code === 'WW') return t('news.worldwide');
     try { return new Intl.DisplayNames([lang], { type: 'region' }).of(code) || code; } catch { return code; }
-  }, [lang]);
+  }, [lang, t]);
 
   const fetchNews = useCallback(async (q: string, country: string) => {
     const kw = q.trim();
@@ -126,20 +131,22 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
     } catch { setStatus('error'); }
   }, []);
 
-  // Refetch (when visible) if the config changed or the cache is from a previous
-  // day (headlines refresh daily) — otherwise reuse the cached list. On mobile
-  // the panel is always visible, so it loads on mount.
+  // Refetch (when visible) if the config changed, or the cached copy is older
+  // than the chosen refresh interval (0 = manual only) — otherwise reuse the
+  // cache. On mobile the panel is always visible, so it loads on mount.
   useEffect(() => {
     if ((!open && !isMobile) || !cfg.q.trim()) return;
     const c = loadCache();
-    const stale = !c || c.q !== cfg.q || c.country !== cfg.country || dayStamp(c.fetchedAt) !== dayStamp(Date.now());
-    if (stale) void fetchNews(cfg.q, cfg.country);
+    const intervalH = cfg.intervalH ?? 24;
+    const aged = intervalH > 0 && (!c || Date.now() - c.fetchedAt >= intervalH * 3600_000);
+    const changed = !c || c.q !== cfg.q || c.country !== cfg.country;
+    if (changed || aged) void fetchNews(cfg.q, cfg.country);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, isMobile, cfg.q, cfg.country]);
+  }, [open, isMobile, cfg.q, cfg.country, cfg.intervalH]);
 
   function applySearch(e: React.FormEvent) {
     e.preventDefault();
-    const next = { q: draft.q.trim(), country: draft.country };
+    const next: Config = { q: draft.q.trim(), country: draft.country, intervalH: draft.intervalH ?? 24 };
     setCfg(next);
     try { localStorage.setItem(CFG_KEY, JSON.stringify(next)); } catch { /* */ }
     if (next.q) setShowSettings(false); // collapse to the clean headline list
@@ -150,57 +157,76 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
 
   // Shared inner content (header + config form + headline list). `inline` = the
   // static mobile section (no drag, no close button); otherwise the floating card.
-  const panel = (inline: boolean) => (
+  const panel = (inline: boolean) => {
+    // Desktop: refresh + close appear only on hover; settings (gear) is always
+    // available. Mobile section shows the controls (no hover there).
+    const controlsVisible = inline || hover;
+    const hoverCtrl: React.CSSProperties = { opacity: controlsVisible ? 1 : 0, pointerEvents: controlsVisible ? 'auto' : 'none', transition: 'opacity .15s ease' };
+    return (
     <>
       <div className="flex items-center gap-1.5 px-3 pt-3">
         <Newspaper className="h-4 w-4 text-foreground" />
         <span className="flex-1 text-sm font-semibold text-foreground">{t('news.title')}</span>
         {cfg.q.trim() && (
           <button type="button" data-no-drag aria-label={t('news.refresh')} title={t('news.refresh')}
-            onClick={() => void fetchNews(cfg.q, cfg.country)}
+            onClick={() => void fetchNews(cfg.q, cfg.country)} style={hoverCtrl}
             className="grid h-6 w-6 place-items-center rounded transition-colors hover:bg-black/10">
             <RefreshCw className={`h-3.5 w-3.5 text-muted-foreground ${status === 'loading' ? 'animate-spin' : ''}`} />
           </button>
         )}
-        {/* Settings (country + keyword) live behind this gear. */}
+        {/* Settings (country + keyword + interval) live behind this gear — always available. */}
         <button type="button" data-no-drag aria-label={t('news.settings')} title={t('news.settings')}
           aria-pressed={showSettings} onClick={() => { setDraft(cfg); setShowSettings((v) => !v); }}
           className="grid h-6 w-6 place-items-center rounded transition-colors hover:bg-black/10">
           <Settings className={`h-3.5 w-3.5 ${showSettings ? 'text-foreground' : 'text-muted-foreground'}`} />
         </button>
         {!inline && (
-          <button type="button" data-no-drag aria-label={t('common.cancel')} onClick={() => setOpen(false)}
+          <button type="button" data-no-drag aria-label={t('common.cancel')} onClick={() => setOpen(false)} style={hoverCtrl}
             className="grid h-6 w-6 place-items-center rounded transition-colors hover:bg-black/10">
             <X className="h-4 w-4 text-muted-foreground" />
           </button>
         )}
       </div>
 
-      {/* Config: country + keyword — only when the gear is on. */}
+      {/* Config: country + keyword(s) + refresh interval — only when the gear is on. */}
       {showSettings && (
-        <form data-no-drag onSubmit={applySearch} className="flex items-center gap-1.5 px-3 pb-1 pt-2">
-          <select
-            value={draft.country}
-            onChange={(e) => setDraft((d) => ({ ...d, country: e.target.value }))}
-            aria-label={t('news.country')}
-            className="shrink-0 rounded-md px-1.5 py-1.5 text-xs"
-            style={inputStyle}
-          >
-            {COUNTRIES.map((c) => <option key={c} value={c}>{countryName(c)}</option>)}
-          </select>
-          <input
-            type="text"
-            value={draft.q}
-            onChange={(e) => setDraft((d) => ({ ...d, q: e.target.value }))}
-            placeholder={t('news.keyword')}
-            aria-label={t('news.keyword')}
-            className="min-w-0 flex-1 rounded-md px-2 py-1.5 text-sm"
-            style={inputStyle}
-          />
-          <button type="submit" aria-label={t('news.search')} title={t('news.search')}
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-md transition-colors hover:bg-black/10" style={inputStyle}>
-            <Search className="h-4 w-4" />
-          </button>
+        <form data-no-drag onSubmit={applySearch} className="flex flex-col gap-1.5 px-3 pb-1 pt-2">
+          <div className="flex items-center gap-1.5">
+            <select
+              value={draft.country}
+              onChange={(e) => setDraft((d) => ({ ...d, country: e.target.value }))}
+              aria-label={t('news.country')}
+              className="min-w-0 flex-1 rounded-md px-1.5 py-1.5 text-xs"
+              style={inputStyle}
+            >
+              {COUNTRIES.map((c) => <option key={c} value={c}>{countryName(c)}</option>)}
+            </select>
+            <select
+              value={draft.intervalH ?? 24}
+              onChange={(e) => setDraft((d) => ({ ...d, intervalH: Number(e.target.value) }))}
+              aria-label={t('news.interval')}
+              title={t('news.interval')}
+              className="shrink-0 rounded-md px-1.5 py-1.5 text-xs"
+              style={inputStyle}
+            >
+              {INTERVALS.map((iv) => <option key={iv.h} value={iv.h}>{iv.label === 'manual' ? t('news.intManual') : iv.label}</option>)}
+            </select>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <input
+              type="text"
+              value={draft.q}
+              onChange={(e) => setDraft((d) => ({ ...d, q: e.target.value }))}
+              placeholder={t('news.keywordPh')}
+              aria-label={t('news.keyword')}
+              className="min-w-0 flex-1 rounded-md px-2 py-1.5 text-sm"
+              style={inputStyle}
+            />
+            <button type="submit" aria-label={t('news.search')} title={t('news.search')}
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-md transition-colors hover:bg-black/10" style={inputStyle}>
+              <Search className="h-4 w-4" />
+            </button>
+          </div>
         </form>
       )}
 
@@ -236,7 +262,8 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
         )}
       </div>
     </>
-  );
+    );
+  };
 
   // Mobile: a plain static section at the bottom of the stacked layout (no FAB).
   if (isMobile) {

@@ -940,9 +940,13 @@ async function runPushCron(env: Env): Promise<void> {
  *  localized headlines. We build only the fixed Bing URL from a whitelisted
  *  market + the encoded keyword (no SSRF surface). */
 const NEWS_MARKETS: Record<string, string> = {
-  KR: 'ko-KR', US: 'en-US', GB: 'en-GB', JP: 'ja-JP', CN: 'zh-CN', TW: 'zh-TW',
-  FR: 'fr-FR', DE: 'de-DE', ES: 'es-ES', IT: 'it-IT', IN: 'en-IN', BR: 'pt-BR',
-  RU: 'ru-RU', CA: 'en-CA', AU: 'en-AU',
+  KR: 'ko-KR', US: 'en-US', GB: 'en-GB', JP: 'ja-JP', CN: 'zh-CN', TW: 'zh-TW', HK: 'zh-HK',
+  FR: 'fr-FR', DE: 'de-DE', ES: 'es-ES', IT: 'it-IT', PT: 'pt-PT', NL: 'nl-NL', BE: 'nl-BE',
+  IN: 'en-IN', BR: 'pt-BR', RU: 'ru-RU', CA: 'en-CA', AU: 'en-AU', NZ: 'en-NZ', IE: 'en-IE',
+  MX: 'es-MX', AR: 'es-AR', CL: 'es-CL', SE: 'sv-SE', NO: 'nb-NO', DK: 'da-DK', FI: 'fi-FI',
+  PL: 'pl-PL', TR: 'tr-TR', ID: 'en-ID', MY: 'en-MY', PH: 'en-PH', SG: 'en-SG', ZA: 'en-ZA',
+  SA: 'ar-SA', TH: 'th-TH', AT: 'de-AT', CH: 'de-CH',
+  // WW (worldwide) is intentionally absent → no market filter (global results).
 };
 
 function decodeEntities(s: string): string {
@@ -998,9 +1002,10 @@ function parseRss(xml: string): NewsItem[] {
 async function handleNews(request: Request, env: Env, ctx?: Waiter): Promise<Response> {
   void env;
   const url = new URL(request.url);
-  const q = (url.searchParams.get('q') || '').trim().slice(0, 120);
+  const q = (url.searchParams.get('q') || '').trim().slice(0, 160);
   const country = (url.searchParams.get('country') || 'KR').toUpperCase();
-  const mkt = NEWS_MARKETS[country] ?? NEWS_MARKETS.KR;
+  // undefined for WW / unknown → no market filter = worldwide results.
+  const mkt = NEWS_MARKETS[country];
   if (!q) return json({ error: 'missing_query' }, 400);
 
   const cache = (caches as unknown as { default: Cache }).default;
@@ -1010,7 +1015,10 @@ async function handleNews(request: Request, env: Env, ctx?: Waiter): Promise<Res
   const hit = await cache.match(freshKey);
   if (hit) return hit;
 
-  const feed = `https://www.bing.com/news/search?q=${encodeURIComponent(q)}&format=RSS&setmkt=${mkt}`;
+  // Comma-separated keywords → an OR search ("삼성, 애플" → 삼성 OR 애플).
+  const terms = q.split(',').map((s) => s.trim()).filter(Boolean);
+  const searchQ = terms.length > 1 ? terms.join(' OR ') : q;
+  const feed = `https://www.bing.com/news/search?q=${encodeURIComponent(searchQ)}&format=RSS${mkt ? `&setmkt=${mkt}` : ''}`;
   const headers = {
     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Safari/537.36',
     'accept': 'application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.8',
@@ -1026,7 +1034,7 @@ async function handleNews(request: Request, env: Env, ctx?: Waiter): Promise<Res
 
   if (items.length) {
     const payload = { q, country, items, fetchedAt: Date.now() };
-    const fresh = json(payload, 200, { 'cache-control': 'public, max-age=10800' });   // 3h
+    const fresh = json(payload, 200, { 'cache-control': 'public, max-age=3600' });     // 1h — lets shorter client refresh intervals get fresh data
     const stale = json(payload, 200, { 'cache-control': 'public, max-age=604800' });   // 7d fallback
     const put = Promise.all([cache.put(freshKey, fresh.clone()), cache.put(staleKey, stale.clone())]);
     if (ctx?.waitUntil) ctx.waitUntil(put); else await put;
