@@ -58,6 +58,7 @@ import { StatsDialog } from '@/components/Admin/StatsDialog';
 import { OPEN_UPGRADE_EVENT } from '@/lib/pro';
 import { WelcomeOverlay } from '@/components/Onboarding/WelcomeOverlay';
 import { FirstInsightCard } from '@/components/Onboarding/FirstInsightCard';
+import { DesignMagician } from '@/components/Onboarding/DesignMagician';
 import { readSharedFromHash, clearShareHash } from '@/lib/share-link';
 import { AnalyticsDialog } from '@/components/Analytics/AnalyticsDialog';
 import { TimeGapDialog } from '@/components/TimeGap/TimeGapDialog';
@@ -84,6 +85,7 @@ import type { Preset } from '@/types/preset';
 // never empty). Set once the welcome is dismissed.
 const ONBOARDED_KEY = '24h-circle-planner.onboarded';
 const INSIGHT_KEY = '24h-circle-planner.first-insight';
+const MAGICIAN_KEY = '24h-circle-planner.design-magician';
 
 function isFirstVisit(): boolean {
   try {
@@ -113,9 +115,17 @@ function App() {
   const [shareImport, setShareImport] = useState<Schedule | null>(() => readSharedFromHash());
   // First visit → one-time welcome over the seeded demo (skipped when opening a link).
   const [welcomeOpen, setWelcomeOpen] = useState<boolean>(() => isFirstVisit() && shareImport === null);
+  // Design magician — a guided decorate-your-app flow. First-timers get it once
+  // right after onboarding; anyone can relaunch it from the top of Design.
+  const [magicianOpen, setMagicianOpen] = useState(false);
+  const closeMagician = () => {
+    setMagicianOpen(false);
+    try { localStorage.setItem(MAGICIAN_KEY, '1'); } catch { /* storage unavailable */ }
+  };
   const dismissWelcome = () => {
     markOnboarded();
     setWelcomeOpen(false);
+    try { if (!localStorage.getItem(MAGICIAN_KEY)) setMagicianOpen(true); } catch { /* */ }
   };
   // First "aha" card — the biggest slice of the day — shown once after the first
   // real schedule exists (right after the welcome, or for returning users).
@@ -571,7 +581,14 @@ function App() {
       />
 
       {/* T19: Settings dialog */}
-      <SettingsDialog section={settingsSection} onClose={() => setSettingsSection(null)} />
+      <SettingsDialog
+        section={settingsSection}
+        onClose={() => setSettingsSection(null)}
+        onOpenMagician={() => { setSettingsSection(null); setMagicianOpen(true); }}
+      />
+
+      {/* Guided decorate-your-app flow (first visit + relaunchable from Design). */}
+      <DesignMagician open={magicianOpen} onClose={closeMagician} />
 
       {/* T9: Export dialog */}
       <ExportDialog

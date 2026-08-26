@@ -1,5 +1,5 @@
 import { useRef, useState, type ChangeEvent } from 'react';
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus, Wand2 } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import { toast } from 'sonner';
 import { fireNotification, fireSliceAlarmPopup } from '@/lib/notify';
@@ -44,6 +44,8 @@ export type SettingsSection = 'language' | 'font' | 'icons' | 'timeline' | 'back
 export interface SettingsDialogProps {
   section: SettingsSection | null;
   onClose: () => void;
+  /** Launch the guided design magician (closes this dialog first). */
+  onOpenMagician?: () => void;
 }
 
 const SECTION_TITLE: Record<SettingsSection, TKey> = {
@@ -69,7 +71,7 @@ const BG_LABEL: Record<Background, TKey> = {
 // Selection highlight is driven by aria-pressed via the shared `.opt-chip` CSS.
 const OPT_CHIP = 'opt-chip px-3 py-1.5 rounded-md text-sm';
 
-export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
+export function SettingsDialog({ section, onClose, onOpenMagician }: SettingsDialogProps) {
   const { prefs, setPreference } = usePreferences();
   const { plan } = useAuth();
   const { t, lang } = useTranslation();
@@ -159,6 +161,17 @@ export function SettingsDialog({ section, onClose }: SettingsDialogProps) {
         </DialogHeader>
 
         <div className="flex flex-col gap-5 py-1">
+          {/* Guided design magician — top of every look-and-feel section. */}
+          {section !== 'language' && onOpenMagician && (
+            <button
+              type="button"
+              onClick={onOpenMagician}
+              className="flex items-center justify-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/15"
+            >
+              <Wand2 className="h-4 w-4" />
+              {t('magician.open')}
+            </button>
+          )}
           {/* Language */}
           {section === 'language' && (
             <div className="flex flex-wrap gap-1.5">
