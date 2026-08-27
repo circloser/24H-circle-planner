@@ -6,6 +6,8 @@ import { useTranslation } from '@/hooks/usePreferences';
 interface TutorialOverlayProps {
   open: boolean;
   onClose: () => void;
+  /** Called when the user completes the tour via the finish button. */
+  onFinish?: () => void;
 }
 
 interface Rect { top: number; left: number; width: number; height: number }
@@ -17,7 +19,7 @@ interface Rect { top: number; left: number; width: number; height: number }
  * it. Launched from the bottom of the 내 시간표 menu (and offered after the
  * design magician). Falls back to a centred card if an anchor isn't on screen.
  */
-export function TutorialOverlay({ open, onClose }: TutorialOverlayProps) {
+export function TutorialOverlay({ open, onClose, onFinish }: TutorialOverlayProps) {
   const { t } = useTranslation();
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
@@ -114,7 +116,7 @@ export function TutorialOverlay({ open, onClose }: TutorialOverlayProps) {
             <ChevronLeft className="h-4 w-4" />
           </button>
           {last ? (
-            <button type="button" onClick={onClose}
+            <button type="button" onClick={() => { onClose(); onFinish?.(); }}
               className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-primary py-2 text-sm font-semibold text-primary-foreground">
               <Check className="h-4 w-4" /> {t('magician.finish')}
             </button>

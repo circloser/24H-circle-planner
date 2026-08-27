@@ -60,6 +60,7 @@ import { WelcomeOverlay } from '@/components/Onboarding/WelcomeOverlay';
 import { FirstInsightCard } from '@/components/Onboarding/FirstInsightCard';
 import { DesignMagician } from '@/components/Onboarding/DesignMagician';
 import { TutorialOverlay } from '@/components/Onboarding/TutorialOverlay';
+import { PlayStoreBanner } from '@/components/Onboarding/PlayStoreBanner';
 import { readSharedFromHash, clearShareHash } from '@/lib/share-link';
 import { AnalyticsDialog } from '@/components/Analytics/AnalyticsDialog';
 import { TimeGapDialog } from '@/components/TimeGap/TimeGapDialog';
@@ -87,6 +88,7 @@ import type { Preset } from '@/types/preset';
 const ONBOARDED_KEY = '24h-circle-planner.onboarded';
 const INSIGHT_KEY = '24h-circle-planner.first-insight';
 const MAGICIAN_KEY = '24h-circle-planner.design-magician';
+const GETAPP_KEY = '24h-circle-planner.getapp-banner';
 
 function isFirstVisit(): boolean {
   try {
@@ -121,6 +123,15 @@ function App() {
   // right after onboarding; anyone can relaunch it from the top of Design.
   const [magicianOpen, setMagicianOpen] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
+  const [getAppOpen, setGetAppOpen] = useState(false);
+  // The very end of the first-run flow: a get-the-app QR, shown once.
+  const finishFirstRun = () => {
+    try { if (!localStorage.getItem(GETAPP_KEY)) setGetAppOpen(true); } catch { /* */ }
+  };
+  const closeGetApp = () => {
+    setGetAppOpen(false);
+    try { localStorage.setItem(GETAPP_KEY, '1'); } catch { /* */ }
+  };
   const closeMagician = () => {
     setMagicianOpen(false);
     try { localStorage.setItem(MAGICIAN_KEY, '1'); } catch { /* storage unavailable */ }
@@ -595,8 +606,12 @@ function App() {
           Finishing offers the timetable tutorial. */}
       <DesignMagician open={magicianOpen} onClose={closeMagician} onFinish={() => setTutorialOpen(true)} />
 
-      {/* Guided coach-mark tour of the timetable (from the 내 시간표 menu). */}
-      <TutorialOverlay open={tutorialOpen} onClose={() => setTutorialOpen(false)} />
+      {/* Guided coach-mark tour of the timetable (from the 내 시간표 menu).
+          Finishing it caps the first-run flow with the get-the-app QR. */}
+      <TutorialOverlay open={tutorialOpen} onClose={() => setTutorialOpen(false)} onFinish={finishFirstRun} />
+
+      {/* Final first-run flourish: scan-to-download QR (shown once). */}
+      <PlayStoreBanner open={getAppOpen} onClose={closeGetApp} />
 
       {/* T9: Export dialog */}
       <ExportDialog
