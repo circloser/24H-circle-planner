@@ -419,6 +419,7 @@ function App() {
         onOpenE2ee={() => setE2eeOpen(true)}
         onOpenUpgrade={() => setUpgradeOpen(true)}
         onOpenTutorial={() => setTutorialOpen(true)}
+        onOpenMagician={() => setMagicianOpen(true)}
       />
 
       <ActivationNudge onSendToPhone={() => setTransferOpen(true)} />

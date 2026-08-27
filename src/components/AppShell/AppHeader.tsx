@@ -1,4 +1,4 @@
-import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target, Lock, CalendarClock, CreditCard, Tags, Scale, CalendarRange, Sun, Moon, GraduationCap } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target, Lock, CalendarClock, CreditCard, Tags, Scale, CalendarRange, Sun, Moon, GraduationCap, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -43,6 +43,8 @@ export interface AppHeaderProps {
   onOpenUpgrade: () => void;
   /** Launch the guided timetable tutorial (from the 내 시간표 menu). */
   onOpenTutorial: () => void;
+  /** Launch the guided design magician (top of the Design menu). */
+  onOpenMagician: () => void;
 }
 
 /**
@@ -74,6 +76,7 @@ export function AppHeader({
   onOpenE2ee,
   onOpenUpgrade,
   onOpenTutorial,
+  onOpenMagician,
 }: AppHeaderProps) {
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
@@ -194,6 +197,12 @@ export function AppHeader({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-[12rem]">
+              {/* Guided decorate flow — top of the Design menu. */}
+              <DropdownMenuItem onClick={onOpenMagician} className="gap-2 font-semibold text-primary">
+                <Wand2 className="h-4 w-4" />
+                {t('magician.open')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={onOpenPresets} className="gap-2">
                 <Sparkles className="h-4 w-4" />
                 {t('header.presets')}
