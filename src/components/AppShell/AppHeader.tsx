@@ -1,4 +1,4 @@
-import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target, Lock, CalendarClock, CreditCard, Tags, Scale, CalendarRange, Sun, Moon } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target, Lock, CalendarClock, CreditCard, Tags, Scale, CalendarRange, Sun, Moon, GraduationCap } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -41,6 +41,8 @@ export interface AppHeaderProps {
   onOpenReset: () => void;
   onOpenE2ee: () => void;
   onOpenUpgrade: () => void;
+  /** Launch the guided timetable tutorial (from the 내 시간표 menu). */
+  onOpenTutorial: () => void;
 }
 
 /**
@@ -71,6 +73,7 @@ export function AppHeader({
   onOpenReset,
   onOpenE2ee,
   onOpenUpgrade,
+  onOpenTutorial,
 }: AppHeaderProps) {
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
@@ -111,7 +114,7 @@ export function AppHeader({
           <SaveIndicator />
         </div>
         {/* Centred view toggle — independent, page-centred between the side groups */}
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center" data-tour="view">
           <ChartViewToggle />
         </div>
         <div className="flex min-w-0 shrink items-center justify-end gap-1 sm:gap-2">
@@ -140,6 +143,11 @@ export function AppHeader({
                 <CalendarClock className="h-4 w-4" />
                 {t('weekday.title')}
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onOpenTutorial} className="gap-2">
+                <GraduationCap className="h-4 w-4" />
+                {t('tutorial.open')}
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           {/* Diary — its own top-level menu, pulled out of 내 시간표. Holds the
@@ -147,7 +155,7 @@ export function AppHeader({
               (time analysis, goals) that read from those saved days. */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="shrink-0 px-2 sm:px-3" aria-label={t('diary.open')}>
+              <Button variant="ghost" size="sm" className="shrink-0 px-2 sm:px-3" aria-label={t('diary.open')} data-tour="diary">
                 <BookOpen className="h-4 w-4 sm:hidden" />
                 <span className="hidden sm:inline">{t('diary.open')}</span>
                 <ChevronDown className="ml-1 hidden h-4 w-4 sm:inline" />

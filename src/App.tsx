@@ -59,6 +59,7 @@ import { OPEN_UPGRADE_EVENT } from '@/lib/pro';
 import { WelcomeOverlay } from '@/components/Onboarding/WelcomeOverlay';
 import { FirstInsightCard } from '@/components/Onboarding/FirstInsightCard';
 import { DesignMagician } from '@/components/Onboarding/DesignMagician';
+import { TutorialOverlay } from '@/components/Onboarding/TutorialOverlay';
 import { readSharedFromHash, clearShareHash } from '@/lib/share-link';
 import { AnalyticsDialog } from '@/components/Analytics/AnalyticsDialog';
 import { TimeGapDialog } from '@/components/TimeGap/TimeGapDialog';
@@ -119,6 +120,7 @@ function App() {
   // Design magician — a guided decorate-your-app flow. First-timers get it once
   // right after onboarding; anyone can relaunch it from the top of Design.
   const [magicianOpen, setMagicianOpen] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
   const closeMagician = () => {
     setMagicianOpen(false);
     try { localStorage.setItem(MAGICIAN_KEY, '1'); } catch { /* storage unavailable */ }
@@ -405,6 +407,7 @@ function App() {
         onOpenReset={() => setResetOpen(true)}
         onOpenE2ee={() => setE2eeOpen(true)}
         onOpenUpgrade={() => setUpgradeOpen(true)}
+        onOpenTutorial={() => setTutorialOpen(true)}
       />
 
       <ActivationNudge onSendToPhone={() => setTransferOpen(true)} />
@@ -421,7 +424,7 @@ function App() {
       >
         {/* Multi-day switcher — pinned at the top in-flow on mobile, floating on desktop. */}
         {chartView !== 'record' && <DayBar onOpenDiary={() => setDiaryOpen(true)} />}
-        <div className="flex w-full flex-col items-center gap-4">
+        <div className="flex w-full flex-col items-center gap-4" data-tour="chart">
         {chartView === 'record' ? (
           <RecordView />
         ) : chartView === 'table' ? (
@@ -588,8 +591,12 @@ function App() {
         onOpenMagician={() => { setSettingsSection(null); setMagicianOpen(true); }}
       />
 
-      {/* Guided decorate-your-app flow (first visit + relaunchable from Design). */}
-      <DesignMagician open={magicianOpen} onClose={closeMagician} />
+      {/* Guided decorate-your-app flow (first visit + relaunchable from Design).
+          Finishing offers the timetable tutorial. */}
+      <DesignMagician open={magicianOpen} onClose={closeMagician} onFinish={() => setTutorialOpen(true)} />
+
+      {/* Guided coach-mark tour of the timetable (from the 내 시간표 menu). */}
+      <TutorialOverlay open={tutorialOpen} onClose={() => setTutorialOpen(false)} />
 
       {/* T9: Export dialog */}
       <ExportDialog
