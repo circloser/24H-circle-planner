@@ -308,6 +308,7 @@ export function DayBar({ onOpenDiary }: { onOpenDiary?: () => void }) {
                 onClick={onOpenDiary}
                 aria-label={t('edit.saveDiary')}
                 title={t('edit.saveDiary')}
+                data-tour="diarySave"
                 className="flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-1 font-semibold transition-colors hover:bg-black/10 text-foreground"
               >
                 <BookMarked className="h-3 w-3" />

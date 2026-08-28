@@ -29,15 +29,19 @@ function sliceRect(): Rect | null {
   return { top: r.top, left: r.left, width: r.width, height: r.height };
 }
 
-/** A small zone just OUTSIDE the ring (right side) — where rim memos live. */
+/** A small zone just OUTSIDE the ring at its BOTTOM-RIGHT — hovering there
+ *  reveals the rim-memo affordance. */
 function rimRect(): Rect | null {
-  const svg = document.querySelector('main svg');
-  if (!svg) return null;
-  const r = svg.getBoundingClientRect();
+  // The chart is the LARGEST svg in main (small icon svgs come first in DOM).
+  const svgs = [...document.querySelectorAll('main svg')];
+  if (svgs.length === 0) return null;
+  const r = svgs.map((s) => s.getBoundingClientRect()).sort((a, b) => b.width - a.width)[0];
+  if (r.width < 200) return null;
   const cx = r.left + r.width / 2;
   const cy = r.top + r.height / 2;
   const edge = r.width * 0.47; // just past the ring's outer edge
-  return { top: cy - 34, left: cx + edge - 30, width: 96, height: 68 };
+  const k = Math.SQRT1_2; // 45° toward bottom-right
+  return { top: cy + edge * k - 30, left: cx + edge * k - 40, width: 96, height: 68 };
 }
 
 function anchorRect(name: string): Rect | null {
@@ -73,7 +77,7 @@ export function TutorialOverlay({ open, onClose, onFinish }: TutorialOverlayProp
     { name: 'tutorial.n2', body: 'tutorial.s2', target: sliceRect },
     { name: 'tutorial.n3', body: 'tutorial.s3', target: sliceRect },
     { name: 'tutorial.n4', body: 'tutorial.s4', target: rimRect },
-    { name: 'tutorial.n5', body: 'tutorial.s5', target: () => anchorRect('diary') },
+    { name: 'tutorial.n5', body: 'tutorial.s5', target: () => anchorRect('diarySave') ?? anchorRect('diary') },
     { name: 'tutorial.n6', body: 'tutorial.s6', target: () => anchorRect('view') },
   ];
   const last = step === steps.length - 1;
