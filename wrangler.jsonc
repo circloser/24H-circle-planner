@@ -21,7 +21,10 @@
     // Worker runs — which silently broke the OAuth login redirect (curl worked, the
     // browser didn't). Run the Worker first for /api/* so it owns those routes;
     // everything else stays asset-first with the SPA fallback.
-    "run_worker_first": ["/api/*"]
+    // /health/* and /stories/* also run Worker-first so the 40 retired article
+    // URLs can answer with a real 301 (see worker/legacy-redirects.ts); every
+    // other path under them falls straight through to ASSETS.
+    "run_worker_first": ["/api/*", "/health/*", "/stories/*"]
   },
 
   // The Worker's D1 database binding (env.DB). Schema: worker/migrations/.

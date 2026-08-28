@@ -8,6 +8,7 @@
  */
 
 import { sendWebPush } from '../src/lib/webpush';
+import { legacyRedirectTarget } from './legacy-redirects';
 
 export interface Env {
   /** Static assets binding (the built SPA in ./dist). */
@@ -1170,6 +1171,13 @@ export default {
       if (p === '/api/referral/claim' && m === 'POST') return handleReferralClaim(request, env);
       return json({ error: 'not_found' }, 404);
     }
+
+    // Retired /health and /stories articles → 301 to the pillar that absorbed
+    // them. Static assets can't issue a 301 themselves, so wrangler.jsonc routes
+    // those two prefixes through the Worker first; everything that isn't a
+    // retired slug (the pillars, the section indexes) falls through untouched.
+    const moved = legacyRedirectTarget(p);
+    if (moved) return Response.redirect(new URL(moved, url).toString(), 301);
 
     // Non-API request → serve the SPA (unchanged behaviour).
     return env.ASSETS.fetch(request);
