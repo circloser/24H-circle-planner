@@ -1,7 +1,9 @@
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { GraduationCap, X, ChevronLeft, ChevronRight, Check } from 'lucide-react';
-import { useTranslation } from '@/hooks/usePreferences';
+import { useTranslation, useChartView } from '@/hooks/usePreferences';
+import { useStoreSelector } from '@/hooks/useScheduleStore';
+import type { TKey } from '@/i18n/translations';
 
 interface TutorialOverlayProps {
   open: boolean;
@@ -12,57 +14,145 @@ interface TutorialOverlayProps {
 
 interface Rect { top: number; left: number; width: number; height: number }
 
+const RIM_KEY = '24h-circle-planner.rimmemos';
+const DIARY_KEY = '24h-circle-planner.diary';
+
+/** Bounding rect of a real, medium-sized slice path (small enough to read as
+ *  "this one", big enough to grab) — steps 1-3 point at it. */
+function sliceRect(): Rect | null {
+  const paths = [...document.querySelectorAll<SVGPathElement>('main svg path[data-slice-id]')];
+  if (paths.length === 0) return null;
+  const rects = paths.map((p) => p.getBoundingClientRect()).filter((r) => r.width > 24 && r.height > 24);
+  if (rects.length === 0) return null;
+  rects.sort((a, b) => a.width * a.height - b.width * b.height);
+  const r = rects[Math.floor(rects.length / 2)]; // median-sized slice
+  return { top: r.top, left: r.left, width: r.width, height: r.height };
+}
+
+/** A small zone just OUTSIDE the ring (right side) — where rim memos live. */
+function rimRect(): Rect | null {
+  const svg = document.querySelector('main svg');
+  if (!svg) return null;
+  const r = svg.getBoundingClientRect();
+  const cx = r.left + r.width / 2;
+  const cy = r.top + r.height / 2;
+  const edge = r.width * 0.47; // just past the ring's outer edge
+  return { top: cy - 34, left: cx + edge - 30, width: 96, height: 68 };
+}
+
+function anchorRect(name: string): Rect | null {
+  const el = document.querySelector(`[data-tour="${name}"]`);
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  return { top: r.top, left: r.left, width: r.width, height: r.height };
+}
+
+interface SliceSnap { id: string; label: string; startTime: string; endTime: string }
+interface Baseline { slices: SliceSnap[]; rim: string | null; diary: string | null; view: string }
+
+const readLs = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
+
 /**
- * A guided coach-mark tour of the timetable's core features. Each step points a
- * highlight ring + tooltip at a real control (via its `data-tour` anchor) and
- * explains what to try — without blocking the app, so the user can actually do
- * it. Launched from the bottom of the 내 시간표 menu (and offered after the
- * design magician). Falls back to a centred card if an anchor isn't on screen.
+ * A hands-on coach-mark tour: each step highlights the EXACT control (a real
+ * slice, the rim, the diary menu, the view toggle) with a pulsing ring and asks
+ * the user to actually do it. The overlay watches the schedule/preferences/
+ * storage, marks the step done (✓) the moment the action happens, and advances
+ * automatically. Steps can also be skipped with Next.
  */
 export function TutorialOverlay({ open, onClose, onFinish }: TutorialOverlayProps) {
   const { t } = useTranslation();
+  const chartView = useChartView();
+  const slices = useStoreSelector((s) => s.history.present.slices);
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
+  const [done, setDone] = useState(false);
+  const base = useRef<Baseline | null>(null);
 
-  const steps: { tour: string; text: string }[] = [
-    { tour: 'chart', text: t('tutorial.s1') },
-    { tour: 'chart', text: t('tutorial.s2') },
-    { tour: 'chart', text: t('tutorial.s3') },
-    { tour: 'chart', text: t('tutorial.s4') },
-    { tour: 'diary', text: t('tutorial.s5') },
-    { tour: 'view', text: t('tutorial.s6') },
+  const steps: { name: TKey; body: TKey; target: () => Rect | null }[] = [
+    { name: 'tutorial.n1', body: 'tutorial.s1', target: sliceRect },
+    { name: 'tutorial.n2', body: 'tutorial.s2', target: sliceRect },
+    { name: 'tutorial.n3', body: 'tutorial.s3', target: sliceRect },
+    { name: 'tutorial.n4', body: 'tutorial.s4', target: rimRect },
+    { name: 'tutorial.n5', body: 'tutorial.s5', target: () => anchorRect('diary') },
+    { name: 'tutorial.n6', body: 'tutorial.s6', target: () => anchorRect('view') },
   ];
+  const last = step === steps.length - 1;
 
   useEffect(() => { if (open) setStep(0); }, [open]);
 
-  // Track the current target's position (re-measure on step, resize, scroll).
+  // Capture a baseline when a step becomes active — completion is "something
+  // relevant changed since this snapshot".
+  useEffect(() => {
+    if (!open) return;
+    base.current = {
+      slices: slices.map((s) => ({ id: s.id, label: s.label, startTime: s.startTime, endTime: s.endTime })),
+      rim: readLs(RIM_KEY),
+      diary: readLs(DIARY_KEY),
+      view: chartView,
+    };
+    setDone(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, step]);
+
+  // Detect the step's action. Store/pref changes arrive via re-render; rim/diary
+  // localStorage writes are polled (same-tab storage events don't fire).
+  useEffect(() => {
+    if (!open || done) return;
+    const b = base.current;
+    if (!b) return;
+    const check = () => {
+      switch (step) {
+        case 0: { // resize: same slices, some time moved
+          if (slices.length !== b.slices.length) return false;
+          return slices.some((s) => { const o = b.slices.find((x) => x.id === s.id); return o && (o.startTime !== s.startTime || o.endTime !== s.endTime); });
+        }
+        case 1: return slices.length < b.slices.length; // delete
+        case 2: { // rename
+          if (slices.length !== b.slices.length) return false;
+          return slices.some((s) => { const o = b.slices.find((x) => x.id === s.id); return o && o.label !== s.label; });
+        }
+        case 3: return readLs(RIM_KEY) !== b.rim; // rim memo
+        case 4: return readLs(DIARY_KEY) !== b.diary; // diary saved
+        case 5: return chartView !== b.view; // view switched
+        default: return false;
+      }
+    };
+    if (check()) { setDone(true); return; }
+    const id = window.setInterval(() => { if (check()) setDone(true); }, 600);
+    return () => window.clearInterval(id);
+  }, [open, step, done, slices, chartView]);
+
+  // Auto-advance shortly after a step is completed (last step waits for finish).
+  useEffect(() => {
+    if (!open || !done || last) return;
+    const id = window.setTimeout(() => setStep((s) => s + 1), 1300);
+    return () => window.clearTimeout(id);
+  }, [open, done, last]);
+
+  // Track the current target's position (re-measure on step, resize, scroll,
+  // and periodically — slices move as the user edits).
   useLayoutEffect(() => {
     if (!open) return;
-    const measure = () => {
-      const el = document.querySelector(`[data-tour="${steps[step].tour}"]`);
-      if (!el) { setRect(null); return; }
-      const r = el.getBoundingClientRect();
-      setRect({ top: r.top, left: r.left, width: r.width, height: r.height });
-    };
+    const measure = () => setRect(steps[step].target());
     measure();
+    const id = window.setInterval(measure, 500);
     window.addEventListener('resize', measure);
     window.addEventListener('scroll', measure, true);
-    return () => { window.removeEventListener('resize', measure); window.removeEventListener('scroll', measure, true); };
+    return () => { window.clearInterval(id); window.removeEventListener('resize', measure); window.removeEventListener('scroll', measure, true); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, step]);
 
   if (!open) return null;
 
-  const last = step === steps.length - 1;
   const go = (d: number) => setStep((s) => Math.min(steps.length - 1, Math.max(0, s + d)));
 
   // Tooltip placement: below the target if it fits, else above; else centred.
-  const pad = 8;
-  const cardW = 300;
+  const cardW = 310;
+  const cardH = 190;
   let cardStyle: React.CSSProperties;
   if (rect) {
-    const below = rect.top + rect.height + 150 < window.innerHeight;
-    const top = below ? rect.top + rect.height + pad + 6 : Math.max(8, rect.top - 6 - 150);
+    const below = rect.top + rect.height + cardH + 20 < window.innerHeight;
+    const top = below ? rect.top + rect.height + 14 : Math.max(8, rect.top - 14 - cardH);
     let left = rect.left + rect.width / 2 - cardW / 2;
     left = Math.max(8, Math.min(window.innerWidth - cardW - 8, left));
     cardStyle = { position: 'fixed', top, left, width: cardW };
@@ -71,18 +161,20 @@ export function TutorialOverlay({ open, onClose, onFinish }: TutorialOverlayProp
   }
 
   return createPortal(
-    // Container is click-through so the user can actually try each feature; only
-    // the tooltip card and the highlight ring are drawn.
+    // Container is click-through so the user can actually do each action; only
+    // the tooltip card captures the pointer.
     <div className="fixed inset-0 z-[59]" style={{ pointerEvents: 'none' }}>
+      <style>{`@keyframes tut-pulse { 0%,100% { box-shadow: 0 0 0 3px hsl(var(--primary) / 0.25), 0 0 20px hsl(var(--primary) / 0.35); } 50% { box-shadow: 0 0 0 9px hsl(var(--primary) / 0.12), 0 0 30px hsl(var(--primary) / 0.5); } }`}</style>
       {rect && (
         <div
           aria-hidden
           className="fixed rounded-xl"
           style={{
             top: rect.top - 6, left: rect.left - 6, width: rect.width + 12, height: rect.height + 12,
-            border: '2px solid hsl(var(--primary))',
-            boxShadow: '0 0 0 3px hsl(var(--primary) / 0.25), 0 0 22px hsl(var(--primary) / 0.35)',
-            transition: 'all .2s ease',
+            border: `2px solid ${done ? '#16a34a' : 'hsl(var(--primary))'}`,
+            boxShadow: done ? '0 0 0 3px rgb(22 163 74 / 0.3)' : undefined,
+            animation: done ? 'none' : 'tut-pulse 1.6s ease-in-out infinite',
+            transition: 'top .25s ease, left .25s ease, width .25s ease, height .25s ease',
           }}
         />
       )}
@@ -92,9 +184,9 @@ export function TutorialOverlay({ open, onClose, onFinish }: TutorialOverlayProp
         className="rounded-2xl border border-border bg-surface p-4 shadow-2xl"
         style={{ ...cardStyle, pointerEvents: 'auto' }}
       >
-        <div className="mb-2 flex items-center gap-1.5">
+        <div className="mb-1.5 flex items-center gap-1.5">
           <GraduationCap className="h-4 w-4" style={{ color: 'hsl(var(--primary))' }} />
-          <span className="flex-1 text-sm font-bold text-foreground">{t('tutorial.title')}</span>
+          <span className="flex-1 text-sm font-bold text-foreground">{t(steps[step].name)}</span>
           <span className="text-[11px] tabular-nums text-muted-foreground">{step + 1}/{steps.length}</span>
           <button type="button" onClick={onClose} aria-label={t('common.cancel')}
             className="grid h-6 w-6 place-items-center rounded transition-colors hover:bg-black/10">
@@ -102,28 +194,39 @@ export function TutorialOverlay({ open, onClose, onFinish }: TutorialOverlayProp
           </button>
         </div>
 
-        <p className="text-[13px] leading-relaxed text-foreground">{steps[step].text}</p>
+        <p className="text-[13px] leading-relaxed text-foreground">{t(steps[step].body)}</p>
 
-        <div className="mt-3 flex justify-center gap-1">
+        {/* Live status: try-it hint → green "done!" the moment the action lands. */}
+        {done ? (
+          <p className="mt-2 flex items-center gap-1 text-[12px] font-semibold" style={{ color: '#16a34a' }} role="status">
+            <Check className="h-3.5 w-3.5" /> {t('tutorial.done')}
+          </p>
+        ) : (
+          <p className="mt-2 text-[11px] text-muted-foreground">{t('tutorial.tryIt')}</p>
+        )}
+
+        <div className="mt-2.5 flex justify-center gap-1">
           {steps.map((_, i) => (
-            <span key={i} className="h-1.5 w-1.5 rounded-full" style={{ background: i === step ? 'hsl(var(--primary))' : 'hsl(var(--border))' }} />
+            <span key={i} className="h-1.5 w-1.5 rounded-full"
+              style={{ background: i < step || (i === step && done) ? '#16a34a' : i === step ? 'hsl(var(--primary))' : 'hsl(var(--border))' }} />
           ))}
         </div>
 
-        <div className="mt-3 flex items-center gap-2">
+        <div className="mt-2.5 flex items-center gap-2">
           <button type="button" onClick={() => go(-1)} disabled={step === 0}
             className="grid h-8 w-8 place-items-center rounded-md border border-border disabled:opacity-40">
             <ChevronLeft className="h-4 w-4" />
           </button>
           {last ? (
             <button type="button" onClick={() => { onClose(); onFinish?.(); }}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-primary py-2 text-sm font-semibold text-primary-foreground">
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-md py-2 text-sm font-semibold text-primary-foreground"
+              style={{ background: done ? '#16a34a' : 'hsl(var(--primary))' }}>
               <Check className="h-4 w-4" /> {t('magician.finish')}
             </button>
           ) : (
             <button type="button" onClick={() => go(1)}
               className="flex flex-1 items-center justify-center gap-1 rounded-md bg-primary py-2 text-sm font-semibold text-primary-foreground">
-              {t('magician.next')} <ChevronRight className="h-4 w-4" />
+              {t(done ? 'magician.next' : 'tutorial.skip')} <ChevronRight className="h-4 w-4" />
             </button>
           )}
         </div>
