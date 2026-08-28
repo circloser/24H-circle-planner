@@ -126,12 +126,8 @@ export function TutorialOverlay({ open, onClose, onFinish }: TutorialOverlayProp
     return () => window.clearInterval(id);
   }, [open, step, done, slices, chartView]);
 
-  // Auto-advance shortly after a step is completed (last step waits for finish).
-  useEffect(() => {
-    if (!open || !done || last) return;
-    const id = window.setTimeout(() => setStep((s) => s + 1), 1300);
-    return () => window.clearTimeout(id);
-  }, [open, done, last]);
+  // NB: no auto-advance — the user moves on with Next when ready, so there's
+  // room to reflect on each feature after trying it.
 
   // Track the current target's position (re-measure on step, resize, scroll,
   // and periodically — slices move as the user edits).
@@ -200,13 +196,11 @@ export function TutorialOverlay({ open, onClose, onFinish }: TutorialOverlayProp
 
         <p className="text-[13px] leading-relaxed text-foreground">{t(steps[step].body)}</p>
 
-        {/* Live status: try-it hint → green "done!" the moment the action lands. */}
-        {done ? (
+        {/* Green "done!" the moment the action lands (no hint line, no rush). */}
+        {done && (
           <p className="mt-2 flex items-center gap-1 text-[12px] font-semibold" style={{ color: '#16a34a' }} role="status">
             <Check className="h-3.5 w-3.5" /> {t('tutorial.done')}
           </p>
-        ) : (
-          <p className="mt-2 text-[11px] text-muted-foreground">{t('tutorial.tryIt')}</p>
         )}
 
         <div className="mt-2.5 flex justify-center gap-1">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './index.css';
 import { Sparkles, Plus } from 'lucide-react';
 import { toast } from 'sonner';
@@ -73,7 +73,6 @@ import { NewsWidget } from '@/components/News/NewsWidget';
 import { DiaryViewSync } from '@/components/DiaryViewSync';
 import { RecordView } from '@/components/Record/RecordView';
 import { WeekdayScheduleDialog } from '@/components/Weekday/WeekdayScheduleDialog';
-import { WeekdayPromptDialog } from '@/components/Weekday/WeekdayPromptDialog';
 import { loadWeekdayMap, weekdayName, STORAGE_KEY_WEEKDAY_PROMPTED } from '@/lib/weekday-schedules';
 import { loadSlots } from '@/lib/slots';
 import { dateKey } from '@/hooks/useDiary';
@@ -117,11 +116,28 @@ function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   // A schedule arriving via a share link (#p=…) → confirm before it replaces.
   const [shareImport, setShareImport] = useState<Schedule | null>(() => readSharedFromHash());
-  // First visit → one-time welcome over the seeded demo (skipped when opening a link).
-  const [welcomeOpen, setWelcomeOpen] = useState<boolean>(() => isFirstVisit() && shareImport === null);
+  // First visit = a CLEAN start: just the timetable on a quiet screen — no
+  // welcome card, no banners, no widgets, no insight. After ~5s of taking it
+  // in, the design magician starts. (The persona picker stays available via
+  // the preset gallery.)
+  const [firstRunClean, setFirstRunClean] = useState<boolean>(() => isFirstVisit() && shareImport === null);
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
   // Design magician — a guided decorate-your-app flow. First-timers get it once
-  // right after onboarding; anyone can relaunch it from the top of Design.
+  // (5s after the clean first screen); anyone can relaunch it from Design.
   const [magicianOpen, setMagicianOpen] = useState(false);
+  useEffect(() => {
+    if (!firstRunClean) return;
+    // Suppress the insight card for this brand-new user (quiet-start policy).
+    try { localStorage.setItem(INSIGHT_KEY, '1'); } catch { /* */ }
+    setInsightDone(true);
+    const id = window.setTimeout(() => {
+      markOnboarded();
+      setFirstRunClean(false);
+      setMagicianOpen(true);
+    }, 5000);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [getAppOpen, setGetAppOpen] = useState(false);
   // The very end of the first-run flow: a get-the-app QR, shown once.
@@ -362,12 +378,41 @@ function App() {
     void requestPersistentStorage();
   }, []);
 
-  // Mark today as prompted the moment a weekday prompt is shown, so a reload
-  // before the user answers doesn't ask again this day.
+  // Weekday defaults now load AUTOMATICALLY (no prompt): on open, and again the
+  // moment the local date rolls past midnight — so each day starts on its
+  // assigned schedule (and its alarms) without any manual step. A toast says
+  // which day was loaded. Skipped while viewing a past diary day.
   useEffect(() => {
     if (weekdaySlot) {
+      handleSlotLoad(weekdaySlot);
+      toast.success(t('weekday.autoLoaded', { day: weekdayName(new Date().getDay(), lang) }));
+      setWeekdaySlot(null);
       try { localStorage.setItem(STORAGE_KEY_WEEKDAY_PROMPTED, dateKey()); } catch { /* ignore */ }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const diaryDateRef = useRef(diaryDate);
+  diaryDateRef.current = diaryDate;
+  const langRef = useRef(lang);
+  langRef.current = lang;
+  useEffect(() => {
+    let lastDay = dateKey();
+    const id = window.setInterval(() => {
+      const today = dateKey();
+      if (today === lastDay) return;
+      lastDay = today;
+      if (diaryDateRef.current) return; // reading a past day — don't clobber it
+      try {
+        const slotId = loadWeekdayMap()[new Date().getDay()];
+        const slot = slotId ? (loadSlots()[slotId] ?? null) : null;
+        if (slot) {
+          handleSlotLoad(slot);
+          toast.success(t('weekday.autoLoaded', { day: weekdayName(new Date().getDay(), langRef.current) }));
+          localStorage.setItem(STORAGE_KEY_WEEKDAY_PROMPTED, today);
+        }
+      } catch { /* best effort */ }
+    }, 30_000);
+    return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -422,10 +467,10 @@ function App() {
         onOpenMagician={() => setMagicianOpen(true)}
       />
 
-      <ActivationNudge onSendToPhone={() => setTransferOpen(true)} />
+      {!firstRunClean && <ActivationNudge onSendToPhone={() => setTransferOpen(true)} />}
       <EnablePushBanner />
-      <GetAppBanner />
-      <IosInstallBanner onOpen={() => setHomeOpen(true)} />
+      {!firstRunClean && <GetAppBanner />}
+      {!firstRunClean && <IosInstallBanner onOpen={() => setHomeOpen(true)} />}
 
       <main
         className={
@@ -661,13 +706,7 @@ function App() {
       {/* Assign a saved schedule to each weekday. */}
       <WeekdayScheduleDialog open={weekdayOpen} onOpenChange={setWeekdayOpen} />
 
-      {/* On opening the app on a weekday with an assigned default → confirm load. */}
-      <WeekdayPromptDialog
-        slot={weekdaySlot}
-        dayName={weekdayName(new Date().getDay(), lang)}
-        onKeep={() => setWeekdaySlot(null)}
-        onLoad={(slot) => { handleSlotLoad(slot); setWeekdaySlot(null); }}
-      />
+      {/* (Weekday defaults auto-load now — the confirm prompt is gone.) */}
 
       {/* One-time first-visit welcome over the seeded demo schedule. */}
       <WelcomeOverlay
@@ -697,14 +736,14 @@ function App() {
           (bottom-left). On mobile these move into the stacked sections under the
           chart (MobileMemoSection / MobileClockSection inside <main>). */}
       <DiaryViewSync />
-      {!isMobile && prefs.showMemos && <MemoLayer />}
-      {!isMobile && <GoalsWidget onSetup={() => setGoalsOpen(true)} />}
-      {!isMobile && <ClockToolsLayer />}
+      {!isMobile && !firstRunClean && prefs.showMemos && <MemoLayer />}
+      {!isMobile && !firstRunClean && <GoalsWidget onSetup={() => setGoalsOpen(true)} />}
+      {!isMobile && !firstRunClean && <ClockToolsLayer />}
       {/* Keyword news headlines — desktop: the FAB is always shown; its window
           open/closed is a pref (magician-toggleable). Mobile: a bottom section. */}
-      {!isMobile && <NewsWidget />}
+      {!isMobile && !firstRunClean && <NewsWidget />}
       {/* Background pet — desktop only (removed on mobile). */}
-      {!isMobile && (
+      {!isMobile && !firstRunClean && (
         <TamagotchiProvider>
           <TamagotchiLayer />
         </TamagotchiProvider>

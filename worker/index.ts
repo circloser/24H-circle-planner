@@ -1017,19 +1017,35 @@ async function handleNews(request: Request, env: Env, ctx?: Waiter): Promise<Res
 
   // Comma-separated keywords → an OR search ("삼성, 애플" → 삼성 OR 애플).
   const terms = q.split(',').map((s) => s.trim()).filter(Boolean);
-  const searchQ = terms.length > 1 ? terms.join(' OR ') : q;
-  const feed = `https://www.bing.com/news/search?q=${encodeURIComponent(searchQ)}&format=RSS${mkt ? `&setmkt=${mkt}` : ''}`;
+  // Bing's RSS ignores "A OR B" (returns nothing), so multiple keywords are
+  // fetched INDIVIDUALLY (in parallel) and interleaved round-robin, deduped.
   const headers = {
     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Safari/537.36',
     'accept': 'application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.8',
   };
+  const fetchTerm = async (term: string): Promise<NewsItem[]> => {
+    const feed = `https://www.bing.com/news/search?q=${encodeURIComponent(term)}&format=RSS${mkt ? `&setmkt=${mkt}` : ''}`;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt) await new Promise((r) => setTimeout(r, 300 * attempt));
+      try {
+        const res = await fetch(feed, { headers });
+        if (res.ok) { const parsed = parseRss(await res.text()); if (parsed.length) return parsed; }
+      } catch { /* retry */ }
+    }
+    return [];
+  };
+  const lists = await Promise.all(terms.slice(0, 3).map(fetchTerm));
   let items: NewsItem[] = [];
-  for (let attempt = 0; attempt < 3; attempt++) {
-    if (attempt) await new Promise((r) => setTimeout(r, 300 * attempt));
-    try {
-      const res = await fetch(feed, { headers });
-      if (res.ok) { items = parseRss(await res.text()); if (items.length) break; }
-    } catch { /* retry */ }
+  const seenTitles = new Set<string>();
+  for (let i = 0; items.length < 10; i++) {
+    let any = false;
+    for (const list of lists) {
+      const it = list[i];
+      if (!it) continue;
+      any = true;
+      if (!seenTitles.has(it.title) && items.length < 10) { seenTitles.add(it.title); items.push(it); }
+    }
+    if (!any) break;
   }
 
   if (items.length) {

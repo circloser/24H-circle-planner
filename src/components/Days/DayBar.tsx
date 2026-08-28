@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, X, Copy, FileText, LayoutGrid, Lock, Unlock, CalendarDays, ChevronLeft, ChevronRight, LogOut, Pencil, Undo2, BookMarked } from 'lucide-react';
+import { Plus, X, Copy, FileText, LayoutGrid, Lock, Unlock, CalendarDays, ChevronLeft, ChevronRight, LogOut, Undo2, BookMarked } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import { toast } from 'sonner';
 import {
@@ -294,10 +294,6 @@ export function DayBar({ onOpenDiary }: { onOpenDiary?: () => void }) {
             WebkitBackdropFilter: 'blur(8px)',
           }}
         >
-          <span className="flex items-center gap-1 text-muted-foreground">
-            <Pencil className="h-3 w-3" />
-            {t('diary.editMode')}
-          </span>
           {/* Save today's schedule as a diary entry — opens the diary window
               (where "오늘 저장" lives) so the day can be logged. */}
           {onOpenDiary && (

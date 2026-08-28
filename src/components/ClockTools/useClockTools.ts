@@ -86,13 +86,13 @@ export function clockSpawnPos(count: number): Pos {
   return spawnNearCentre(-340 + count * 26, -40 + count * 26, 168, 150);
 }
 
-/** Default stacked positions above the bottom-left FAB. One local clock + the
- *  calendar start ON (floating on the LEFT) so a first-time visitor lands on a
- *  live dashboard; every other tool stays off until opened. */
+/** Default positions above the bottom-left FAB. EVERYTHING starts OFF — a
+ *  first-time visitor lands on a clean screen with just the timetable; the
+ *  design magician (and the FAB menu) turn tools on. */
 function defaultState(): ClockToolsState {
   return {
-    clocks: [{ id: uuid(), mode: 'analog', pos: spawnNearCentre(-340, -40, 168, 150), tz: null }],
-    calendar: { on: true, pos: spawnNearCentre(-360, -210, 232, 240) },
+    clocks: [],
+    calendar: { on: false, pos: spawnNearCentre(-360, -210, 232, 240) },
     nownext: { on: false, pos: spawnNearCentre(150, -210, 210, 180) },
     timer: { on: false, pos: spawnNearCentre(-340, 130, 200, 160), setSec: 300, remainingSec: 300, running: false, endAt: null },
     weathers: [],

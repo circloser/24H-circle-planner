@@ -12,6 +12,7 @@ import { useClockTools } from '@/components/ClockTools/useClockTools';
 import { CLOCKTOOLS_SYNC_EVENT } from '@/lib/sync/widgetSync';
 import { COLOR_THEMES } from '@/data/color-themes';
 import type { TKey } from '@/i18n/translations';
+import { useTheme } from '@/hooks/useTheme';
 
 interface DesignMagicianProps {
   open: boolean;
@@ -29,6 +30,7 @@ interface DesignMagicianProps {
  */
 export function DesignMagician({ open, onClose, onFinish }: DesignMagicianProps) {
   const { prefs, setPreference } = usePreferences();
+  const { theme, setTheme } = useTheme();
   const { t, lang } = useTranslation();
   const dispatch = useStoreDispatch();
   const present = useStoreSelector((s) => s.history.present);
@@ -72,6 +74,18 @@ export function DesignMagician({ open, onClose, onFinish }: DesignMagicianProps)
   const swatch = (from: string, via: string, to: string) => `linear-gradient(135deg, ${from}, ${via}, ${to})`;
 
   const steps = [
+    // ── Light / dark mode — the very first choice ────────────────────────────
+    {
+      title: t('magician.stepMode'),
+      body: (
+        <div className="flex gap-1.5">
+          <button type="button" onClick={() => setTheme('light')} aria-pressed={theme === 'light'}
+            className="opt-chip flex-1 rounded-md px-2 py-1.5 text-xs">☀️ {t('theme.lightMode')}</button>
+          <button type="button" onClick={() => setTheme('dark')} aria-pressed={theme === 'dark'}
+            className="opt-chip flex-1 rounded-md px-2 py-1.5 text-xs">🌙 {t('theme.darkMode')}</button>
+        </div>
+      ),
+    },
     // ── Colour theme (recolours the schedule) ────────────────────────────────
     {
       title: t('magician.stepTheme'),

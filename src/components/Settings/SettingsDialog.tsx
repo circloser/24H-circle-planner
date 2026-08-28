@@ -39,7 +39,7 @@ import { LANGUAGES, type Lang } from '@/i18n/translations';
 import type { TKey } from '@/i18n/translations';
 
 /** Each settings category is its own focused dialog, opened from the gear menu. */
-export type SettingsSection = 'language' | 'font' | 'icons' | 'timeline' | 'background' | 'theme';
+export type SettingsSection = 'language' | 'font' | 'icons' | 'timeline' | 'background' | 'theme' | 'alarms';
 
 export interface SettingsDialogProps {
   section: SettingsSection | null;
@@ -55,6 +55,7 @@ const SECTION_TITLE: Record<SettingsSection, TKey> = {
   timeline: 'settings.timeline',
   background: 'settings.background',
   theme: 'settings.colorTheme',
+  alarms: 'settings.alarms',
 };
 
 const BG_LABEL: Record<Background, TKey> = {
@@ -252,9 +253,11 @@ export function SettingsDialog({ section, onClose, onOpenMagician }: SettingsDia
             </div>
           )}
 
-          {/* Timeline: now-line style + world-clock lines */}
-          {section === 'timeline' && (
+          {/* Timeline (ring/snap/now-line/world clocks) + Alarms (chime, slice,
+              push, tests) share this container; `section` picks the blocks. */}
+          {(section === 'timeline' || section === 'alarms') && (
             <div className="flex flex-col gap-4">
+              {section === 'timeline' && (<>
               {/* Donut ring thickness — moves the inner radius (outer rim fixed).
                   Slider shows thickness (thicker → right); stored as innerR. */}
               <div className="flex flex-col gap-2">
@@ -292,6 +295,8 @@ export function SettingsDialog({ section, onClose, onOpenMagician }: SettingsDia
                 </div>
                 <p className="text-[11px] text-muted-foreground">{t('settings.snapHint')}</p>
               </div>
+              </>)}
+              {section === 'alarms' && (<>
               {/* Recurring time chime — every N minutes / on the hour. */}
               <div className="flex flex-col gap-2">
                 <span className="text-xs text-muted-foreground">{t('chime.label')}</span>
@@ -458,7 +463,8 @@ export function SettingsDialog({ section, onClose, onOpenMagician }: SettingsDia
                   </button>
                 )}
               </div>
-
+              </>)}
+              {section === 'timeline' && (<>
               {/* Now line on/off */}
               <div className="flex flex-col gap-2">
                 <span className="text-xs text-muted-foreground">{t('settings.clockNowLine')}</span>
@@ -542,6 +548,7 @@ export function SettingsDialog({ section, onClose, onOpenMagician }: SettingsDia
                   </button>
                 </div>
               </div>
+              </>)}
             </div>
           )}
 
