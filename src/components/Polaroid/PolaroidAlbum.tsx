@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Images, X, Plus } from 'lucide-react';
+import { Images, X, Plus, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from '@/hooks/usePreferences';
 import { makeDragStart, anchoredStyle, spawnNearCentre, clampOffset, loadPosProfile, savePosProfile, type Pos } from '@/components/ClockTools/clock-utils';
 
@@ -132,6 +132,7 @@ function PolaroidCard({ photo, onChange, onRemove }: { photo: Photo; onChange: (
 export function PolaroidAlbum() {
   const { t } = useTranslation();
   const [open, setOpen] = useState<boolean>(() => { try { return localStorage.getItem(OPEN_KEY) === '1'; } catch { return false; } });
+  const [menuOpen, setMenuOpen] = useState(false);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -186,24 +187,39 @@ export function PolaroidAlbum() {
       <input ref={fileRef} type="file" accept="image/*" multiple className="hidden"
         onChange={(e) => { void onFiles(e.target.files); e.target.value = ''; }} />
 
-      {/* Add button rides above the album FAB while the album is open. */}
-      {open && photos.length < MAX_PHOTOS && (
-        <button
-          type="button"
-          onClick={() => fileRef.current?.click()}
-          aria-label={t('polaroid.add')}
-          title={t('polaroid.add')}
-          className="fixed bottom-[76px] right-[182px] z-30 grid h-9 w-9 place-items-center rounded-full border border-border bg-surface text-muted-foreground shadow-md transition-transform hover:scale-105"
-        >
-          <Plus className="h-4 w-4" />
-        </button>
+      {/* Click-away backdrop for the popup menu. */}
+      {menuOpen && (
+        <div className="fixed inset-0 z-[39]" onClick={() => setMenuOpen(false)} aria-hidden="true" />
+      )}
+
+      {/* Popup menu — add photos / show-hide, like the memo & clock-tool FABs. */}
+      {menuOpen && (
+        <div className="fixed bottom-[76px] right-[182px] z-40 flex flex-col items-end gap-2">
+          <button
+            type="button"
+            onClick={() => { setMenuOpen(false); fileRef.current?.click(); }}
+            disabled={photos.length >= MAX_PHOTOS}
+            className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-2 text-sm text-foreground shadow-md transition-transform hover:scale-105 disabled:opacity-50"
+          >
+            <Plus className="h-4 w-4" />
+            {t('polaroid.add')}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setOpen((v) => !v); setMenuOpen(false); }}
+            className="flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-2 text-sm text-foreground shadow-md transition-transform hover:scale-105"
+          >
+            {open ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {t(open ? 'polaroid.hide' : 'polaroid.show')}
+          </button>
+        </div>
       )}
 
       <button
         type="button"
-        onClick={() => { if (!open && photos.length === 0) fileRef.current?.click(); else setOpen((v) => !v); }}
+        onClick={() => setMenuOpen((v) => !v)}
         aria-label={t('polaroid.open')}
-        aria-expanded={open}
+        aria-expanded={menuOpen}
         title={t('polaroid.open')}
         className="fixed bottom-5 right-[182px] z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 bg-surface text-muted-foreground border border-border"
       >

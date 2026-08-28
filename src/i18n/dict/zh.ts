@@ -54,6 +54,8 @@ export const zh: Record<TKey, string> = {
   'polaroid.add': '添加照片（仅保存在本设备）',
   'polaroid.caption': '写下说明…',
   'polaroid.delete': '删除照片',
+  'polaroid.show': '显示照片',
+  'polaroid.hide': '隐藏照片',
   'referral.menu': '邀请朋友',
   'referral.title': '邀请朋友',
   'referral.desc': '朋友通过你的链接登录后，你将自动获得 1 个月 Pro。',

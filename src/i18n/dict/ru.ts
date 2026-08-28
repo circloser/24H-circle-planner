@@ -54,6 +54,8 @@ export const ru: Record<TKey, string> = {
   'polaroid.add': 'Добавить фото (хранится только на этом устройстве)',
   'polaroid.caption': 'Подпись…',
   'polaroid.delete': 'Удалить фото',
+  'polaroid.show': 'Показать фото',
+  'polaroid.hide': 'Скрыть фото',
   'referral.menu': 'Пригласить друга',
   'referral.title': 'Пригласить друга',
   'referral.desc': 'Когда друг откроет вашу ссылку и войдёт, вы автоматически получите 1 месяц Pro.',

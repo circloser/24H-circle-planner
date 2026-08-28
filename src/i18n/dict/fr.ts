@@ -54,6 +54,8 @@ export const fr: Record<TKey, string> = {
   'polaroid.add': 'Ajouter des photos (sur cet appareil uniquement)',
   'polaroid.caption': 'Écrire une légende…',
   'polaroid.delete': 'Supprimer la photo',
+  'polaroid.show': 'Afficher les photos',
+  'polaroid.hide': 'Masquer les photos',
   'referral.menu': 'Inviter un ami',
   'referral.title': 'Inviter un ami',
   'referral.desc': 'Quand un ami ouvre votre lien et se connecte, vous recevez automatiquement 1 mois de Pro.',

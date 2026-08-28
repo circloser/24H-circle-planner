@@ -54,6 +54,8 @@ export const ja: Record<TKey, string> = {
   'polaroid.add': '写真を追加（この端末のみに保存）',
   'polaroid.caption': 'キャプションを書く…',
   'polaroid.delete': '写真を削除',
+  'polaroid.show': '写真を表示',
+  'polaroid.hide': '写真を隠す',
   'referral.menu': '友達を招待',
   'referral.title': '友達を招待',
   'referral.desc': '友達がこのリンクからログインすると、あなたにPro 1ヶ月が自動で付与されます。',

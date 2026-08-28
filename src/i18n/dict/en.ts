@@ -57,6 +57,8 @@ export const en: Record<TKey, string> = {
   'polaroid.add': 'Add photos (stored on this device only)',
   'polaroid.caption': 'Write a caption…',
   'polaroid.delete': 'Delete photo',
+  'polaroid.show': 'Show photos',
+  'polaroid.hide': 'Hide photos',
   'referral.menu': 'Invite a friend',
   'referral.title': 'Invite a friend',
   'referral.desc': 'When a friend opens your link and signs in, you automatically get 1 month of Pro.',

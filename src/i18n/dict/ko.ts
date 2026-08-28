@@ -60,6 +60,8 @@ export const ko = {
   'polaroid.add': '사진 추가 (이 기기에만 저장)',
   'polaroid.caption': '캡션 쓰기…',
   'polaroid.delete': '사진 삭제',
+  'polaroid.show': '사진 표시',
+  'polaroid.hide': '사진 숨기기',
   'referral.menu': '친구 초대',
   'referral.title': '친구 초대',
   'referral.desc': '친구가 이 링크로 접속해 로그인하면, 나에게 Pro 1개월이 자동으로 지급돼요.',
