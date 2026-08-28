@@ -799,14 +799,16 @@ function App() {
           (bottom-left). On mobile these move into the stacked sections under the
           chart (MobileMemoSection / MobileClockSection inside <main>). */}
       <DiaryViewSync />
-      {!isMobile && !firstRunClean && prefs.showMemos && <MemoLayer />}
-      {!isMobile && !firstRunClean && <GoalsWidget onSetup={() => setGoalsOpen(true)} />}
-      {!isMobile && !firstRunClean && <ClockToolsLayer />}
+      {/* prefs.showWidgets = master switch (환경설정 > 위젯): off hides every
+          floating widget AND its FAB for a completely clean canvas. */}
+      {!isMobile && !firstRunClean && prefs.showWidgets && prefs.showMemos && <MemoLayer />}
+      {!isMobile && !firstRunClean && prefs.showWidgets && <GoalsWidget onSetup={() => setGoalsOpen(true)} />}
+      {!isMobile && !firstRunClean && prefs.showWidgets && <ClockToolsLayer />}
       {/* Keyword news headlines — desktop: the FAB is always shown; its window
           open/closed is a pref (magician-toggleable). Mobile: a bottom section. */}
-      {!isMobile && !firstRunClean && <NewsWidget />}
+      {!isMobile && !firstRunClean && prefs.showWidgets && <NewsWidget />}
       {/* Polaroid photo wall — photos live only on this device (IndexedDB). */}
-      {!isMobile && !firstRunClean && <PolaroidAlbum />}
+      {!isMobile && !firstRunClean && prefs.showWidgets && <PolaroidAlbum />}
       {/* Background pet — desktop only (removed on mobile). */}
       {!isMobile && !firstRunClean && (
         <TamagotchiProvider>

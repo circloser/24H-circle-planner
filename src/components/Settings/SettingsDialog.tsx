@@ -40,7 +40,7 @@ import { LANGUAGES, type Lang } from '@/i18n/translations';
 import type { TKey } from '@/i18n/translations';
 
 /** Each settings category is its own focused dialog, opened from the gear menu. */
-export type SettingsSection = 'language' | 'font' | 'icons' | 'timeline' | 'background' | 'theme' | 'alarms';
+export type SettingsSection = 'language' | 'font' | 'icons' | 'timeline' | 'background' | 'theme' | 'alarms' | 'widgets';
 
 export interface SettingsDialogProps {
   section: SettingsSection | null;
@@ -57,6 +57,7 @@ const SECTION_TITLE: Record<SettingsSection, TKey> = {
   background: 'settings.background',
   theme: 'settings.colorTheme',
   alarms: 'settings.alarms',
+  widgets: 'settings.widgets',
 };
 
 const BG_LABEL: Record<Background, TKey> = {
@@ -254,6 +255,39 @@ export function SettingsDialog({ section, onClose, onOpenMagician }: SettingsDia
             </div>
           )}
 
+          {/* Widgets — master show/hide + grid snap for the floating widgets
+              (clocks, goals, news, post-its, polaroids). */}
+          {section === 'widgets' && (
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <span className="text-xs text-muted-foreground">{t('settings.showWidgets')}</span>
+                <div className="flex gap-1.5">
+                  <button type="button" onClick={() => setPreference('showWidgets', true)} aria-pressed={prefs.showWidgets} className={OPT_CHIP}>
+                    {t('magician.on')}
+                  </button>
+                  <button type="button" onClick={() => setPreference('showWidgets', false)} aria-pressed={!prefs.showWidgets} className={OPT_CHIP}>
+                    {t('magician.off')}
+                  </button>
+                </div>
+                <p className="text-[11px] text-muted-foreground">{t('settings.showWidgetsHint')}</p>
+              </div>
+              {/* Widget grid snap — floating widgets land on a 20px grid while
+                  dragging; off = free. */}
+              <div className="flex flex-col gap-2">
+                <span className="text-xs text-muted-foreground">{t('settings.widgetSnap')}</span>
+                <div className="flex gap-1.5">
+                  <button type="button" onClick={() => setPreference('widgetSnap', true)} aria-pressed={prefs.widgetSnap} className={OPT_CHIP}>
+                    {t('magician.on')}
+                  </button>
+                  <button type="button" onClick={() => setPreference('widgetSnap', false)} aria-pressed={!prefs.widgetSnap} className={OPT_CHIP}>
+                    {t('magician.off')}
+                  </button>
+                </div>
+                <p className="text-[11px] text-muted-foreground">{t('settings.widgetSnapHint')}</p>
+              </div>
+            </div>
+          )}
+
           {/* Timeline (ring/snap/now-line/world clocks) + Alarms (chime, slice,
               push, tests) share this container; `section` picks the blocks. */}
           {(section === 'timeline' || section === 'alarms') && (
@@ -295,20 +329,6 @@ export function SettingsDialog({ section, onClose, onOpenMagician }: SettingsDia
                   ))}
                 </div>
                 <p className="text-[11px] text-muted-foreground">{t('settings.snapHint')}</p>
-              </div>
-              {/* Widget grid snap — floating widgets (clocks/goals/news/post-its/
-                  polaroids) land on a 20px grid while dragging; off = free. */}
-              <div className="flex flex-col gap-2">
-                <span className="text-xs text-muted-foreground">{t('settings.widgetSnap')}</span>
-                <div className="flex gap-1.5">
-                  <button type="button" onClick={() => setPreference('widgetSnap', true)} aria-pressed={prefs.widgetSnap} className={OPT_CHIP}>
-                    {t('magician.on')}
-                  </button>
-                  <button type="button" onClick={() => setPreference('widgetSnap', false)} aria-pressed={!prefs.widgetSnap} className={OPT_CHIP}>
-                    {t('magician.off')}
-                  </button>
-                </div>
-                <p className="text-[11px] text-muted-foreground">{t('settings.widgetSnapHint')}</p>
               </div>
               </>)}
               {section === 'alarms' && (<>

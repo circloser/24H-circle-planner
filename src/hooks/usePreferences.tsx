@@ -85,6 +85,9 @@ export interface Preferences {
   /** Snap floating widgets (clocks/goals/news/post-its/polaroids) to a 20px
    *  grid while dragging. Shift always bypasses; off = free placement. */
   widgetSnap: boolean;
+  /** Master switch for ALL floating widgets (clocks/goals/news/post-its/
+   *  polaroids incl. their FABs). Off = a completely clean canvas. */
+  showWidgets: boolean;
   worldClocks: WorldClock[]; // extra timezone lines
   chartView: ChartView; // 24h ('full') / 12h day / 12h night clock window
   /** Browser notification when the day crosses into the next slice of the
@@ -136,6 +139,7 @@ const DEFAULT_PREFS: Preferences = {
   showSecondsHand: true,
   secondsHandColor: SECONDS_HAND_DEFAULT_COLOR,
   widgetSnap: true,
+  showWidgets: true,
   worldClocks: [],
   chartView: 'full',
   sliceAlarms: false,
