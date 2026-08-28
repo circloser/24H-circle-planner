@@ -180,6 +180,10 @@ function poopStep(pets: Pet[], hygiene: number, poops: Poop[], now: number): { p
   let pp = poops;
   const next = pets.map((pet) => {
     if (pet.phase === 'egg' || pet.phase === 'dead') return pet;
+    // Sleeping pets don't poop — digestion pauses: keep the timer pinned to
+    // `now` while asleep, so waking starts a fresh countdown (and an offline
+    // catch-up over a sleeping pet drops nothing).
+    if (pet.sleeping) return pet.lastPoopAt === now ? pet : { ...pet, lastPoopAt: now };
     let lastPoopAt = pet.lastPoopAt;
     while (now - lastPoopAt >= POOP_EVERY) {
       lastPoopAt += POOP_EVERY;
