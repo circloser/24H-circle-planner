@@ -24,7 +24,7 @@
     { "@type": "Question", "name": "시간표 일기는 무엇인가요?", "acceptedAnswer": { "@type": "Answer", "text": "날짜별로 그날의 시간표를 기록하는 기능입니다. 월 달력에서 저장된 날을 한눈에 보고, 긴 메모를 함께 남기거나 나중에 다시 불러올 수 있습니다." } },
     { "@type": "Question", "name": "실시간 기록 모드는 무엇인가요?", "acceptedAnswer": { "@type": "Answer", "text": "계획과 별개로, 지금 하고 있는 일을 실시간으로 원에 기록하는 모드입니다. 실제로 시간을 어떻게 썼는지 되돌아보는 데 유용합니다." } },
     { "@type": "Question", "name": "목표·미션 기능은 어떻게 쓰나요?", "acceptedAnswer": { "@type": "Answer", "text": "특정 활동(예: 공부, 운동)에 대해 하루/주 단위 누적 목표 시간을 설정하면, 저장된 일기를 기준으로 달성률을 자동 계산해 보여줍니다." } },
-    { "@type": "Question", "name": "어떤 언어를 지원하나요?", "acceptedAnswer": { "@type": "Answer", "text": "한국어와 영어를 포함해 7개 언어를 지원합니다. 설정에서 언어를 바꿀 수 있습니다." } },
+    { "@type": "Question", "name": "어떤 언어를 지원하나요?", "acceptedAnswer": { "@type": "Answer", "text": "한국어와 영어를 포함해 8개 언어를 지원합니다. 설정에서 언어를 바꿀 수 있습니다." } },
     { "@type": "Question", "name": "광고가 있나요?", "acceptedAnswer": { "@type": "Answer", "text": "플래너 앱 화면은 광고 없이 깔끔하게 유지합니다. 가이드 등 일부 콘텐츠 페이지에는 광고가 표시될 수 있습니다." } },
     { "@type": "Question", "name": "데이터를 백업하거나 다른 기기로 옮기려면 어떻게 하나요?", "acceptedAnswer": { "@type": "Answer", "text": "내보내기에서 JSON으로 전체 백업을 저장했다가 다른 기기에서 복원할 수 있습니다. QR 코드를 이용한 기기 간 전송도 지원합니다." } },
     { "@type": "Question", "name": "문의나 피드백은 어디로 보내나요?", "acceptedAnswer": { "@type": "Answer", "text": "singlena@gmail.com 또는 문의 페이지로 보내주세요. 버그 제보와 기능 제안을 환영합니다." } }
@@ -121,7 +121,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
         <p>특정 활동(예: 공부, 운동)에 대해 하루/주 단위 누적 목표 시간을 설정하면, 저장된 일기를 기준으로 달성률을 자동 계산해 보여줍니다.</p></div>
 
       <div class="qa"><h2>어떤 언어를 지원하나요?</h2>
-        <p>한국어와 영어를 포함해 7개 언어를 지원합니다. 설정에서 언어를 바꿀 수 있습니다.</p></div>
+        <p>한국어와 영어를 포함해 8개 언어를 지원합니다. 설정에서 언어를 바꿀 수 있습니다.</p></div>
 
       <div class="qa"><h2>광고가 있나요?</h2>
         <p>플래너 앱 화면은 광고 없이 깔끔하게 유지합니다. 가이드 등 일부 콘텐츠 페이지에는 광고가 표시될 수 있습니다.</p></div>
@@ -192,6 +192,8 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
     <nav>
       <a href="/">홈 Home</a>
       <a href="/guides/">가이드 Guides</a>
+      <a href="/blog/">블로그 Blog</a>
+      <a href="/templates/">템플릿 Templates</a>
       <a href="/stories/">스토리 Stories</a>
       <a href="/health/">건강 Health</a>
       <a href="/faq">자주 묻는 질문 FAQ</a>

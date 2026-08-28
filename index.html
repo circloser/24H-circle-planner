@@ -199,10 +199,12 @@
       hidden/cloaked content.
     -->
     <div id="root">
-      <!-- Boot splash: covers the crawler copy below with a symbolic loading
-           mark while the bundle loads. React replaces all of #root on mount, so
-           this (and the copy) disappear the moment the app is ready. The copy
-           underneath stays rendered (not hidden) — no cloaking. -->
+      <!-- Boot splash: a symbolic loading mark shown while the bundle loads.
+           React replaces all of #root on mount, so the splash disappears the
+           moment the app is ready. NOTE: the page copy below lives OUTSIDE
+           #root on purpose — it must survive the mount so the homepage keeps
+           real, readable content (and its section navigation) for visitors,
+           reviewers and crawlers alike, instead of turning into a bare app. -->
       <div id="boot-splash" style="position:fixed;inset:0;z-index:99;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#f4f5f7">
         <style>
           [data-theme='dark'] #boot-splash { background:#0f131a }
@@ -215,7 +217,30 @@
         </svg>
         <div class="bs-brand" style="font-family:'Pretendard',system-ui,sans-serif;font-weight:800;font-size:17px;letter-spacing:-0.3px;color:#1f2430">24Hou<span style="color:#FF4D4D">ring</span></div>
       </div>
-      <main style="max-width:760px;margin:0 auto;padding:40px 20px;font-family:'Pretendard',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;color:#1f2430;line-height:1.65">
+    </div>
+
+    <!-- Site content — persists after the app mounts (outside #root). -->
+    <style>
+      #site-copy-wrap { background:#ffffff; border-top:1px solid #e3e6ec }
+      [data-theme='dark'] #site-copy-wrap { background:#0f131a; border-top-color:#232a36 }
+      /* The app's global reset strips link colour/underline; this block is
+         plain content, so its links must look like links. */
+      #site-copy a { color:#1a4fd6; text-decoration:underline; text-underline-offset:2px }
+      #site-copy a:hover { text-decoration-thickness:2px }
+      [data-theme='dark'] #site-copy { color:#c6ccd8 !important }
+      [data-theme='dark'] #site-copy h1,
+      [data-theme='dark'] #site-copy h2,
+      [data-theme='dark'] #site-copy h3,
+      [data-theme='dark'] #site-copy strong { color:#e8ebf1 !important }
+      [data-theme='dark'] #site-copy p,
+      [data-theme='dark'] #site-copy li { color:#c6ccd8 !important }
+      [data-theme='dark'] #site-copy a { color:#7fb0ff !important }
+      [data-theme='dark'] #site-copy hr { border-top-color:#232a36 !important }
+      [data-theme='dark'] #site-copy nav,
+      [data-theme='dark'] #site-copy nav a { color:#98a1b3 !important }
+    </style>
+    <div id="site-copy-wrap">
+    <main id="site-copy" style="max-width:760px;margin:0 auto;padding:44px 20px 56px;font-family:'Pretendard',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;color:#1f2430;line-height:1.65">
         <h1 style="font-size:30px;font-weight:800;letter-spacing:-0.5px;margin:0 0 8px">24Houring — your whole day at a glance, a 24-hour circle planner</h1>
         <p style="font-size:17px;color:#3a4150;margin:0 0 20px">
           24Houring is a <strong>free</strong> web planner that visualizes your 24-hour day like a clock.
@@ -269,7 +294,16 @@
         <p style="margin:0 0 8px">New here? Start from a situation-based <a href="/templates/">template</a> (office worker, exam student, freelancer, miracle morning, weekend reset, …) and adjust it, or follow the step-by-step <a href="/guides/">guides</a> on time blocking, time audits, and building a morning/evening routine.</p>
         <p style="margin:0 0 8px">처음이라면 상황별 <a href="/templates/">템플릿</a>에서 시작해 고쳐 쓰는 것이 가장 빠르고, <a href="/guides/time-blocking">타임블로킹</a>·<a href="/guides/time-audit">시간 점검</a>·<a href="/guides/morning-evening-routine">아침·저녁 루틴</a> 가이드가 방법을 단계별로 안내합니다.</p>
 
-        <p style="margin:24px 0 0;font-size:15px;color:#7e8aa0">Loading the interactive planner at <strong>24houring.com</strong> … · 앱을 불러오는 중입니다…</p>
+        <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">Reading · 읽을거리</h2>
+        <p style="margin:0 0 10px">Alongside the planner we publish original, hand-written articles about spending a day well — every piece written by us, in Korean and English. 플래너와 함께, 하루를 잘 쓰는 법에 관한 글을 직접 써서 싣고 있습니다.</p>
+        <ul style="padding-left:20px;margin:0 0 8px">
+          <li><a href="/guides/"><strong>Guides · 가이드</strong></a> — 14 in-depth bilingual how-tos: time blocking, the 24-hour circle method, sleep-first day design, shift-work scheduling, weekly reviews, energy management, beating procrastination.</li>
+          <li><a href="/blog/"><strong>Blog · 블로그</strong></a> — 20 shorter essays on everyday time problems: the weekend that disappears, the hidden two hours, the smallest unit of a restart.</li>
+          <li><a href="/templates/"><strong>Templates · 템플릿</strong></a> — 10 ready-made circular day plans you can load into the planner with one click.</li>
+          <li><a href="/health/"><strong>Health · 건강</strong></a> — how sleep, meals, movement, mind and daily rhythm shape the hours you get.</li>
+          <li><a href="/stories/"><strong>Stories · 스토리</strong></a> — how writers, thinkers, founders and leaders actually structured their days.</li>
+          <li><a href="/faq"><strong>FAQ · 자주 묻는 질문</strong></a> — everything about pricing, privacy, offline use and exports.</li>
+        </ul>
 
         <hr style="border:none;border-top:1px solid #e3e6ec;margin:28px 0 14px" />
         <nav style="font-size:14px;color:#7e8aa0">
@@ -278,7 +312,7 @@
           <a href="/contact" style="color:#7e8aa0">Contact · 문의</a>
           <div style="margin-top:8px">© 2026 Circloser · <a href="mailto:singlena@gmail.com" style="color:#7e8aa0">singlena@gmail.com</a></div>
         </nav>
-      </main>
+    </main>
     </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
