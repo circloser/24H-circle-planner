@@ -6,7 +6,7 @@ import { useTranslation } from '@/hooks/usePreferences';
 
 // Baby matches the amoeba stage's footprint (same rendered size → same visual
 // stroke weight); the two stages differ in shape only.
-const SIZE: Record<string, number> = { egg: 46, amoeba: 40, baby: 40, adult: 40, dead: 52 };
+const SIZE: Record<string, number> = { egg: 46, amoeba: 40, baby: 40, adult: 40, super: 40, dead: 52 };
 
 /** State glyph bubble shown above the creature. Hygiene is shared across pets. */
 function stateGlyph(p: Pet, hygiene: number): string | null {
@@ -19,7 +19,7 @@ function stateGlyph(p: Pet, hygiene: number): string | null {
 }
 
 export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
-  const { select, play, moveTo, setDragging, toggleSleep, menuOpen, hygiene } = useTamagotchi();
+  const { select, play, notePlay, moveTo, setDragging, toggleSleep, menuOpen, hygiene } = useTamagotchi();
   const { t } = useTranslation();
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
   const [reacting, setReacting] = useState(false); // brief happy wiggle after a play
@@ -40,8 +40,9 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
   // Adults face the way they walk (mirror by horizontal heading) and lean
   // forward for a dynamic, diagonal look. Younger forms stay upright/front-on.
   const faceDir = Math.cos(pet.heading) >= 0 ? 1 : -1;
+  const grown = pet.phase === 'adult' || pet.phase === 'super';
   const flipStyle: CSSProperties | undefined =
-    pet.phase === 'adult'
+    grown
       ? { transform: `scaleX(${faceDir}) rotate(6deg)`, transition: 'transform .2s ease' }
       : undefined;
 
@@ -112,6 +113,7 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
       tx = Math.max(36, Math.min(w - 36, tx));
       ty = Math.max(70, Math.min(h - 36, ty));
       moveTo(pet.id, tx, ty);
+      notePlay(pet.id); // dragging counts toward evolution (EVOLVE_PLAYS)
       setDragPos(null);
       if (flicked) {
         setFlinging(true);
@@ -172,7 +174,7 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
         )}
         <div style={flipStyle}>
           <div className={dragging || reacting ? 'tama-wiggle' : pet.sleeping ? '' : 'tama-bob'}>
-            <PetArt species={pet.species} phase={pet.phase} size={size} walk={pet.phase === 'adult' && !pet.sleeping} />
+            <PetArt species={pet.species} phase={pet.phase} size={size} walk={grown && !pet.sleeping} />
           </div>
         </div>
         {pet.phase === 'egg' && (
@@ -185,6 +187,18 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
             }}
           >
             🥚 {formatHatch(remaining, t)}
+          </span>
+        )}
+        {/* Stage-5 name badge — a named pet roams with its name in tiny text. */}
+        {pet.name && pet.phase !== 'egg' && pet.phase !== 'dead' && (
+          <span
+            style={{
+              position: 'absolute', bottom: -12, fontSize: 8.5, fontWeight: 600,
+              whiteSpace: 'nowrap', letterSpacing: 0.2, pointerEvents: 'none',
+              color: 'hsl(var(--muted-foreground))',
+            }}
+          >
+            {pet.name}
           </span>
         )}
       </div>

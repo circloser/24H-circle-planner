@@ -282,7 +282,21 @@ function AdultBody({ species, walk }: { species: Species; walk: boolean }) {
   }
 }
 
+/** Stage-4 (super) fill colour per species — a pastel "colouring-in" of the
+ *  line art: the same body is drawn once underneath as a fat colored
+ *  silhouette (fill + thick stroke), then the dark line art on top. */
+const SPECIES_FILL: Record<Species, string> = {
+  cat: '#E9D5FF', // lavender
+  puppy: '#FED7AA', // peach
+  bear: '#D9B98C', // tan
+  rabbit: '#FBCFE8', // pink
+  chick: '#FDE047', // vivid yellow
+  duck: '#FDE68A', // soft yellow
+  mole: '#C7B9A5', // warm grey
+};
+
 export function PetArt({ species, phase, size = 56, className = '', walk = true }: { species: Species; phase: Phase; size?: number; className?: string; walk?: boolean }) {
+  const grown = phase === 'adult' || phase === 'super';
   return (
     <svg
       viewBox="0 0 64 64"
@@ -291,7 +305,7 @@ export function PetArt({ species, phase, size = 56, className = '', walk = true 
       className={className}
       fill="none"
       stroke="currentColor"
-      strokeWidth={phase === 'adult' ? 0.9 : 1.8}
+      strokeWidth={grown ? 0.9 : 1.8}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden
@@ -303,7 +317,15 @@ export function PetArt({ species, phase, size = 56, className = '', walk = true 
             <path d="M25 26 l6 6 M31 26 l-6 6 M39 26 l6 6 M45 26 l-6 6" />
             <path d="M25 40 q7 -5 14 0" />
           </>)
-        : phase === 'adult' ? <AdultBody species={species} walk={walk} />
+        : grown ? (<>
+            {/* Super (stage 4): coloured — silhouette underlay, lines on top. */}
+            {phase === 'super' && (
+              <g stroke={SPECIES_FILL[species]} fill={SPECIES_FILL[species]} strokeWidth={5} strokeLinejoin="round" aria-hidden>
+                <AdultBody species={species} walk={walk} />
+              </g>
+            )}
+            <AdultBody species={species} walk={walk} />
+          </>)
         : <BabyBody species={species} />}
     </svg>
   );

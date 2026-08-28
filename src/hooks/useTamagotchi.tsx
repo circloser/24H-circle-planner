@@ -11,7 +11,7 @@ import { createContext, useContext, useCallback, useEffect, useRef, useState } f
 export type Species = 'chick' | 'duck' | 'rabbit' | 'bear' | 'puppy' | 'cat' | 'mole';
 export const SPECIES: Species[] = ['chick', 'duck', 'rabbit', 'bear', 'puppy', 'cat', 'mole'];
 
-export type Phase = 'egg' | 'amoeba' | 'baby' | 'adult' | 'dead';
+export type Phase = 'egg' | 'amoeba' | 'baby' | 'adult' | 'super' | 'dead';
 
 export interface Poop {
   id: string;
@@ -33,6 +33,10 @@ export interface Pet {
   happiness: number;
   energy: number;
   sleeping: boolean;
+  /** Total play interactions (taps + drags) — drives evolution (EVOLVE_PLAYS). */
+  plays: number;
+  /** Stage-5 badge: naming a coloured (super) pet shows this under it as it roams. */
+  name: string | null;
   lastPoopAt: number; // ms — this pet's own poop timer (poops go to the shared pile)
   hungerZeroSince: number | null; // death timer
   bloat: number; // 0..MAX_BLOAT — temporary size bump from overfeeding, decays
@@ -66,8 +70,10 @@ export const HATCH_DELAYS = [
   6 * 60 * 60 * 1000,
   12 * 60 * 60 * 1000,
 ];
-const AMOEBA_MS = 20 * 60 * 1000; // amoeba → baby
-const BABY_MS = 2 * 60 * 60 * 1000; // baby → adult
+/** Play-driven evolution: TOTAL plays (taps + drags) to reach each stage.
+ *  amoeba(1) → baby(2) at 100 · → adult(3) at 300 · → super/coloured(4) at 500.
+ *  Stage 5 = naming a super pet (see rename). Time no longer evolves pets. */
+export const EVOLVE_PLAYS = { baby: 100, adult: 300, super: 500 } as const;
 const POOP_EVERY = 20 * 60 * 1000; // 20 min → poop (-20 hygiene)
 const DEATH_AFTER = 3 * 24 * 60 * 60 * 1000; // hunger 0 sustained 3 days → dead
 const TICK = 1000; // ms
@@ -118,6 +124,8 @@ export function newEgg(order = 0): Pet {
     happiness: 80,
     energy: 100,
     sleeping: false,
+    plays: 0,
+    name: null,
     lastPoopAt: now,
     hungerZeroSince: null,
     bloat: 0,
@@ -140,10 +148,12 @@ function advance(pet: Pet, now: number, dt: number): Pet {
     return p;
   }
 
-  // Growth transitions (from hatch clock).
-  const age = p.hatchedAt ? now - p.hatchedAt : 0;
-  if (p.phase === 'amoeba' && age >= AMOEBA_MS) p.phase = 'baby';
-  if (p.phase === 'baby' && age >= BABY_MS) p.phase = 'adult';
+  // Growth is PLAY-driven, not time-driven: evolving takes attention (taps +
+  // drags accumulate pet.plays; thresholds in EVOLVE_PLAYS).
+  const plays = p.plays ?? 0;
+  if (p.phase === 'amoeba' && plays >= EVOLVE_PLAYS.baby) p.phase = 'baby';
+  if (p.phase === 'baby' && plays >= EVOLVE_PLAYS.adult) p.phase = 'adult';
+  if (p.phase === 'adult' && plays >= EVOLVE_PLAYS.super) p.phase = 'super';
 
   // Stat decay.
   p.hunger = clamp(p.hunger - HUNGER_RATE * dt);
@@ -213,7 +223,8 @@ function load(): Stored {
     const hygiene0 = typeof s.hygiene === 'number' ? s.hygiene
       : (legacy.length ? Math.round(legacy.reduce((a, p) => a + (p.hygiene ?? 100), 0) / legacy.length) : 100);
     const poops0 = Array.isArray(s.poops) ? s.poops : legacy.flatMap((p) => p.poops ?? []);
-    const advanced = s.pets.map((pet) => advance(pet, now, dt));
+    // Older saves predate plays/name — default them before advancing.
+    const advanced = s.pets.map((pet) => advance({ ...pet, plays: pet.plays ?? 0, name: pet.name ?? null }, now, dt));
     const stepped = poopStep(advanced, hygiene0, poops0.slice(0, POOP_CAP), now);
     return { version: 1, on: !!s.on, selectedId: s.selectedId ?? null, pets: stepped.pets, hygiene: stepped.hygiene, poops: stepped.poops, savedAt: now };
   } catch {
@@ -238,6 +249,10 @@ interface TamagotchiApi {
   release: (id: string) => void;
   feed: (id: string) => void;
   play: (id: string) => void;
+  /** Count a drag/throw as play (evolution progress) without the play reaction. */
+  notePlay: (id: string) => void;
+  /** Stage 5: name a super (coloured) pet — shown in tiny text as it roams. */
+  rename: (id: string, name: string) => void;
   /** Remove one poop from the shared pile (tap-to-clean) → shared hygiene +20. */
   removePoop: (poopId: string) => void;
   toggleSleep: (id: string) => void;
@@ -360,7 +375,11 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
     feed: useCallback((id) => mutate(id, (p) => (p.phase === 'egg' || p.phase === 'dead' || p.sleeping ? p : { ...p, hunger: clamp(p.hunger + 25), bloat: Math.min(MAX_BLOAT, (p.bloat ?? 0) + BLOAT_PER_FEED) })), [mutate]),
     // Playing also makes the pet dash off to the side for a moment (boostUntil +
     // a fresh random heading) — the "runs away happily" reaction.
-    play: useCallback((id) => mutate(id, (p) => (p.phase === 'egg' || p.phase === 'dead' || p.sleeping || p.energy < 10 ? p : { ...p, happiness: clamp(p.happiness + 20), energy: clamp(p.energy - 10), heading: rand(0, Math.PI * 2), boostUntil: Date.now() + 2400 })), [mutate]),
+    play: useCallback((id) => mutate(id, (p) => (p.phase === 'egg' || p.phase === 'dead' || p.sleeping || p.energy < 10 ? p : { ...p, plays: (p.plays ?? 0) + 1, happiness: clamp(p.happiness + 20), energy: clamp(p.energy - 10), heading: rand(0, Math.PI * 2), boostUntil: Date.now() + 2400 })), [mutate]),
+    // A drag/throw counts toward evolution too, without the happiness/dash
+    // reaction (and not while asleep — repositioning a sleeper isn't play).
+    notePlay: useCallback((id) => mutate(id, (p) => (p.phase === 'egg' || p.phase === 'dead' || p.sleeping ? p : { ...p, plays: (p.plays ?? 0) + 1 })), [mutate]),
+    rename: useCallback((id, name) => mutate(id, (p) => (p.phase === 'super' ? { ...p, name: name.trim().slice(0, 12) || null } : p)), [mutate]),
     removePoop: useCallback((poopId) => setState((s) => ({
       ...s,
       poops: s.poops.filter((q) => q.id !== poopId),

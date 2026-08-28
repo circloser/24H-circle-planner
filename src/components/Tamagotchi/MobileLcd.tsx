@@ -5,7 +5,7 @@ import { MOBILE_LCD } from './tama-utils';
 import { useTamagotchi, type Pet } from '@/hooks/useTamagotchi';
 import { useTranslation } from '@/hooks/usePreferences';
 
-const SIZE: Record<string, number> = { egg: 34, amoeba: 30, baby: 30, adult: 28, dead: 38 };
+const SIZE: Record<string, number> = { egg: 34, amoeba: 30, baby: 30, adult: 28, super: 28, dead: 38 };
 
 /** State glyph above the pet (shared hygiene). Mirrors Creature.stateGlyph. */
 function glyphFor(p: Pet, hygiene: number): string | null {
@@ -34,7 +34,7 @@ function LcdPet({ pet, hygiene }: { pet: Pet; hygiene: number }) {
 
   const faceDir = Math.cos(pet.heading) >= 0 ? 1 : -1;
   const flip: CSSProperties | undefined =
-    pet.phase === 'adult' ? { transform: `scaleX(${faceDir}) rotate(6deg)`, transition: 'transform .2s ease' } : undefined;
+    pet.phase === 'adult' || pet.phase === 'super' ? { transform: `scaleX(${faceDir}) rotate(6deg)`, transition: 'transform .2s ease' } : undefined;
 
   function onTap() {
     select(pet.id);
@@ -61,7 +61,7 @@ function LcdPet({ pet, hygiene }: { pet: Pet; hygiene: number }) {
         {glyph && <span style={{ position: 'absolute', top: -14, fontSize: 12, pointerEvents: 'none' }}>{glyph}</span>}
         <div style={flip}>
           <div className={reacting ? 'tama-wiggle' : pet.sleeping ? '' : 'tama-bob'}>
-            <PetArt species={pet.species} phase={pet.phase} size={size} walk={pet.phase === 'adult' && !pet.sleeping} />
+            <PetArt species={pet.species} phase={pet.phase} size={size} walk={(pet.phase === 'adult' || pet.phase === 'super') && !pet.sleeping} />
           </div>
         </div>
         {pet.phase === 'egg' && (

@@ -1,7 +1,7 @@
 import { PetArt } from './TamagotchiArt';
 import { MobileLcd } from './MobileLcd';
 import { formatHatch, fireTamaFx, MOBILE_LCD } from './tama-utils';
-import { useTamagotchi, MAX_PETS, type Pet } from '@/hooks/useTamagotchi';
+import { useTamagotchi, MAX_PETS, EVOLVE_PLAYS, type Pet } from '@/hooks/useTamagotchi';
 import { useTranslation } from '@/hooks/usePreferences';
 
 /** One stat as a donut ring (2×2 grid). Hover shows what it means + the value. */
@@ -43,7 +43,7 @@ function DeviceBtn({ label, title, onClick, disabled }: { label: string; title: 
 }
 
 export function TamagotchiDevice({ isMobile = false }: { isMobile?: boolean }) {
-  const { pets, hygiene, selectedId, on, toggle, closeMenu, select, addEgg, release, feed, toggleSleep } = useTamagotchi();
+  const { pets, hygiene, selectedId, on, toggle, closeMenu, select, addEgg, release, feed, toggleSleep, rename } = useTamagotchi();
   const { t } = useTranslation();
 
   const pet: Pet | undefined = pets.find((p) => p.id === selectedId) ?? pets[0];
@@ -163,6 +163,41 @@ export function TamagotchiDevice({ isMobile = false }: { isMobile?: boolean }) {
           <DonutStat emoji="🧼" value={hygiene} label={t('tama.statHygiene')} />
           <DonutStat emoji="⚡" value={pet.energy} label={t('tama.statEnergy')} />
         </div>
+      )}
+
+      {/* Evolution progress — play (tap/drag) to evolve: 100 → 300 → 500. */}
+      {pet && isCreature && (() => {
+        const plays = pet.plays ?? 0;
+        const next = pet.phase === 'amoeba' ? EVOLVE_PLAYS.baby
+          : pet.phase === 'baby' ? EVOLVE_PLAYS.adult
+          : pet.phase === 'adult' ? EVOLVE_PLAYS.super
+          : null;
+        return (
+          <p title={t('tama.playsHint')} style={{ margin: '6px 0 0', textAlign: 'center', fontSize: 10.5, fontWeight: 700, color: '#9d174d', cursor: 'help' }}>
+            🎮 {t('tama.plays')} {next ? `${Math.min(plays, next)}/${next}` : plays}
+          </p>
+        );
+      })()}
+
+      {/* Stage 5 — naming a coloured (super) pet shows the name as it roams. */}
+      {pet && pet.phase === 'super' && (
+        <input
+          key={pet.id}
+          type="text"
+          defaultValue={pet.name ?? ''}
+          placeholder={t('tama.namePlaceholder')}
+          aria-label={t('tama.nameLabel')}
+          title={t('tama.nameLabel')}
+          maxLength={12}
+          onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+          onBlur={(e) => rename(pet.id, e.target.value)}
+          style={{
+            width: '100%', boxSizing: 'border-box', marginTop: 6, padding: '4px 10px',
+            borderRadius: 999, border: '2px solid #e58aa8', outline: 'none',
+            fontSize: 11, fontWeight: 700, textAlign: 'center',
+            color: '#9d174d', background: '#fff0f5',
+          }}
+        />
       )}
 
       {/* Actions — feed + sleep (play/clean moved onto the pet & its poop). */}
