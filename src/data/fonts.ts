@@ -25,6 +25,11 @@ export { default as lato400 } from './fonts/lato-400.woff2?inline';
 export { default as montserrat400 } from './fonts/montserrat-400.woff2?inline';
 export { default as poppins400 } from './fonts/poppins-400.woff2?inline';
 export { default as playfair400 } from './fonts/playfair-display-400.woff2?inline';
+// Russian families ship as latin + cyrillic subset pairs (unicode-range faces).
+export { default as ptSansLatin } from './fonts/pt-sans-latin.woff2?inline';
+export { default as ptSansCyrillic } from './fonts/pt-sans-cyrillic.woff2?inline';
+export { default as rubikLatin } from './fonts/rubik-latin.woff2?inline';
+export { default as rubikCyrillic } from './fonts/rubik-cyrillic.woff2?inline';
 
 // T9: OTF ?url exports — lazy-fetched at PDF export time only (NOT ?inline to avoid bundle bloat).
 // Format chosen: OTF — the official Pretendard v1.3.9 release ships .otf under dist/public/static/.

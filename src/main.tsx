@@ -2,6 +2,8 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Toaster } from 'sonner'
 import './index.css'
+// Self-hosted JA/ZH/RU web fonts (unicode-range slices — see scripts/fetch-i18n-fonts.mjs).
+import './generated-fonts.css'
 import App from './App.tsx'
 import { ScheduleStoreProvider } from './hooks/useScheduleStore.tsx'
 import { PreferencesProvider } from './hooks/usePreferences.tsx'

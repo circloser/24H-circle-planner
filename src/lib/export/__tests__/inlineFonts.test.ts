@@ -20,6 +20,10 @@ vi.mock('@/data/fonts', () => ({
   montserrat400: 'data:font/woff2;base64,MONTSERRAT400==',
   poppins400: 'data:font/woff2;base64,POPPINS400==',
   playfair400: 'data:font/woff2;base64,PLAYFAIR400==',
+  ptSansLatin: 'data:font/woff2;base64,PTSANSLAT==',
+  ptSansCyrillic: 'data:font/woff2;base64,PTSANSCYR==',
+  rubikLatin: 'data:font/woff2;base64,RUBIKLAT==',
+  rubikCyrillic: 'data:font/woff2;base64,RUBIKCYR==',
 }));
 
 import { injectFontFaceStyle } from '../inlineFonts';

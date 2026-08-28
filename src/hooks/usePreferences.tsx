@@ -22,6 +22,14 @@ export const FONT_FAMILIES = [
   { id: 'Montserrat', label: 'Montserrat (EN)', css: "'Montserrat'" },
   { id: 'Poppins', label: 'Poppins (EN)', css: "'Poppins'" },
   { id: 'Playfair Display', label: 'Playfair (EN Serif)', css: "'Playfair Display'" },
+  // Two popular families per remaining UI language (self-hosted slices — see
+  // scripts/fetch-i18n-fonts.mjs). Other scripts fall back to the system stack.
+  { id: 'Noto Sans JP', label: 'Noto Sans JP (日本語)', css: "'Noto Sans JP'" },
+  { id: 'M PLUS Rounded 1c', label: 'M PLUS Rounded (日本語)', css: "'M PLUS Rounded 1c'" },
+  { id: 'Noto Sans SC', label: 'Noto Sans SC (中文)', css: "'Noto Sans SC'" },
+  { id: 'ZCOOL KuaiLe', label: 'ZCOOL KuaiLe (中文)', css: "'ZCOOL KuaiLe'" },
+  { id: 'PT Sans', label: 'PT Sans (Русский)', css: "'PT Sans'" },
+  { id: 'Rubik', label: 'Rubik (Русский)', css: "'Rubik'" },
 ] as const;
 
 // Continuous font-scale slider bounds (replaces the old 3-step buttons).
