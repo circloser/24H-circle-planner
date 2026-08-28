@@ -269,6 +269,17 @@ svg text {
   background-size: 100% 30px;
 }
 
+/* On phones a `fixed` background stays put while the timetable scrolls, so the
+   two visibly separate. Let these full-canvas backgrounds scroll WITH the
+   content instead, so the background stays attached to the chart. */
+@media (max-width: 767px) {
+  [data-bg='gradient-fill'] body,
+  [data-bg='gradient'] body,
+  [data-bg='image'] body {
+    background-attachment: scroll;
+  }
+}
+
 /* ─── Settings option chips / swatches ──────────────────────────────────────── */
 /* Predates the @theme mapping above (when bg-primary etc. generated no CSS).
    Kept as shared classes — many call sites rely on them; selected state is

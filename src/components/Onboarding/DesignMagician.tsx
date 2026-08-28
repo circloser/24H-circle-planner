@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Wand2, X, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import {
-  usePreferences, GRADIENT_PRESETS, FONT_FAMILIES,
+  usePreferences, GRADIENT_PRESETS, FONT_FAMILIES, BACKGROUNDS,
   FONT_SCALE_MIN, FONT_SCALE_MAX, FONT_SCALE_STEP, RING_INNER_MIN, RING_INNER_MAX,
 } from '@/hooks/usePreferences';
 import { useTranslation } from '@/hooks/usePreferences';
@@ -11,6 +11,7 @@ import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useClockTools } from '@/components/ClockTools/useClockTools';
 import { CLOCKTOOLS_SYNC_EVENT } from '@/lib/sync/widgetSync';
 import { COLOR_THEMES } from '@/data/color-themes';
+import type { TKey } from '@/i18n/translations';
 
 interface DesignMagicianProps {
   open: boolean;
@@ -94,18 +95,29 @@ export function DesignMagician({ open, onClose, onFinish }: DesignMagicianProps)
       body: (
         <div className="flex flex-col gap-2">
           <div className="flex gap-1.5">
-            {(['none', 'gradient'] as const).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => setPreference('bgType', mode === 'none' ? 'pattern' : 'gradient')}
-                aria-pressed={mode === 'none' ? prefs.bgType !== 'gradient' && prefs.bgType !== 'color' : prefs.bgType === 'gradient'}
-                className="opt-chip flex-1 rounded-md px-2 py-1.5 text-xs"
-              >
-                {mode === 'none' ? t('magician.bgPlain') : t('magician.bgGradient')}
-              </button>
-            ))}
+            <button type="button"
+              onClick={() => { setPreference('bgType', 'pattern'); setPreference('background', 'none'); }}
+              aria-pressed={prefs.bgType !== 'gradient' && prefs.background === 'none'}
+              className="opt-chip flex-1 rounded-md px-2 py-1.5 text-xs">{t('magician.bgPlain')}</button>
+            <button type="button"
+              onClick={() => { setPreference('bgType', 'pattern'); if (prefs.background === 'none') setPreference('background', 'dots'); }}
+              aria-pressed={prefs.bgType === 'pattern' && prefs.background !== 'none'}
+              className="opt-chip flex-1 rounded-md px-2 py-1.5 text-xs">{t('magician.bgPattern')}</button>
+            <button type="button"
+              onClick={() => setPreference('bgType', 'gradient')}
+              aria-pressed={prefs.bgType === 'gradient'}
+              className="opt-chip flex-1 rounded-md px-2 py-1.5 text-xs">{t('magician.bgGradient')}</button>
           </div>
+          {prefs.bgType === 'pattern' && prefs.background !== 'none' && (
+            <div className="grid grid-cols-4 gap-1.5">
+              {BACKGROUNDS.filter((b) => b !== 'none').map((b) => (
+                <button key={b} type="button"
+                  onClick={() => { setPreference('bgType', 'pattern'); setPreference('background', b); }}
+                  aria-pressed={prefs.background === b}
+                  className="opt-chip rounded-md px-1 py-1.5 text-[10px]">{t(`bg.${b}` as TKey)}</button>
+              ))}
+            </div>
+          )}
           {prefs.bgType === 'gradient' && (
             <>
               <div className="flex gap-1.5">
@@ -189,10 +201,10 @@ export function DesignMagician({ open, onClose, onFinish }: DesignMagicianProps)
     },
     // ── Widget on/off ─────────────────────────────────────────────────────────
     { title: t('magician.stepClock'), body: onOff(clockOn, (v) => { if (v && !clockOn) clock.addClock(); else if (!v) clock.state.clocks.forEach((c) => clock.removeClock(c.id)); syncClocks(); }) },
-    { title: t('magician.stepCalendar'), body: onOff(clock.state.calendar.on, (v) => { if (v !== clock.state.calendar.on) clock.toggle('calendar'); syncClocks(); }) },
+    { title: t('magician.stepCalendar'), body: onOff(clock.state.calendar.on, (v) => { clock.setCalendar({ on: v }); syncClocks(); }) },
     { title: t('magician.stepWeather'), body: onOff(weatherOn, (v) => { if (v && !weatherOn) clock.addWeather(); else if (!v) clock.state.weathers.forEach((w) => clock.removeWeather(w.id)); syncClocks(); }) },
     { title: t('magician.stepMemos'), body: onOff(prefs.showMemos, (v) => setPreference('showMemos', v)) },
-    { title: t('magician.stepNews'), body: onOff(prefs.showNews, (v) => setPreference('showNews', v)) },
+    { title: t('magician.stepNews'), body: onOff(prefs.newsOpen, (v) => setPreference('newsOpen', v)) },
   ];
 
   const last = step === steps.length - 1;

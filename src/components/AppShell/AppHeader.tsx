@@ -146,11 +146,6 @@ export function AppHeader({
                 <CalendarClock className="h-4 w-4" />
                 {t('weekday.title')}
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onOpenTutorial} className="gap-2">
-                <GraduationCap className="h-4 w-4" />
-                {t('tutorial.open')}
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           {/* Diary — its own top-level menu, pulled out of 내 시간표. Holds the
@@ -251,6 +246,12 @@ export function AppHeader({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-[12rem]">
+              {/* Guided timetable tutorial — top of the settings menu. */}
+              <DropdownMenuItem onClick={onOpenTutorial} className="gap-2">
+                <GraduationCap className="h-4 w-4" />
+                {t('tutorial.open')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               {!authLoading && (
                 <>
                   {user ? (

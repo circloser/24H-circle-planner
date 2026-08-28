@@ -604,8 +604,8 @@ function App() {
       />
 
       {/* Guided decorate-your-app flow (first visit + relaunchable from Design).
-          Finishing offers the timetable tutorial. */}
-      <DesignMagician open={magicianOpen} onClose={closeMagician} onFinish={() => setTutorialOpen(true)} />
+          Finishing just closes — the tutorial is launched separately. */}
+      <DesignMagician open={magicianOpen} onClose={closeMagician} />
 
       {/* Guided coach-mark tour of the timetable (from the 내 시간표 menu).
           Finishing it caps the first-run flow with the get-the-app QR. */}
@@ -700,9 +700,9 @@ function App() {
       {!isMobile && prefs.showMemos && <MemoLayer />}
       {!isMobile && <GoalsWidget onSetup={() => setGoalsOpen(true)} />}
       {!isMobile && <ClockToolsLayer />}
-      {/* Keyword news headlines — desktop: floating FAB; mobile: a bottom
-          section inside <main> (above). No AI tokens (server-side RSS). */}
-      {!isMobile && prefs.showNews && <NewsWidget />}
+      {/* Keyword news headlines — desktop: the FAB is always shown; its window
+          open/closed is a pref (magician-toggleable). Mobile: a bottom section. */}
+      {!isMobile && <NewsWidget />}
       {/* Background pet — desktop only (removed on mobile). */}
       {!isMobile && (
         <TamagotchiProvider>

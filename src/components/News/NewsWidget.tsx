@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Newspaper, X, Search, RefreshCw, Loader2, Settings } from 'lucide-react';
-import { useTranslation } from '@/hooks/usePreferences';
+import { useTranslation, usePreferences } from '@/hooks/usePreferences';
 import { makeDragStart, anchoredStyle, spawnNearCentre, clampOffset, type Pos } from '@/components/ClockTools/clock-utils';
 
 /** A single-line headline that, on hover, scrolls left to reveal the part cut
@@ -86,7 +86,11 @@ function loadCache(): Cache | null {
  */
 export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
   const { t, lang } = useTranslation();
-  const [open, setOpen] = useState(false);
+  const { prefs, setPreference } = usePreferences();
+  // Desktop: the card's open/closed state is a preference (so the design
+  // magician can toggle the window while the FAB stays fixed).
+  const open = prefs.newsOpen;
+  const setOpen = (v: boolean) => setPreference('newsOpen', v);
   const [pos, setPos] = useState<Pos>(loadPos);
   const [hover, setHover] = useState(false);
   const [cfg, setCfg] = useState<Config>(loadConfig);
@@ -316,7 +320,7 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
 
       <button
         type="button"
-        onClick={() => { setDraft(cfg); setOpen((v) => !v); }}
+        onClick={() => { setDraft(cfg); setOpen(!open); }}
         aria-label={t('news.open')}
         aria-expanded={open}
         title={t('news.open')}

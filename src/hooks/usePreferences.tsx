@@ -73,7 +73,8 @@ export interface Preferences {
   gradient: GradientBg; // start/middle/end + angle, used when bgType === 'gradient'
   showIcons: boolean; // global toggle for slice icons in the chart
   showMemos: boolean; // show the floating post-it memo layer (desktop)
-  showNews: boolean; // show the floating news widget (desktop)
+  showNews: boolean; // show the floating news widget (mobile section)
+  newsOpen: boolean; // desktop: whether the news card window is open (FAB is always shown)
   showNowLine: boolean; // current-time indicator line
   nowLineColor: string; // colour of the current-time line
   nowLineWidth: number; // stroke width of the current-time line
@@ -121,6 +122,7 @@ const DEFAULT_PREFS: Preferences = {
   showIcons: true,
   showMemos: true,
   showNews: true,
+  newsOpen: false,
   showNowLine: true,
   nowLineColor: NOW_LINE_DEFAULT_COLOR,
   nowLineWidth: NOW_LINE_DEFAULT_WIDTH,

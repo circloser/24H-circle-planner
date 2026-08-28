@@ -25,6 +25,7 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
   const [flinging, setFlinging] = useState(false); // brief snappy transition after a throw/drop
   // Track drag + recent pointer velocity (px/ms) so a flick "throws" the pet.
   const drag = useRef<{ ox: number; oy: number; moved: boolean; lx: number; ly: number; lt: number; vx: number; vy: number } | null>(null);
+  const dodgeCooldown = useRef(0);
 
   // Overfeeding puffs the pet up a little (pet.bloat, eases back over time).
   const size = Math.round((SIZE[pet.phase] ?? 54) * (1 + (pet.bloat ?? 0)));
@@ -42,22 +43,29 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
       ? { transform: `scaleX(${faceDir}) rotate(6deg)`, transition: 'transform .2s ease' }
       : undefined;
 
+  // Playful dodge: darts ~140px away in a random direction (with a short
+  // cooldown so it doesn't spam). Used on hover.
+  function dodge() {
+    const ang = Math.random() * Math.PI * 2;
+    const w = window.innerWidth, h = window.innerHeight;
+    const tx = Math.max(36, Math.min(w - 36, pet.x + Math.cos(ang) * 140));
+    const ty = Math.max(70, Math.min(h - 36, pet.y + Math.sin(ang) * 140));
+    moveTo(pet.id, tx, ty);
+    setFlinging(true);
+    window.setTimeout(() => setFlinging(false), 480);
+    fireTamaFx(pet.x, pet.y - size / 2, 'heart');
+    dodgeCooldown.current = Date.now() + 1500;
+  }
+  function onPointerEnter() {
+    // ~20% of the time, hovering the pet makes it run away (a game of chase).
+    if (pet.phase === 'egg' || pet.phase === 'dead' || pet.sleeping || dragPos) return;
+    if (Date.now() < dodgeCooldown.current) return;
+    if (Math.random() < 0.2) dodge();
+  }
+
   function onPointerDown(e: React.PointerEvent) {
     if (pet.phase === 'dead') { select(pet.id); return; }
     e.preventDefault();
-    // Playful dodge: ~20% of grab attempts, an awake pet darts ~140px away
-    // instead of being caught (no drag starts).
-    if (pet.phase !== 'egg' && !pet.sleeping && Math.random() < 0.2) {
-      const ang = Math.random() * Math.PI * 2;
-      const w = window.innerWidth, h = window.innerHeight;
-      const tx = Math.max(36, Math.min(w - 36, pet.x + Math.cos(ang) * 140));
-      const ty = Math.max(70, Math.min(h - 36, pet.y + Math.sin(ang) * 140));
-      moveTo(pet.id, tx, ty);
-      setFlinging(true);
-      window.setTimeout(() => setFlinging(false), 480);
-      fireTamaFx(pet.x, pet.y - size / 2, 'heart');
-      return;
-    }
     (e.target as Element).setPointerCapture?.(e.pointerId);
     drag.current = { ox: e.clientX - pet.x, oy: e.clientY - pet.y, moved: false, lx: e.clientX, ly: e.clientY, lt: performance.now(), vx: 0, vy: 0 };
     setDragPos({ x: pet.x, y: pet.y });
@@ -141,7 +149,7 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
             : 'left 1s linear, top 1s linear',
         cursor: dragging ? 'grabbing' : 'grab',
         touchAction: 'none',
-        zIndex: selected ? 21 : 20, // a background pet — below widgets, menus & popups
+        zIndex: selected ? 36 : 35, // above widgets (selectable over them), below menus & popups
         color: 'hsl(var(--foreground))',
         opacity: pet.sleeping ? 0.55 : pet.phase === 'dead' ? 0.5 : 1,
         pointerEvents: 'auto',
@@ -149,6 +157,7 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
         // roaming pet isn't permanently highlighted.
         filter: selected && menuOpen ? 'drop-shadow(0 0 6px hsl(var(--primary)/0.7))' : 'drop-shadow(0 1px 1px rgba(0,0,0,0.25))',
       }}
+      onPointerEnter={onPointerEnter}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
