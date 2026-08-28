@@ -40,6 +40,12 @@ export async function launchPage(ctxOpts = {}) {
     locale: 'ko-KR',
     ...ctxOpts,
   });
+  // Every suite tests the RETURNING-user app: mark onboarding done up front so
+  // the quiet first run (5s → design magician overlay) never opens mid-test and
+  // intercepts pointer events.
+  await ctx.addInitScript(() => {
+    try { localStorage.setItem('24h-circle-planner.onboarded', '1'); } catch { /* */ }
+  });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
@@ -82,11 +88,11 @@ export async function seedBasicData(page, { slices } = {}) {
   return key;
 }
 
-/** Load the seeded diary via the UI (day menu → 일기 → pick date → 불러오기). */
+/** Load the seeded diary via the UI (일기 menu → 시간표 일기 → pick date → 불러오기). */
 export async function loadDiary(page, key) {
-  await page.locator('button[aria-label="내 시간표"]').first().click();
+  await page.locator('button[aria-label="일기"]').first().click();
   await wait(200);
-  await page.locator('[role="menuitem"]:has-text("일기")').first().click();
+  await page.locator('[role="menuitem"]:has-text("시간표 일기")').first().click();
   await wait(400);
   await page.locator(`button[title="${key}"]`).first().click();
   await wait(250);

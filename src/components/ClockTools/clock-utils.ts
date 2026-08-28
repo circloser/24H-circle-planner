@@ -203,6 +203,18 @@ export function formatHMS(totalSec: number): string {
  *  freely. */
 export const WIDGET_SNAP_GRID = 20;
 
+/** Global widget-snap switch, mirrored from the `widgetSnap` preference by App
+ *  (module-level so plain drag utils don't need a React context). Off = every
+ *  drag places freely; Shift still bypasses when on. */
+let widgetSnapOn = true;
+export function setWidgetSnapEnabled(v: boolean): void { widgetSnapOn = v; }
+export function isWidgetSnapEnabled(): boolean { return widgetSnapOn; }
+
+/** Snap a coordinate to the widget grid unless snapping is off or bypassed. */
+export function snapWidgetCoord(v: number, bypass: boolean): number {
+  return bypass || !widgetSnapOn ? v : Math.round(v / WIDGET_SNAP_GRID) * WIDGET_SNAP_GRID;
+}
+
 export function makeDragStart(pos: Pos, onChange: (p: Pos) => void) {
   return (e: ReactPointerEvent<HTMLElement>) => {
     if ((e.target as Element).closest('[data-no-drag]')) return;
@@ -214,9 +226,10 @@ export function makeDragStart(pos: Pos, onChange: (p: Pos) => void) {
     const origX = pos.x;
     const origY = pos.y;
     const { minX, minY } = dragFloor();
-    // Snap a value to the grid (unless Shift = free placement), floored on-screen.
+    // Snap a value to the grid (unless Shift = free placement, or the global
+    // widget-snap preference is off), floored on-screen.
     const snap = (v: number, min: number, free: boolean) =>
-      free ? Math.max(min, v) : Math.max(min, Math.round(v / WIDGET_SNAP_GRID) * WIDGET_SNAP_GRID);
+      Math.max(min, snapWidgetCoord(v, free));
     const onMove = (ev: PointerEvent) => {
       const x = snap(origX + (ev.clientX - startX), minX, ev.shiftKey);
       const y = snap(origY + (ev.clientY - startY), minY, ev.shiftKey);

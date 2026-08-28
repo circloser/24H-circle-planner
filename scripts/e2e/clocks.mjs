@@ -30,6 +30,11 @@ export async function run() {
       await wait(200);
       pass('desktop: two clocks added', (await count()) === base + 2, `count=${await count()} base=${base}`);
 
+      // Close the FAB menu — its full-screen backdrop would otherwise swallow
+      // the widget hovers below. A bare click anywhere lands on the backdrop.
+      await page.mouse.click(640, 120);
+      await wait(200);
+
       // Set a timezone on the LAST clock (topmost) → its city label appears.
       const last = page.locator('[data-clock-widget]').last();
       await last.hover({ position: { x: 12, y: 12 } });

@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useCallback, useEffect, useRef } from 'react';
+import { createContext, useContext, useCallback } from 'react';
 import { v4 as uuid } from 'uuid';
 import { randomQuote } from '@/data/quotes';
 import { useTranslation } from '@/hooks/usePreferences';
@@ -99,15 +99,6 @@ function pickSpawn(size: number): { x: number; y: number } {
   return toStored(Math.round(rand(m, vw - size - m)), Math.round(rand(headerY + 12, vh - size - m)));
 }
 
-/**
- * A spawn point on the RIGHT strip of the screen — used for the first-run
- * starter note so it lands opposite the left-hand clock/calendar.
- */
-function rightSpawn(size: number): { x: number; y: number } {
-  const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
-  return toStored(Math.max(16, vw - size - 40), 150);
-}
-
 interface MemoContextValue {
   memos: Memo[];
   visible: boolean;
@@ -126,37 +117,9 @@ interface MemoContextValue {
 const MemoContext = createContext<MemoContextValue | null>(null);
 
 export function MemoProvider({ children }: { children: React.ReactNode }) {
-  // Whether this is the visitor's very first load (no memo storage yet). Must be
-  // read BEFORE usePersistedState's save effect writes the initial envelope.
-  const firstRunRef = useRef(
-    typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEY) == null,
-  );
   const [state, setState] = usePersistedState(STORAGE_KEY, memosCodec);
   const { memos, visible } = state;
-  const { lang, t } = useTranslation();
-
-  // First-ever visit: drop ONE starter post-it on the RIGHT so newcomers see how
-  // memos look, with a hint (in their language) that they can add their own.
-  useEffect(() => {
-    if (!firstRunRef.current) return;
-    firstRunRef.current = false;
-    setState((prev) => {
-      if (prev.memos.length > 0) return prev;
-      const { x, y } = rightSpawn(MEMO_SIZE);
-      const memo: Memo = {
-        id: uuid(),
-        text: t('memo.placeholderHint'),
-        x,
-        y,
-        color: DEFAULT_COLOR,
-        fontFamily: 'Pretendard',
-        align: 'center',
-        createdAt: Date.now(),
-        onScreen: true,
-      };
-      return { memos: [memo], visible: true };
-    });
-  }, [t, setState]);
+  const { lang } = useTranslation();
 
   const addMemo = useCallback(() => {
     const { x, y } = pickSpawn(MEMO_SIZE);

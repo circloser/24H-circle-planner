@@ -197,13 +197,9 @@ function load(): Stored {
   const base: Stored = { version: 1, on: false, pets: [], selectedId: null, hygiene: 100, poops: [], savedAt: Date.now() };
   try {
     const raw = localStorage.getItem(KEY);
-    // First-ever visit (no stored state): auto-grant one egg and turn the pet on
-    // so every new user meets a hatching companion — a soft retention hook. The
-    // first egg hatches in ~1 min (HATCH_DELAYS[0]).
-    if (!raw) {
-      const egg = newEgg(0);
-      return { ...base, on: true, pets: [egg], selectedId: egg.id };
-    }
+    // No stored state (first visit): quiet start — no auto egg, the pet stays
+    // off until the visitor opens the 🐣 console and adds one themselves.
+    if (!raw) return base;
     const s = JSON.parse(raw) as Stored;
     if (!s || s.version !== 1 || !Array.isArray(s.pets)) return base;
     const now = Date.now();

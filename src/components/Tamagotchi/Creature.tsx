@@ -4,7 +4,9 @@ import { formatHatch, fireTamaFx } from './tama-utils';
 import { useTamagotchi, type Pet } from '@/hooks/useTamagotchi';
 import { useTranslation } from '@/hooks/usePreferences';
 
-const SIZE: Record<string, number> = { egg: 46, amoeba: 40, baby: 54, adult: 40, dead: 52 };
+// Baby matches the amoeba stage's footprint (same rendered size → same visual
+// stroke weight); the two stages differ in shape only.
+const SIZE: Record<string, number> = { egg: 46, amoeba: 40, baby: 40, adult: 40, dead: 52 };
 
 /** State glyph bubble shown above the creature. Hygiene is shared across pets. */
 function stateGlyph(p: Pet, hygiene: number): string | null {
@@ -96,26 +98,27 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
     setDragging(pet.id, false);
 
     if (moved) {
-      // A flick throws the pet ~100px along the flick direction; a slow release
-      // just lets it drop ~30px. Land clamped inside the window, with a snappy
-      // fling transition + a little settle bounce.
+      // A flick throws the pet ~300px along the flick direction; a gentle
+      // release places it EXACTLY where it was let go (no drop motion — so
+      // pets can be positioned precisely). Land clamped inside the window.
       const speed = Math.hypot(vx, vy); // px/ms
+      const flicked = speed > 0.35;
       let tx = end.x, ty = end.y;
-      if (speed > 0.35) {
+      if (flicked) {
         tx = end.x + (vx / speed) * 300; // throw ~300px along the flick
         ty = end.y + (vy / speed) * 300;
-      } else {
-        ty = end.y + 90; // gentle drop ~90px
       }
       const w = window.innerWidth, h = window.innerHeight;
       tx = Math.max(36, Math.min(w - 36, tx));
       ty = Math.max(70, Math.min(h - 36, ty));
       moveTo(pet.id, tx, ty);
       setDragPos(null);
-      setFlinging(true);
-      window.setTimeout(() => setFlinging(false), 480);
-      setDropping(true);
-      window.setTimeout(() => setDropping(false), 460);
+      if (flicked) {
+        setFlinging(true);
+        window.setTimeout(() => setFlinging(false), 480);
+        setDropping(true);
+        window.setTimeout(() => setDropping(false), 460);
+      }
       select(pet.id);
       fireTamaFx(tx, ty - size / 2, 'heart');
       return;

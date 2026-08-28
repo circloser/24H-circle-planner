@@ -2,7 +2,7 @@ import { type PointerEvent as ReactPointerEvent } from 'react';
 import { X, GripHorizontal, AlignLeft, AlignCenter } from 'lucide-react';
 import { useMemos, MEMO_COLORS, type Memo } from '@/hooks/useMemos';
 import { FONT_FAMILIES, useTranslation } from '@/hooks/usePreferences';
-import { anchoredStyle, dragFloor } from '@/components/ClockTools/clock-utils';
+import { anchoredStyle, dragFloor, snapWidgetCoord } from '@/components/ClockTools/clock-utils';
 
 const SIZE = 200; // fixed (size not adjustable, by request)
 const FOLD = 26; // folded-corner size (px)
@@ -66,8 +66,8 @@ export function MemoNote({ memo }: { memo: Memo }) {
       if (!moved && Math.hypot(ev.clientX - startX, ev.clientY - startY) < 4) return;
       moved = true;
       updateMemo(memo.id, {
-        x: Math.max(minX, origX + (ev.clientX - startX)),
-        y: Math.max(minY, origY + (ev.clientY - startY)),
+        x: Math.max(minX, snapWidgetCoord(origX + (ev.clientX - startX), ev.shiftKey)),
+        y: Math.max(minY, snapWidgetCoord(origY + (ev.clientY - startY), ev.shiftKey)),
       });
     };
     const onUp = () => {

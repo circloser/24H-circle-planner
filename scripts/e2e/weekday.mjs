@@ -16,12 +16,20 @@ const SLOT = {
 const DAY = { id: 'd1', schedule: { id: 'd1s', version: 1, name: '원본 시간표', presetSource: null, updatedAt: '2026-07-01T00:00:00.000Z',
   slices: [{ id: 'o', label: '원본라벨', startTime: '00:00', endTime: '24:00', color: '#60a5fa', icon: '', textPosition: 'inside' }] } };
 
+// The seed must run ONCE: addInitScript re-runs in EVERY new document, and the
+// app spawns same-origin about:blank iframes (lib resize probes) whose re-run
+// would silently reset storage to the seed mid-test — clobbering what the app
+// itself persisted. A marker key makes it idempotent (and reloads keep state).
 const seedBase = (extra = {}) => `
-  localStorage.setItem('24h-circle-planner.onboarded', '1');
-  localStorage.setItem('24h-circle-planner.prefs', JSON.stringify({ version: 1, prefs: { language: 'ko' } }));
-  localStorage.setItem('24h-circle-planner.slots', JSON.stringify({ version: 1, slots: { s1: ${JSON.stringify(SLOT)} } }));
-  localStorage.setItem('24h-circle-planner.days', JSON.stringify({ version: 1, activeId: 'd1', days: [${JSON.stringify(DAY)}] }));
-  ${extra.assignToday ? "localStorage.setItem('24h-circle-planner.weekday-schedules', JSON.stringify({ version: 1, byWeekday: { [new Date().getDay()]: 's1' } }));" : ''}
+  if (!localStorage.getItem('24h-e2e-weekday-seeded')) {
+    localStorage.setItem('24h-e2e-weekday-seeded', '1');
+    localStorage.setItem('24h-circle-planner.onboarded', '1');
+    localStorage.setItem('24h-circle-planner.prefs', JSON.stringify({ version: 1, prefs: { language: 'ko' } }));
+    localStorage.setItem('24h-circle-planner.slots', JSON.stringify({ version: 1, slots: { s1: ${JSON.stringify(SLOT)} } }));
+    localStorage.setItem('24h-circle-planner.days', JSON.stringify({ version: 1, activeId: 'd1', days: [${JSON.stringify(DAY)}] }));
+    ${extra.assignToday ? "localStorage.setItem('24h-circle-planner.weekday-schedules', JSON.stringify({ version: 1, byWeekday: { [new Date().getDay()]: 's1' } }));" : ''}
+    ${extra.promptedToday ? "{ const n = new Date(); localStorage.setItem('24h-circle-planner.weekday-prompted', n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0')); }" : ''}
+  }
 `;
 
 export async function run() {
@@ -52,51 +60,60 @@ export async function run() {
     }
   }
 
-  // ── 2) Prompt on an assigned weekday → LOAD replaces the working schedule;
-  //       reload does NOT re-prompt the same day. ──
+  // ── 2) Assigned weekday AUTO-LOADS on open (no prompt since the auto-load
+  //       redesign): the chart shows the slot's schedule, a toast names the
+  //       day, and the per-day guard key is written. ──
   {
     const { browser, page, errors } = await launchPage({ locale: 'ko-KR' });
     try {
       await page.addInitScript(seedBase({ assignToday: true }));
       await page.goto(FILE, { waitUntil: "domcontentloaded", timeout: 30000 });
       await page.waitForSelector("svg[role='img']", { timeout: 15000 });
-      await wait(400);
-
-      pass('weekday prompt appears', (await page.locator('text=오늘의 기본 시간표').count()) > 0);
-      pass('prompt names the assigned slot', (await page.locator('text=요일 루틴').count()) > 0);
-      // Before loading, the working schedule shows its own label.
-      pass('working schedule shown before load', (await page.locator('svg[role="img"] >> text=원본라벨').count()) > 0);
-
-      await page.locator('[role="dialog"] button:has-text("불러오기")').last().click();
       await wait(600);
-      pass("loading replaces the chart with the weekday's schedule", (await page.locator('svg[role="img"] >> text=요일테스트').count()) > 0);
 
-      // Reload — already prompted today → no prompt.
+      pass('no prompt dialog (auto-load)', (await page.locator('text=오늘의 기본 시간표').count()) === 0);
+      pass("chart auto-loads the weekday's schedule", (await page.locator('svg[role="img"] >> text=요일테스트').count()) > 0);
+      // The toast is deliberately deferred ~600ms (fired before <Toaster>
+      // mounts, sonner would drop it) — poll briefly instead of a one-shot count.
+      const toastSeen = await page.waitForSelector('text=시간표를 불러왔어요', { timeout: 4000 }).then(() => true).catch(() => false);
+      pass('toast announces the auto-load', toastSeen);
+      const guard = await page.evaluate(() => localStorage.getItem('24h-circle-planner.weekday-prompted'));
+      const today = await page.evaluate(() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`; });
+      pass('per-day guard key written', guard === today, `got=${guard}`);
+
+      // Reload — guard set → schedule stays, still no prompt. Persistence of
+      // the loaded day is debounced, so poll storage until it lands (≤5s)
+      // instead of guessing a delay.
+      let persisted = false;
+      for (let i = 0; i < 25 && !persisted; i++) {
+        persisted = await page.evaluate(() => (localStorage.getItem('24h-circle-planner.days') || '').includes('요일테스트'));
+        if (!persisted) await wait(200);
+      }
+      pass('loaded day flushed to storage', persisted);
       await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
       await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
       await wait(500);
-      pass('no re-prompt after loading (same day)', (await page.locator('text=오늘의 기본 시간표').count()) === 0);
-      pass('load flow: no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
+      pass('schedule persists across reload', (await page.locator('svg[role="img"] >> text=요일테스트').count()) > 0);
+      pass('still no prompt after reload', (await page.locator('text=오늘의 기본 시간표').count()) === 0);
+      pass('auto-load flow: no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
     } finally {
       await browser.close();
     }
   }
 
-  // ── 3) Prompt → "keep current": the working schedule is untouched. ──
+  // ── 3) Guard already set for today → auto-load is skipped and the working
+  //       schedule is untouched. ──
   {
     const { browser, page, errors } = await launchPage({ locale: 'ko-KR' });
     try {
-      await page.addInitScript(seedBase({ assignToday: true }));
+      await page.addInitScript(seedBase({ assignToday: true, promptedToday: true }));
       await page.goto(FILE, { waitUntil: "domcontentloaded", timeout: 30000 });
       await page.waitForSelector("svg[role='img']", { timeout: 15000 });
-      await wait(400);
+      await wait(600);
 
-      pass('prompt appears (keep scenario)', (await page.locator('text=오늘의 기본 시간표').count()) > 0);
-      await page.locator('[role="dialog"] button:has-text("현재 유지")').last().click();
-      await wait(400);
-      pass('keeping leaves the original schedule', (await page.locator('svg[role="img"] >> text=원본라벨').count()) > 0);
-      pass("keeping does NOT load the weekday's schedule", (await page.locator('svg[role="img"] >> text=요일테스트').count()) === 0);
-      pass('keep flow: no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
+      pass('guarded day keeps the original schedule', (await page.locator('svg[role="img"] >> text=원본라벨').count()) > 0);
+      pass("guarded day does NOT load the weekday's schedule", (await page.locator('svg[role="img"] >> text=요일테스트').count()) === 0);
+      pass('guarded flow: no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
     } finally {
       await browser.close();
     }

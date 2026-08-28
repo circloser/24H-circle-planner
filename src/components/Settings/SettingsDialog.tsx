@@ -19,6 +19,7 @@ import {
   BACKGROUNDS,
   GRADIENT_PRESETS,
   NOW_LINE_DEFAULT_COLOR,
+  SECONDS_HAND_DEFAULT_COLOR,
   SNAP_STEPS,
   RING_INNER_MIN,
   RING_INNER_MAX,
@@ -295,6 +296,20 @@ export function SettingsDialog({ section, onClose, onOpenMagician }: SettingsDia
                 </div>
                 <p className="text-[11px] text-muted-foreground">{t('settings.snapHint')}</p>
               </div>
+              {/* Widget grid snap — floating widgets (clocks/goals/news/post-its/
+                  polaroids) land on a 20px grid while dragging; off = free. */}
+              <div className="flex flex-col gap-2">
+                <span className="text-xs text-muted-foreground">{t('settings.widgetSnap')}</span>
+                <div className="flex gap-1.5">
+                  <button type="button" onClick={() => setPreference('widgetSnap', true)} aria-pressed={prefs.widgetSnap} className={OPT_CHIP}>
+                    {t('magician.on')}
+                  </button>
+                  <button type="button" onClick={() => setPreference('widgetSnap', false)} aria-pressed={!prefs.widgetSnap} className={OPT_CHIP}>
+                    {t('magician.off')}
+                  </button>
+                </div>
+                <p className="text-[11px] text-muted-foreground">{t('settings.widgetSnapHint')}</p>
+              </div>
               </>)}
               {section === 'alarms' && (<>
               {/* Recurring time chime — every N minutes / on the hour. */}
@@ -506,6 +521,34 @@ export function SettingsDialog({ section, onClose, onOpenMagician }: SettingsDia
                 />
                 <span className="w-8 text-right text-xs tabular-nums text-muted-foreground">{prefs.nowLineWidth}</span>
               </div>
+
+              {/* Seconds hand on/off — sweeps one revolution per minute (24h view). */}
+              <div className="flex flex-col gap-2">
+                <span className="text-xs text-muted-foreground">{t('settings.secondsHand')}</span>
+                <div className="flex gap-1.5">
+                  <button type="button" onClick={() => setPreference('showSecondsHand', true)} aria-pressed={prefs.showSecondsHand} className={OPT_CHIP}>
+                    {t('settings.iconsShow')}
+                  </button>
+                  <button type="button" onClick={() => setPreference('showSecondsHand', false)} aria-pressed={!prefs.showSecondsHand} className={OPT_CHIP}>
+                    {t('settings.iconsHide')}
+                  </button>
+                </div>
+              </div>
+
+              {/* Seconds hand colour */}
+              {prefs.showSecondsHand && (
+                <div className="flex items-center gap-3">
+                  <span className="w-16 shrink-0 text-xs text-muted-foreground">{t('settings.lineColor')}</span>
+                  <label className="opt-pick inline-flex w-fit cursor-pointer items-center gap-2 rounded-md px-2 py-1.5">
+                    <span className="h-6 w-6 rounded border border-border" style={{ backgroundColor: prefs.secondsHandColor }} />
+                    <span className="text-sm tabular-nums">{prefs.secondsHandColor}</span>
+                    <input type="color" value={prefs.secondsHandColor} onChange={(e) => setPreference('secondsHandColor', e.target.value)} className="sr-only" aria-label={t('settings.lineColor')} />
+                  </label>
+                  <button type="button" onClick={() => setPreference('secondsHandColor', SECONDS_HAND_DEFAULT_COLOR)} className="text-xs text-muted-foreground underline">
+                    {t('settings.lineReset')}
+                  </button>
+                </div>
+              )}
 
               {/* World clocks */}
               <div className="flex flex-col gap-2">

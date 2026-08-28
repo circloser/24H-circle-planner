@@ -66,14 +66,16 @@ describe('useClockTools — multi-window weather', () => {
     expect(result.current.state.clocks[0].pos).toEqual(clampOffset(migrateLegacyPos({ x: 30, y: 40 }), 168, 150));
   });
 
-  it('migrates a legacy OFF clock to no clocks; missing clock info → default local clock', () => {
+  it('migrates a legacy OFF clock to no clocks; missing clock info → no clocks (quiet default)', () => {
     localStorage.setItem(KEY, JSON.stringify({
       version: 1,
       state: { clock: { on: false, mode: 'analog', pos: { x: 1, y: 2 } } },
     }));
     expect(renderHook(() => useClockTools()).result.current.state.clocks).toEqual([]);
+    // Since the quiet-start defaults (clock tools all OFF), missing clock info
+    // also yields no clocks — nothing appears until the user adds one.
     localStorage.setItem(KEY, JSON.stringify({ version: 1, state: {} }));
-    expect(renderHook(() => useClockTools()).result.current.state.clocks).toHaveLength(1);
+    expect(renderHook(() => useClockTools()).result.current.state.clocks).toEqual([]);
   });
 
   it('addClock caps at MAX_CLOCKS; setClock patches ONE clock (timezone)', () => {

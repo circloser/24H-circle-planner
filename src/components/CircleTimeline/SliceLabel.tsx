@@ -19,6 +19,11 @@ interface SliceLabelProps {
   spec?: ViewSpec;
   /** Kept for caller compatibility; labels no longer stagger (they sit on one ring). */
   index?: number;
+  /** Invisible hit-target copy rendered ABOVE the boundary handles, so clicking
+   *  a label always wins over the boundary strip even in narrow wedges (the
+   *  boundary stays grabbable anywhere the text isn't). Draws nothing visible
+   *  and must not duplicate data-label-id (the drag engine moves that one). */
+  hitOnly?: boolean;
 }
 
 // Outside labels sit on the page (beyond the ring), so they keep a fixed dark
@@ -35,7 +40,7 @@ const LABEL_TEXT_DEFAULT = DARK_TEXT;
  * - Skips rendering for slices < 30 min when textPosition === 'inside'
  *   (too narrow); falls back to icon-only.
  */
-export function SliceLabel({ slice, onEdit, spec = FULL_SPEC }: SliceLabelProps) {
+export function SliceLabel({ slice, onEdit, spec = FULL_SPEC, hitOnly = false }: SliceLabelProps) {
   const { textPosition, label, icon: rawIcon } = slice;
   // Global "show icons" toggle — when off, every icon below renders as empty so
   // the chart shows text-only labels (and narrow icon-only slices show nothing).
@@ -119,6 +124,9 @@ export function SliceLabel({ slice, onEdit, spec = FULL_SPEC }: SliceLabelProps)
   const fontWeight = slice.bold ? 700 : 400;
   const fontStyle = slice.italic ? 'italic' : 'normal';
 
+  // Hit-only copies exist for the mouse (labels are click-through on touch).
+  if (hitOnly && coarse) return null;
+
   if (isInside) {
     const { x, y } = labelAnchorInside(slice, undefined, spec);
     // Centre edit zone: a single click here opens the editor (text cursor), even
@@ -127,6 +135,38 @@ export function SliceLabel({ slice, onEdit, spec = FULL_SPEC }: SliceLabelProps)
     const hitR = narrow ? 24 : 38;
     const iconY = -20;
     const textY = showIcon ? 14 : 0;
+
+    if (hitOnly) {
+      // Same geometry as the visible label, painted transparent: the centre hit
+      // circle plus the name glyphs (colour emoji ignore `fill`, so the icon is
+      // skipped — the hit circle already covers its area).
+      return (
+        <g
+          data-label-hit={slice.id}
+          transform={`translate(${x} ${y})`}
+          style={labelStyle}
+          onClick={onLabelClick}
+          onDoubleClick={onLabelClick}
+        >
+          <circle cx={0} cy={0} r={hitR} fill="transparent" />
+          {localized ? (
+            <text
+              x={0}
+              y={textY}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontFamily={fontFamily}
+              fontWeight={fontWeight}
+              fontStyle={fontStyle}
+              fill="transparent"
+              style={labelFontSize(textPx)}
+            >
+              {localized}
+            </text>
+          ) : null}
+        </g>
+      );
+    }
 
     // Positioned via `transform` (children at relative offsets) so the boundary
     // drag engine can re-anchor the whole label by updating one attribute —
@@ -175,6 +215,28 @@ export function SliceLabel({ slice, onEdit, spec = FULL_SPEC }: SliceLabelProps)
   // Outside label
   const { x, y, leader } = labelAnchorOutside(slice, undefined, spec);
   const [leaderStart, leaderEnd] = leader;
+
+  if (hitOnly) {
+    // Transparent copy of the name text only (no leader line, no emoji icon).
+    if (!outsideText) return null;
+    return (
+      <g data-label-hit={slice.id} style={labelStyle} onClick={onLabelClick}>
+        <text
+          x={x}
+          y={y}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontFamily={fontFamily}
+          fontWeight={fontWeight}
+          fontStyle={fontStyle}
+          fill="transparent"
+          style={labelFontSize(20)}
+        >
+          {outsideText}
+        </text>
+      </g>
+    );
+  }
 
   return (
     <g

@@ -34,6 +34,11 @@ export async function run() {
       );
       pass('desktop: windows cascade (distinct positions)', new Set(boxes).size === 3);
 
+      // Close the FAB menu — its full-screen backdrop would otherwise swallow
+      // the widget hovers below. A bare click anywhere lands on the backdrop.
+      await page.mouse.click(640, 120);
+      await wait(200);
+
       // Close ONE window (its hover-revealed ✕) — the other two stay. Cascaded
       // siblings overlap this window's centre, so hover its top-left corner
       // (always uncovered); hovering raises it above the stack (hover:z-[26]).

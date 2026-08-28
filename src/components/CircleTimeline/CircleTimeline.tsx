@@ -12,7 +12,7 @@ import {
   type ViewSpec,
 } from '@/lib/chart-view';
 import { useSliceSelector, useStoreSelector } from '@/hooks/useScheduleStore';
-import { useTranslation, useShowNowLine, useChartView, useNowLineStyle, useWorldClocks, useSnapMinutes, useRingInnerR } from '@/hooks/usePreferences';
+import { useTranslation, useShowNowLine, useChartView, useNowLineStyle, useSecondsHand, useWorldClocks, useSnapMinutes, useRingInnerR } from '@/hooks/usePreferences';
 import { useCoarsePointer } from '@/hooks/useCoarsePointer';
 import { translatePresetName } from '@/i18n/content';
 import { SliceLabel } from './SliceLabel';
@@ -248,6 +248,25 @@ function NowIndicator({ hhmm, spec = FULL_SPEC, color = '#EF4444', width = 2.5 }
   );
 }
 
+/**
+ * Seconds hand: a time line sweeping one full revolution per MINUTE (like a
+ * clock's second hand), ticking once a second. 24h view only — under the 12h
+ * remap it would jump in and out of the window. Mounted only while enabled, so
+ * the 1s interval doesn't run otherwise.
+ */
+function SecondsIndicator({ color, width }: { color: string; width: number }) {
+  const [sec, setSec] = useState(() => new Date().getSeconds());
+  useEffect(() => {
+    const id = window.setInterval(() => setSec(new Date().getSeconds()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  return (
+    <g className="seconds-indicator" data-export-exclude="true">
+      <TimeMark minute={sec * 24} spec={FULL_SPEC} color={color} width={width} />
+    </g>
+  );
+}
+
 // ─── Annulus backdrop path ────────────────────────────────────────────────────
 
 function annulusPath(cx: number, cy: number, outerR: number, innerR: number): string {
@@ -469,6 +488,7 @@ export function CircleTimeline({
   const { t, lang } = useTranslation();
   const showNowLine = useShowNowLine();
   const nowLineStyle = useNowLineStyle();
+  const secondsHand = useSecondsHand();
   const worldClocks = useWorldClocks();
   // Active view window (24h / 12h day / 12h night). Drives the angle remap below.
   // Preview thumbnails (preset gallery, day strip) always show the full 24h clock.
@@ -741,6 +761,25 @@ export function CircleTimeline({
         <BoundaryHandles slices={slices} spec={spec} onPointerDownHandle={onPointerDownHandle} />
       ) : null}
 
+      {/* Text-priority hit overlay — invisible copies of the labels painted
+          ABOVE the boundary strips, so clicking a name always opens the editor
+          even in narrow wedges where the boundary hit-strip crosses the text.
+          The boundary stays selectable anywhere the text isn't. */}
+      {isInteractive && slices.length > 1 && onPointerDownHandle && !mobileNoChartDrag && !coarse ? (
+        <g className="label-hit-overlay" data-export-exclude="true">
+          {(is12h ? labelSlices : slices).map((slice, i) => (
+            <SliceLabel
+              key={slice.id}
+              slice={slice}
+              spec={spec}
+              index={i}
+              hitOnly
+              onEdit={isInteractive ? handleDoubleClick : undefined}
+            />
+          ))}
+        </g>
+      ) : null}
+
       {/* 12h seam: the window's two edge hours (06/18 for day, 18/06 for night)
           meet at the BOTTOM but are NOT contiguous in time — the other 12h are
           hidden. A bold dashed radial cut visualises that discontinuity. Kept in
@@ -782,6 +821,11 @@ export function CircleTimeline({
           Tagged data-export-exclude="true" — stripped from PNG/PDF clone. */}
       {!hideLiveMarkers && showNowLine && (!is12h || isInWindow(hhmmToMinutes(clock.hhmm), spec)) ? (
         <NowIndicator hhmm={clock.hhmm} spec={spec} color={nowLineStyle.color} width={nowLineStyle.width} />
+      ) : null}
+
+      {/* Seconds hand — one revolution per minute; 24h view only, toggleable. */}
+      {!hideLiveMarkers && secondsHand.on && !is12h ? (
+        <SecondsIndicator color={secondsHand.color} width={Math.max(1.5, nowLineStyle.width - 1)} />
       ) : null}
 
       {/* World-clock lines: an extra time line per configured timezone (own colour).

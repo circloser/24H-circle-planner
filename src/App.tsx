@@ -43,6 +43,7 @@ import { DayBar } from '@/components/Days/DayBar';
 import { AddToHomeDialog, type BeforeInstallPromptEvent } from '@/components/AddToHomeDialog/AddToHomeDialog';
 import { AboutDialog } from '@/components/About/AboutDialog';
 import { requestPersistentStorage } from '@/lib/persistent-storage';
+import { setWidgetSnapEnabled } from '@/components/ClockTools/clock-utils';
 import { useTranslation, useChartView, usePreferences } from '@/hooks/usePreferences';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useDayChange } from '@/hooks/useDayChange';
@@ -57,7 +58,6 @@ import { UpgradeDialog } from '@/components/Billing/UpgradeDialog';
 import { StatsDialog } from '@/components/Admin/StatsDialog';
 import { OPEN_UPGRADE_EVENT } from '@/lib/pro';
 import { WelcomeOverlay } from '@/components/Onboarding/WelcomeOverlay';
-import { FirstInsightCard } from '@/components/Onboarding/FirstInsightCard';
 import { DesignMagician } from '@/components/Onboarding/DesignMagician';
 import { TutorialOverlay } from '@/components/Onboarding/TutorialOverlay';
 import { PlayStoreBanner } from '@/components/Onboarding/PlayStoreBanner';
@@ -87,9 +87,9 @@ import type { Preset } from '@/types/preset';
 // (the day-1 schedule is seeded with a demo example by useDays so the circle is
 // never empty). Set once the welcome is dismissed.
 const ONBOARDED_KEY = '24h-circle-planner.onboarded';
-const INSIGHT_KEY = '24h-circle-planner.first-insight';
 const MAGICIAN_KEY = '24h-circle-planner.design-magician';
 const GETAPP_KEY = '24h-circle-planner.getapp-banner';
+const TUTORIAL_KEY = '24h-circle-planner.tutorial-seen';
 
 function isFirstVisit(): boolean {
   try {
@@ -123,15 +123,16 @@ function App() {
   // in, the design magician starts. (The persona picker stays available via
   // the preset gallery.)
   const [firstRunClean, setFirstRunClean] = useState<boolean>(() => isFirstVisit() && shareImport === null);
+  // True for the visitor's ENTIRE first session (captured before markOnboarded
+  // runs). Keeps first-visit noise away — banners, nudges, the insight card —
+  // even after the 5s clean phase hands over to the design magician.
+  const [firstSession] = useState<boolean>(() => isFirstVisit());
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   // Design magician — a guided decorate-your-app flow. First-timers get it once
   // (5s after the clean first screen); anyone can relaunch it from Design.
   const [magicianOpen, setMagicianOpen] = useState(false);
   useEffect(() => {
     if (!firstRunClean) return;
-    // Suppress the insight card for this brand-new user (quiet-start policy).
-    try { localStorage.setItem(INSIGHT_KEY, '1'); } catch { /* */ }
-    setInsightDone(true);
     const id = window.setTimeout(() => {
       markOnboarded();
       setFirstRunClean(false);
@@ -141,6 +142,18 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [tutorialOpen, setTutorialOpen] = useState(false);
+  // "Shall we do the tutorial?" — asked once, right after the magician finishes
+  // (its final button, not the X), and only if the tutorial was never opened.
+  const [askTutorialOpen, setAskTutorialOpen] = useState(false);
+  const openTutorial = () => {
+    try { localStorage.setItem(TUTORIAL_KEY, '1'); } catch { /* */ }
+    setTutorialOpen(true);
+  };
+  const onMagicianFinish = () => {
+    try {
+      if (localStorage.getItem(TUTORIAL_KEY) === null) setAskTutorialOpen(true);
+    } catch { /* */ }
+  };
   const [getAppOpen, setGetAppOpen] = useState(false);
   const [referralOpen, setReferralOpen] = useState(false);
   // The very end of the first-run flow: a get-the-app QR, shown once.
@@ -159,15 +172,6 @@ function App() {
     markOnboarded();
     setWelcomeOpen(false);
     try { if (!localStorage.getItem(MAGICIAN_KEY)) setMagicianOpen(true); } catch { /* */ }
-  };
-  // First "aha" card — the biggest slice of the day — shown once after the first
-  // real schedule exists (right after the welcome, or for returning users).
-  const [insightDone, setInsightDone] = useState<boolean>(() => {
-    try { return localStorage.getItem(INSIGHT_KEY) !== null; } catch { return true; }
-  });
-  const dismissInsight = () => {
-    try { localStorage.setItem(INSIGHT_KEY, '1'); } catch { /* storage unavailable */ }
-    setInsightDone(true);
   };
 
   // Apply the chosen colour theme (if any) to a preset and load it, so content +
@@ -405,17 +409,27 @@ function App() {
     void requestPersistentStorage();
   }, []);
 
+  // Mirror the widget grid-snap preference into the module-level switch the
+  // plain drag utils consult (clock tools, goals, news, post-its, polaroids).
+  useEffect(() => {
+    setWidgetSnapEnabled(prefs.widgetSnap);
+  }, [prefs.widgetSnap]);
+
   // Weekday defaults now load AUTOMATICALLY (no prompt): on open, and again the
   // moment the local date rolls past midnight — so each day starts on its
   // assigned schedule (and its alarms) without any manual step. A toast says
   // which day was loaded. Skipped while viewing a past diary day.
   useEffect(() => {
-    if (weekdaySlot) {
-      handleSlotLoad(weekdaySlot);
-      toast.success(t('weekday.autoLoaded', { day: weekdayName(new Date().getDay(), lang) }));
-      setWeekdaySlot(null);
-      try { localStorage.setItem(STORAGE_KEY_WEEKDAY_PROMPTED, dateKey()); } catch { /* ignore */ }
-    }
+    if (!weekdaySlot) return;
+    handleSlotLoad(weekdaySlot);
+    // Deferred: this effect runs on the very first mount, BEFORE <Toaster>
+    // exists — sonner drops toasts fired that early, so the announcement
+    // never appeared. A short delay lets the Toaster mount first.
+    const day = weekdayName(new Date().getDay(), lang);
+    const toastId = window.setTimeout(() => toast.success(t('weekday.autoLoaded', { day })), 600);
+    setWeekdaySlot(null);
+    try { localStorage.setItem(STORAGE_KEY_WEEKDAY_PROMPTED, dateKey()); } catch { /* ignore */ }
+    return () => window.clearTimeout(toastId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const diaryDateRef = useRef(diaryDate);
@@ -490,7 +504,7 @@ function App() {
         onOpenReset={() => setResetOpen(true)}
         onOpenE2ee={() => setE2eeOpen(true)}
         onOpenUpgrade={() => setUpgradeOpen(true)}
-        onOpenTutorial={() => setTutorialOpen(true)}
+        onOpenTutorial={openTutorial}
         onOpenMagician={() => setMagicianOpen(true)}
         onOpenReferral={() => setReferralOpen(true)}
       />
@@ -498,10 +512,10 @@ function App() {
       {/* Invite a friend → 1 month Pro for the inviter once the friend signs in. */}
       <ReferralDialog open={referralOpen} onOpenChange={setReferralOpen} />
 
-      {!firstRunClean && <ActivationNudge onSendToPhone={() => setTransferOpen(true)} />}
+      {!firstSession && <ActivationNudge onSendToPhone={() => setTransferOpen(true)} />}
       <EnablePushBanner />
-      {!firstRunClean && <GetAppBanner />}
-      {!firstRunClean && <IosInstallBanner onOpen={() => setHomeOpen(true)} />}
+      {!firstSession && <GetAppBanner />}
+      {!firstSession && <IosInstallBanner onOpen={() => setHomeOpen(true)} />}
 
       <main
         className={
@@ -680,8 +694,26 @@ function App() {
       />
 
       {/* Guided decorate-your-app flow (first visit + relaunchable from Design).
-          Finishing just closes — the tutorial is launched separately. */}
-      <DesignMagician open={magicianOpen} onClose={closeMagician} />
+          Its final button offers the tutorial next (once, never after the X). */}
+      <DesignMagician open={magicianOpen} onClose={closeMagician} onFinish={onMagicianFinish} />
+
+      {/* "튜토리얼 진행할까요?" — after the magician's finish, for tutorial newcomers. */}
+      {askTutorialOpen && (
+        <div className="fixed inset-0 z-[59] grid place-items-center bg-black/40 p-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-5 shadow-2xl">
+            <p className="text-base font-semibold text-foreground">{t('tutorial.askTitle')}</p>
+            <p className="mt-1.5 text-sm text-muted-foreground">{t('tutorial.askBody')}</p>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setAskTutorialOpen(false); finishFirstRun(); }}>
+                {t('tutorial.askNo')}
+              </Button>
+              <Button onClick={() => { setAskTutorialOpen(false); openTutorial(); }}>
+                {t('tutorial.askYes')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Guided coach-mark tour of the timetable (from the 내 시간표 menu).
           Finishing it caps the first-run flow with the get-the-app QR. */}
@@ -749,9 +781,9 @@ function App() {
       />
 
       {/* First-insight card — the day's biggest slice, once the schedule is real. */}
-      {!welcomeOpen && !isEmptyState && !insightDone && (
-        <FirstInsightCard slices={present.slices} onClose={dismissInsight} />
-      )}
+      {/* The auto-shown first-insight card is retired (quiet-start policy):
+          it lingered over the bottom bar for anyone whose insight flag was
+          never written (share-link first arrivals, pre-policy visitors). */}
 
       {/* Incoming share link (#p=…) → confirm before replacing the schedule. */}
       <ShareImportDialog

@@ -61,6 +61,7 @@ export interface WorldClock {
 
 export const NOW_LINE_DEFAULT_COLOR = '#EF4444';
 export const NOW_LINE_DEFAULT_WIDTH = 2.5;
+export const SECONDS_HAND_DEFAULT_COLOR = '#3B82F6';
 
 export interface Preferences {
   language: Lang;
@@ -78,6 +79,12 @@ export interface Preferences {
   showNowLine: boolean; // current-time indicator line
   nowLineColor: string; // colour of the current-time line
   nowLineWidth: number; // stroke width of the current-time line
+  /** Seconds hand: a time line sweeping one revolution per minute (24h view). */
+  showSecondsHand: boolean;
+  secondsHandColor: string; // colour of the seconds hand (default blue)
+  /** Snap floating widgets (clocks/goals/news/post-its/polaroids) to a 20px
+   *  grid while dragging. Shift always bypasses; off = free placement. */
+  widgetSnap: boolean;
   worldClocks: WorldClock[]; // extra timezone lines
   chartView: ChartView; // 24h ('full') / 12h day / 12h night clock window
   /** Browser notification when the day crosses into the next slice of the
@@ -126,6 +133,9 @@ const DEFAULT_PREFS: Preferences = {
   showNowLine: true,
   nowLineColor: NOW_LINE_DEFAULT_COLOR,
   nowLineWidth: NOW_LINE_DEFAULT_WIDTH,
+  showSecondsHand: true,
+  secondsHandColor: SECONDS_HAND_DEFAULT_COLOR,
+  widgetSnap: true,
   worldClocks: [],
   chartView: 'full',
   sliceAlarms: false,
@@ -307,6 +317,15 @@ export function useNowLineStyle(): { color: string; width: number } {
   return {
     color: ctx?.prefs.nowLineColor ?? NOW_LINE_DEFAULT_COLOR,
     width: ctx?.prefs.nowLineWidth ?? NOW_LINE_DEFAULT_WIDTH,
+  };
+}
+
+/** Null-safe read of the seconds hand (one revolution per minute, 24h view). */
+export function useSecondsHand(): { on: boolean; color: string } {
+  const ctx = useContext(PreferencesContext);
+  return {
+    on: ctx?.prefs.showSecondsHand ?? true,
+    color: ctx?.prefs.secondsHandColor ?? SECONDS_HAND_DEFAULT_COLOR,
   };
 }
 
