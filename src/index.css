@@ -35,6 +35,14 @@
 @font-face { font-family: 'Gowun Dodum'; font-weight: 400; font-display: swap; src: url('/fonts/gowun-dodum-400.woff2') format('woff2'); }
 @font-face { font-family: 'Black Han Sans'; font-weight: 400; font-display: swap; src: url('/fonts/black-han-sans-400.woff2') format('woff2'); }
 @font-face { font-family: 'Gaegu'; font-weight: 400; font-display: swap; src: url('/fonts/gaegu-400.woff2') format('woff2'); }
+/* Latin-only web fonts (Google Fonts latin subsets) — Korean text falls back
+   to the system stack under these. */
+@font-face { font-family: 'Roboto'; font-weight: 400; font-display: swap; src: url('/fonts/roboto-400.woff2') format('woff2'); }
+@font-face { font-family: 'Open Sans'; font-weight: 400; font-display: swap; src: url('/fonts/open-sans-400.woff2') format('woff2'); }
+@font-face { font-family: 'Lato'; font-weight: 400; font-display: swap; src: url('/fonts/lato-400.woff2') format('woff2'); }
+@font-face { font-family: 'Montserrat'; font-weight: 400; font-display: swap; src: url('/fonts/montserrat-400.woff2') format('woff2'); }
+@font-face { font-family: 'Poppins'; font-weight: 400; font-display: swap; src: url('/fonts/poppins-400.woff2') format('woff2'); }
+@font-face { font-family: 'Playfair Display'; font-weight: 400; font-display: swap; src: url('/fonts/playfair-display-400.woff2') format('woff2'); }
 
 /* ─── Color tokens (light mode defaults) ─────────────────────────────────── */
 :root {

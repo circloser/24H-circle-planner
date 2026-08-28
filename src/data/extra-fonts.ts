@@ -14,6 +14,12 @@ import jua400 from './fonts/jua-400.woff2?inline';
 import gowunDodum400 from './fonts/gowun-dodum-400.woff2?inline';
 import blackHanSans400 from './fonts/black-han-sans-400.woff2?inline';
 import gaegu400 from './fonts/gaegu-400.woff2?inline';
+import roboto400 from './fonts/roboto-400.woff2?inline';
+import openSans400 from './fonts/open-sans-400.woff2?inline';
+import lato400 from './fonts/lato-400.woff2?inline';
+import montserrat400 from './fonts/montserrat-400.woff2?inline';
+import poppins400 from './fonts/poppins-400.woff2?inline';
+import playfair400 from './fonts/playfair-display-400.woff2?inline';
 
 export function injectExtraFonts(): void {
   const style = document.createElement('style');
@@ -28,6 +34,12 @@ export function injectExtraFonts(): void {
     @font-face { font-family:'Gowun Dodum'; font-weight:400; font-display:swap; src:url('${gowunDodum400}') format('woff2'); }
     @font-face { font-family:'Black Han Sans'; font-weight:400; font-display:swap; src:url('${blackHanSans400}') format('woff2'); }
     @font-face { font-family:'Gaegu'; font-weight:400; font-display:swap; src:url('${gaegu400}') format('woff2'); }
+    @font-face { font-family:'Roboto'; font-weight:400; font-display:swap; src:url('${roboto400}') format('woff2'); }
+    @font-face { font-family:'Open Sans'; font-weight:400; font-display:swap; src:url('${openSans400}') format('woff2'); }
+    @font-face { font-family:'Lato'; font-weight:400; font-display:swap; src:url('${lato400}') format('woff2'); }
+    @font-face { font-family:'Montserrat'; font-weight:400; font-display:swap; src:url('${montserrat400}') format('woff2'); }
+    @font-face { font-family:'Poppins'; font-weight:400; font-display:swap; src:url('${poppins400}') format('woff2'); }
+    @font-face { font-family:'Playfair Display'; font-weight:400; font-display:swap; src:url('${playfair400}') format('woff2'); }
   `;
   document.head.appendChild(style);
 }

@@ -98,6 +98,26 @@ export function spawnNearCentre(dx: number, dy: number, w = 180, h = 180): Pos {
   return toStored(x, y);
 }
 
+/** Fixed "margin" spots the design magician places widgets into — the empty
+ *  band AROUND the chart. Left column top-to-bottom: clock (top-left),
+ *  calendar under it, weather at mid-height, news at the bottom; the post-it
+ *  goes to the RIGHT margin. Viewport coords → stored centre-offsets,
+ *  clamped fully on-screen. */
+export function marginSpawn(slot: 'clock' | 'calendar' | 'weather' | 'news' | 'memo', w: number, h: number): Pos {
+  const W = vw(), H = vh();
+  const x = slot === 'memo' ? W - w - 28 : 20;
+  const y =
+    slot === 'clock' ? 84
+      : slot === 'calendar' ? 248
+      : slot === 'weather' ? 500 // below the calendar slot (232×240 from y 248)
+      : slot === 'news' ? H - h - 24
+      : 140; // memo — right margin, near the top
+  return toStored(
+    Math.min(Math.max(8, x), Math.max(8, W - w - 8)),
+    Math.min(Math.max(72, y), Math.max(72, H - h - 8)),
+  );
+}
+
 /* ── Per-resolution position profiles ────────────────────────────────────────
    Different monitors want different layouts: a spot tuned on a 2560-wide screen
    lands badly on a 1366 laptop. Every widget position save also records into a

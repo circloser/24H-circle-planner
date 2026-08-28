@@ -15,6 +15,13 @@ export const FONT_FAMILIES = [
   { id: 'Gowun Dodum', label: '고운돋움 (Clean)', css: "'Gowun Dodum'" },
   { id: 'Black Han Sans', label: '검은고딕 (Display)', css: "'Black Han Sans'" },
   { id: 'Gaegu', label: '개구 (손글씨)', css: "'Gaegu'" },
+  // Latin-only English web fonts — Korean glyphs fall back to the system stack.
+  { id: 'Roboto', label: 'Roboto (EN)', css: "'Roboto'" },
+  { id: 'Open Sans', label: 'Open Sans (EN)', css: "'Open Sans'" },
+  { id: 'Lato', label: 'Lato (EN)', css: "'Lato'" },
+  { id: 'Montserrat', label: 'Montserrat (EN)', css: "'Montserrat'" },
+  { id: 'Poppins', label: 'Poppins (EN)', css: "'Poppins'" },
+  { id: 'Playfair Display', label: 'Playfair (EN Serif)', css: "'Playfair Display'" },
 ] as const;
 
 // Continuous font-scale slider bounds (replaces the old 3-step buttons).

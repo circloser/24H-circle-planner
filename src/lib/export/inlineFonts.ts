@@ -9,6 +9,12 @@ import {
   gowunDodum400,
   blackHanSans400,
   gaegu400,
+  roboto400,
+  openSans400,
+  lato400,
+  montserrat400,
+  poppins400,
+  playfair400,
 } from '@/data/fonts';
 
 interface Face {
@@ -33,6 +39,12 @@ const FACES: Face[] = [
   { family: 'Gowun Dodum', weight: 400, src: gowunDodum400 },
   { family: 'Black Han Sans', weight: 400, src: blackHanSans400 },
   { family: 'Gaegu', weight: 400, src: gaegu400 },
+  { family: 'Roboto', weight: 400, src: roboto400 },
+  { family: 'Open Sans', weight: 400, src: openSans400 },
+  { family: 'Lato', weight: 400, src: lato400 },
+  { family: 'Montserrat', weight: 400, src: montserrat400 },
+  { family: 'Poppins', weight: 400, src: poppins400 },
+  { family: 'Playfair Display', weight: 400, src: playfair400 },
 ];
 
 /**

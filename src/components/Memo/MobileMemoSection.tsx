@@ -79,7 +79,7 @@ export function MobileMemoSection() {
             <List className="h-4 w-4" />
             {t('memo.list')}
           </button>
-          <button type="button" className={btn} onClick={addMemo}>
+          <button type="button" className={btn} onClick={() => addMemo()}>
             <Plus className="h-4 w-4" />
             {t('memo.add')}
           </button>

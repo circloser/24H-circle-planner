@@ -218,7 +218,7 @@ export interface ClockToolsApi {
   state: ClockToolsState;
   toggle: (kind: ToolKind) => void;
   /** Open one more clock (up to MAX_CLOCKS; no-ops at the cap). */
-  addClock: () => void;
+  addClock: (pos?: Pos) => void;
   /** Close ONE clock (the ✕ on that clock). */
   removeClock: (id: string) => void;
   /** Patch one clock (mode toggle, timezone, or position while dragging). */
@@ -228,7 +228,7 @@ export interface ClockToolsApi {
   setCalendar: (patch: Partial<CalendarState>) => void;
   setNownext: (patch: Partial<CalendarState>) => void;
   /** Open one more weather window (up to MAX_WEATHERS; no-ops at the cap). */
-  addWeather: () => void;
+  addWeather: (pos?: Pos) => void;
   /** Close ONE weather window (the ✕ on that window). */
   removeWeather: (id: string) => void;
   /** Patch one weather window (its place, or its position while dragging). */
@@ -269,10 +269,10 @@ export function useClockTools(): ClockToolsApi {
     });
   }, []);
 
-  const addClock = useCallback(() => {
+  const addClock = useCallback((pos?: Pos) => {
     setState((s) => {
       if (s.clocks.length >= MAX_CLOCKS) return s;
-      const item: ClockItem = { id: uuid(), mode: 'analog', pos: clockSpawnPos(s.clocks.length), tz: null };
+      const item: ClockItem = { id: uuid(), mode: 'analog', pos: pos ?? clockSpawnPos(s.clocks.length), tz: null };
       return { ...s, clocks: [...s.clocks, item] };
     });
   }, []);
@@ -295,10 +295,10 @@ export function useClockTools(): ClockToolsApi {
     setState((s) => ({ ...s, nownext: { ...s.nownext, ...patch } }));
   }, []);
 
-  const addWeather = useCallback(() => {
+  const addWeather = useCallback((pos?: Pos) => {
     setState((s) => {
       if (s.weathers.length >= MAX_WEATHERS) return s;
-      const item: WeatherItem = { id: uuid(), pos: weatherSpawnPos(s.weathers.length), place: null };
+      const item: WeatherItem = { id: uuid(), pos: pos ?? weatherSpawnPos(s.weathers.length), place: null };
       return { ...s, weathers: [...s.weathers, item] };
     });
   }, []);

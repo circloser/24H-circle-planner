@@ -6,13 +6,28 @@ import {
   FONT_SCALE_MIN, FONT_SCALE_MAX, FONT_SCALE_STEP, RING_INNER_MIN, RING_INNER_MAX,
 } from '@/hooks/usePreferences';
 import { useTranslation } from '@/hooks/usePreferences';
-import { makeDragStart, spawnNearCentre, type Pos } from '@/components/ClockTools/clock-utils';
+import { makeDragStart, spawnNearCentre, marginSpawn, type Pos } from '@/components/ClockTools/clock-utils';
+import { useMemos } from '@/hooks/useMemos';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useClockTools } from '@/components/ClockTools/useClockTools';
 import { CLOCKTOOLS_SYNC_EVENT } from '@/lib/sync/widgetSync';
 import { COLOR_THEMES } from '@/data/color-themes';
 import type { TKey } from '@/i18n/translations';
 import { useTheme } from '@/hooks/useTheme';
+
+// Where the magician last placed each widget: turning a tool OFF snapshots its
+// position here, so turning it back ON restores the exact same spot. Without a
+// snapshot, first placement goes to the screen MARGIN (marginSpawn slots).
+const MAG_POS_KEY = '24h-circle-planner.magician-pos';
+// The one sticky note the magician manages (archived on OFF, restored on ON).
+const MAG_MEMO_KEY = '24h-circle-planner.magician-memo';
+
+function loadMagPos(): Partial<Record<'clock' | 'calendar' | 'weather', Pos>> {
+  try { return JSON.parse(localStorage.getItem(MAG_POS_KEY) || '{}'); } catch { return {}; }
+}
+function saveMagPos(key: 'clock' | 'calendar' | 'weather', pos: Pos): void {
+  try { localStorage.setItem(MAG_POS_KEY, JSON.stringify({ ...loadMagPos(), [key]: pos })); } catch { /* */ }
+}
 
 interface DesignMagicianProps {
   open: boolean;
@@ -47,6 +62,8 @@ export function DesignMagician({ open, onClose, onFinish }: DesignMagicianProps)
   const syncClocks = () => window.setTimeout(() => window.dispatchEvent(new Event(CLOCKTOOLS_SYNC_EVENT)), 0);
   const clockOn = clock.state.clocks.length > 0;
   const weatherOn = clock.state.weathers.length > 0;
+  const memos = useMemos();
+  const magMemoId = (() => { try { return localStorage.getItem(MAG_MEMO_KEY); } catch { return null; } })();
 
   /** A reusable On/Off pair. */
   const onOff = (on: boolean, set: (v: boolean) => void) => (
@@ -214,10 +231,53 @@ export function DesignMagician({ open, onClose, onFinish }: DesignMagicianProps)
       ),
     },
     // ── Widget on/off ─────────────────────────────────────────────────────────
-    { title: t('magician.stepClock'), body: onOff(clockOn, (v) => { if (v && !clockOn) clock.addClock(); else if (!v) clock.state.clocks.forEach((c) => clock.removeClock(c.id)); syncClocks(); }) },
-    { title: t('magician.stepCalendar'), body: onOff(clock.state.calendar.on, (v) => { clock.setCalendar({ on: v }); syncClocks(); }) },
-    { title: t('magician.stepWeather'), body: onOff(weatherOn, (v) => { if (v && !weatherOn) clock.addWeather(); else if (!v) clock.state.weathers.forEach((w) => clock.removeWeather(w.id)); syncClocks(); }) },
-    { title: t('magician.stepMemos'), body: onOff(prefs.showMemos, (v) => setPreference('showMemos', v)) },
+    // Each tool first appears in the screen MARGIN (left column: clock top,
+    // calendar under it, weather mid, news bottom; post-it right). Turning a
+    // tool off snapshots its position so on restores the same spot.
+    { title: t('magician.stepClock'), body: onOff(clockOn, (v) => {
+      if (v && !clockOn) clock.addClock(loadMagPos().clock ?? marginSpawn('clock', 168, 150));
+      else if (!v && clockOn) {
+        saveMagPos('clock', clock.state.clocks[0].pos);
+        clock.state.clocks.forEach((c) => clock.removeClock(c.id));
+      }
+      syncClocks();
+    }) },
+    { title: t('magician.stepCalendar'), body: onOff(clock.state.calendar.on, (v) => {
+      if (v && !clock.state.calendar.on) {
+        clock.setCalendar({ on: true, pos: loadMagPos().calendar ?? marginSpawn('calendar', 232, 240) });
+      } else if (!v && clock.state.calendar.on) {
+        saveMagPos('calendar', clock.state.calendar.pos);
+        clock.setCalendar({ on: false });
+      }
+      syncClocks();
+    }) },
+    { title: t('magician.stepWeather'), body: onOff(weatherOn, (v) => {
+      if (v && !weatherOn) clock.addWeather(loadMagPos().weather ?? marginSpawn('weather', 204, 200));
+      else if (!v && weatherOn) {
+        saveMagPos('weather', clock.state.weathers[0].pos);
+        clock.state.weathers.forEach((w) => clock.removeWeather(w.id));
+      }
+      syncClocks();
+    }) },
+    // Post-it: the FAB stays regardless — this toggles ONE magician-managed
+    // note in the RIGHT margin (archived on off, text kept; restored on on).
+    { title: t('magician.stepMemos'), body: (() => {
+      const magMemo = memos.memos.find((m) => m.id === magMemoId);
+      const noteOn = !!magMemo && magMemo.onScreen && prefs.showMemos && memos.visible;
+      return onOff(noteOn, (v) => {
+        if (v) {
+          setPreference('showMemos', true);
+          if (!memos.visible) memos.toggleVisible();
+          if (magMemo) memos.restoreMemo(magMemo.id);
+          else {
+            const id = memos.addMemo(marginSpawn('memo', 200, 200));
+            try { localStorage.setItem(MAG_MEMO_KEY, id); } catch { /* */ }
+          }
+        } else if (magMemo) {
+          memos.archiveMemo(magMemo.id);
+        }
+      });
+    })() },
     { title: t('magician.stepNews'), body: onOff(prefs.newsOpen, (v) => setPreference('newsOpen', v)) },
   ];
 

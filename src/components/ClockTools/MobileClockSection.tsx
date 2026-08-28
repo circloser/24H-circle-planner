@@ -57,7 +57,7 @@ export function MobileClockSection() {
             inline card below closes itself via its ✕. */}
         <button
           type="button"
-          onClick={addClock}
+          onClick={() => addClock()}
           aria-label={t('clock.clockAdd')}
           disabled={state.clocks.length >= MAX_CLOCKS}
           aria-pressed={state.clocks.length > 0}
@@ -81,7 +81,7 @@ export function MobileClockSection() {
             inline card below closes itself via its ✕. */}
         <button
           type="button"
-          onClick={addWeather}
+          onClick={() => addWeather()}
           aria-label={t('clock.weatherAdd')}
           disabled={state.weathers.length >= MAX_WEATHERS}
           aria-pressed={state.weathers.length > 0}

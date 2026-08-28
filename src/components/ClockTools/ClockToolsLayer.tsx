@@ -110,7 +110,7 @@ export function ClockToolsLayer() {
           <button
             type="button"
             className={item}
-            onClick={addClock}
+            onClick={() => addClock()}
             aria-label={t('clock.clockAdd')}
             disabled={state.clocks.length >= MAX_CLOCKS}
             style={state.clocks.length >= MAX_CLOCKS ? { opacity: 0.5 } : undefined}
@@ -130,7 +130,7 @@ export function ClockToolsLayer() {
           <button
             type="button"
             className={item}
-            onClick={addWeather}
+            onClick={() => addWeather()}
             aria-label={t('clock.weatherAdd')}
             disabled={state.weathers.length >= MAX_WEATHERS}
             style={state.weathers.length >= MAX_WEATHERS ? { opacity: 0.5 } : undefined}

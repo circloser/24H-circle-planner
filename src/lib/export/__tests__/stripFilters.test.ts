@@ -13,6 +13,12 @@ vi.mock('@/data/fonts', () => ({
   gowunDodum400: 'data:font/woff2;base64,GOWUN400==',
   blackHanSans400: 'data:font/woff2;base64,BLACKHAN400==',
   gaegu400: 'data:font/woff2;base64,GAEGU400==',
+  roboto400: 'data:font/woff2;base64,ROBOTO400==',
+  openSans400: 'data:font/woff2;base64,OPENSANS400==',
+  lato400: 'data:font/woff2;base64,LATO400==',
+  montserrat400: 'data:font/woff2;base64,MONTSERRAT400==',
+  poppins400: 'data:font/woff2;base64,POPPINS400==',
+  playfair400: 'data:font/woff2;base64,PLAYFAIR400==',
 }));
 
 import { stripFiltersAndBackdrop } from '../stripFilters';

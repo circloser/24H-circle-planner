@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Newspaper, X, Search, RefreshCw, Loader2, Settings, Plus } from 'lucide-react';
 import { useTranslation, usePreferences } from '@/hooks/usePreferences';
-import { makeDragStart, anchoredStyle, spawnNearCentre, clampOffset, loadPosProfile, savePosProfile, type Pos } from '@/components/ClockTools/clock-utils';
+import { makeDragStart, anchoredStyle, marginSpawn, clampOffset, loadPosProfile, savePosProfile, type Pos } from '@/components/ClockTools/clock-utils';
 
 const WINDOWS_KEY = '24h-news.windows';
 const LEGACY_CFG_KEY = '24h-news.config';
@@ -28,7 +28,10 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 const cacheKey = (id: string) => `24h-news.cache.${id}`;
 
 function newWindow(index: number): NewsWindow {
-  return { id: uid(), q: '', country: 'KR', intervalH: 24, pos: spawnNearCentre(320 + index * 30, -160 + index * 60, CARD_W, 300) };
+  // First window lands in the BOTTOM-LEFT margin (the news toggle's home spot);
+  // extra windows cascade up-and-right from it so each stays grabbable.
+  const base = marginSpawn('news', CARD_W, 300);
+  return { id: uid(), q: '', country: 'KR', intervalH: 24, pos: { x: base.x + index * 28, y: base.y - index * 46 } };
 }
 
 /** Load the window list; migrates the old single-config (comma keywords become
@@ -274,6 +277,13 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
   const open = prefs.newsOpen;
   const [windows, setWindows] = useState<NewsWindow[]>(loadWindows);
   useEffect(() => { saveWindows(windows); }, [windows]);
+
+  // The pref can be flipped on from OUTSIDE this widget (design magician) —
+  // if it opens with no window yet, create the first one so the toggle is
+  // visibly doing something.
+  useEffect(() => {
+    if (open && !isMobile) setWindows((ws) => (ws.length === 0 ? [newWindow(0)] : ws));
+  }, [open, isMobile]);
 
   const patchWindow = (id: string, patch: Partial<NewsWindow>) =>
     setWindows((ws) => ws.map((w) => (w.id === id ? { ...w, ...patch } : w)));

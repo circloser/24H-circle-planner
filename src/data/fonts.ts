@@ -17,6 +17,14 @@ export { default as jua400 } from './fonts/jua-400.woff2?inline';
 export { default as gowunDodum400 } from './fonts/gowun-dodum-400.woff2?inline';
 export { default as blackHanSans400 } from './fonts/black-han-sans-400.woff2?inline';
 export { default as gaegu400 } from './fonts/gaegu-400.woff2?inline';
+// Latin-only English web fonts (Google Fonts latin subsets, 400 only —
+// browsers synthesize bold; tiny files, so inlining is cheap).
+export { default as roboto400 } from './fonts/roboto-400.woff2?inline';
+export { default as openSans400 } from './fonts/open-sans-400.woff2?inline';
+export { default as lato400 } from './fonts/lato-400.woff2?inline';
+export { default as montserrat400 } from './fonts/montserrat-400.woff2?inline';
+export { default as poppins400 } from './fonts/poppins-400.woff2?inline';
+export { default as playfair400 } from './fonts/playfair-display-400.woff2?inline';
 
 // T9: OTF ?url exports — lazy-fetched at PDF export time only (NOT ?inline to avoid bundle bloat).
 // Format chosen: OTF — the official Pretendard v1.3.9 release ships .otf under dist/public/static/.

@@ -102,7 +102,9 @@ function pickSpawn(size: number): { x: number; y: number } {
 interface MemoContextValue {
   memos: Memo[];
   visible: boolean;
-  addMemo: () => void;
+  /** Adds one note (at `pos` in stored centre-offset space, or a random spot)
+   *  and returns its id — the design magician tracks the note it created. */
+  addMemo: (pos?: { x: number; y: number }) => string;
   updateMemo: (id: string, patch: Partial<Memo>) => void;
   /** Hide from the canvas but keep in the list (the note's X button). */
   archiveMemo: (id: string) => void;
@@ -121,8 +123,8 @@ export function MemoProvider({ children }: { children: React.ReactNode }) {
   const { memos, visible } = state;
   const { lang } = useTranslation();
 
-  const addMemo = useCallback(() => {
-    const { x, y } = pickSpawn(MEMO_SIZE);
+  const addMemo = useCallback((pos?: { x: number; y: number }) => {
+    const { x, y } = pos ?? pickSpawn(MEMO_SIZE);
     const memo: Memo = {
       id: uuid(),
       // Seed the note with a quote in the current UI language.
@@ -137,6 +139,7 @@ export function MemoProvider({ children }: { children: React.ReactNode }) {
     };
     // Adding a note implies the layer should be visible.
     setState((prev) => ({ memos: [...prev.memos, memo], visible: true }));
+    return memo.id;
   }, [lang, setState]);
 
   const updateMemo = useCallback((id: string, patch: Partial<Memo>) => {
