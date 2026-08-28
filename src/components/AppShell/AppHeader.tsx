@@ -1,4 +1,4 @@
-import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target, Lock, CalendarClock, CreditCard, Tags, Scale, CalendarRange, Sun, Moon, GraduationCap, Wand2, BellRing } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target, Lock, CalendarClock, CreditCard, Tags, Scale, CalendarRange, Sun, Moon, GraduationCap, Wand2, BellRing, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -45,6 +45,8 @@ export interface AppHeaderProps {
   onOpenTutorial: () => void;
   /** Launch the guided design magician (top of the Design menu). */
   onOpenMagician: () => void;
+  /** Invite-a-friend dialog (personal ?ref= link → Pro reward). */
+  onOpenReferral: () => void;
 }
 
 /**
@@ -77,6 +79,7 @@ export function AppHeader({
   onOpenUpgrade,
   onOpenTutorial,
   onOpenMagician,
+  onOpenReferral,
 }: AppHeaderProps) {
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
@@ -329,6 +332,10 @@ export function AppHeader({
               <DropdownMenuItem onClick={() => onOpenSettings('alarms')} className="gap-2">
                 <BellRing className="h-4 w-4" />
                 {t('settings.alarms')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onOpenReferral} className="gap-2">
+                <UserPlus className="h-4 w-4" />
+                {t('referral.menu')}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}

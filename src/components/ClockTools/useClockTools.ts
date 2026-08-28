@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { v4 as uuid } from 'uuid';
-import { spawnNearCentre, migrateLegacyPos, clampOffset, type Pos } from './clock-utils';
+import { spawnNearCentre, migrateLegacyPos, clampOffset, loadPosProfile, savePosProfile, type Pos } from './clock-utils';
 import { CLOCKTOOLS_SYNC_EVENT } from '@/lib/sync/widgetSync';
 
 export type ClockMode = 'analog' | 'digital';
@@ -180,6 +180,14 @@ function loadState(): ClockToolsState {
         if (merged.timer.running && (!merged.timer.endAt || merged.timer.endAt <= Date.now())) {
           merged.timer = { ...merged.timer, running: false, endAt: null, remainingSec: 0 };
         }
+        // Per-resolution layout memory: a position the user set on THIS screen
+        // size wins over the plain (possibly other-device/synced) value.
+        merged.calendar = { ...merged.calendar, pos: loadPosProfile('ct.calendar') ?? merged.calendar.pos };
+        merged.nownext = { ...merged.nownext, pos: loadPosProfile('ct.nownext') ?? merged.nownext.pos };
+        merged.timer = { ...merged.timer, pos: loadPosProfile('ct.timer') ?? merged.timer.pos };
+        merged.alarm = { ...merged.alarm, pos: loadPosProfile('ct.alarm') ?? merged.alarm.pos };
+        merged.clocks = merged.clocks.map((c) => ({ ...c, pos: loadPosProfile(`ct.clock.${c.id}`) ?? c.pos }));
+        merged.weathers = merged.weathers.map((w) => ({ ...w, pos: loadPosProfile(`ct.weather.${w.id}`) ?? w.pos }));
         return merged;
       }
     }
@@ -197,6 +205,13 @@ function saveState(state: ClockToolsState): void {
   } catch {
     // storage unavailable — tools simply won't persist
   }
+  // Mirror every position into the per-resolution profile (local-only).
+  savePosProfile('ct.calendar', state.calendar.pos);
+  savePosProfile('ct.nownext', state.nownext.pos);
+  savePosProfile('ct.timer', state.timer.pos);
+  savePosProfile('ct.alarm', state.alarm.pos);
+  for (const c of state.clocks) savePosProfile(`ct.clock.${c.id}`, c.pos);
+  for (const w of state.weathers) savePosProfile(`ct.weather.${w.id}`, w.pos);
 }
 
 export interface ClockToolsApi {

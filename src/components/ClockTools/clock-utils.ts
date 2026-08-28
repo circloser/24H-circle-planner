@@ -98,6 +98,44 @@ export function spawnNearCentre(dx: number, dy: number, w = 180, h = 180): Pos {
   return toStored(x, y);
 }
 
+/* ── Per-resolution position profiles ────────────────────────────────────────
+   Different monitors want different layouts: a spot tuned on a 2560-wide screen
+   lands badly on a 1366 laptop. Every widget position save also records into a
+   per-resolution profile; on load, a profile entry for the CURRENT resolution
+   wins over the plain (synced/last-used) value. Profiles are local-only (never
+   synced), so each device keeps its own layout per screen size. */
+const PROFILE_KEY = '24h-circle-planner.pos-profiles';
+
+const resKey = () => `${vw()}x${vh()}`;
+
+type ProfileMap = Record<string, Record<string, Pos>>;
+
+function readProfiles(): ProfileMap {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if (raw) { const p = JSON.parse(raw) as ProfileMap; if (p && typeof p === 'object') return p; }
+  } catch { /* ignore */ }
+  return {};
+}
+
+/** The stored position for `key` at the current resolution, if the user has
+ *  placed it on a screen this size before. */
+export function loadPosProfile(key: string): Pos | null {
+  const p = readProfiles()[resKey()]?.[key];
+  return p && typeof p.x === 'number' && typeof p.y === 'number' ? p : null;
+}
+
+/** Record `pos` for `key` under the current resolution (call alongside the
+ *  widget's own persist). Best-effort. */
+export function savePosProfile(key: string, pos: Pos): void {
+  try {
+    const all = readProfiles();
+    const rk = resKey();
+    all[rk] = { ...(all[rk] ?? {}), [key]: { x: Math.round(pos.x), y: Math.round(pos.y) } };
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(all));
+  } catch { /* storage unavailable */ }
+}
+
 /** Current time, re-rendered every `intervalMs` while `active` (no ticking when off). */
 export function useNow(active: boolean, intervalMs = 1000): Date {
   const [now, setNow] = useState(() => new Date());

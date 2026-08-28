@@ -4,7 +4,7 @@ import { useDiary } from '@/hooks/useDiary';
 import { useGoals } from '@/hooks/useGoals';
 import { useTranslation } from '@/hooks/usePreferences';
 import { accumulatedMinutes } from '@/lib/goals';
-import { makeDragStart, anchoredStyle, spawnNearCentre, migrateLegacyPos, clampOffset, type Pos } from '@/components/ClockTools/clock-utils';
+import { makeDragStart, anchoredStyle, spawnNearCentre, migrateLegacyPos, clampOffset, loadPosProfile, savePosProfile, type Pos } from '@/components/ClockTools/clock-utils';
 import { GOALS_WIDGET_SYNC_EVENT } from '@/lib/sync/widgetSync';
 
 const POS_KEY = '24h-circle-planner.goalswidget';
@@ -16,6 +16,9 @@ function defaultPos(): Pos {
 }
 
 function loadPos(): Pos {
+  // A position saved on THIS screen size wins (per-resolution layout memory).
+  const prof = loadPosProfile(POS_KEY);
+  if (prof) return clampOffset(prof, CARD_W, 300);
   try {
     const raw = localStorage.getItem(POS_KEY);
     if (raw) {
@@ -55,6 +58,7 @@ export function GoalsWidget({ onSetup }: { onSetup: () => void }) {
     } catch {
       // storage unavailable — position simply won't persist
     }
+    savePosProfile(POS_KEY, pos); // remember per screen size too
   }, [pos]);
 
   // Cloud sync applied a new position to localStorage (no reload) — adopt it live.

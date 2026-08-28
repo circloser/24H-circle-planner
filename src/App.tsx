@@ -70,6 +70,8 @@ import { DiaryNotePanel } from '@/components/Diary/DiaryNotePanel';
 import { GoalsDialog } from '@/components/Goals/GoalsDialog';
 import { GoalsWidget } from '@/components/Goals/GoalsWidget';
 import { NewsWidget } from '@/components/News/NewsWidget';
+import { PolaroidAlbum } from '@/components/Polaroid/PolaroidAlbum';
+import { ReferralDialog } from '@/components/Referral/ReferralDialog';
 import { DiaryViewSync } from '@/components/DiaryViewSync';
 import { RecordView } from '@/components/Record/RecordView';
 import { WeekdayScheduleDialog } from '@/components/Weekday/WeekdayScheduleDialog';
@@ -140,6 +142,7 @@ function App() {
   }, []);
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [getAppOpen, setGetAppOpen] = useState(false);
+  const [referralOpen, setReferralOpen] = useState(false);
   // The very end of the first-run flow: a get-the-app QR, shown once.
   const finishFirstRun = () => {
     try { if (!localStorage.getItem(GETAPP_KEY)) setGetAppOpen(true); } catch { /* */ }
@@ -261,7 +264,31 @@ function App() {
   })();
   const isMobile = useIsMobile();
   const chartView = useChartView();
-  const { refresh: refreshAuth } = useAuth();
+  const { refresh: refreshAuth, user } = useAuth();
+
+  // ── Referral: capture ?ref= on arrival; after the invited friend signs in,
+  //    claim it once (rewards the referrer with 1 month Pro server-side). ──
+  useEffect(() => {
+    try {
+      const u = new URL(window.location.href);
+      const ref = u.searchParams.get('ref');
+      if (ref) {
+        localStorage.setItem('24h-ref', ref.toLowerCase());
+        u.searchParams.delete('ref');
+        window.history.replaceState(null, '', u.toString());
+      }
+    } catch { /* ignore */ }
+  }, []);
+  useEffect(() => {
+    if (!user) return;
+    let code: string | null = null;
+    try { code = localStorage.getItem('24h-ref'); } catch { /* */ }
+    if (!code) return;
+    void fetch('/api/referral/claim', {
+      method: 'POST', headers: { 'content-type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ code }),
+    }).then(() => { try { localStorage.removeItem('24h-ref'); } catch { /* */ } }).catch(() => { /* retry next login */ });
+  }, [user]);
 
   // One-time toast for OAuth (/?login=ok|…) and Polar checkout (/?checkout=success)
   // round-trips. Show feedback, re-read the session (entitlement may have just
@@ -465,7 +492,11 @@ function App() {
         onOpenUpgrade={() => setUpgradeOpen(true)}
         onOpenTutorial={() => setTutorialOpen(true)}
         onOpenMagician={() => setMagicianOpen(true)}
+        onOpenReferral={() => setReferralOpen(true)}
       />
+
+      {/* Invite a friend → 1 month Pro for the inviter once the friend signs in. */}
+      <ReferralDialog open={referralOpen} onOpenChange={setReferralOpen} />
 
       {!firstRunClean && <ActivationNudge onSendToPhone={() => setTransferOpen(true)} />}
       <EnablePushBanner />
@@ -742,6 +773,8 @@ function App() {
       {/* Keyword news headlines — desktop: the FAB is always shown; its window
           open/closed is a pref (magician-toggleable). Mobile: a bottom section. */}
       {!isMobile && !firstRunClean && <NewsWidget />}
+      {/* Polaroid photo wall — photos live only on this device (IndexedDB). */}
+      {!isMobile && !firstRunClean && <PolaroidAlbum />}
       {/* Background pet — desktop only (removed on mobile). */}
       {!isMobile && !firstRunClean && (
         <TamagotchiProvider>

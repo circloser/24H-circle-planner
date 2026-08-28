@@ -934,6 +934,69 @@ async function runPushCron(env: Env): Promise<void> {
   }
 }
 
+// ─── Referrals (invite a friend → 1 month Pro via the grants table) ──────────
+/** Lazy-create the referral tables (D1 DDL is idempotent with IF NOT EXISTS). */
+async function ensureReferralTables(db: D1Database): Promise<void> {
+  await db.prepare('CREATE TABLE IF NOT EXISTS referral_codes (code TEXT PRIMARY KEY, user_id TEXT NOT NULL UNIQUE, created_at INTEGER NOT NULL)').run();
+  await db.prepare('CREATE TABLE IF NOT EXISTS referrals (referred_user_id TEXT PRIMARY KEY, referrer_user_id TEXT NOT NULL, created_at INTEGER NOT NULL)').run();
+}
+
+/** Short, url-safe referral code derived from the user id (stable). */
+function referralCodeFor(userId: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < userId.length; i++) { h ^= userId.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return h.toString(36).padStart(7, '0').slice(0, 7);
+}
+
+/** GET /api/referral/me — my invite code + how many friends signed in with it. */
+async function handleReferralMe(request: Request, env: Env): Promise<Response> {
+  if (!env.DB) return json({ error: 'unconfigured' }, 503);
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'unauthorized' }, 401);
+  await ensureReferralTables(env.DB);
+  const code = referralCodeFor(user.id);
+  await env.DB.prepare('INSERT INTO referral_codes (code, user_id, created_at) VALUES (?,?,?) ON CONFLICT(code) DO NOTHING').bind(code, user.id, Date.now()).run();
+  const row = await env.DB.prepare('SELECT COUNT(*) AS n FROM referrals WHERE referrer_user_id=?').bind(user.id).first<{ n: number }>();
+  return json({ code, invited: Number(row?.n ?? 0) });
+}
+
+const REFERRAL_GRANT_DAYS = 30;
+const REFERRAL_NEW_USER_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** POST /api/referral/claim {code} — called once by a NEWLY signed-in user who
+ *  arrived via an invite link. Rewards the REFERRER with 30 days Pro (grants
+ *  row, idempotent per referred user). Guards: must be logged in, can't claim
+ *  your own code, one claim per account, account must be < 7 days old. */
+async function handleReferralClaim(request: Request, env: Env): Promise<Response> {
+  if (!env.DB) return json({ error: 'unconfigured' }, 503);
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'unauthorized' }, 401);
+  let body: { code?: unknown };
+  try { body = await request.json(); } catch { return json({ error: 'bad_json' }, 400); }
+  const code = typeof body.code === 'string' ? body.code.trim().toLowerCase() : '';
+  if (!code || code.length > 16) return json({ error: 'bad_code' }, 400);
+  await ensureReferralTables(env.DB);
+
+  const owner = await env.DB.prepare('SELECT user_id FROM referral_codes WHERE code=?').bind(code).first<{ user_id: string }>();
+  if (!owner) return json({ ok: false, reason: 'unknown_code' });
+  if (owner.user_id === user.id) return json({ ok: false, reason: 'self' });
+  const already = await env.DB.prepare('SELECT 1 FROM referrals WHERE referred_user_id=?').bind(user.id).first();
+  if (already) return json({ ok: false, reason: 'already_claimed' });
+  const u = await env.DB.prepare('SELECT created_at FROM users WHERE id=?').bind(user.id).first<{ created_at: number }>();
+  if (!u || Date.now() - u.created_at > REFERRAL_NEW_USER_WINDOW_MS) return json({ ok: false, reason: 'not_new' });
+
+  const now = Date.now();
+  await env.DB.prepare('INSERT INTO referrals (referred_user_id, referrer_user_id, created_at) VALUES (?,?,?)').bind(user.id, owner.user_id, now).run();
+  // Reward: 30 days Pro to the referrer, via the same grants table coupons use.
+  const grantCode = `ref-${user.id}`;
+  const dup = await env.DB.prepare('SELECT 1 FROM grants WHERE user_id=? AND code=?').bind(owner.user_id, grantCode).first();
+  if (!dup) {
+    await env.DB.prepare('INSERT INTO grants (user_id, code, expires_at, created_at) VALUES (?,?,?,?)')
+      .bind(owner.user_id, grantCode, now + REFERRAL_GRANT_DAYS * 24 * 60 * 60 * 1000, now).run();
+  }
+  return json({ ok: true });
+}
+
 // ─── News (keyword headlines, no AI tokens) ──────────────────────────────────
 /** Country code → Bing News market (mkt). Bing News RSS tolerates datacenter/
  *  edge egress (unlike Google News, which 503s CF IPs) and returns clean,
@@ -1103,6 +1166,8 @@ export default {
       if (p === '/api/push/plan' && m === 'DELETE') return handlePushPlanDelete(request, env);
       if (p === '/api/push/test' && m === 'POST') return handlePushTest(request, env);
       if (p === '/api/news' && m === 'GET') return handleNews(request, env, ctx);
+      if (p === '/api/referral/me' && m === 'GET') return handleReferralMe(request, env);
+      if (p === '/api/referral/claim' && m === 'POST') return handleReferralClaim(request, env);
       return json({ error: 'not_found' }, 404);
     }
 
