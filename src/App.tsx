@@ -540,8 +540,14 @@ function App() {
           className={
             isMobile
               ? 'relative w-full max-w-[560px] aspect-square'
-              : 'relative max-w-[720px] w-full mx-auto aspect-square'
+              : 'relative mx-auto aspect-square'
           }
+          // Desktop: the ring is square, so its width also decides the page
+          // height. Cap it by the viewport height minus the app chrome (header,
+          // day bar, footer, padding ≈ 250px) so the planner fits ONE screen and
+          // never adds a scrollbar of its own; 320px keeps it usable on very
+          // short windows (which then scroll, as before).
+          style={isMobile ? undefined : { width: 'min(720px, 100%, max(320px, calc(100dvh - 250px)))' }}
         >
           <CircleTimeline
             slices={present.slices}

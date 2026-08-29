@@ -222,6 +222,10 @@
     <!-- Site content — persists after the app mounts (outside #root). -->
     <style>
       #site-copy-wrap { background:#ffffff; border-top:1px solid #e3e6ec }
+      /* Phones get the planner only — the copy block is desktop-side
+         context, and on a small screen it just turns the app into a long
+         scroll. The markup stays in the document either way. */
+      @media (max-width: 767px) { #site-copy-wrap { display:none } }
       [data-theme='dark'] #site-copy-wrap { background:#0f131a; border-top-color:#232a36 }
       /* The app's global reset strips link colour/underline; this block is
          plain content, so its links must look like links. */
