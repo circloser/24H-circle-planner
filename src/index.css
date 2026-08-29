@@ -175,6 +175,21 @@
 /* ─── Mobile usability (P0) ──────────────────────────────────────────────── */
 /* Stop accidental pull-to-refresh / overscroll bounce inside the installed app. */
 html, body { overscroll-behavior-y: contain; }
+
+/* ─── Desktop: hide the document scrollbar ───────────────────────────────────
+   The planner is capped to fill exactly one screen, so the only thing that
+   scrolls is the site-copy block beneath it — and an app screen with a
+   scrollbar running down it reads as a layout bug. Hide the scrollbar CHROME
+   only: wheel, trackpad, keyboard (space / Page Down / End) and anchor links
+   all still scroll normally, so the copy and its section links stay reachable.
+   Scoped to `html` so scroll areas inside dialogs keep their own scrollbars,
+   and to ≥768px because phones don't render one anyway. This rule ships with
+   the app bundle only — /guides, /blog and the other content pages keep
+   theirs. */
+@media (min-width: 768px) {
+  html { scrollbar-width: none; }
+  html::-webkit-scrollbar { width: 0; height: 0; }
+}
 /* Respect the notch / gesture bar on edge-to-edge phones (needs viewport-fit=cover). */
 [data-app-header] { padding-top: env(safe-area-inset-top); }
 [data-app-root] { padding-bottom: env(safe-area-inset-bottom); }
