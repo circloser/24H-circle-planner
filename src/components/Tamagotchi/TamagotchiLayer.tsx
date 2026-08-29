@@ -76,7 +76,7 @@ export function TamagotchiLayer({ isMobile = false }: { isMobile?: boolean }) {
         aria-pressed={menuOpen}
         title={t('tama.title')}
         aria-label={t('tama.menu')}
-        className={`fixed bottom-5 z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 border ${isMobile ? 'left-5' : 'left-[76px]'}`}
+        className={`absolute bottom-5 z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 border ${isMobile ? 'left-5' : 'left-[76px]'}`}
         style={{
           background: menuOpen ? 'hsl(var(--primary))' : 'hsl(var(--surface))',
           color: menuOpen ? 'hsl(var(--primary-foreground))' : 'hsl(var(--muted-foreground))',
@@ -92,7 +92,7 @@ export function TamagotchiLayer({ isMobile = false }: { isMobile?: boolean }) {
         <div
           className="tama-pop"
           style={{
-            position: 'fixed', bottom: 74, left: isMobile ? 16 : 72, zIndex: 40, maxWidth: 224,
+            position: 'absolute', bottom: 74, left: isMobile ? 16 : 72, zIndex: 40, maxWidth: 224,
             display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', borderRadius: 14,
             background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))',
             boxShadow: '0 8px 22px rgba(0,0,0,0.24)', fontSize: 12, fontWeight: 600, lineHeight: 1.35,
@@ -118,7 +118,7 @@ export function TamagotchiLayer({ isMobile = false }: { isMobile?: boolean }) {
               title={t('tama.cleanPoop')}
               aria-label={t('tama.cleanPoop')}
               onClick={(e) => { e.stopPropagation(); removePoop(poop.id); }}
-              style={{ position: 'fixed', left: poop.x, top: poop.y, transform: 'translate(-50%,-50%)', zIndex: 34, color: '#7c5a3a', pointerEvents: 'auto', cursor: 'pointer', background: 'transparent', border: 'none', padding: 4, lineHeight: 0 }}
+              style={{ position: 'absolute', left: poop.x, top: poop.y, transform: 'translate(-50%,-50%)', zIndex: 34, color: '#7c5a3a', pointerEvents: 'auto', cursor: 'pointer', background: 'transparent', border: 'none', padding: 4, lineHeight: 0 }}
             >
               <PoopArt size={18} />
             </button>

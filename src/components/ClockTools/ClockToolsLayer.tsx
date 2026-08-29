@@ -100,12 +100,12 @@ export function ClockToolsLayer() {
 
       {/* Click-away backdrop for the popup menu. */}
       {menuOpen && (
-        <div className="fixed inset-0 z-[39]" onClick={() => setMenuOpen(false)} aria-hidden="true" />
+        <div className="absolute inset-0 z-[39]" onClick={() => setMenuOpen(false)} aria-hidden="true" />
       )}
 
       {/* Popup menu — stacked above the FAB (bottom-left). */}
       {menuOpen && (
-        <div className="fixed bottom-[76px] left-5 z-40 flex flex-col items-start gap-2">
+        <div className="absolute bottom-[76px] left-5 z-40 flex flex-col items-start gap-2">
           {/* Clock ADDS a window per click (multi-timezone) instead of toggling. */}
           <button
             type="button"
@@ -166,7 +166,7 @@ export function ClockToolsLayer() {
         aria-label={t('clock.tools')}
         aria-expanded={menuOpen}
         title={t('clock.tools')}
-        className="fixed bottom-5 left-5 z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 bg-surface text-muted-foreground border border-border"
+        className="absolute bottom-5 left-5 z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 bg-surface text-muted-foreground border border-border"
       >
         <Clock className="h-5 w-5" />
       </button>

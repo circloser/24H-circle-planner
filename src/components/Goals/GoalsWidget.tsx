@@ -80,7 +80,7 @@ export function GoalsWidget({ onSetup }: { onSetup: () => void }) {
           onPointerDown={makeDragStart(pos, setPos)}
           onPointerMove={() => { if (!hover) setHover(true); }}
           onPointerLeave={() => setHover(false)}
-          className="fixed z-30 max-h-[60vh] w-[300px] cursor-grab touch-none overflow-y-auto rounded-xl p-3 transition-shadow active:cursor-grabbing"
+          className="absolute z-30 max-h-[60vh] w-[300px] cursor-grab touch-none overflow-y-auto rounded-xl p-3 transition-shadow active:cursor-grabbing"
           style={{
             ...anchoredStyle(pos.x, pos.y),
             // Transparent at rest; on hover reveal the same boundary as the
@@ -141,7 +141,7 @@ export function GoalsWidget({ onSetup }: { onSetup: () => void }) {
         aria-label={t('goals.open')}
         aria-expanded={open}
         title={t('goals.open')}
-        className="fixed bottom-5 right-[74px] z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 bg-surface text-muted-foreground border border-border"
+        className="absolute bottom-5 right-[74px] z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 bg-surface text-muted-foreground border border-border"
       >
         <Target className="h-5 w-5" />
       </button>

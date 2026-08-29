@@ -63,7 +63,7 @@ export function TamagotchiDevice({ isMobile = false }: { isMobile?: boolean }) {
       role="dialog"
       aria-label={t('tama.title')}
       style={{
-        position: 'fixed', left: 16, bottom: 84, zIndex: 40,
+        position: 'absolute', left: 16, bottom: 84, zIndex: 40,
         width: isMobile ? MOBILE_LCD.w + 24 : 216,
         borderRadius: 26, padding: 12,
         background: '#ffffff',

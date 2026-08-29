@@ -91,7 +91,7 @@ function PolaroidCard({ photo, onChange, onRemove }: { photo: Photo; onChange: (
       onPointerDown={makeDragStart(photo.pos, (p) => onChange({ pos: p }))}
       onPointerEnter={() => setHover(true)}
       onPointerLeave={() => setHover(false)}
-      className="fixed z-[28] w-[168px] cursor-grab touch-none select-none active:cursor-grabbing"
+      className="absolute z-[28] w-[168px] cursor-grab touch-none select-none active:cursor-grabbing"
       style={{
         ...anchoredStyle(photo.pos.x, photo.pos.y),
         transform: `rotate(${photo.rot}deg)`,
@@ -189,12 +189,12 @@ export function PolaroidAlbum() {
 
       {/* Click-away backdrop for the popup menu. */}
       {menuOpen && (
-        <div className="fixed inset-0 z-[39]" onClick={() => setMenuOpen(false)} aria-hidden="true" />
+        <div className="absolute inset-0 z-[39]" onClick={() => setMenuOpen(false)} aria-hidden="true" />
       )}
 
       {/* Popup menu — add photos / show-hide, like the memo & clock-tool FABs. */}
       {menuOpen && (
-        <div className="fixed bottom-[76px] right-[182px] z-40 flex flex-col items-end gap-2">
+        <div className="absolute bottom-[76px] right-[182px] z-40 flex flex-col items-end gap-2">
           <button
             type="button"
             onClick={() => { setMenuOpen(false); fileRef.current?.click(); }}
@@ -221,7 +221,7 @@ export function PolaroidAlbum() {
         aria-label={t('polaroid.open')}
         aria-expanded={menuOpen}
         title={t('polaroid.open')}
-        className="fixed bottom-5 right-[182px] z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 bg-surface text-muted-foreground border border-border"
+        className="absolute bottom-5 right-[182px] z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 bg-surface text-muted-foreground border border-border"
       >
         <Images className="h-5 w-5" />
       </button>

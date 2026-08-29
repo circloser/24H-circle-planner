@@ -34,12 +34,12 @@ export function MemoLayer() {
 
       {/* Click-away backdrop for the popup menu. */}
       {menuOpen && (
-        <div className="fixed inset-0 z-20" onClick={() => setMenuOpen(false)} aria-hidden="true" />
+        <div className="absolute inset-0 z-20" onClick={() => setMenuOpen(false)} aria-hidden="true" />
       )}
 
       {/* Popup menu — stacked above the FAB. */}
       {menuOpen && (
-        <div className="fixed bottom-[76px] right-5 z-30 flex flex-col items-end gap-2">
+        <div className="absolute bottom-[76px] right-5 z-30 flex flex-col items-end gap-2">
           <button
             type="button"
             className={item}
@@ -83,7 +83,7 @@ export function MemoLayer() {
         aria-label={t('memo.add')}
         aria-expanded={menuOpen}
         title={t('memo.add')}
-        className="fixed bottom-5 right-5 z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 bg-surface text-muted-foreground border border-border"
+        className="absolute bottom-5 right-5 z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 bg-surface text-muted-foreground border border-border"
       >
         <StickyNote className="h-5 w-5" />
       </button>

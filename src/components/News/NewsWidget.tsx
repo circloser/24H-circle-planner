@@ -224,7 +224,7 @@ function NewsCard({ win, inline, canAdd, onChange, onAdd, onRemove }: {
       onPointerDown={makeDragStart(win.pos, (p) => onChange({ pos: p }))}
       onPointerMove={() => { if (!hover) setHover(true); }}
       onPointerLeave={() => setHover(false)}
-      className="fixed z-30 w-[300px] cursor-grab touch-none overflow-hidden rounded-xl active:cursor-grabbing"
+      className="absolute z-30 w-[300px] cursor-grab touch-none overflow-hidden rounded-xl active:cursor-grabbing"
       style={{
         ...anchoredStyle(win.pos.x, win.pos.y),
         backgroundColor: hover ? 'hsl(var(--surface) / 0.92)' : 'transparent',
@@ -321,7 +321,7 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
         aria-label={t('news.open')}
         aria-expanded={open}
         title={t('news.open')}
-        className="fixed bottom-5 right-[128px] z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 bg-surface text-muted-foreground border border-border"
+        className="absolute bottom-5 right-[128px] z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 bg-surface text-muted-foreground border border-border"
       >
         <Newspaper className="h-5 w-5" />
       </button>

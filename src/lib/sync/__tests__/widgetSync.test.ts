@@ -14,7 +14,7 @@ describe('centre-offset position space (clock-utils)', () => {
   it('toStored maps a viewport point to a centre offset; anchoredStyle renders it back', () => {
     setViewport(1600, 900);
     expect(toStored(900, 450)).toEqual({ x: 100, y: 0 }); // 100px right of centre
-    expect(anchoredStyle(100, 0)).toEqual({ position: 'fixed', left: 'calc(50vw + 100px)', top: 'calc(50vh + 0px)' });
+    expect(anchoredStyle(100, 0)).toEqual({ position: 'absolute', left: 'calc(50vw + 100px)', top: 'calc(50vh + 0px)' });
   });
 
   it('an offset means the same chart-relative spot on ANY viewport (no re-basing)', () => {

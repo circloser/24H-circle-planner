@@ -45,8 +45,11 @@ export function migrateLegacyPos(p: Pos): Pos {
 }
 
 /** `position:fixed` left/top for a centre-offset position. */
-export function anchoredStyle(x: number, y: number): { position: 'fixed'; left: string; top: string } {
-  return { position: 'fixed', left: `calc(50vw + ${x}px)`, top: `calc(50vh + ${y}px)` };
+export function anchoredStyle(x: number, y: number): { position: 'absolute'; left: string; top: string } {
+  // `absolute`, not `fixed`: the widgets sit inside the app shell so they scroll
+  // away with the planner. vw/vh keep the coordinates viewport-relative, so a
+  // stored offset still means the same spot on screen at scroll 0.
+  return { position: 'absolute', left: `calc(50vw + ${x}px)`, top: `calc(50vh + ${y}px)` };
 }
 
 /** Lower bound (offset space) keeping the widget's top-left on screen. */

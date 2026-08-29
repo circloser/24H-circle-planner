@@ -143,7 +143,7 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
     <div
       className="tama-creature"
       style={{
-        position: 'fixed',
+        position: 'absolute',
         left: x,
         top: y,
         transform: 'translate(-50%, -50%)',
