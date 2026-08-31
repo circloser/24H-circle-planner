@@ -221,7 +221,7 @@ export function PolaroidAlbum() {
         aria-label={t('polaroid.open')}
         aria-expanded={menuOpen}
         title={t('polaroid.open')}
-        className="absolute bottom-5 right-[182px] z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 bg-surface text-muted-foreground border border-border"
+        className="absolute bottom-5 right-[128px] z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 bg-surface text-muted-foreground border border-border"
       >
         <Images className="h-5 w-5" />
       </button>

@@ -76,7 +76,7 @@ export function TamagotchiLayer({ isMobile = false }: { isMobile?: boolean }) {
         aria-pressed={menuOpen}
         title={t('tama.title')}
         aria-label={t('tama.menu')}
-        className={`absolute bottom-5 z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 border ${isMobile ? 'left-5' : 'left-[76px]'}`}
+        className={`absolute bottom-5 z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 border ${isMobile ? 'left-5' : 'left-[132px]'}`}
         style={{
           background: menuOpen ? 'hsl(var(--primary))' : 'hsl(var(--surface))',
           color: menuOpen ? 'hsl(var(--primary-foreground))' : 'hsl(var(--muted-foreground))',

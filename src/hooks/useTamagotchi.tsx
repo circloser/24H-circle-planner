@@ -38,6 +38,9 @@ export interface Pet {
   /** Stage-5 badge: naming a coloured (super) pet shows this under it as it roams. */
   name: string | null;
   lastPoopAt: number; // ms — this pet's own poop timer (poops go to the shared pile)
+  /** ms until the NEXT poop (random POOP_MIN..POOP_MAX, re-rolled per drop).
+   *  Optional: older saves default a fresh roll in poopStep. */
+  nextPoopIn?: number;
   hungerZeroSince: number | null; // death timer
   bloat: number; // 0..MAX_BLOAT — temporary size bump from overfeeding, decays
   boostUntil: number; // ms — dashes away faster until this time (play reaction)
@@ -74,7 +77,8 @@ export const HATCH_DELAYS = [
  *  amoeba(1) → baby(2) at 100 · → adult(3) at 300 · → super/coloured(4) at 500.
  *  Stage 5 = naming a super pet (see rename). Time no longer evolves pets. */
 export const EVOLVE_PLAYS = { baby: 100, adult: 300, super: 500 } as const;
-const POOP_EVERY = 20 * 60 * 1000; // 20 min → poop (-20 hygiene)
+const POOP_MIN = 60 * 60 * 1000; // poops come no closer than 1h apart…
+const POOP_MAX = 150 * 60 * 1000; // …and up to 2.5h — interval re-rolled each time
 const DEATH_AFTER = 3 * 24 * 60 * 60 * 1000; // hunger 0 sustained 3 days → dead
 const TICK = 1000; // ms
 
@@ -195,14 +199,18 @@ function poopStep(pets: Pet[], hygiene: number, poops: Poop[], now: number): { p
     // catch-up over a sleeping pet drops nothing).
     if (pet.sleeping) return pet.lastPoopAt === now ? pet : { ...pet, lastPoopAt: now };
     let lastPoopAt = pet.lastPoopAt;
-    while (now - lastPoopAt >= POOP_EVERY) {
-      lastPoopAt += POOP_EVERY;
+    let nextIn = pet.nextPoopIn ?? rand(POOP_MIN, POOP_MAX);
+    while (now - lastPoopAt >= nextIn) {
+      lastPoopAt += nextIn;
+      nextIn = rand(POOP_MIN, POOP_MAX);
       if (pp.length < POOP_CAP) {
         pp = [...pp, { id: uid(), x: pet.x + rand(-26, 26), y: pet.y + rand(18, 40) }];
         h = clamp(h - 20);
       }
     }
-    return lastPoopAt === pet.lastPoopAt ? pet : { ...pet, lastPoopAt };
+    // Persist the roll too, or every step would re-roll it (and a per-tick
+    // re-roll would skew intervals toward POOP_MIN).
+    return lastPoopAt === pet.lastPoopAt && nextIn === pet.nextPoopIn ? pet : { ...pet, lastPoopAt, nextPoopIn: nextIn };
   });
   return { pets: next, hygiene: h, poops: pp };
 }
@@ -372,10 +380,12 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
       const pets = s.pets.filter((p) => p.id !== id);
       return { ...s, pets, selectedId: s.selectedId === id ? (pets[0]?.id ?? null) : s.selectedId };
     }), []),
-    feed: useCallback((id) => mutate(id, (p) => (p.phase === 'egg' || p.phase === 'dead' || p.sleeping ? p : { ...p, hunger: clamp(p.hunger + 25), bloat: Math.min(MAX_BLOAT, (p.bloat ?? 0) + BLOAT_PER_FEED) })), [mutate]),
+    // Feeding fills a modest +10 and counts as a play interaction too (evolution).
+    feed: useCallback((id) => mutate(id, (p) => (p.phase === 'egg' || p.phase === 'dead' || p.sleeping ? p : { ...p, hunger: clamp(p.hunger + 10), plays: (p.plays ?? 0) + 1, bloat: Math.min(MAX_BLOAT, (p.bloat ?? 0) + BLOAT_PER_FEED) })), [mutate]),
     // Playing also makes the pet dash off to the side for a moment (boostUntil +
     // a fresh random heading) — the "runs away happily" reaction.
-    play: useCallback((id) => mutate(id, (p) => (p.phase === 'egg' || p.phase === 'dead' || p.sleeping || p.energy < 10 ? p : { ...p, plays: (p.plays ?? 0) + 1, happiness: clamp(p.happiness + 20), energy: clamp(p.energy - 10), heading: rand(0, Math.PI * 2), boostUntil: Date.now() + 2400 })), [mutate]),
+    // -3 energy per play: 100 → the LOW_ENERGY(20) auto-nap after ~26 plays.
+    play: useCallback((id) => mutate(id, (p) => (p.phase === 'egg' || p.phase === 'dead' || p.sleeping || p.energy < 3 ? p : { ...p, plays: (p.plays ?? 0) + 1, happiness: clamp(p.happiness + 20), energy: clamp(p.energy - 3), heading: rand(0, Math.PI * 2), boostUntil: Date.now() + 2400 })), [mutate]),
     // A drag/throw counts toward evolution too, without the happiness/dash
     // reaction (and not while asleep — repositioning a sleeper isn't play).
     notePlay: useCallback((id) => mutate(id, (p) => (p.phase === 'egg' || p.phase === 'dead' || p.sleeping ? p : { ...p, plays: (p.plays ?? 0) + 1 })), [mutate]),

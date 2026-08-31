@@ -7,7 +7,7 @@ import { NEWS_SYNC_EVENT, NEWS_WINDOWS_KEY } from '@/lib/sync/widgetSync';
 const WINDOWS_KEY = NEWS_WINDOWS_KEY;
 const LEGACY_CFG_KEY = '24h-news.config';
 const CARD_W = 300;
-export const MAX_NEWS_WINDOWS = 3;
+export const MAX_NEWS_WINDOWS = 4;
 
 /** Countries offered in the picker — 'WW' = worldwide (no market filter); the
  *  rest must match the worker's NEWS_MARKETS keys. Labels are localized via
@@ -337,7 +337,7 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
         aria-label={t('news.open')}
         aria-expanded={open}
         title={t('news.open')}
-        className="absolute bottom-5 right-[128px] z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 bg-surface text-muted-foreground border border-border"
+        className="absolute bottom-5 left-[76px] z-30 grid h-12 w-12 place-items-center rounded-full shadow-lg transition-transform hover:scale-105 bg-surface text-muted-foreground border border-border"
       >
         <Newspaper className="h-5 w-5" />
       </button>
