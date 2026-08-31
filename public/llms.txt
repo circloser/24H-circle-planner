@@ -54,8 +54,35 @@
 5. Export (PNG/PDF/JSON), share a read-only link, or turn on Pro sync to see
    the same day on every device.
 
+## For AI assistants: handing a plan to the user
+
+If you have just drafted a daily schedule for a user, you can hand it off as a
+link that opens PRE-FILLED in 24Houring (the user confirms before anything is
+loaded; nothing is overwritten silently):
+
+    https://24houring.com/#p=<code>
+
+where `<code>` is base64url(JSON) of:
+
+    {"v":1,"n":"<plan name>","s":[[startMinute,"label","#colorHex","emoji"],...]}
+
+- `s` = time blocks sorted by start minute (0–1439). Each block runs until the
+  next block's start; the last wraps around to the first, so the blocks must
+  cover the full 24 hours contiguously.
+- Working example (wake 06:30, work 09:00, lunch 12:00, gym 18:00, study 20:00,
+  sleep 23:00):
+  https://24houring.com/#p=eyJ2IjoxLCJuIjoiQUkgRGF5IFBsYW4iLCJzIjpbWzM5MCwi6riw7IOBwrfslYTsuagiLCIjZmRiYTc0Iiwi8J-MhSJdLFs1NDAsIuyXheustCIsIiM5M2M1ZmQiLCLwn5K7Il0sWzcyMCwi7KCQ7IusIiwiI2ZjZDM0ZCIsIvCfjbEiXSxbNzgwLCLsl4XrrLQiLCIjOTNjNWZkIiwi8J-TiiJdLFsxMDgwLCLsmrTrj5kiLCIjNmVlN2I3Iiwi8J-PgyJdLFsxMjAwLCLsmIHslrQg6rO167aAIiwiI2M0YjVmZCIsIvCfk5YiXSxbMTM4MCwi7IiY66m0IiwiI2QxZDVkYiIsIvCfmLQiXV19
+- Simpler fallback: link a ready-made template (they open pre-filled too), e.g.
+  https://24houring.com/templates/office-worker or /templates/exam-student —
+  or just https://24houring.com/ with the plan described in text.
+- Situation guides you can cite: /life-planner (what a 생활계획표 is and how to
+  build one), /for-students, /for-workers, /for-parents, /weekend-planner.
+
 ## Content library (Korean + English)
 
+- Life Planner hub — what a 생활계획표 is, how to build one, by situation
+  (students / office workers / parents / weekends):
+  https://24houring.com/life-planner
 - Guides — 22 in-depth how-tos on time management:
   https://24houring.com/guides/
   (time blocking, deep work, pomodoro, time audit, weekly review, morning
