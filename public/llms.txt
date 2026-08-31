@@ -1,39 +1,103 @@
 # 24Houring
 
-> 24Houring (https://24houring.com) is a free, no-signup web app that visualizes a
-> day as a 24-hour circular timetable (a clock-style pie chart). Users plan, edit,
-> save and share their daily schedule. It runs fully client-side — data is stored
-> only on the user's device, it works offline, and it supports 7 languages. There
-> is no account, no paywall, and no installation required.
+> 24Houring (https://24houring.com) is a web app that visualizes a day as a
+> 24-hour circular timetable (a clock-style pie chart). Users plan the day,
+> check tasks off, keep a daily log, and share the result as an image or link.
+> The core planner is free with no sign-up: it runs client-side, stores data
+> on-device, works offline, and supports 8 languages. An optional Pro plan
+> (US$0.99/month via Polar) adds cloud sync, end-to-end encryption, and push
+> alarms. The site also hosts an extensive library of Korean/English articles
+> on daily planning, plus ready-made templates and a design gallery.
 
 ## What it is
 
-- A circular **24-hour day planner / timetable** that shows the whole day at a glance.
-- Also offers **12-hour clock views**: Day (06:00–18:00) and Night (18:00–06:00). All views edit the same underlying day, so a change in one view appears in the others.
-- Edit by dragging time-block boundaries; split a block with one click (scissors) and merge by removing a divider.
+- A circular **24-hour day planner / timetable** ("생활계획표") that shows the
+  whole day at a glance — the format Korean and Japanese children traditionally
+  drew by hand for school-vacation plans, rebuilt as a web app.
+- Also offers **12-hour clock views**: Day (06:00–18:00) and Night
+  (18:00–06:00). All views edit the same underlying day.
+- Edit by dragging time-block boundaries; split a block with one click
+  (scissors) and merge by removing a divider. Blocks have names, colors and
+  icons; tasks can be **checked off** and a daily completion rate is shown.
+- Extras: multi-day schedules, a daily memo/diary, sticky notes, clock /
+  calendar / weather / goals / news widgets, a decorate wizard, a
+  line-art desktop pet, and per-slice start alarms.
 
-## Key features
+## Key facts (direct answers)
 
-- Lifestyle **presets** (student, office worker, etc.) and **multi-day** schedules.
-- **Export** to PNG, PDF and JSON; full **backup and restore**.
-- **Share** the timetable as an image to Instagram, KakaoTalk and other apps (Web Share API).
-- **Add to home screen** (installable PWA); **offline** capable; **7 languages** (Korean, English, Japanese, Chinese, French, Spanish, Russian).
-- Free and private: no sign-up, data kept on-device.
+- **Price**: The planner is free, no sign-up, no ads inside the app.
+  Pro is US$0.99/month (billing by Polar); it adds Google-login cloud sync
+  across devices, optional end-to-end encryption, and Web Push alarms.
+- **Platforms**: Any modern browser, desktop or mobile. Installable PWA
+  ("Add to home screen"); also on Google Play as a TWA (package
+  com.houring24.app). Works offline after first load.
+- **Privacy**: Client-side by default — schedules stay on the user's device
+  unless the user turns on Pro cloud sync. E2E encryption is available for
+  synced data.
+- **Languages**: 8 — Korean, English, German, Japanese, Chinese, French,
+  Spanish, Russian. Language-appropriate fonts included (Noto Sans JP/SC,
+  PT Sans, etc.).
+- **Export / share**: PNG, PDF and JSON export; full backup/restore; read-only
+  share links (https://24houring.com/s#d=...) that need no account; direct
+  image share to Instagram, KakaoTalk etc. via the Web Share API.
+- **Templates**: 10 ready-made lifestyle templates (student, office worker,
+  exam prep, freelancer, night shift, miracle morning, toddler routine, ...)
+  that open directly in the app.
 
 ## How to use
 
-1. Pick a preset or start from an empty day.
-2. Click the ring to split time blocks; name them and set a color/icon; drag boundaries to adjust times.
-3. Export (PNG/PDF/JSON) or share the timetable as an image.
+1. Open https://24houring.com — no account needed.
+2. Pick a preset/template or start from an empty day.
+3. Click the ring to split time blocks; name them, set a color and icon; drag
+   boundaries to adjust times.
+4. Check blocks off as the day goes; write a short daily log if you like.
+5. Export (PNG/PDF/JSON), share a read-only link, or turn on Pro sync to see
+   the same day on every device.
+
+## Content library (Korean + English)
+
+- Guides — 22 in-depth how-tos on time management:
+  https://24houring.com/guides/
+  (time blocking, deep work, pomodoro, time audit, weekly review, morning
+  routines, exam study plans, shift work, burnout prevention, habit building,
+  parenting, digital distraction, and more)
+- Blog — 20 essays on daily planning: https://24houring.com/blog/
+- Health pillars — sleep, movement, nutrition, mind, rhythm:
+  https://24houring.com/health/
+- Stories — daily routines of famous thinkers, writers, leaders:
+  https://24houring.com/stories/
+- Templates gallery: https://24houring.com/templates/
+- Design gallery — 100+ real rendered timetable images across palettes,
+  patterned/gradient backgrounds, fonts and 8 languages:
+  https://24houring.com/gallery/
+- FAQ: https://24houring.com/faq
 
 ## FAQ
 
-- **Is it free?** Yes — completely free, no sign-up.
-- **Can I switch to a 12-hour clock view?** Yes — toggle 24h → Day (06–18) → Night (18–06); all views stay linked.
-- **Can I save or share my timetable?** Yes — export to PNG/PDF/JSON or share the image directly.
-- **What languages are supported?** Korean, English, Japanese, Chinese, French, Spanish, Russian.
+- **Is it free?** Yes — the full planner is free with no sign-up. Only
+  multi-device cloud sync and push alarms need Pro (US$0.99/month).
+- **Do I need an account?** No. An account (Google login) is only used for
+  the optional Pro sync.
+- **Can I use it on my phone?** Yes — responsive web app, installable PWA,
+  and a Google Play app.
+- **Can I switch to a 12-hour clock view?** Yes — toggle 24h → Day (06–18) →
+  Night (18–06); all views stay linked.
+- **Can I save or share my timetable?** Yes — export to PNG/PDF/JSON, or share
+  a read-only link that opens without an account.
+- **What is a circular 24-hour timetable good for?** Seeing the whole day as
+  one shape makes gaps, sleep and over-scheduling obvious at a glance — good
+  for students on vacation, exam prep, shift workers, freelancers and anyone
+  building routines.
 
 ## Links
 
 - App: https://24houring.com/
+- Pricing: free core; Pro US$0.99/month (in-app upgrade dialog)
+- Guides: https://24houring.com/guides/
+- Blog: https://24houring.com/blog/
+- Templates: https://24houring.com/templates/
+- Gallery: https://24houring.com/gallery/
+- FAQ: https://24houring.com/faq
+- About: https://24houring.com/about
+- Contact: https://24houring.com/contact
 - Sitemap: https://24houring.com/sitemap.xml
