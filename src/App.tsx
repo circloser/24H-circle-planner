@@ -53,6 +53,8 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useShareActions } from '@/hooks/useShareActions';
 import { useCompletionCelebration } from '@/hooks/useCompletionCelebration';
 import { usePipWidget } from '@/components/PipWidget/PipWidget';
+import { WidgetConnectDialog } from '@/components/WidgetConnect/WidgetConnectDialog';
+import { isPlayStoreApp } from '@/lib/twa';
 import { useSyncStatus } from '@/hooks/useSync';
 import { useAuth } from '@/hooks/useAuth';
 import { E2eeDialog } from '@/components/Sync/E2eeDialog';
@@ -406,6 +408,8 @@ function App() {
 
   // Always-on-top PiP mini widget (desktop Chrome/Edge; menu item hidden elsewhere).
   const pip = usePipWidget();
+  // Android home-screen widget hookup — only offered inside the Play Store TWA.
+  const [widgetConnectOpen, setWidgetConnectOpen] = useState(false);
 
   // E2EE: when the cloud copy is ciphertext this device can't read, sync reports
   // 'locked' — surface the unlock dialog automatically so the user isn't stuck.
@@ -524,6 +528,7 @@ function App() {
         onOpenMagician={() => setMagicianOpen(true)}
         onOpenReferral={() => setReferralOpen(true)}
         onOpenPip={pip.supported ? () => void pip.open() : undefined}
+        onOpenWidgetConnect={isPlayStoreApp() ? () => setWidgetConnectOpen(true) : undefined}
       />
 
       {/* Invite a friend → 1 month Pro for the inviter once the friend signs in. */}
@@ -719,6 +724,7 @@ function App() {
       {/* Guided decorate-your-app flow (first visit + relaunchable from Design).
           Its final button offers the tutorial next (once, never after the X). */}
       <DesignMagician open={magicianOpen} onClose={closeMagician} onFinish={onMagicianFinish} />
+      <WidgetConnectDialog open={widgetConnectOpen} onOpenChange={setWidgetConnectOpen} svgRef={svgRef} />
       {pip.portal}
 
       {/* "튜토리얼 진행할까요?" — after the magician's finish, for tutorial newcomers. */}

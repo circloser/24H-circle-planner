@@ -49,6 +49,8 @@ export interface AppHeaderProps {
   onOpenReferral: () => void;
   /** Open the always-on-top PiP mini widget (undefined = unsupported browser). */
   onOpenPip?: () => void;
+  /** Android home-widget hookup dialog (undefined = not the Play Store app). */
+  onOpenWidgetConnect?: () => void;
 }
 
 /**
@@ -83,6 +85,7 @@ export function AppHeader({
   onOpenMagician,
   onOpenReferral,
   onOpenPip,
+  onOpenWidgetConnect,
 }: AppHeaderProps) {
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
@@ -364,6 +367,12 @@ export function AppHeader({
                 <DropdownMenuItem onClick={onOpenPip} className="gap-2">
                   <PictureInPicture2 className="h-4 w-4" />
                   {t('pip.menu')}
+                </DropdownMenuItem>
+              )}
+              {onOpenWidgetConnect && (
+                <DropdownMenuItem onClick={onOpenWidgetConnect} className="gap-2">
+                  <LayoutGrid className="h-4 w-4" />
+                  {t('homewidget.menu')}
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem onClick={onOpenHome} className="gap-2">

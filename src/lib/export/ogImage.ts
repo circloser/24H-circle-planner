@@ -1,5 +1,35 @@
 import { exportPng } from './png';
 
+/** Blob → plain base64 (chunked so big arrays don't blow the arg limit). */
+async function blobToBase64(blob: Blob): Promise<string> {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let bin = '';
+  const CHUNK = 0x8000;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(bin);
+}
+
+/** The worker rejects share PNGs above ~360KB decoded — callers skip the image
+ *  (falling back to the generic og card) rather than failing the share. */
+const MAX_B64 = 480_000;
+
+/**
+ * Square 1080px render of the ring (watermark included) for the Android
+ * home-screen widget — the widget shows this image square, so the 1200x630
+ * unfurl card would waste half the pixels. Returns plain base64 or null.
+ */
+export async function buildSquarePngBase64(svg: SVGSVGElement): Promise<string | null> {
+  try {
+    const blob = await exportPng(svg, { size: 1080, transparent: false });
+    const b64 = await blobToBase64(blob);
+    return b64.length > MAX_B64 ? null : b64;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Compose the 1200x630 link-unfurl card for a server-stored share: the current
  * theme's background colour with the ring (watermark included) centered on it.
@@ -23,15 +53,8 @@ export async function buildOgPngBase64(svg: SVGSVGElement): Promise<string | nul
       ctx.drawImage(bmp, (1200 - side) / 2, (630 - side) / 2, side, side);
       const out = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
       if (!out) return null;
-      const bytes = new Uint8Array(await out.arrayBuffer());
-      let bin = '';
-      const CHUNK = 0x8000;
-      for (let i = 0; i < bytes.length; i += CHUNK) {
-        bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
-      }
-      const b64 = btoa(bin);
-      // The worker rejects anything above ~360KB decoded — skip rather than fail.
-      return b64.length > 480_000 ? null : b64;
+      const b64 = await blobToBase64(out);
+      return b64.length > MAX_B64 ? null : b64;
     } finally {
       bmp.close();
     }
