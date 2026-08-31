@@ -261,6 +261,8 @@ export const ru: Record<TKey, string> = {
   'celebrate.day': 'Все задачи на сегодня выполнены! 🎉',
   'celebrate.design': 'Новый дизайн готов! Похвастайтесь им.',
   'celebrate.share': 'Поделиться',
+  'pip.menu': 'Мини-виджет (поверх окон)',
+  'pip.failed': 'Мини-виджет не открывается в этом браузере — попробуйте Chrome или Edge на компьютере.',
   'export.png': 'Экспорт PNG',
   'export.pdf': 'Экспорт PDF',
   'export.pdfNote': 'A4 книжная, 300 DPI (210×297 мм)',

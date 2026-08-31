@@ -52,6 +52,7 @@ import { useSliceInteraction } from '@/hooks/useSliceInteraction';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useShareActions } from '@/hooks/useShareActions';
 import { useCompletionCelebration } from '@/hooks/useCompletionCelebration';
+import { usePipWidget } from '@/components/PipWidget/PipWidget';
 import { useSyncStatus } from '@/hooks/useSync';
 import { useAuth } from '@/hooks/useAuth';
 import { E2eeDialog } from '@/components/Sync/E2eeDialog';
@@ -403,6 +404,9 @@ function App() {
   // Pride moment: first 100% checklist of the day → celebrate + offer to share.
   useCompletionCelebration(present.slices, diaryDate ?? dateKey(), shareImage);
 
+  // Always-on-top PiP mini widget (desktop Chrome/Edge; menu item hidden elsewhere).
+  const pip = usePipWidget();
+
   // E2EE: when the cloud copy is ciphertext this device can't read, sync reports
   // 'locked' — surface the unlock dialog automatically so the user isn't stuck.
   const syncStatus = useSyncStatus().status;
@@ -519,6 +523,7 @@ function App() {
         onOpenTutorial={openTutorial}
         onOpenMagician={() => setMagicianOpen(true)}
         onOpenReferral={() => setReferralOpen(true)}
+        onOpenPip={pip.supported ? () => void pip.open() : undefined}
       />
 
       {/* Invite a friend → 1 month Pro for the inviter once the friend signs in. */}
@@ -714,6 +719,7 @@ function App() {
       {/* Guided decorate-your-app flow (first visit + relaunchable from Design).
           Its final button offers the tutorial next (once, never after the X). */}
       <DesignMagician open={magicianOpen} onClose={closeMagician} onFinish={onMagicianFinish} />
+      {pip.portal}
 
       {/* "튜토리얼 진행할까요?" — after the magician's finish, for tutorial newcomers. */}
       {askTutorialOpen && (

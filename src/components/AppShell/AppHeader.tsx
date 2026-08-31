@@ -1,4 +1,4 @@
-import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target, Lock, CalendarClock, CreditCard, Tags, Scale, CalendarRange, Sun, Moon, GraduationCap, Wand2, BellRing, UserPlus, LayoutGrid } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target, Lock, CalendarClock, CreditCard, Tags, Scale, CalendarRange, Sun, Moon, GraduationCap, Wand2, BellRing, UserPlus, LayoutGrid, PictureInPicture2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -47,6 +47,8 @@ export interface AppHeaderProps {
   onOpenMagician: () => void;
   /** Invite-a-friend dialog (personal ?ref= link → Pro reward). */
   onOpenReferral: () => void;
+  /** Open the always-on-top PiP mini widget (undefined = unsupported browser). */
+  onOpenPip?: () => void;
 }
 
 /**
@@ -80,6 +82,7 @@ export function AppHeader({
   onOpenTutorial,
   onOpenMagician,
   onOpenReferral,
+  onOpenPip,
 }: AppHeaderProps) {
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
@@ -357,6 +360,12 @@ export function AppHeader({
                 <Link2 className="h-4 w-4" />
                 {t('sharelink.copy')}
               </DropdownMenuItem>
+              {onOpenPip && (
+                <DropdownMenuItem onClick={onOpenPip} className="gap-2">
+                  <PictureInPicture2 className="h-4 w-4" />
+                  {t('pip.menu')}
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={onOpenHome} className="gap-2">
                 <Smartphone className="h-4 w-4" />
                 {t('home.button')}

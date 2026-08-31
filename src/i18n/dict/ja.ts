@@ -261,6 +261,8 @@ export const ja: Record<TKey, string> = {
   'celebrate.day': '今日のタスクをすべて完了しました！🎉',
   'celebrate.design': '新しいデザインが完成！気に入ったらシェアしよう。',
   'celebrate.share': 'シェア',
+  'pip.menu': 'ミニウィジェット（常に手前）',
+  'pip.failed': 'このブラウザではミニウィジェットを開けません — デスクトップ版Chrome/Edgeでお試しください。',
   'export.png': 'PNGでエクスポート',
   'export.pdf': 'PDFでエクスポート',
   'export.pdfNote': 'A4縦 300 DPI（210×297mm）',

@@ -261,6 +261,8 @@ export const fr: Record<TKey, string> = {
   'celebrate.day': 'Tout est terminé pour aujourd’hui ! 🎉',
   'celebrate.design': 'Nouveau look terminé ! Montrez-le.',
   'celebrate.share': 'Partager',
+  'pip.menu': 'Mini-widget (toujours visible)',
+  'pip.failed': 'Le mini-widget ne peut pas s’ouvrir ici — essayez Chrome ou Edge sur ordinateur.',
   'export.png': 'Exporter en PNG',
   'export.pdf': 'Exporter en PDF',
   'export.pdfNote': 'A4 portrait 300 DPI (210×297 mm)',

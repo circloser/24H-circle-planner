@@ -259,6 +259,8 @@ export const zh: Record<TKey, string> = {
   'celebrate.day': '今天的任务全部完成！🎉',
   'celebrate.design': '新设计完成！喜欢就晒一晒吧。',
   'celebrate.share': '分享',
+  'pip.menu': '迷你小组件（置顶显示）',
+  'pip.failed': '此浏览器无法打开迷你小组件 — 请在桌面版 Chrome/Edge 中尝试。',
   'export.png': '导出 PNG',
   'export.pdf': '导出 PDF',
   'export.pdfNote': 'A4 竖版 300 DPI（210×297mm）',

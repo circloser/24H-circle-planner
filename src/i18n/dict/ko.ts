@@ -265,6 +265,8 @@ export const ko = {
   'celebrate.day': '오늘 할 일을 모두 완료했어요! 🎉',
   'celebrate.design': '새 디자인 완성! 마음에 들면 자랑해 보세요.',
   'celebrate.share': '공유하기',
+  'pip.menu': '미니 위젯 (항상 위)',
+  'pip.failed': '이 브라우저에서는 미니 위젯을 열 수 없어요 — 데스크톱 Chrome/Edge에서 시도해 보세요.',
   'export.png': 'PNG 내보내기',
   'export.pdf': 'PDF 내보내기',
   'export.pdfNote': 'A4 세로 300 DPI (210×297mm)',
