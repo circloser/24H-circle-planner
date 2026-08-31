@@ -25,7 +25,7 @@
  * Loading a diary is a view state, not a data change, so it now syncs nothing.
  */
 
-import { CLOCKTOOLS_KEY, GOALSWIDGET_KEY } from './widgetSync';
+import { CLOCKTOOLS_KEY, GOALSWIDGET_KEY, NEWS_WINDOWS_KEY } from './widgetSync';
 
 const PREFIX = '24h-circle-planner.';
 
@@ -60,13 +60,19 @@ export const SYNC_KEYS: readonly string[] = [
   'palette',
   'prefs',
   'view',
-].map((k) => PREFIX + k);
+].map((k) => PREFIX + k)
+  // News windows (keyword/country/interval + centre-relative pos). Same
+  // loop-safety contract as clocktools: live-applied, kept-if-absent, and
+  // loadWindows is transform-free so apply→save is byte-identical (the
+  // per-resolution pos-profiles are LOCAL render overrides, never on the wire).
+  .concat([NEWS_WINDOWS_KEY]);
 
 /** Keys KEPT when absent from a cloud blob (older blobs must not wipe them);
  *  deletions of every other key still propagate. */
 const KEEP_IF_ABSENT = new Set<string>([
   CLOCKTOOLS_KEY,
   GOALSWIDGET_KEY,
+  NEWS_WINDOWS_KEY,
   PREFIX + 'palette',
   PREFIX + 'slots',
   PREFIX + 'weekday-schedules',
@@ -82,7 +88,7 @@ export const VIEW_KEY = PREFIX + 'view';
  *  The floating widgets are here so a remote widget change never reloads the page —
  *  which is what preempted the seed-push and caused the login loop. useClockTools /
  *  GoalsWidget re-read their state on the events below. */
-export const LIVE_APPLY_KEYS: readonly string[] = [PREFS_KEY, VIEW_KEY, CLOCKTOOLS_KEY, GOALSWIDGET_KEY];
+export const LIVE_APPLY_KEYS: readonly string[] = [PREFS_KEY, VIEW_KEY, CLOCKTOOLS_KEY, GOALSWIDGET_KEY, NEWS_WINDOWS_KEY];
 
 /** Window event fired after applying a prefs-only cloud change (re-read live). */
 export const PREFS_SYNC_EVENT = '24h:prefs-synced';

@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Newspaper, X, Search, RefreshCw, Loader2, Settings, Plus } from 'lucide-react';
 import { useTranslation, usePreferences } from '@/hooks/usePreferences';
 import { makeDragStart, anchoredStyle, marginSpawn, clampOffset, loadPosProfile, savePosProfile, type Pos } from '@/components/ClockTools/clock-utils';
+import { NEWS_SYNC_EVENT, NEWS_WINDOWS_KEY } from '@/lib/sync/widgetSync';
 
-const WINDOWS_KEY = '24h-news.windows';
+const WINDOWS_KEY = NEWS_WINDOWS_KEY;
 const LEGACY_CFG_KEY = '24h-news.config';
 const CARD_W = 300;
 export const MAX_NEWS_WINDOWS = 3;
@@ -35,17 +36,17 @@ function newWindow(index: number): NewsWindow {
 }
 
 /** Load the window list; migrates the old single-config (comma keywords become
- *  up to 3 windows, one keyword each). */
+ *  up to 3 windows, one keyword each). TRANSFORM-FREE for well-formed data:
+ *  this key syncs across devices, so apply→save must be byte-identical — no
+ *  pos-profile or viewport clamping here (both are render-time concerns in
+ *  NewsCard; see widgetSync's "no wire transform" rule). */
 function loadWindows(): NewsWindow[] {
   try {
     const raw = localStorage.getItem(WINDOWS_KEY);
     if (raw) {
       const list = JSON.parse(raw) as NewsWindow[];
       if (Array.isArray(list)) {
-        return list.slice(0, MAX_NEWS_WINDOWS).map((w, i) => ({
-          ...newWindow(i), ...w,
-          pos: loadPosProfile(`news.${w.id}`) ?? clampOffset(w.pos ?? newWindow(i).pos, CARD_W, 300),
-        }));
+        return list.slice(0, MAX_NEWS_WINDOWS).map((w, i) => ({ ...newWindow(i), ...w }));
       }
     }
     const legacy = localStorage.getItem(LEGACY_CFG_KEY);
@@ -61,8 +62,10 @@ function loadWindows(): NewsWindow[] {
 }
 
 function saveWindows(list: NewsWindow[]): void {
+  // Pos-profiles are NOT written here: a keyword edit must never clobber this
+  // resolution's remembered spot with a pos synced from another screen. The
+  // drag handler records the profile at the moment the user actually moves it.
   try { localStorage.setItem(WINDOWS_KEY, JSON.stringify(list)); } catch { /* */ }
-  for (const w of list) savePosProfile(`news.${w.id}`, w.pos);
 }
 
 /** One floating (or inline) news card: one keyword, own country/interval/cache. */
@@ -76,6 +79,10 @@ function NewsCard({ win, inline, canAdd, onChange, onAdd, onRemove }: {
 }) {
   const { t, lang } = useTranslation();
   const [hover, setHover] = useState(false);
+  // Where THIS device draws the card: its own per-resolution profile wins,
+  // else the stored (possibly synced-from-another-screen) pos clamped into
+  // view. Render-time only — the wire value is never rewritten by either.
+  const renderPos = loadPosProfile(`news.${win.id}`) ?? clampOffset(win.pos, CARD_W, 300);
   const [showSettings, setShowSettings] = useState(() => !win.q.trim());
   const [draft, setDraft] = useState({ q: win.q, country: win.country, intervalH: win.intervalH });
   const [items, setItems] = useState<NewsItem[]>(() => {
@@ -221,12 +228,12 @@ function NewsCard({ win, inline, canAdd, onChange, onAdd, onRemove }: {
   return (
     <div
       data-news-card="1"
-      onPointerDown={makeDragStart(win.pos, (p) => onChange({ pos: p }))}
+      onPointerDown={makeDragStart(renderPos, (p) => { savePosProfile(`news.${win.id}`, p); onChange({ pos: p }); })}
       onPointerMove={() => { if (!hover) setHover(true); }}
       onPointerLeave={() => setHover(false)}
       className="absolute z-30 w-[300px] cursor-grab touch-none overflow-hidden rounded-xl active:cursor-grabbing"
       style={{
-        ...anchoredStyle(win.pos.x, win.pos.y),
+        ...anchoredStyle(renderPos.x, renderPos.y),
         backgroundColor: hover ? 'hsl(var(--surface) / 0.92)' : 'transparent',
         border: `1px solid ${hover ? 'hsl(var(--border))' : 'transparent'}`,
         boxShadow: hover ? '0 20px 25px -5px rgb(0 0 0 / 0.14), 0 8px 10px -6px rgb(0 0 0 / 0.12)' : 'none',
@@ -277,6 +284,15 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
   const open = prefs.newsOpen;
   const [windows, setWindows] = useState<NewsWindow[]>(loadWindows);
   useEffect(() => { saveWindows(windows); }, [windows]);
+
+  // Cloud sync applied a new windows list to localStorage (no reload) — adopt it
+  // live. loadWindows is transform-free, so the follow-up save is byte-identical
+  // and never churns the sync engine.
+  useEffect(() => {
+    const onSync = () => setWindows(loadWindows());
+    window.addEventListener(NEWS_SYNC_EVENT, onSync);
+    return () => window.removeEventListener(NEWS_SYNC_EVENT, onSync);
+  }, []);
 
   // The pref can be flipped on from OUTSIDE this widget (design magician) —
   // if it opens with no window yet, create the first one so the toggle is

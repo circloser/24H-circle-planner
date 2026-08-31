@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/hooks/usePreferences';
 import { collectSyncData, applySyncData, dataFingerprint, changedSyncKeys, mergeSyncData, LIVE_APPLY_KEYS, PREFS_KEY, PREFS_SYNC_EVENT, VIEW_KEY, VIEW_SYNC_EVENT, type SyncEnvelope } from '@/lib/sync/syncData';
-import { CLOCKTOOLS_KEY, GOALSWIDGET_KEY, CLOCKTOOLS_SYNC_EVENT, GOALS_WIDGET_SYNC_EVENT } from '@/lib/sync/widgetSync';
+import { CLOCKTOOLS_KEY, GOALSWIDGET_KEY, NEWS_WINDOWS_KEY, CLOCKTOOLS_SYNC_EVENT, GOALS_WIDGET_SYNC_EVENT, NEWS_SYNC_EVENT } from '@/lib/sync/widgetSync';
 import { pullRemote, pushRemote, deviceLabel } from '@/lib/sync/syncClient';
 import { loadCachedKey, forgetKey, E2EE_EVENT, E2EE_REPUSH_EVENT, E2EE_DISABLE_EVENT } from '@/lib/sync/e2ee';
 
@@ -167,6 +167,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         // is never preempted, which is what broke the naive version).
         if (changed.includes(CLOCKTOOLS_KEY)) window.dispatchEvent(new Event(CLOCKTOOLS_SYNC_EVENT));
         if (changed.includes(GOALSWIDGET_KEY)) window.dispatchEvent(new Event(GOALS_WIDGET_SYNC_EVENT));
+        if (changed.includes(NEWS_WINDOWS_KEY)) window.dispatchEvent(new Event(NEWS_SYNC_EVENT));
         setLastSyncedAt(Date.now());
         stat('synced');
         // Toast only for a settings change; a diary-view follow is self-evident.
