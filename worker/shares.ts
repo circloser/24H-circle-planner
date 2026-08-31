@@ -87,7 +87,7 @@ export async function handleShareCreate(request: Request, env: Env): Promise<Res
 
     const id = newShareId();
     await env.DB.prepare('INSERT INTO shares (id, payload, name, og_png, ip_hash, created_at) VALUES (?, ?, ?, ?, ?, ?)')
-      .bind(id, d, name, png, ipHash, Date.now())
+      .bind(id, d, name, png ? png.buffer : null, ipHash, Date.now())
       .run();
     return json({ id, url: `${ORIGIN}/s/${id}` });
   } catch {
@@ -113,9 +113,17 @@ export async function handleShareGet(env: Env, id: string): Promise<Response> {
 export async function handleShareOg(env: Env, id: string): Promise<Response> {
   if (!env.DB) return new Response('unavailable', { status: 503 });
   try {
-    const row = await env.DB.prepare('SELECT og_png FROM shares WHERE id = ?').bind(id).first<{ og_png: ArrayBuffer | null }>();
+    const row = await env.DB.prepare('SELECT og_png FROM shares WHERE id = ?').bind(id).first<{ og_png: unknown }>();
     if (!row || !row.og_png) return new Response('not found', { status: 404 });
-    return new Response(row.og_png, {
+    // D1 hands BLOB columns back as a plain number array (sometimes an
+    // ArrayBuffer) — normalize, or Response would serialize "137,80,78,71,…".
+    const raw = row.og_png;
+    const bytes = raw instanceof ArrayBuffer ? new Uint8Array(raw)
+      : ArrayBuffer.isView(raw) ? new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength)
+      : Array.isArray(raw) ? Uint8Array.from(raw as number[])
+      : null;
+    if (!bytes) return new Response('not found', { status: 404 });
+    return new Response(bytes, {
       headers: { 'content-type': 'image/png', 'cache-control': 'public, max-age=31536000, immutable' },
     });
   } catch {
