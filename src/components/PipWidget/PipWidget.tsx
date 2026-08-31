@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { CircleTimeline } from '@/components/CircleTimeline/CircleTimeline';
-import { NowNextCard } from '@/components/NowNext/NowNextCard';
 import { useStoreSelector } from '@/hooks/useScheduleStore';
 import { useTranslation } from '@/hooks/usePreferences';
 import { track } from '@/lib/track';
@@ -52,16 +51,19 @@ function adoptStyles(pip: Window): void {
   pip.document.title = '24Houring';
 }
 
-/** The widget's content — rendered into the PiP window through a portal. */
+/** The widget's content — rendered into the PiP window through a portal.
+ *  Ring only (user feedback dropped the now/next card), with the chart's own
+ *  font-scale var boosted so labels read at a glance: the ring grew 230→360
+ *  (×1.56) and the 1.3 var multiplies on top — ≈2× text overall. */
 function PipContent() {
   const slices = useStoreSelector((s) => s.history.present.slices);
   return (
-    <div className="flex h-full w-full flex-col items-center gap-2 overflow-hidden bg-surface p-3 text-foreground">
-      <div className="w-full max-w-[230px]">
-        <CircleTimeline slices={slices} mode="preview" size={230} />
-      </div>
-      <div className="w-full rounded-xl border border-border bg-surface p-2.5 shadow-sm">
-        <NowNextCard slices={slices} />
+    <div
+      className="flex h-full w-full items-center justify-center overflow-hidden bg-surface p-3 text-foreground"
+      style={{ '--app-font-scale': '1.3' } as React.CSSProperties}
+    >
+      <div className="w-full max-w-[360px]">
+        <CircleTimeline slices={slices} mode="preview" size={360} />
       </div>
     </div>
   );
@@ -80,7 +82,7 @@ export function usePipWidget(): { supported: boolean; open: () => Promise<void>;
     if (!isPipSupported()) return;
     try {
       const api = (window as unknown as { documentPictureInPicture: DocPipApi }).documentPictureInPicture;
-      const win = await api.requestWindow({ width: 300, height: 420 });
+      const win = await api.requestWindow({ width: 390, height: 430 });
       adoptStyles(win);
       win.addEventListener('pagehide', () => setPipWin(null));
       setPipWin(win);
