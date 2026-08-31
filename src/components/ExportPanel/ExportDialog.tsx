@@ -17,6 +17,7 @@ import { exportRangePng, exportRangeCsv, type RangeDay } from '@/lib/export/rang
 import { useDiary, dateKey } from '@/hooks/useDiary';
 import { useTranslation, useChartView, useShowIcons } from '@/hooks/usePreferences';
 import { useAuth } from '@/hooks/useAuth';
+import { requestUpgrade } from '@/lib/pro';
 import { track } from '@/lib/track';
 import type { Schedule } from '@/types/schedule';
 import type { TimeSlice } from '@/types/time-slice';
@@ -43,6 +44,63 @@ function triggerDownload(blob: Blob, filename: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
+// ─── Watermark toggle (Pro perk + upsell) ─────────────────────────────────────
+
+/**
+ * "Export without watermark" switch. Pro users toggle it; free users see it
+ * with a PRO chip and tapping opens the upgrade paywall instead — the export
+ * itself always keeps the wordmark on the free tier.
+ */
+function WatermarkRow({
+  noWatermark,
+  onChange,
+}: {
+  noWatermark: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  const isPro = useAuth().plan === 'pro';
+  const on = isPro && noWatermark;
+
+  function handleClick() {
+    if (!isPro) {
+      track('upgrade_open', { source: 'watermark' });
+      requestUpgrade();
+      return;
+    }
+    onChange(!noWatermark);
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={on}
+        onClick={handleClick}
+        className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+        style={{
+          backgroundColor: on ? 'hsl(var(--primary))' : 'hsl(var(--text-muted) / 0.3)',
+          borderColor: on ? 'hsl(var(--primary))' : 'hsl(var(--text-muted) / 0.45)',
+        }}
+      >
+        <span
+          className={`pointer-events-none block h-5 w-5 rounded-full border border-muted-foreground/30 shadow-md transition-transform ${
+            on ? 'translate-x-5' : 'translate-x-0.5'
+          }`}
+          style={{ backgroundColor: '#ffffff' }}
+        />
+      </button>
+      <span className="text-sm">{t('export.noWatermark')}</span>
+      {!isPro && (
+        <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-amber-600 dark:text-amber-400">
+          PRO
+        </span>
+      )}
+    </div>
+  );
+}
+
 // ─── PNG Tab ──────────────────────────────────────────────────────────────────
 
 type PngSize = 1080 | 2160 | 3840;
@@ -55,8 +113,10 @@ function PngTab({
   scheduleName: string;
 }) {
   const { t } = useTranslation();
+  const isPro = useAuth().plan === 'pro';
   const [size, setSize] = useState<PngSize>(2160);
   const [transparent, setTransparent] = useState(false);
+  const [noWatermark, setNoWatermark] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleExport() {
@@ -68,7 +128,7 @@ function PngTab({
     try {
       const { exportPng } = await import('@/lib/export/png');
       track('export', { format: 'png' });
-      const blob = await exportPng(svgRef.current, { size, transparent });
+      const blob = await exportPng(svgRef.current, { size, transparent, watermark: !(isPro && noWatermark) });
       const filename = `24h-${slug(scheduleName)}-${formatDateYYYYMMDD()}.png`;
       triggerDownload(blob, filename);
       toast.success(t('export.pngDone'));
@@ -131,6 +191,8 @@ function PngTab({
         <span className="text-sm">{t('export.transparentBg')}</span>
       </div>
 
+      <WatermarkRow noWatermark={noWatermark} onChange={setNoWatermark} />
+
       <Button onClick={handleExport} disabled={loading} className="w-full">
         {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
         {t('export.png')}
@@ -149,6 +211,8 @@ function PdfTab({
   scheduleName: string;
 }) {
   const { t } = useTranslation();
+  const isPro = useAuth().plan === 'pro';
+  const [noWatermark, setNoWatermark] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleExport() {
@@ -160,7 +224,7 @@ function PdfTab({
     try {
       const { exportPdf } = await import('@/lib/export/pdf');
       track('export', { format: 'pdf' });
-      const blob = await exportPdf(svgRef.current, { scheduleName });
+      const blob = await exportPdf(svgRef.current, { scheduleName, watermark: !(isPro && noWatermark) });
       const filename = `24h-${slug(scheduleName)}-${formatDateYYYYMMDD()}.pdf`;
       triggerDownload(blob, filename);
       toast.success(t('export.pdfDone'));
@@ -174,6 +238,7 @@ function PdfTab({
   return (
     <div className="flex flex-col gap-4 pt-2">
       <p className="text-sm text-muted-foreground">{t('export.pdfNote')}</p>
+      <WatermarkRow noWatermark={noWatermark} onChange={setNoWatermark} />
       <Button onClick={handleExport} disabled={loading} className="w-full">
         {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
         {t('export.pdf')}

@@ -14,12 +14,12 @@ import { exportPng } from './png';
  */
 export async function exportPdf(
   sourceSvg: SVGSVGElement,
-  opts: { scheduleName: string },
+  opts: { scheduleName: string; watermark?: boolean },
 ): Promise<Blob> {
-  void opts; // schedule name is rendered inside the chart hub, not as PDF text
+  // schedule name is rendered inside the chart hub, not as PDF text
 
   // 1. Rasterize the whole chart at high resolution (solid background).
-  const pngBlob = await exportPng(sourceSvg, { size: 2160, transparent: false });
+  const pngBlob = await exportPng(sourceSvg, { size: 2160, transparent: false, watermark: opts.watermark });
   const dataUrl = await blobToDataURL(pngBlob);
 
   // 2. Place it centered on an A4 portrait page (210×297 mm), 10 mm margins.

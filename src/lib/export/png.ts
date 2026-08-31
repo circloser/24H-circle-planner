@@ -8,6 +8,9 @@ export interface PngExportOptions {
   /** When set, stamp a scannable QR (→ this URL) into the bottom-right corner —
    *  used by the share flow to make the image directly actionable. */
   qrUrl?: string;
+  /** Stamp the 24houring.com wordmark (default true). Only the Pro export
+   *  toggle may pass false — the free tier always carries the mark. */
+  watermark?: boolean;
 }
 
 /**
@@ -22,7 +25,7 @@ export async function exportPng(
   sourceSvg: SVGSVGElement,
   opts: PngExportOptions,
 ): Promise<Blob> {
-  const { size, transparent, qrUrl } = opts;
+  const { size, transparent, qrUrl, watermark = true } = opts;
 
   // 1. Deep-clone the SVG
   const clone = sourceSvg.cloneNode(true) as SVGSVGElement;
@@ -55,7 +58,7 @@ export async function exportPng(
   injectFontFaceStyle(clone, [selectedFamily, 'Pretendard']);
 
   // 2b. Stamp the brand wordmark into the bottom margin (viral loop; free tier).
-  addWatermark(clone);
+  if (watermark) addWatermark(clone);
   // 2c. Share flow only: a scannable QR in the corner so the image is actionable.
   if (qrUrl) addShareQr(clone, qrUrl);
 

@@ -39,7 +39,7 @@ if (import.meta.env.VITE_SINGLEFILE === 'true') {
 const isSpike = new URLSearchParams(window.location.search).get('spike') === '1';
 // Read-only shared-day viewer (route: /s#d=…). Served via the SPA fallback in
 // wrangler.jsonc (not_found_handling: single-page-application).
-const isShareView = window.location.pathname === '/s' || window.location.pathname === '/s/';
+const isShareView = /^\/s(\/[A-Za-z0-9]*)?$/.test(window.location.pathname);
 // Compact desktop-widget window (route: /widget) — SPA-fallback served.
 const isWidget = window.location.pathname === '/widget' || window.location.pathname === '/widget/';
 const root = createRoot(document.getElementById('root')!);

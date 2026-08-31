@@ -74,6 +74,31 @@ export function buildViewUrl(schedule: Schedule, note?: string): string {
   return `${PROD_ORIGIN}/s#d=${encodeShare(schedule, note)}`;
 }
 
+/**
+ * Create a server-stored share (short /s/:id link that unfurls into an OG card
+ * showing the actual ring). `pngB64` is the optional 1200x630 unfurl image.
+ * Returns the short URL, or null when the API is unreachable/declines — the
+ * caller then falls back to the fragment-only buildViewUrl link.
+ */
+export async function createServerShareUrl(
+  schedule: Schedule,
+  note?: string,
+  pngB64?: string,
+): Promise<string | null> {
+  try {
+    const res = await fetch('/api/share', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ d: encodeShare(schedule, note), name: schedule.name ?? '', png: pngB64 }),
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { url?: string };
+    return typeof body.url === 'string' && body.url.startsWith(PROD_ORIGIN) ? body.url : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Decode a fragment code back into a Schedule, or null if invalid. */
 export function decodeSchedule(code: string): Schedule | null {
   try {

@@ -51,6 +51,7 @@ import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useSliceInteraction } from '@/hooks/useSliceInteraction';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useShareActions } from '@/hooks/useShareActions';
+import { useCompletionCelebration } from '@/hooks/useCompletionCelebration';
 import { useSyncStatus } from '@/hooks/useSync';
 import { useAuth } from '@/hooks/useAuth';
 import { E2eeDialog } from '@/components/Sync/E2eeDialog';
@@ -151,8 +152,17 @@ function App() {
   };
   const onMagicianFinish = () => {
     try {
-      if (localStorage.getItem(TUTORIAL_KEY) === null) setAskTutorialOpen(true);
+      if (localStorage.getItem(TUTORIAL_KEY) === null) {
+        setAskTutorialOpen(true);
+        return;
+      }
     } catch { /* */ }
+    // Returning user just re-decorated their chart — a pride moment: offer to
+    // share the new look (first-run keeps the tutorial-offer flow above).
+    toast(t('celebrate.design'), {
+      action: { label: t('celebrate.share'), onClick: () => void shareImage() },
+      duration: 8_000,
+    });
   };
   const [getAppOpen, setGetAppOpen] = useState(false);
   const [referralOpen, setReferralOpen] = useState(false);
@@ -390,6 +400,8 @@ function App() {
 
   // Share actions (PNG via native sheet / read-only /s#d= link incl. the note).
   const { shareImage, copyLink } = useShareActions(svgRef);
+  // Pride moment: first 100% checklist of the day → celebrate + offer to share.
+  useCompletionCelebration(present.slices, diaryDate ?? dateKey(), shareImage);
 
   // E2EE: when the cloud copy is ciphertext this device can't read, sync reports
   // 'locked' — surface the unlock dialog automatically so the user isn't stuck.

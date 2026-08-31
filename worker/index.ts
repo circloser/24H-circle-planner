@@ -9,6 +9,7 @@
 
 import { sendWebPush } from '../src/lib/webpush';
 import { legacyRedirectTarget } from './legacy-redirects';
+import { handleShareCreate, handleShareGet, handleShareOg, handleShareView } from './shares';
 
 export interface Env {
   /** Static assets binding (the built SPA in ./dist). */
@@ -1169,7 +1170,21 @@ export default {
       if (p === '/api/news' && m === 'GET') return handleNews(request, env, ctx);
       if (p === '/api/referral/me' && m === 'GET') return handleReferralMe(request, env);
       if (p === '/api/referral/claim' && m === 'POST') return handleReferralClaim(request, env);
+      if (p === '/api/share' && m === 'POST') return handleShareCreate(request, env);
+      {
+        const share = /^\/api\/share\/([A-Za-z0-9]{4,24})(\/og\.png)?$/.exec(p);
+        if (share && m === 'GET') {
+          return share[2] ? handleShareOg(env, share[1]) : handleShareGet(env, share[1]);
+        }
+      }
       return json({ error: 'not_found' }, 404);
+    }
+
+    // Short share links: serve the viewer shell with OG tags + payload injected
+    // so the link unfurls into a card showing the actual ring.
+    {
+      const share = /^\/s\/([A-Za-z0-9]{4,24})$/.exec(p);
+      if (share && m === 'GET') return handleShareView(request, env, share[1]);
     }
 
     // Retired /health and /stories articles → 301 to the pillar that absorbed

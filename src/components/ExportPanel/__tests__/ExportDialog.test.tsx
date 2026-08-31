@@ -168,11 +168,16 @@ describe('ExportDialog', () => {
     expect(screen.getByRole('button', { name: '4K (3840px)' })).toBeTruthy();
   });
 
-  it('transparent background switch is present in PNG tab', () => {
+  it('transparent background + watermark switches are present in PNG tab', () => {
     renderDialog();
-    const toggle = screen.getByRole('switch');
-    expect(toggle).toBeTruthy();
-    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    // Two switches: transparent background, and the Pro no-watermark toggle.
+    const toggles = screen.getAllByRole('switch');
+    expect(toggles).toHaveLength(2);
+    for (const toggle of toggles) {
+      expect(toggle.getAttribute('aria-checked')).toBe('false');
+    }
+    // Signed-out (free) render: the watermark row carries the PRO chip.
+    expect(screen.getByText('PRO')).toBeTruthy();
   });
 
   it('JSON tab shows JSON 가져오기 button', async () => {
