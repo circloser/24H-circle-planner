@@ -172,6 +172,13 @@ export async function handleShareView(request: Request, env: Env, id: string): P
   ].join('\n');
 
   let html = await shellRes.text();
+  // Strip the shell's own social/meta tags first — link scrapers take the FIRST
+  // og:* occurrence, so the generic homepage card would otherwise win.
+  html = html
+    .replace(/<meta (?:property="og:|name="twitter:)[^>]*\/?>\s*/g, '')
+    .replace(/<title>[\s\S]*?<\/title>\s*/, '')
+    .replace(/<meta name="description"[^>]*\/?>\s*/, '')
+    .replace(/<link rel="canonical"[^>]*\/?>\s*/, '');
   html = html.includes('</head>') ? html.replace('</head>', `${tags}\n</head>`) : `${tags}\n${html}`;
   return new Response(html, {
     status: shellRes.status,
