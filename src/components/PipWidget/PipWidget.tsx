@@ -59,11 +59,15 @@ function PipContent() {
   const slices = useStoreSelector((s) => s.history.present.slices);
   return (
     <div
-      className="flex h-full w-full items-center justify-center overflow-hidden bg-surface p-3 text-foreground"
+      className="grid h-full w-full place-items-center overflow-hidden bg-surface text-foreground"
       style={{ '--app-font-scale': '1.3' } as React.CSSProperties}
     >
-      <div className="w-full max-w-[360px]">
-        <CircleTimeline slices={slices} mode="preview" size={360} />
+      {/* Square sized to the PiP window's own viewport — Chrome doesn't honour
+          the requested window size exactly (chrome/clamping), and the user can
+          resize; a fixed ring size clipped. The chart is responsive (no `size`),
+          so it always fills this square edge to edge. */}
+      <div style={{ width: 'min(100vw, 100vh)', height: 'min(100vw, 100vh)', padding: 6 }}>
+        <CircleTimeline slices={slices} mode="preview" />
       </div>
     </div>
   );
