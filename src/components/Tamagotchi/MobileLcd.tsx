@@ -52,7 +52,9 @@ function LcdPet({ pet, hygiene }: { pet: Pet; hygiene: number }) {
       aria-label={t('tama.pet', { n: '' })}
       style={{
         position: 'absolute', left: x, top: y, transform: 'translate(-50%, -50%)',
-        transition: 'left .8s linear, top .8s linear', background: 'transparent', border: 'none',
+        // Exactly the tick length: the glide finishes as the next step arrives,
+        // so the pet never stalls between steps (a shorter one visibly stutters).
+        transition: 'left 1s linear, top 1s linear', background: 'transparent', border: 'none',
         padding: 0, cursor: 'pointer', touchAction: 'manipulation', lineHeight: 0,
         color: 'inherit', opacity: pet.sleeping ? 0.6 : pet.phase === 'dead' ? 0.5 : 1, zIndex: 2,
       }}
@@ -83,6 +85,9 @@ export function MobileLcd({ pets, hygiene, sleeping }: { pets: Pet[]; hygiene: n
   const visible = pets.filter((p) => p.phase !== 'dead');
   return (
     <div
+      // `tama-slow` calms every pet animation inside the terrarium — at a couple
+      // of px per second, a desktop-paced walk cycle looks like running in place.
+      className="tama-slow"
       style={{
         position: 'relative', width: MOBILE_LCD.w, height: MOBILE_LCD.h, borderRadius: 14,
         overflow: 'hidden', background: sleeping ? '#20304a' : '#eceef1', border: '3px solid #cbd5e1',

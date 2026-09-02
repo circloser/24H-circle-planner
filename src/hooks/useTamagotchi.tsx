@@ -340,8 +340,15 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
       setState((s) => {
         const now = Date.now();
         const dt = Math.max(0, now - cp.savedAt);
+        // A pet arriving from another device lands inside the ACTIVE world (the
+        // mobile terrarium, else the window) — same rule as a freshly laid egg.
+        const world = worldRef.current;
+        const spawn = () => ({
+          ...(world ? { x: rand(20, world.w - 20), y: rand(20, world.h - 20) } : spawnXY()),
+          heading: rand(0, Math.PI * 2),
+        });
         // Strings come from our own writer, so the unions are safe here.
-        const merged = mergeCheckpointPets(cp, s.pets, () => ({ ...spawnXY(), heading: rand(0, Math.PI * 2) })) as unknown as Pet[];
+        const merged = mergeCheckpointPets(cp, s.pets, spawn) as unknown as Pet[];
         const pets = merged.map((p) => advance(p, now, dt));
         const spot = () => {
           const p = pets[Math.floor(Math.random() * pets.length)];
@@ -396,10 +403,16 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
             hy += (cy / cl) * COH_W + (aliY / al) * ALI_W;
           }
           if (sn > 0) { const sl = Math.hypot(sepX, sepY) || 1; hx += (sepX / sl) * SEP_W; hy += (sepY / sl) * SEP_W; }
-          hx += (Math.random() - 0.5) * 0.35; hy += (Math.random() - 0.5) * 0.35; // wander jitter
+          // Wander jitter. A confined world gets far LESS of it: the same ±20°
+          // per second that reads as pleasant wandering across a whole window
+          // becomes visible trembling inside a 240×150 box.
+          const jitter = world ? 0.1 : 0.35;
+          hx += (Math.random() - 0.5) * jitter; hy += (Math.random() - 0.5) * jitter;
           let heading = Math.atan2(hy, hx);
-          // Confined worlds (mobile LCD) are tiny, so pets move slower there.
-          const speed = (p.phase === 'amoeba' ? 8 : 13) * (now < (p.boostUntil ?? 0) ? 3.8 : 1) * (world ? 0.45 : 1);
+          // Confined worlds (mobile LCD) are tiny, so pets drift slowly there —
+          // a couple of px per second, which the 1s CSS transition renders as a
+          // continuous glide rather than a step.
+          const speed = (p.phase === 'amoeba' ? 8 : 13) * (now < (p.boostUntil ?? 0) ? 3.8 : 1) * (world ? 0.18 : 1);
           let nx = p.x + Math.cos(heading) * speed;
           let ny = p.y + Math.sin(heading) * speed;
           // Bounds: a small margin inside the LCD box, or the whole window (with

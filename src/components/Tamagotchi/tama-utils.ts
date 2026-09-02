@@ -29,6 +29,12 @@ export const TAMA_CSS = `
 .tama-armL { animation: tama-armB .5s ease-in-out infinite; }
 .tama-armR { animation: tama-armA .5s ease-in-out infinite; }
 .tama-tail { animation: tama-tailw .6s ease-in-out infinite; }
+/* Calm mode for the mobile terrarium: the pets drift a couple of px per second
+   in there, so desktop-paced limbs would look like running in place. */
+.tama-slow .tama-bob { animation-duration: 3s; }
+.tama-slow .tama-legL, .tama-slow .tama-legR,
+.tama-slow .tama-armL, .tama-slow .tama-armR { animation-duration: 1.6s; }
+.tama-slow .tama-tail { animation-duration: 1.9s; }
 `;
 
 // ── Transient play/feed effects (floating emojis) ────────────────────────────
