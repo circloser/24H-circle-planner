@@ -79,7 +79,7 @@ function LcdPet({ pet, hygiene }: { pet: Pet; hygiene: number }) {
 /** The mobile "terrarium": the console LCD becomes a little play area the pets
  *  roam inside (world confined to MOBILE_LCD via setWorld). Sized exactly to
  *  MOBILE_LCD so stored pet coords map 1:1. */
-export function MobileLcd({ pets, hygiene, sleeping }: { pets: Pet[]; hygiene: number; sleeping: boolean }) {
+export function MobileLcd({ pets, hygiene }: { pets: Pet[]; hygiene: number }) {
   const { t } = useTranslation();
   const { poops, removePoop } = useTamagotchi();
   const visible = pets.filter((p) => p.phase !== 'dead');
@@ -90,8 +90,11 @@ export function MobileLcd({ pets, hygiene, sleeping }: { pets: Pet[]; hygiene: n
       className="tama-slow"
       style={{
         position: 'relative', width: MOBILE_LCD.w, height: MOBILE_LCD.h, borderRadius: 14,
-        overflow: 'hidden', background: sleeping ? '#20304a' : '#eceef1', border: '3px solid #cbd5e1',
-        color: sleeping ? '#8fb0e8' : '#374151', transition: 'background .4s',
+        // The terrarium keeps its daylight look even while a pet naps — sleep
+        // still shows on the pet itself (💤 + dimmed sprite). Blacking out the
+        // whole box on the phone was too heavy a change for a nap.
+        overflow: 'hidden', background: '#eceef1', border: '3px solid #cbd5e1',
+        color: '#374151',
       }}
     >
       {visible.length === 0 ? (

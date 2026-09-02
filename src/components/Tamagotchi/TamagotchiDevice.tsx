@@ -145,7 +145,7 @@ export function TamagotchiDevice({
       {/* LCD screen — on mobile it becomes a little terrarium the pets roam
           inside (they don't wander the page); on desktop it shows the selected
           pet's portrait (they roam the whole window instead). */}
-      {isMobile && <MobileLcd pets={pets} hygiene={hygiene} sleeping={sleeping} />}
+      {isMobile && <MobileLcd pets={pets} hygiene={hygiene} />}
       {!isMobile && (
       <div style={{
         borderRadius: 16, padding: 10, minHeight: 92, display: 'grid', placeItems: 'center',
