@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useStoreSelector } from '@/hooks/useScheduleStore';
+import { useLiveDaySlices } from '@/hooks/useLiveDaySlices';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
 import { dateKey } from '@/hooks/useDiary';
 import { currentSliceAt } from '@/lib/sliceAlarm';
@@ -21,7 +21,10 @@ const pad2 = (n: number) => String(n).padStart(2, '0');
  * doubles (deduped per local HH:MM).
  */
 export function useChimes(): void {
-  const slices = useStoreSelector((s) => s.history.present.slices);
+  // The chime is a clock, so it keeps ringing while a saved/diary day is open —
+  // but the block name it announces comes from the LIVE day or not at all
+  // (useLiveDaySlices), never from the day being browsed.
+  const slices = useLiveDaySlices();
   const { prefs } = usePreferences();
   const { t, lang } = useTranslation();
   const every = prefs.chimeEvery;
@@ -50,7 +53,8 @@ export function useChimes(): void {
         if (localStorage.getItem(LAST_KEY) === slot) return; // already chimed this minute
         localStorage.setItem(LAST_KEY, slot);
 
-        const cur = currentSliceAt(slicesRef.current, minuteOfDay);
+        const live = slicesRef.current;
+        const cur = live ? currentSliceAt(live, minuteOfDay) : null;
         const title = `🔔 ${hhmm}`;
         const body = cur && cur.label ? cur.label : tRef.current('chime.body');
         fireSliceAlarmPopup({ title, body });

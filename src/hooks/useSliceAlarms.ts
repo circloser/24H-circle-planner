@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { useStoreSelector } from '@/hooks/useScheduleStore';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
 import { dateKey } from '@/hooks/useDiary';
+import { useLiveDaySlices } from '@/hooks/useLiveDaySlices';
 import { currentSliceAt } from '@/lib/sliceAlarm';
 import { fireNotification, fireSliceAlarmPopup } from '@/lib/notify';
 import { playBeep } from '@/components/ClockTools/clock-utils';
@@ -23,7 +23,9 @@ const LAST_KEY = '24h-circle-planner.last-alarm';
  * True closed-tab alarms need Web Push (the planned Pro tier), not this hook.
  */
 export function useSliceAlarms(): void {
-  const slices = useStoreSelector((s) => s.history.present.slices);
+  // Null while a saved/diary day of another date is open — that day's blocks
+  // must never ring today (see useLiveDaySlices).
+  const slices = useLiveDaySlices();
   const { prefs } = usePreferences();
   const { t } = useTranslation();
   const enabled = prefs.sliceAlarms;
@@ -53,6 +55,13 @@ export function useSliceAlarms(): void {
       try {
         const now = new Date();
         const slices = slicesRef.current;
+        // Browsing another day: stay silent AND drop the baseline, so coming
+        // back to today re-baselines instead of announcing the block you are
+        // already sitting in.
+        if (!slices) {
+          lastRef.current = null;
+          return;
+        }
         const cur = currentSliceAt(slices, now.getHours() * 60 + now.getMinutes());
         if (!cur) {
           lastRef.current = null;

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useStoreSelector } from '@/hooks/useScheduleStore';
+import { useLiveDaySlices } from '@/hooks/useLiveDaySlices';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
 import { useAuth } from '@/hooks/useAuth';
 import { enablePush, uploadPushPlan, pushSupported } from '@/lib/push';
@@ -19,7 +19,10 @@ function granted(): boolean {
  * server cleanup) live in the Settings toggle — this hook only maintains.
  */
 export function usePushAlarms(): void {
-  const slices = useStoreSelector((s) => s.history.present.slices);
+  // Null while a saved/diary day of another date is open. Uploading THAT would
+  // hand every device the old timetable until something overwrote it, so the
+  // plan is simply left alone until the live day is back (useLiveDaySlices).
+  const slices = useLiveDaySlices();
   const { prefs } = usePreferences();
   const { user, plan } = useAuth();
   const { t } = useTranslation();
@@ -50,9 +53,11 @@ export function usePushAlarms(): void {
     void enablePush();
   }, [active]);
 
-  // Debounced plan upload on schedule OR chime-cadence changes.
+  // Debounced plan upload on schedule OR chime-cadence changes. Leaving a diary
+  // view flips `slices` back to today's, which re-uploads and self-heals a plan
+  // that had gone stale.
   useEffect(() => {
-    if (!active) return;
+    if (!active || !slices) return;
     const id = window.setTimeout(() => {
       void uploadPushPlan(slices, untitledRef.current, prefs.chimeEvery);
     }, 1500);
@@ -73,7 +78,9 @@ export function usePushAlarms(): void {
       if (now - last < WAKE_REFRESH_MS) return;
       last = now;
       void enablePush().then((ok) => {
-        if (ok) void uploadPushPlan(slicesRef.current, untitledRef.current, chimeRef.current);
+        // Re-assert the subscription either way; only re-upload a LIVE-day plan.
+        const live = slicesRef.current;
+        if (ok && live) void uploadPushPlan(live, untitledRef.current, chimeRef.current);
       });
     };
     window.addEventListener('focus', onWake);
