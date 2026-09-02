@@ -59,6 +59,8 @@ import { isPlayStoreApp } from '@/lib/twa';
 import { useSyncStatus } from '@/hooks/useSync';
 import { useAuth } from '@/hooks/useAuth';
 import { E2eeDialog } from '@/components/Sync/E2eeDialog';
+import { SyncPrivacyDialog } from '@/components/Sync/SyncPrivacyDialog';
+import { hasSyncConsent } from '@/lib/sync/consent';
 import { UpgradeDialog } from '@/components/Billing/UpgradeDialog';
 import { StatsDialog } from '@/components/Admin/StatsDialog';
 import { OPEN_UPGRADE_EVENT } from '@/lib/pro';
@@ -82,7 +84,7 @@ import { RecordView } from '@/components/Record/RecordView';
 import { WeekdayScheduleDialog } from '@/components/Weekday/WeekdayScheduleDialog';
 import { loadWeekdayMap, weekdayName, STORAGE_KEY_WEEKDAY_PROMPTED } from '@/lib/weekday-schedules';
 import { loadSlots } from '@/lib/slots';
-import { dateKey } from '@/hooks/useDiary';
+import { dateKey, DIARY_FIRST_SAVE_EVENT } from '@/hooks/useDiary';
 import { PRESETS } from '@/data/presets';
 import type { Slot } from '@/types/slot';
 import type { Schedule } from '@/types/schedule';
@@ -230,6 +232,10 @@ function App() {
   const [diaryOpen, setDiaryOpen] = useState(false);
   const [goalsOpen, setGoalsOpen] = useState(false);
   const [e2eeOpen, setE2eeOpen] = useState(false);
+  // "Where is my diary kept" — shown after the first diary entry, and as a
+  // REQUIRED step before this device's first cloud upload (the sync engine
+  // holds its first push until it is answered; see lib/sync/consent).
+  const [privacyNotice, setPrivacyNotice] = useState<'diary' | 'sync' | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [weekdayOpen, setWeekdayOpen] = useState(false);
   // On opening the app on a weekday that has an assigned default schedule, ask
@@ -423,6 +429,25 @@ function App() {
     const id = requestAnimationFrame(() => setE2eeOpen(true));
     return () => cancelAnimationFrame(id);
   }, [syncStatus]);
+
+  // This account syncs (Pro + signed in) but this device has never been told
+  // its data will leave the device → REQUIRED privacy step. The engine is
+  // already holding its first push; answering either way releases it.
+  useEffect(() => {
+    if (syncStatus === 'disabled' || hasSyncConsent()) return;
+    const id = requestAnimationFrame(() => setPrivacyNotice('sync'));
+    return () => cancelAnimationFrame(id);
+  }, [syncStatus]);
+
+  // First diary entry ever saved → the same explanation, informational here.
+  useEffect(() => {
+    const onFirstSave = () => {
+      // Never displace the blocking sync step with the softer notice.
+      setPrivacyNotice((cur) => (cur === 'sync' ? cur : 'diary'));
+    };
+    window.addEventListener(DIARY_FIRST_SAVE_EVENT, onFirstSave);
+    return () => window.removeEventListener(DIARY_FIRST_SAVE_EVENT, onFirstSave);
+  }, []);
 
   // Ask the browser to keep our localStorage from being auto-evicted, so a
   // user's schedule/memos/backups survive storage-pressure cleanups. Best-effort.
@@ -799,6 +824,13 @@ function App() {
 
       {/* End-to-end encryption for cloud sync (enable / unlock / manage). */}
       <E2eeDialog open={e2eeOpen} onOpenChange={setE2eeOpen} />
+      <SyncPrivacyDialog
+        open={privacyNotice !== null}
+        onOpenChange={(o) => { if (!o) setPrivacyNotice(null); }}
+        variant={privacyNotice ?? 'diary'}
+        isPro={syncStatus !== 'disabled'}
+        onSetPassphrase={() => setE2eeOpen(true)}
+      />
       <UpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} />
       <StatsDialog open={statsOpen} onOpenChange={setStatsOpen} />
       <TimePaletteDialog open={paletteOpen} onOpenChange={setPaletteOpen} />

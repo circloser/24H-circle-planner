@@ -8,6 +8,7 @@ import { CLOCKTOOLS_KEY, GOALSWIDGET_KEY, NEWS_WINDOWS_KEY, CLOCKTOOLS_SYNC_EVEN
 import { TAMA_KEY, TAMA_SYNC_EVENT } from '@/lib/sync/tamaSync';
 import { pullRemote, pushRemote, deviceLabel } from '@/lib/sync/syncClient';
 import { loadCachedKey, forgetKey, E2EE_EVENT, E2EE_REPUSH_EVENT, E2EE_DISABLE_EVENT } from '@/lib/sync/e2ee';
+import { hasSyncConsent, grantSyncConsent, SYNC_CONSENT_EVENT } from '@/lib/sync/consent';
 
 // 'locked' = the cloud copy is E2EE ciphertext and this device has no key yet;
 // the engine pauses (no push/pull would clobber it) until the passphrase unlocks.
@@ -127,6 +128,10 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     let pushTimer: ReturnType<typeof setTimeout> | null = null;
     let busy = false;
     let locked = false; // set when the cloud is E2EE ciphertext we can't read yet
+    // Nothing leaves this device until the user has been told it will be stored
+    // on the server and has chosen passphrase-or-plaintext (see sync/consent).
+    // Pulling stays allowed — reading the cloud copy discloses nothing new.
+    let awaitingConsent = !hasSyncConsent();
     let ready = false; // a first pull has round-tripped — until then, NEVER push
     let lastObserved = '';
     const meta = loadMeta();
@@ -199,7 +204,11 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     };
 
     const doPush = async (baseVersion: number) => {
-      if (stopped || busy) return;
+      // The consent guard lives on the two functions that actually TRANSMIT,
+      // not on their callers: a first pull that finds an empty (or diverged)
+      // cloud would otherwise seed/merge this device's data up before the user
+      // had been told anything.
+      if (stopped || busy || awaitingConsent) return;
       busy = true;
       stat('syncing');
       const data = collectSyncData();
@@ -234,7 +243,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       baseVersion: number,
       before: Record<string, string>,
     ) => {
-      if (stopped || busy) return;
+      if (stopped || busy || awaitingConsent) return; // see doPush
       busy = true;
       stat('syncing');
       const modifiedAt = Date.now();
@@ -334,7 +343,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     };
 
     const tick = () => {
-      if (stopped || busy || locked || !ready) return; // not-ready/locked → never push (would clobber the cloud)
+      if (stopped || busy || locked || awaitingConsent || !ready) return; // not-ready/locked/unannounced → never push
       if (!navigatorOnline()) {
         stat('offline');
         return;
@@ -378,6 +387,10 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     // cloud plaintext is replaced with ciphertext right away.
     const onRepush = () => {
       locked = false;
+      // Choosing a passphrase IS the privacy answer (the stronger one), even
+      // when it was set from the account menu rather than the gate.
+      awaitingConsent = false;
+      grantSyncConsent();
       void doPush(meta.version);
     };
     // Disable cloud-wide: forget the key SILENTLY (no resume-pull race), then
@@ -385,10 +398,19 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     const onDisable = () => {
       forgetKey(true);
       locked = false;
+      awaitingConsent = false; // turning encryption off is an explicit choice too
+      grantSyncConsent();
       void doPush(meta.version);
+    };
+    // The privacy step was answered (passphrase set, or plaintext accepted) —
+    // release the held push so this device's data finally goes up.
+    const onConsent = () => {
+      awaitingConsent = false;
+      tick(); // don't make the user wait for the next interval
     };
     window.addEventListener('focus', onWake);
     window.addEventListener('online', onWake);
+    window.addEventListener(SYNC_CONSENT_EVENT, onConsent);
     window.addEventListener(E2EE_EVENT, onE2ee);
     window.addEventListener(E2EE_REPUSH_EVENT, onRepush);
     window.addEventListener(E2EE_DISABLE_EVENT, onDisable);
@@ -400,6 +422,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       if (pushTimer) clearTimeout(pushTimer);
       window.removeEventListener('focus', onWake);
       window.removeEventListener('online', onWake);
+      window.removeEventListener(SYNC_CONSENT_EVENT, onConsent);
       window.removeEventListener(E2EE_EVENT, onE2ee);
       window.removeEventListener(E2EE_REPUSH_EVENT, onRepush);
       window.removeEventListener(E2EE_DISABLE_EVENT, onDisable);

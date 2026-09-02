@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Wand2, X, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import {
@@ -85,6 +85,30 @@ export function DesignMagician({ open, onClose, onFinish }: DesignMagicianProps)
   const [pos, setPos] = useState<Pos>(spots[0]);
   // Restart at the first step whenever it (re)opens.
   useEffect(() => { if (open) { setStep(0); setPos(spawnNearCentre(-300, 160, 300, 260)); } }, [open]);
+
+  // The step spots are laid out for a ~260px panel, but a step's content decides
+  // the real height (the font list is much taller). After each step renders,
+  // measure and lift the panel by however much it hangs below the screen, so the
+  // buttons are always reachable. `pos.y` is an offset from the viewport centre
+  // and `top` is `50vh + y`, so subtracting the overflow moves it up exactly.
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    const fit = () => {
+      const el = panelRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      // maxHeight keeps the panel inside the screen, so both edges can always
+      // be satisfied: pin the top into [8, screen - height - 8].
+      const wanted = Math.min(Math.max(r.top, 8), Math.max(8, window.innerHeight - r.height - 8));
+      const shift = wanted - r.top;
+      if (Math.abs(shift) > 0.5) setPos((p) => ({ ...p, y: p.y + shift }));
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+  }, [open, step]);
 
   if (!open) return null;
 
@@ -294,9 +318,13 @@ export function DesignMagician({ open, onClose, onFinish }: DesignMagicianProps)
       role="dialog"
       aria-label={t('magician.title')}
       onPointerDown={makeDragStart(pos, setPos)}
-      className="fixed z-[58] w-[300px] cursor-grab touch-none overflow-hidden rounded-2xl p-4 shadow-2xl active:cursor-grabbing"
+      ref={panelRef}
+      className="fixed z-[58] flex w-[300px] cursor-grab touch-none flex-col overflow-hidden rounded-2xl p-4 shadow-2xl active:cursor-grabbing"
       style={{
         position: 'fixed', left: `calc(50vw + ${pos.x}px)`, top: `calc(50vh + ${pos.y}px)`,
+        // Never taller than the screen — the font step's chip list grows with
+        // every font we add, and used to push the buttons off the bottom.
+        maxHeight: 'calc(100dvh - 16px)',
         border: '1px solid hsl(var(--border))',
         backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
       }}
@@ -304,7 +332,7 @@ export function DesignMagician({ open, onClose, onFinish }: DesignMagicianProps)
       {/* Translucent surface fill (content stays fully opaque above it) so the
           live change behind the panel stays visible. */}
       <div aria-hidden className="pointer-events-none absolute inset-0" style={{ backgroundColor: 'hsl(var(--surface))', opacity: 0.82 }} />
-      <div className="relative z-10">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col">
       <div className="mb-2 flex items-center gap-1.5">
         <Wand2 className="h-4 w-4" style={{ color: 'hsl(var(--primary))' }} />
         <span className="flex-1 text-sm font-bold text-foreground">{t('magician.title')}</span>
@@ -316,7 +344,9 @@ export function DesignMagician({ open, onClose, onFinish }: DesignMagicianProps)
       </div>
 
       <h3 className="mb-2 text-[13px] font-semibold text-foreground">{steps[step].title}</h3>
-      <div data-no-drag>{steps[step].body}</div>
+      {/* Only the step body scrolls, so the progress dots and the 다음 button
+          below stay reachable however long a step's option list gets. */}
+      <div data-no-drag className="min-h-0 flex-1 overflow-y-auto">{steps[step].body}</div>
 
       {/* Progress dots. */}
       <div className="mt-3 flex justify-center gap-1">

@@ -52,6 +52,9 @@ export async function run() {
       // cloud). onboarded flag skips the first-visit welcome overlay.
       await page.addInitScript((secret) => {
         localStorage.setItem('24h-circle-planner.onboarded', '1');
+        // Already answered the pre-upload privacy step: these checks are about
+        // sync mechanics, not the gate (the gate has its own check below).
+        localStorage.setItem('24h-circle-planner.sync-consent', '1');
         localStorage.setItem('24h-circle-planner.prefs', JSON.stringify({ version: 1, prefs: { language: 'ko' } }));
         localStorage.setItem('24h-circle-planner.diary', JSON.stringify({ version: 1, entries: { '2026-07-01': { date: '2026-07-01', name: '내 하루', slices: [], note: secret, savedAt: 1 } } }));
       }, SECRET);
@@ -88,7 +91,10 @@ export async function run() {
     const { browser, page, errors } = await launchPage({ locale: 'ko-KR' });
     try {
       await mockApi(page, store);
-      await page.addInitScript(() => localStorage.setItem('24h-circle-planner.onboarded', '1'));
+      await page.addInitScript(() => {
+        localStorage.setItem('24h-circle-planner.onboarded', '1');
+        localStorage.setItem('24h-circle-planner.sync-consent', '1');
+      });
       await page.goto(`${base}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
       await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
       await page.keyboard.press('Escape').catch(() => {});
@@ -123,6 +129,45 @@ export async function run() {
       });
       pass('right passphrase unlocks + decrypts the note on device B', restored === SECRET, `note=${restored}`);
       pass('device B: no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
+    } finally {
+      await browser.close();
+    }
+  }
+
+  // ── Device C: the pre-upload privacy gate — nothing may leave the device
+  //    until the user has been told it will be stored on the server. ──
+  {
+    const gateStore = { blob: null, version: 0, updatedAt: 0, puts: 0 };
+    const { browser, page, errors } = await launchPage({ locale: 'ko-KR' });
+    try {
+      await mockApi(page, gateStore);
+      // Signed-in Pro device with local data, but NO sync-consent flag.
+      await page.addInitScript((secret) => {
+        localStorage.setItem('24h-circle-planner.onboarded', '1');
+        localStorage.setItem('24h-circle-planner.prefs', JSON.stringify({ version: 1, prefs: { language: 'ko' } }));
+        localStorage.setItem('24h-circle-planner.diary', JSON.stringify({ version: 1, entries: { '2026-07-02': { date: '2026-07-02', name: '내 하루', slices: [], note: secret, savedAt: 1 } } }));
+      }, SECRET);
+      await page.goto(`${base}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
+
+      pass('the privacy step is shown before any upload',
+        await until(async () => (await page.locator('text=동기화 전에 확인해 주세요').count()) > 0));
+
+      // Give the engine ample time to try: it must NOT have pushed anything.
+      await wait(3000);
+      pass('nothing is uploaded while the step is unanswered',
+        gateStore.puts === 0 && gateStore.blob === null, `puts=${gateStore.puts}`);
+
+      // It cannot be dismissed by Esc or a click outside — it must be answered.
+      await page.keyboard.press('Escape').catch(() => {});
+      await wait(400);
+      pass('the step cannot be escaped without answering',
+        (await page.locator('text=동기화 전에 확인해 주세요').count()) > 0);
+
+      await page.locator('button:has-text("암호 없이 동기화")').first().click();
+      pass('answering releases the held upload',
+        await until(() => gateStore.puts > 0 && !!gateStore.blob), `puts=${gateStore.puts}`);
+      pass('device C: no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
     } finally {
       await browser.close();
     }

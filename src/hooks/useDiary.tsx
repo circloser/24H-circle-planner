@@ -28,6 +28,10 @@ type DiaryMap = Record<string, DiaryEntry>;
 
 const STORAGE_KEY = '24h-circle-planner.diary';
 
+/** Fired when the diary goes from empty to its first saved entry — App answers
+ *  it with the "where is this kept" notice (see SyncPrivacyDialog). */
+export const DIARY_FIRST_SAVE_EVENT = '24h:diary-first-save';
+
 const pad2 = (n: number) => String(n).padStart(2, '0');
 
 /** Local-time YYYY-MM-DD key for a date (defaults to today). */
@@ -64,7 +68,17 @@ export function DiaryProvider({ children }: { children: React.ReactNode }) {
 
   const saveEntry = useCallback((schedule: Schedule, date?: string) => {
     const key = date ?? dateKey();
-    setEntries((prev) => ({
+    setEntries((prev) => {
+      // The very first entry is the moment to explain where a diary is kept
+      // (this device, and the server too once Pro sync is on) — App listens.
+      if (Object.keys(prev).length === 0) {
+        try {
+          window.dispatchEvent(new Event(DIARY_FIRST_SAVE_EVENT));
+        } catch {
+          /* non-browser */
+        }
+      }
+      return {
       ...prev,
       [key]: {
         date: key,
@@ -77,7 +91,8 @@ export function DiaryProvider({ children }: { children: React.ReactNode }) {
         note: prev[key]?.note,
         savedAt: Date.now(),
       },
-    }));
+      };
+    });
   }, [activeId, setEntries]);
 
   const setEntryNote = useCallback((date: string, note: string) => {

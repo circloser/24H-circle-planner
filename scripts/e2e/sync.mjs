@@ -64,6 +64,8 @@ export async function run() {
       if (localStorage.getItem('__synctest_seeded')) return;
       localStorage.setItem('__synctest_seeded', '1');
       localStorage.setItem('24h-circle-planner.onboarded', '1');
+      // Pre-answer the privacy gate — this suite tests sync mechanics.
+      localStorage.setItem('24h-circle-planner.sync-consent', '1');
       localStorage.setItem('24h-circle-planner.prefs', JSON.stringify({ version: 1, prefs: { language: 'ko' } }));
       localStorage.setItem(goalsKey, goalVal);
     }, [GOALS, goal('GOALBASE')]);
