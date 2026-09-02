@@ -42,7 +42,21 @@ function DeviceBtn({ label, title, onClick, disabled }: { label: string; title: 
   );
 }
 
-export function TamagotchiDevice({ isMobile = false }: { isMobile?: boolean }) {
+/**
+ * The retro control console.
+ *
+ * `variant` decides how it sits on the page: `popup` floats above the app next
+ * to the 🐣 FAB (desktop), while `section` is a plain card in the normal flow —
+ * how mobile shows it, stacked under the timetable like the clock and news
+ * sections, so it scrolls with the page and needs no FAB or close button.
+ */
+export function TamagotchiDevice({
+  isMobile = false,
+  variant = 'popup',
+}: {
+  isMobile?: boolean;
+  variant?: 'popup' | 'section';
+}) {
   const { pets, hygiene, selectedId, on, toggle, closeMenu, select, addEgg, release, feed, toggleSleep, rename } = useTamagotchi();
   const { t } = useTranslation();
 
@@ -57,17 +71,21 @@ export function TamagotchiDevice({ isMobile = false }: { isMobile?: boolean }) {
     fireTamaFx(pet.x, pet.y - 20, 'yum'); // eating reaction floats over the pet
   };
 
+  const section = variant === 'section';
+
   return (
     <div
-      className="tama-pop"
-      role="dialog"
+      className={section ? undefined : 'tama-pop'}
+      role={section ? 'group' : 'dialog'}
       aria-label={t('tama.title')}
       style={{
-        position: 'absolute', left: 16, bottom: 84, zIndex: 40,
-        width: isMobile ? MOBILE_LCD.w + 24 : 216,
+        ...(section
+          ? { position: 'relative', margin: '0 auto', width: '100%', maxWidth: MOBILE_LCD.w + 24 }
+          : { position: 'absolute', left: 16, bottom: 84, zIndex: 40, width: isMobile ? MOBILE_LCD.w + 24 : 216 }),
         borderRadius: 26, padding: 12,
         background: '#ffffff',
-        border: '3px solid #e5e7eb', boxShadow: '0 10px 26px rgba(0,0,0,0.22)',
+        border: '3px solid #e5e7eb',
+        boxShadow: section ? '0 2px 10px rgba(0,0,0,0.08)' : '0 10px 26px rgba(0,0,0,0.22)',
         fontFamily: "'Pretendard',system-ui,sans-serif",
       }}
     >
@@ -83,15 +101,18 @@ export function TamagotchiDevice({ isMobile = false }: { isMobile?: boolean }) {
         >
           {on ? '⏸' : '▶'}
         </button>
-        <button
-          type="button"
-          onClick={closeMenu}
-          title={t('tama.close')}
-          aria-label={t('tama.close')}
-          style={{ width: 24, height: 24, borderRadius: 999, cursor: 'pointer', fontSize: 12, lineHeight: 1, fontWeight: 800, border: '2px solid #e58aa8', background: '#fff0f5', color: '#be185d' }}
-        >
-          ✕
-        </button>
+        {/* A section is always on screen — there is nothing to close. */}
+        {!section && (
+          <button
+            type="button"
+            onClick={closeMenu}
+            title={t('tama.close')}
+            aria-label={t('tama.close')}
+            style={{ width: 24, height: 24, borderRadius: 999, cursor: 'pointer', fontSize: 12, lineHeight: 1, fontWeight: 800, border: '2px solid #e58aa8', background: '#fff0f5', color: '#be185d' }}
+          >
+            ✕
+          </button>
+        )}
       </div>
 
       {/* Pet tabs + new egg — wraps to multiple rows for up to 6 pets */}

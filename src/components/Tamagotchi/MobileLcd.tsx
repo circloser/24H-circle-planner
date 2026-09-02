@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from 'react';
-import { PetArt } from './TamagotchiArt';
+import { PetArt, PoopArt } from './TamagotchiArt';
 import { formatHatch } from './tama-utils';
 import { MOBILE_LCD } from './tama-utils';
 import { useTamagotchi, type Pet } from '@/hooks/useTamagotchi';
@@ -79,6 +79,7 @@ function LcdPet({ pet, hygiene }: { pet: Pet; hygiene: number }) {
  *  MOBILE_LCD so stored pet coords map 1:1. */
 export function MobileLcd({ pets, hygiene, sleeping }: { pets: Pet[]; hygiene: number; sleeping: boolean }) {
   const { t } = useTranslation();
+  const { poops, removePoop } = useTamagotchi();
   const visible = pets.filter((p) => p.phase !== 'dead');
   return (
     <div
@@ -95,6 +96,29 @@ export function MobileLcd({ pets, hygiene, sleeping }: { pets: Pet[]; hygiene: n
       ) : (
         pets.map((p) => (p.phase === 'dead' ? null : <LcdPet key={p.id} pet={p} hygiene={hygiene} />))
       )}
+
+      {/* The shared pile, tap to clean. Without this the phone could watch
+          hygiene fall (a poop dropped here, or synced from the desktop) with no
+          way to clear it — the desktop cleans them off the page instead. */}
+      {poops.map((poop) => (
+        <button
+          key={poop.id}
+          type="button"
+          title={t('tama.cleanPoop')}
+          aria-label={t('tama.cleanPoop')}
+          onClick={(e) => { e.stopPropagation(); removePoop(poop.id); }}
+          style={{
+            position: 'absolute',
+            left: Math.max(14, Math.min(MOBILE_LCD.w - 14, poop.x)),
+            top: Math.max(14, Math.min(MOBILE_LCD.h - 14, poop.y)),
+            transform: 'translate(-50%,-50%)', zIndex: 2,
+            background: 'transparent', border: 'none', padding: 3, lineHeight: 0,
+            color: '#7c5a3a', cursor: 'pointer',
+          }}
+        >
+          <PoopArt size={15} />
+        </button>
+      ))}
     </div>
   );
 }

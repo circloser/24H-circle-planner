@@ -35,6 +35,7 @@ import { MobileMemoSection } from '@/components/Memo/MobileMemoSection';
 import { ClockToolsLayer } from '@/components/ClockTools/ClockToolsLayer';
 import { TamagotchiProvider } from '@/hooks/useTamagotchi';
 import { TamagotchiLayer } from '@/components/Tamagotchi/TamagotchiLayer';
+import { MobileTamaSection } from '@/components/Tamagotchi/MobileTamaSection';
 import { MobileClockSection } from '@/components/ClockTools/MobileClockSection';
 import { TimeBlockDialog } from '@/components/TimeBlock/TimeBlockDialog';
 import { RimMemoLayer } from '@/components/RimMemo/RimMemoLayer';
@@ -501,6 +502,9 @@ function App() {
   }, []);
 
   return (
+    // The pet provider wraps the whole app: desktop renders the roaming layer at
+    // the bottom, mobile a stacked section inside <main> — one shared state.
+    <TamagotchiProvider>
     <div data-app-root className="relative min-h-screen flex flex-col overflow-x-clip">
       <AppHeader
         onOpenAbout={() => setAboutOpen(true)}
@@ -661,6 +665,9 @@ function App() {
             <MobileClockSection />
             {/* News headlines — a plain section at the very bottom on mobile. */}
             {prefs.showNews && <NewsWidget isMobile />}
+            {/* The pet, in its console — mobile's stand-in for the desktop's
+                roaming creatures (they stay inside the LCD here). */}
+            {!firstRunClean && <MobileTamaSection />}
           </>
         )}
       </main>
@@ -839,18 +846,16 @@ function App() {
       {!isMobile && !firstRunClean && prefs.showWidgets && <NewsWidget />}
       {/* Polaroid photo wall — photos live only on this device (IndexedDB). */}
       {!isMobile && !firstRunClean && prefs.showWidgets && <PolaroidAlbum />}
-      {/* Background pet — desktop only (removed on mobile). */}
-      {!isMobile && !firstRunClean && (
-        <TamagotchiProvider>
-          <TamagotchiLayer />
-        </TamagotchiProvider>
-      )}
+      {/* Background pet — desktop: roams the window from a FAB console. Mobile
+          renders it as a section inside <main> instead (see MobileTamaSection). */}
+      {!isMobile && !firstRunClean && <TamagotchiLayer />}
 
       {/* In-app slice-start popup (bottom-right / bottom, 5s, above everything).
           Fires from useSliceAlarms on a block boundary — shows even without OS
           notification permission. */}
       <SliceAlarmPopup />
     </div>
+    </TamagotchiProvider>
   );
 }
 

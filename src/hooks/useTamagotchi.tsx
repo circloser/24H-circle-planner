@@ -1,5 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  TAMA_SYNC_EVENT,
+  mergeCheckpointPets,
+  readTamaCheckpoint,
+  tamaSignature,
+  toTamaCheckpoint,
+  writeTamaCheckpoint,
+} from '@/lib/sync/tamaSync';
 
 /**
  * A tiny line-art tamagotchi that roams the app background. Self-contained:
@@ -285,15 +293,72 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
   // null = roam the full browser window (desktop). Otherwise a small {w,h} box
   // the pets are confined to — mobile keeps them inside the console LCD.
   const worldRef = useRef<{ w: number; h: number } | null>(null);
+  // Cross-device sync: the DISCRETE signature we last checkpointed. Seeded from
+  // the loaded state (opening the app is not itself a change), then compared on
+  // every state change so the once-a-second tick never writes a checkpoint.
+  const lastSigRef = useRef<string>('');
+  // Set while adopting a cloud checkpoint — that apply must not write one back.
+  const adoptingRef = useRef(false);
 
-  // Persist on every change.
+  // Seed the signature BEFORE the persist effect below runs for the first time
+  // (effects fire in declaration order), so a plain page load pushes nothing.
+  useEffect(() => {
+    lastSigRef.current = tamaSignature(state);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist on every change — the full local blob (positions included).
   useEffect(() => {
     try {
       localStorage.setItem(KEY, JSON.stringify({ ...state, savedAt: Date.now() }));
     } catch {
       /* storage full/unavailable */
     }
+
+    // Cross-device checkpoint: written ONLY when something discrete happened
+    // (pet added/released/renamed, fed or played with, hatched, evolved, died,
+    // fell asleep, pooped, pile cleaned). Time passing rewrites the blob above
+    // every second but must never touch this key — that is what keeps the pet
+    // from pushing to the cloud on every tick. See lib/sync/tamaSync.
+    const sig = tamaSignature(state);
+    const adopting = adoptingRef.current;
+    adoptingRef.current = false;
+    if (sig === lastSigRef.current) return;
+    lastSigRef.current = sig;
+    if (adopting) return; // this change CAME from the cloud — don't bounce it back
+    writeTamaCheckpoint(toTamaCheckpoint(state, Date.now()));
   }, [state]);
+
+  // A checkpoint arrived from another device (Pro sync applied it to storage) —
+  // adopt it live: keep this screen's positions, replay the time since it was
+  // written, and materialise the shared poop pile at local coordinates.
+  useEffect(() => {
+    const onSync = () => {
+      const cp = readTamaCheckpoint();
+      if (!cp) return;
+      adoptingRef.current = true;
+      setState((s) => {
+        const now = Date.now();
+        const dt = Math.max(0, now - cp.savedAt);
+        // Strings come from our own writer, so the unions are safe here.
+        const merged = mergeCheckpointPets(cp, s.pets, () => ({ ...spawnXY(), heading: rand(0, Math.PI * 2) })) as unknown as Pet[];
+        const pets = merged.map((p) => advance(p, now, dt));
+        const spot = () => {
+          const p = pets[Math.floor(Math.random() * pets.length)];
+          return p ? { x: p.x + rand(-26, 26), y: p.y + rand(18, 40) } : spawnXY();
+        };
+        // Poops travel as a COUNT (their coordinates are this screen's pixels):
+        // keep the ones already drawn, then trim or top up to match.
+        const poops = cp.poops <= s.poops.length
+          ? s.poops.slice(0, cp.poops)
+          : [...s.poops, ...Array.from({ length: cp.poops - s.poops.length }, () => ({ id: uid(), ...spot() }))];
+        const selectedId = pets.some((p) => p.id === s.selectedId) ? s.selectedId : (pets[0]?.id ?? null);
+        return { ...s, on: cp.on, hygiene: cp.hygiene, pets, poops, selectedId, savedAt: now };
+      });
+    };
+    window.addEventListener(TAMA_SYNC_EVENT, onSync);
+    return () => window.removeEventListener(TAMA_SYNC_EVENT, onSync);
+  }, []);
 
   // Live tick: decay + growth + flocking wander, only while ON.
   useEffect(() => {
