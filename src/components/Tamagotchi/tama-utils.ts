@@ -31,7 +31,10 @@ export const TAMA_CSS = `
 .tama-tail { animation: tama-tailw .6s ease-in-out infinite; }
 /* Calm mode for the mobile terrarium: the pets drift a couple of px per second
    in there, so desktop-paced limbs would look like running in place. */
-.tama-slow .tama-bob { animation-duration: 3s; }
+/* A 3px bob is ~10% of a 30px sprite — on the small LCD that reads as shaking
+   rather than liveliness, so the terrarium gets a 1px breath instead. */
+@keyframes tama-breathe { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-1px) } }
+.tama-slow .tama-bob { animation: tama-breathe 4.5s ease-in-out infinite; }
 .tama-slow .tama-legL, .tama-slow .tama-legR,
 .tama-slow .tama-armL, .tama-slow .tama-armR { animation-duration: 1.6s; }
 .tama-slow .tama-tail { animation-duration: 1.9s; }

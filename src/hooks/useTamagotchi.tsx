@@ -420,8 +420,24 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
           const m = world ? 20 : 0;
           const minX = world ? m : 36, maxX = world ? w - m : Math.max(60, w - 36);
           const minY = world ? m : 70, maxY = world ? h - m : Math.max(110, h - 36);
-          if (nx < minX || nx > maxX) { heading = Math.PI - heading; nx = Math.max(minX, Math.min(maxX, nx)); }
-          if (ny < minY || ny > maxY) { heading = -heading; ny = Math.max(minY, Math.min(maxY, ny)); }
+          const hitX = nx < minX || nx > maxX;
+          const hitY = ny < minY || ny > maxY;
+          nx = Math.max(minX, Math.min(maxX, nx));
+          ny = Math.max(minY, Math.min(maxY, ny));
+          if (hitX || hitY) {
+            if (world) {
+              // In the tiny terrarium a mirror bounce lets a pet graze along the
+              // wall for many steps, which at this scale looks like vibrating in
+              // place. Turn it back toward the middle (with a little spread) so
+              // it always leaves the edge on the next step.
+              const toCx = (minX + maxX) / 2 - nx;
+              const toCy = (minY + maxY) / 2 - ny;
+              heading = Math.atan2(toCy, toCx) + rand(-0.4, 0.4);
+            } else {
+              if (hitX) heading = Math.PI - heading;
+              if (hitY) heading = -heading;
+            }
+          }
           return { ...p, x: nx, y: ny, heading };
         });
         const stepped = poopStep(pets, s.hygiene, s.poops, now); // shared hygiene/poops
