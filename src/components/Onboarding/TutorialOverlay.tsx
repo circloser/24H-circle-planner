@@ -146,19 +146,23 @@ export function TutorialOverlay({ open, onClose, onFinish }: TutorialOverlayProp
 
   const go = (d: number) => setStep((s) => Math.min(steps.length - 1, Math.max(0, s + d)));
 
-  // Tooltip placement: below the target if it fits, else above; else centred.
+  // The card stays put. It used to re-anchor under (or over) every target, so
+  // the eye chased it around the screen for six steps — testers called that
+  // tiring. Only the highlight ring travels now; the card rests at the bottom
+  // centre and flips to the top ONLY when it would cover the very thing it is
+  // pointing at. Two possible places instead of six.
   const cardW = 310;
   const cardH = 190;
-  let cardStyle: React.CSSProperties;
-  if (rect) {
-    const below = rect.top + rect.height + cardH + 20 < window.innerHeight;
-    const top = below ? rect.top + rect.height + 14 : Math.max(8, rect.top - 14 - cardH);
-    let left = rect.left + rect.width / 2 - cardW / 2;
-    left = Math.max(8, Math.min(window.innerWidth - cardW - 8, left));
-    cardStyle = { position: 'fixed', top, left, width: cardW };
-  } else {
-    cardStyle = { position: 'fixed', top: '50%', left: '50%', width: cardW, transform: 'translate(-50%, -50%)' };
-  }
+  const margin = 16;
+  const restTop = Math.max(margin, window.innerHeight - cardH - margin);
+  const wouldCoverTarget = !!rect && rect.top + rect.height > restTop - 12;
+  const cardStyle: React.CSSProperties = {
+    position: 'fixed',
+    top: wouldCoverTarget ? margin : restTop,
+    left: Math.max(8, (window.innerWidth - cardW) / 2),
+    width: cardW,
+    transition: 'top .25s ease',
+  };
 
   return createPortal(
     // Container is click-through so the user can actually do each action; only

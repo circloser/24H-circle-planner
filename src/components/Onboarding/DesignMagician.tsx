@@ -76,17 +76,16 @@ export function DesignMagician({ open, onClose, onFinish }: DesignMagicianProps)
       ))}
     </div>
   );
-  // The panel drifts to a new corner each step so it never hides what changed.
-  const spots: Pos[] = [
-    spawnNearCentre(-300, 160, 300, 260), spawnNearCentre(300, -180, 300, 260),
-    spawnNearCentre(-300, -180, 300, 260), spawnNearCentre(300, 160, 300, 260),
-    spawnNearCentre(0, 200, 300, 260),
-  ];
-  const [pos, setPos] = useState<Pos>(spots[0]);
+  // ONE resting place for the whole wizard. It used to hop to a different
+  // corner on every step so it never covered what changed — but following a
+  // panel around the screen eleven times is what testers found tiring, and the
+  // right margin already clears the chart. It stays draggable.
+  const home = () => spawnNearCentre(300, -140, 300, 300);
+  const [pos, setPos] = useState<Pos>(home);
   // Restart at the first step whenever it (re)opens.
-  useEffect(() => { if (open) { setStep(0); setPos(spawnNearCentre(-300, 160, 300, 260)); } }, [open]);
+  useEffect(() => { if (open) { setStep(0); setPos(home()); } }, [open]);
 
-  // The step spots are laid out for a ~260px panel, but a step's content decides
+  // The resting place assumes a ~300px panel, but a step's content decides
   // the real height (the font list is much taller). After each step renders,
   // measure and lift the panel by however much it hangs below the screen, so the
   // buttons are always reachable. `pos.y` is an offset from the viewport centre
@@ -306,11 +305,7 @@ export function DesignMagician({ open, onClose, onFinish }: DesignMagicianProps)
   ];
 
   const last = step === steps.length - 1;
-  const go = (d: number) => {
-    const n = Math.min(steps.length - 1, Math.max(0, step + d));
-    setStep(n);
-    setPos(spots[n % spots.length]);
-  };
+  const go = (d: number) => setStep(Math.min(steps.length - 1, Math.max(0, step + d)));
   const finish = () => { onClose(); onFinish?.(); };
 
   return createPortal(
