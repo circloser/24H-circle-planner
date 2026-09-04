@@ -1,7 +1,7 @@
 import { PetArt } from './TamagotchiArt';
 import { MobileLcd } from './MobileLcd';
 import { formatHatch, fireTamaFx, MOBILE_LCD } from './tama-utils';
-import { useTamagotchi, MAX_PETS, EVOLVE_PLAYS, type Pet } from '@/hooks/useTamagotchi';
+import { useTamagotchi, MAX_PETS, EVOLVE_PLAYS, canFeed, type Pet } from '@/hooks/useTamagotchi';
 import { useTranslation } from '@/hooks/usePreferences';
 
 /** One stat as a donut ring (2×2 grid). Hover shows what it means + the value. */
@@ -63,10 +63,13 @@ export function TamagotchiDevice({
   const pet: Pet | undefined = pets.find((p) => p.id === selectedId) ?? pets[0];
   const isCreature = pet && pet.phase !== 'egg' && pet.phase !== 'dead';
   const sleeping = !!pet?.sleeping;
+  // A full pet refuses food (see FULL_HUNGER) — grey the button out so the
+  // refusal reads as "already full" rather than a dead button.
+  const full = !!pet && !canFeed(pet) && !!isCreature && !sleeping;
   const hasEgg = pets.some((p) => p.phase === 'egg'); // can't lay a new egg until it hatches
 
   const onFeed = () => {
-    if (!pet) return;
+    if (!pet || full) return;
     feed(pet.id);
     fireTamaFx(pet.x, pet.y - 20, 'yum'); // eating reaction floats over the pet
   };
@@ -223,7 +226,7 @@ export function TamagotchiDevice({
 
       {/* Actions — feed + sleep (play/clean moved onto the pet & its poop). */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 10 }}>
-        <DeviceBtn label="🍽️" title={t('tama.feed')} onClick={onFeed} disabled={!isCreature || sleeping} />
+        <DeviceBtn label="🍽️" title={t(full ? 'tama.feedFull' : 'tama.feed')} onClick={onFeed} disabled={!isCreature || sleeping || full} />
         <DeviceBtn label={sleeping ? '☀️' : '😴'} title={t(sleeping ? 'tama.wake' : 'tama.sleep')} onClick={() => pet && toggleSleep(pet.id)} disabled={!isCreature && pet?.phase !== 'baby' && pet?.phase !== 'adult'} />
       </div>
 

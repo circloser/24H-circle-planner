@@ -29,6 +29,7 @@ export const ja: Record<TKey, string> = {
   'tama.hatchIn': 'ふ化まで {t}',
   'tama.died': '星になりました…',
   'tama.feed': 'ごはん（満腹度+10）',
+  'tama.feedFull': 'おなかいっぱい — 少し待ってからあげてね',
   'tama.wake': '起こす',
   'tama.sleep': '寝かせる（エネルギー回復）',
   'tama.release': '逃がす',

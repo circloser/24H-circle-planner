@@ -32,6 +32,7 @@ export const de: Record<TKey, string> = {
   'tama.hatchIn': 'Schlüpft in {t}',
   'tama.died': 'Ist ein Stern geworden…',
   'tama.feed': 'Füttern (+10 Sättigung)',
+  'tama.feedFull': 'Schon satt — warte kurz vor dem nächsten Füttern',
   'tama.wake': 'Aufwecken',
   'tama.sleep': 'Schlafen (Energie erholen)',
   'tama.release': 'Freilassen',

@@ -29,6 +29,7 @@ export const ru: Record<TKey, string> = {
   'tama.hatchIn': 'Вылупится через {t}',
   'tama.died': 'Стал звездой…',
   'tama.feed': 'Покормить (+10 сытости)',
+  'tama.feedFull': 'Уже сыт — подождите немного перед следующим кормлением',
   'tama.wake': 'Разбудить',
   'tama.sleep': 'Уложить спать (восстановить энергию)',
   'tama.release': 'Отпустить',

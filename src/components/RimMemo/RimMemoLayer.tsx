@@ -17,22 +17,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useRimMemos, type RimMemo } from './useRimMemos';
 import { hhmmToMinutes } from '@/lib/time-utils';
-import { useChartView, useTranslation } from '@/hooks/usePreferences';
+import { useChartView, useRingOuterR, useTranslation } from '@/hooks/usePreferences';
+import { clampRingOuterR } from '@/lib/svg-geometry';
 import { useDays } from '@/hooks/useDays';
 import { useDiary } from '@/hooks/useDiary';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useStoreSelector } from '@/hooks/useScheduleStore';
 import { viewSpec, angleForMin, minForAngle, isInWindow } from '@/lib/chart-view';
 
-// Must mirror the chart's geometry (CircleTimeline).
+// Must mirror the chart's geometry (CircleTimeline). Everything anchored to the
+// rim is derived from the LIVE outer radius (the "ring size" preference), so
+// memos, their leader lines and the hover band follow when the ring is resized.
 const CX = 500;
 const CY = 500;
-const OUTER_R = 460;
 const VB_MARGIN = 36;
 const VB_SIZE = 1072; // 1000 + 2*36
-const BAND_OUTER = OUTER_R + 58; // hover-capture ring (just outside the slices)
-const ELBOW_R = OUTER_R + 60; // where the leader ends and the memo begins
-const DOT_R = OUTER_R + 18; // mobile: marker dot hugging the rim
+const BAND_GAP = 58; // hover-capture ring (just outside the slices)
+const ELBOW_GAP = 60; // where the leader ends and the memo begins
+const DOT_GAP = 18; // mobile: marker dot hugging the rim
 
 const polar = (r: number, deg: number) => {
   const a = (deg * Math.PI) / 180;
@@ -61,6 +63,7 @@ function annulusPath(ro: number, ri: number): string {
 function RimMemoBox({
   memo,
   angleDeg,
+  elbowR,
   autoFocus,
   readOnly = false,
   deletable = false,
@@ -70,6 +73,8 @@ function RimMemoBox({
 }: {
   memo: RimMemo;
   angleDeg: number;
+  /** Radius where the leader ends and the note starts — follows the ring size. */
+  elbowR: number;
   autoFocus: boolean;
   /** No text editing / dragging (a locked diary snapshot). */
   readOnly?: boolean;
@@ -82,7 +87,7 @@ function RimMemoBox({
   const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
   const right = Math.cos((angleDeg * Math.PI) / 180) >= 0;
-  const elbow = polar(ELBOW_R, angleDeg);
+  const elbow = polar(elbowR, angleDeg);
   const leftPct = pctX(elbow.x);
   const topPct = pctY(elbow.y);
 
@@ -187,6 +192,12 @@ export function RimMemoLayer() {
   const locked = useStoreSelector((s) => s.locked);
   const isMobile = useIsMobile();
   const spec = viewSpec(useChartView());
+  // Live rim radius — the "ring size" preference. Clamped through the same
+  // helper the chart uses so the memos can never drift off the drawn rim.
+  const outerR = clampRingOuterR(useRingOuterR());
+  const bandOuterR = outerR + BAND_GAP;
+  const elbowR = outerR + ELBOW_GAP;
+  const dotR = outerR + DOT_GAP;
   const svgRef = useRef<SVGSVGElement>(null);
   const [hoverAngle, setHoverAngle] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -238,7 +249,7 @@ export function RimMemoLayer() {
     el.addEventListener('pointerup', up);
   };
 
-  const band = annulusPath(BAND_OUTER, OUTER_R);
+  const band = annulusPath(bandOuterR, outerR);
   // Full editing (create via the ring, edit text, drag along the rim) is a
   // desktop-hover interaction — off on touch and in a locked diary snapshot.
   // Deleting is still allowed on touch (via the view popup).
@@ -302,8 +313,8 @@ export function RimMemoLayer() {
 
         {/* Hover preview: extending leader + a "+". */}
         {hoverAngle !== null && (() => {
-          const rim = polar(OUTER_R, hoverAngle);
-          const elbow = polar(ELBOW_R, hoverAngle);
+          const rim = polar(outerR, hoverAngle);
+          const elbow = polar(elbowR, hoverAngle);
           return (
             <g style={{ pointerEvents: 'none' }}>
               <line x1={rim.x} y1={rim.y} x2={elbow.x} y2={elbow.y} stroke="hsl(var(--accent))" strokeWidth={2} strokeDasharray="4 4" opacity={0.8} />
@@ -316,8 +327,8 @@ export function RimMemoLayer() {
         {/* Leader line per memo (desktop text layout only). */}
         {!isMobile && visible.map((m) => {
           const ang = angleForMin(m.minute, spec);
-          const rim = polar(OUTER_R, ang);
-          const elbow = polar(ELBOW_R, ang);
+          const rim = polar(outerR, ang);
+          const elbow = polar(elbowR, ang);
           return (
             <g key={m.id} style={{ pointerEvents: 'none' }}>
               <line x1={rim.x} y1={rim.y} x2={elbow.x} y2={elbow.y} stroke="hsl(var(--text-muted))" strokeWidth={1.5} opacity={0.6} />
@@ -331,7 +342,7 @@ export function RimMemoLayer() {
         // Mobile: one small dot per memo, hugging the rim. Tap → view popup.
         visible.map((m) => {
           const ang = angleForMin(m.minute, spec);
-          const p = polar(DOT_R, ang);
+          const p = polar(dotR, ang);
           return (
             <button
               key={m.id}
@@ -373,6 +384,7 @@ export function RimMemoLayer() {
             key={m.id}
             memo={m}
             angleDeg={angleForMin(m.minute, spec)}
+            elbowR={elbowR}
             autoFocus={editingId === m.id}
             readOnly={!canEdit}
             deletable={canModify}

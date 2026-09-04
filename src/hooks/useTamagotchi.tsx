@@ -96,6 +96,28 @@ const HAPPY_RATE = 1 / 60000; // -1 / min
 const ENERGY_RECOVER = 2 / 1000; // +2 / s while sleeping
 const LOW_ENERGY = 20; // below this → auto-nap (+ ⚡); recharges to 100 → auto-wake
 
+/** How much one feeding restores. */
+const FEED_AMOUNT = 10;
+/**
+ * A pet at or above this refuses food. Hunger drains continuously, so it sits at
+ * exactly 100 for only one tick — without a band, a visibly FULL pet could still
+ * be fed over and over, and because feeding also counts as a play interaction
+ * that let the evolution counter be farmed by mashing the food button. At
+ * -2/min the gauge takes ~2.5 min to fall back under the band, so every feed
+ * that does go through restores a real amount.
+ */
+export const FULL_HUNGER = 100 - FEED_AMOUNT / 2;
+
+/**
+ * Whether a pet will accept food right now. Shared by the feed action and the
+ * feed button so the button can never offer a feeding the action would drop
+ * (a silent no-op reads as a broken button).
+ */
+export function canFeed(p: Pick<Pet, 'phase' | 'sleeping' | 'hunger'> | undefined): boolean {
+  if (!p) return false;
+  return p.phase !== 'egg' && p.phase !== 'dead' && !p.sleeping && p.hunger < FULL_HUNGER;
+}
+
 // ── Overfeed "bloat" (temporary size bump) ───────────────────────────────────
 const MAX_BLOAT = 0.3; // up to +30% size when very full
 const BLOAT_PER_FEED = 0.06; // each feeding puffs up a little…
@@ -475,7 +497,9 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
       return { ...s, pets, selectedId: s.selectedId === id ? (pets[0]?.id ?? null) : s.selectedId };
     }), []),
     // Feeding fills a modest +10 and counts as a play interaction too (evolution).
-    feed: useCallback((id) => mutate(id, (p) => (p.phase === 'egg' || p.phase === 'dead' || p.sleeping ? p : { ...p, hunger: clamp(p.hunger + 10), plays: (p.plays ?? 0) + 1, bloat: Math.min(MAX_BLOAT, (p.bloat ?? 0) + BLOAT_PER_FEED) })), [mutate]),
+    // A pet that is already full turns the food down: no hunger, no play credit
+    // and no bloat, so the evolution counter can't be farmed on a full stomach.
+    feed: useCallback((id) => mutate(id, (p) => (canFeed(p) ? { ...p, hunger: clamp(p.hunger + FEED_AMOUNT), plays: (p.plays ?? 0) + 1, bloat: Math.min(MAX_BLOAT, (p.bloat ?? 0) + BLOAT_PER_FEED) } : p)), [mutate]),
     // Playing also makes the pet dash off to the side for a moment (boostUntil +
     // a fresh random heading) — the "runs away happily" reaction.
     // -3 energy per play: 100 → the LOW_ENERGY(20) auto-nap after ~26 plays.

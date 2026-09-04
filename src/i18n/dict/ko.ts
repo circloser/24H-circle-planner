@@ -35,6 +35,7 @@ export const ko = {
   'tama.hatchIn': '부화까지 {t}',
   'tama.died': '별이 되었어요…',
   'tama.feed': '밥 주기 (+10 포만감)',
+  'tama.feedFull': '배가 불러요 — 조금 기다렸다 주세요',
   'tama.wake': '깨우기',
   'tama.sleep': '재우기 (에너지 회복)',
   'tama.release': '풀어주기',

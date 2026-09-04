@@ -29,6 +29,7 @@ export const zh: Record<TKey, string> = {
   'tama.hatchIn': '{t}后孵化',
   'tama.died': '变成星星了…',
   'tama.feed': '喂食（+10 饱食度）',
+  'tama.feedFull': '已经吃饱了 — 请稍后再喂',
   'tama.wake': '叫醒',
   'tama.sleep': '睡觉（恢复能量）',
   'tama.release': '放生',

@@ -41,10 +41,18 @@ export function setRingInnerR(innerR: number): void {
   RING.innerR = Math.max(60, Math.min(RING.outerR - MIN_BAND, Math.min(380, innerR)));
 }
 
+/** The outer radius the ring will actually use for a given preference value.
+ *  Exported so overlays that sit OUTSIDE the chart (rim memos and their leader
+ *  lines) can anchor to the same rim without reading the mutable singleton —
+ *  they re-render from the preference, which the singleton alone can't trigger. */
+export function clampRingOuterR(outerR: number): number {
+  return Math.max(RING_OUTER_MIN, Math.min(RING_OUTER_MAX, outerR));
+}
+
 /** Set the ring's outer radius (ring-size preference). If the band would
  *  collapse, the inner radius yields — the rim the user is dragging wins. */
 export function setRingOuterR(outerR: number): void {
-  RING.outerR = Math.max(RING_OUTER_MIN, Math.min(RING_OUTER_MAX, outerR));
+  RING.outerR = clampRingOuterR(outerR);
   if (RING.innerR > RING.outerR - MIN_BAND) RING.innerR = RING.outerR - MIN_BAND;
 }
 

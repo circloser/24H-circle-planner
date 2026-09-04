@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import {
   RING,
+  RING_OUTER_MIN,
+  RING_OUTER_MAX,
+  clampRingOuterR,
+  setRingOuterR,
   polarToCartesian,
   slicePath,
   boundaryHandlePosition,
@@ -217,5 +221,29 @@ describe('truncateLabel', () => {
     const exact = '가나다라마바사아자차카타';
     const result = truncateLabel(exact, 12);
     expect(result).toBe(exact);
+  });
+});
+
+describe('clampRingOuterR', () => {
+  // Overlays that live OUTSIDE the chart (rim memos and their leader lines)
+  // anchor themselves with this helper instead of reading the mutable RING
+  // singleton, which cannot trigger a React re-render. If the two ever
+  // disagreed, memos would float off the rim they are supposed to touch.
+  it('holds the outer radius inside the drawable bounds', () => {
+    expect(clampRingOuterR(RING_OUTER_MIN - 100)).toBe(RING_OUTER_MIN);
+    expect(clampRingOuterR(RING_OUTER_MAX + 100)).toBe(RING_OUTER_MAX);
+    expect(clampRingOuterR(430)).toBe(430);
+  });
+
+  it('agrees with the radius the ring actually adopts', () => {
+    const before = RING.outerR;
+    try {
+      for (const v of [RING_OUTER_MIN - 50, 400, 430, 460, 480, RING_OUTER_MAX + 50]) {
+        setRingOuterR(v);
+        expect(RING.outerR).toBe(clampRingOuterR(v));
+      }
+    } finally {
+      setRingOuterR(before);
+    }
   });
 });
