@@ -27,6 +27,7 @@ import {
   type Background,
   type WorldClock,
 } from '@/hooks/usePreferences';
+import { RING_OUTER_MIN, RING_OUTER_MAX } from '@/lib/svg-geometry';
 import { fileToBackgroundDataUrl } from '@/lib/image-bg';
 import { track } from '@/lib/track';
 import { useAuth } from '@/hooks/useAuth';
@@ -293,7 +294,25 @@ export function SettingsDialog({ section, onClose, onOpenMagician }: SettingsDia
           {(section === 'timeline' || section === 'alarms') && (
             <div className="flex flex-col gap-4">
               {section === 'timeline' && (<>
-              {/* Donut ring thickness — moves the inner radius (outer rim fixed).
+              {/* Ring size — the outer rim (ticks, hour labels and leaders follow it). */}
+              <div className="flex flex-col gap-2">
+                <span className="text-xs text-muted-foreground">{t('settings.ringSize')}</span>
+                <div className="flex items-center gap-3">
+                  <span className="w-10 shrink-0 text-[11px] text-muted-foreground">{t('settings.ringSmall')}</span>
+                  <input
+                    type="range"
+                    min={RING_OUTER_MIN}
+                    max={RING_OUTER_MAX}
+                    step={10}
+                    value={prefs.ringOuterR}
+                    onChange={(e) => setPreference('ringOuterR', Number(e.target.value))}
+                    className="flex-1 cursor-pointer accent-[hsl(var(--primary))]"
+                    aria-label={t('settings.ringSize')}
+                  />
+                  <span className="w-10 shrink-0 text-right text-[11px] text-muted-foreground">{t('settings.ringLarge')}</span>
+                </div>
+              </div>
+              {/* Donut ring thickness — moves the inner radius under the current rim.
                   Slider shows thickness (thicker → right); stored as innerR. */}
               <div className="flex flex-col gap-2">
                 <span className="text-xs text-muted-foreground">{t('settings.ringThickness')}</span>
@@ -301,11 +320,11 @@ export function SettingsDialog({ section, onClose, onOpenMagician }: SettingsDia
                   <span className="w-10 shrink-0 text-[11px] text-muted-foreground">{t('settings.ringThin')}</span>
                   <input
                     type="range"
-                    min={460 - RING_INNER_MAX}
-                    max={460 - RING_INNER_MIN}
+                    min={Math.max(40, prefs.ringOuterR - RING_INNER_MAX)}
+                    max={prefs.ringOuterR - RING_INNER_MIN}
                     step={10}
-                    value={460 - prefs.ringInnerR}
-                    onChange={(e) => setPreference('ringInnerR', 460 - Number(e.target.value))}
+                    value={prefs.ringOuterR - prefs.ringInnerR}
+                    onChange={(e) => setPreference('ringInnerR', prefs.ringOuterR - Number(e.target.value))}
                     className="flex-1 cursor-pointer accent-[hsl(var(--primary))]"
                     aria-label={t('settings.ringThickness')}
                   />

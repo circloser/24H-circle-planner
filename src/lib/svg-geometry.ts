@@ -9,11 +9,13 @@ import { angleForMin, FULL_SPEC, type ViewSpec } from '@/lib/chart-view';
 // G7 export mask radii must be kept in sync — see src/lib/export/pixelDiff.ts.
 
 /**
- * Ring geometry. `innerR` is the one mutable field — the user's "ring thickness"
- * preference writes it (via {@link setRingInnerR}) so the whole circle (render,
- * hit-testing, labels, export) reads one consistent value. outerR/cx/cy are
- * fixed. Kept as a shared singleton (rather than threaded through every call
- * site) precisely so rendering and pointer hit-testing can never disagree.
+ * Ring geometry. `innerR` and `outerR` are the two mutable fields — the user's
+ * "ring thickness" and "ring size" preferences write them (via
+ * {@link setRingInnerR} / {@link setRingOuterR}) so the whole circle (render,
+ * hit-testing, ticks, hour labels, leaders, export) reads one consistent pair.
+ * cx/cy are fixed. Kept as a shared singleton (rather than threaded through
+ * every call site) precisely so rendering and pointer hit-testing can never
+ * disagree.
  */
 export const RING: { innerR: number; outerR: number; cx: number; cy: number } = {
   innerR: 100,
@@ -24,10 +26,26 @@ export const RING: { innerR: number; outerR: number; cx: number; cy: number } = 
 
 export type RingGeom = typeof RING;
 
+/** Outer radius bounds. The viewBox is `-36 -36 1072 1072` (edges at ±536 from
+ *  centre) and the cardinal hour labels sit at outerR + 32 with a 30px face, so
+ *  480 is the most the rim can grow before "00"/"12" clip (verified: at 500 they
+ *  do); 400 keeps the chart from looking lost in its box. */
+export const RING_OUTER_MIN = 400;
+export const RING_OUTER_MAX = 480;
+/** Smallest band that still reads as a ring (inner is pushed down to keep it). */
+const MIN_BAND = 40;
+
 /** Set the ring's inner radius (ring-thickness preference). Clamped to keep a
- *  legible hub and a visible band. */
+ *  legible hub and a visible band under the current outer radius. */
 export function setRingInnerR(innerR: number): void {
-  RING.innerR = Math.max(60, Math.min(380, innerR));
+  RING.innerR = Math.max(60, Math.min(RING.outerR - MIN_BAND, Math.min(380, innerR)));
+}
+
+/** Set the ring's outer radius (ring-size preference). If the band would
+ *  collapse, the inner radius yields — the rim the user is dragging wins. */
+export function setRingOuterR(outerR: number): void {
+  RING.outerR = Math.max(RING_OUTER_MIN, Math.min(RING_OUTER_MAX, outerR));
+  if (RING.innerR > RING.outerR - MIN_BAND) RING.innerR = RING.outerR - MIN_BAND;
 }
 
 // ─── Polar / Cartesian ────────────────────────────────────────────────────────

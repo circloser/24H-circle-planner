@@ -6,6 +6,7 @@ import {
   FONT_SCALE_MIN, FONT_SCALE_MAX, FONT_SCALE_STEP, RING_INNER_MIN, RING_INNER_MAX,
 } from '@/hooks/usePreferences';
 import { useTranslation } from '@/hooks/usePreferences';
+import { RING_OUTER_MIN, RING_OUTER_MAX } from '@/lib/svg-geometry';
 import { makeDragStart, spawnNearCentre, marginSpawn, type Pos } from '@/components/ClockTools/clock-utils';
 import { useMemos } from '@/hooks/useMemos';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
@@ -242,14 +243,25 @@ export function DesignMagician({ open, onClose, onFinish }: DesignMagicianProps)
     {
       title: t('magician.stepRing'),
       body: (
-        <div className="flex items-center gap-2">
-          {/* Slider is inverted: smaller innerR = thicker band. */}
-          <span className="text-xs text-muted-foreground">{t('magician.thick')}</span>
-          <input type="range" min={460 - RING_INNER_MAX} max={460 - RING_INNER_MIN}
-            value={460 - prefs.ringInnerR}
-            onChange={(e) => setPreference('ringInnerR', 460 - Number(e.target.value))}
-            className="flex-1 cursor-pointer accent-[hsl(var(--primary))]" />
-          <span className="text-xs text-muted-foreground">{t('magician.thin')}</span>
+        <div className="flex flex-col gap-2">
+          {/* Outer rim: the whole circle grows/shrinks inside its box. */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">{t('settings.ringSmall')}</span>
+            <input type="range" min={RING_OUTER_MIN} max={RING_OUTER_MAX} step={10}
+              value={prefs.ringOuterR}
+              onChange={(e) => setPreference('ringOuterR', Number(e.target.value))}
+              className="flex-1 cursor-pointer accent-[hsl(var(--primary))]" aria-label={t('settings.ringSize')} />
+            <span className="text-xs text-muted-foreground">{t('settings.ringLarge')}</span>
+          </div>
+          {/* Band thickness under that rim. Slider is inverted: smaller innerR = thicker. */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">{t('magician.thick')}</span>
+            <input type="range" min={Math.max(40, prefs.ringOuterR - RING_INNER_MAX)} max={prefs.ringOuterR - RING_INNER_MIN}
+              value={prefs.ringOuterR - prefs.ringInnerR}
+              onChange={(e) => setPreference('ringInnerR', prefs.ringOuterR - Number(e.target.value))}
+              className="flex-1 cursor-pointer accent-[hsl(var(--primary))]" aria-label={t('settings.ringThickness')} />
+            <span className="text-xs text-muted-foreground">{t('magician.thin')}</span>
+          </div>
         </div>
       ),
     },
