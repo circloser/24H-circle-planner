@@ -883,6 +883,7 @@ export function CircleTimeline({
           dominantBaseline="central"
           fontSize={titleFontSize}
           fontWeight={600}
+          data-hub-title="true"
           fill="hsl(var(--foreground) / 0.9)"
           fontFamily="inherit"
           style={{ pointerEvents: 'none' }}

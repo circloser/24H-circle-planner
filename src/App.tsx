@@ -55,6 +55,7 @@ import { useShareActions } from '@/hooks/useShareActions';
 import { useCompletionCelebration } from '@/hooks/useCompletionCelebration';
 import { usePipWidget } from '@/components/PipWidget/PipWidget';
 import { WidgetConnectDialog } from '@/components/WidgetConnect/WidgetConnectDialog';
+import { useWidgetPublisher } from '@/hooks/useWidgetPublisher';
 import { isPlayStoreApp } from '@/lib/twa';
 import { useSyncStatus } from '@/hooks/useSync';
 import { useAuth } from '@/hooks/useAuth';
@@ -417,6 +418,8 @@ function App() {
   const pip = usePipWidget();
   // Android home-screen widget hookup — only offered inside the Play Store TWA.
   const [widgetConnectOpen, setWidgetConnectOpen] = useState(false);
+  // …and once linked, keeps the widget's image in step with every edit.
+  useWidgetPublisher(svgRef);
 
   // E2EE: when the cloud copy is ciphertext this device can't read, sync reports
   // 'locked' — surface the unlock dialog automatically so the user isn't stuck.

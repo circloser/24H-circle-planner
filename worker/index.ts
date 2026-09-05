@@ -10,6 +10,7 @@
 import { sendWebPush } from '../src/lib/webpush';
 import { legacyRedirectTarget } from './legacy-redirects';
 import { handleShareCreate, handleShareGet, handleShareOg, handleShareView } from './shares';
+import { handleWidgetPut, handleWidgetPng, handleWidgetDelete } from './widget';
 
 export interface Env {
   /** Static assets binding (the built SPA in ./dist). */
@@ -1175,6 +1176,15 @@ export default {
         const share = /^\/api\/share\/([A-Za-z0-9]{4,24})(\/og\.png)?$/.exec(p);
         if (share && m === 'GET') {
           return share[2] ? handleShareOg(env, share[1]) : handleShareGet(env, share[1]);
+        }
+      }
+      // Android home-screen widget image slot (see worker/widget.ts).
+      {
+        const widget = /^\/api\/widget\/([A-Za-z0-9]{16,32})(\/png)?$/.exec(p);
+        if (widget) {
+          if (widget[2] && m === 'GET') return handleWidgetPng(request, env, widget[1]);
+          if (!widget[2] && m === 'PUT') return handleWidgetPut(request, env, widget[1]);
+          if (!widget[2] && m === 'DELETE') return handleWidgetDelete(env, widget[1]);
         }
       }
       return json({ error: 'not_found' }, 404);

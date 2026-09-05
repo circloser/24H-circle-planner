@@ -31,6 +31,30 @@ export async function buildSquarePngBase64(svg: SVGSVGElement): Promise<string |
 }
 
 /**
+ * Transparent 1080px render for the Android home-screen widget: no page
+ * background (the launcher wallpaper shows through), a frosted disc under the
+ * ring so the hour numbers stay legible on any wallpaper, no wordmark (it is
+ * the user's own phone, inside our own app), and no hub title — the widget
+ * paints a live clock into the hub natively. `haloR` is the disc radius in SVG
+ * units (the chart's outer radius + enough to cover the hour labels).
+ */
+export async function buildWidgetPngBase64(svg: SVGSVGElement, haloR: number): Promise<string | null> {
+  try {
+    const blob = await exportPng(svg, {
+      size: 1080,
+      transparent: true,
+      watermark: false,
+      stripSelectors: ['[data-hub-title]'],
+      haloDisc: { cx: 500, cy: 500, r: haloR, opacity: 0.62 },
+    });
+    const b64 = await blobToBase64(blob);
+    return b64.length > MAX_B64 ? null : b64;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Compose the 1200x630 link-unfurl card for a server-stored share: the current
  * theme's background colour with the ring (watermark included) centered on it.
  * Returns plain base64 (not a data URL) for the POST /api/share body, or null

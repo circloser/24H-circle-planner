@@ -9,8 +9,19 @@ export interface PngExportOptions {
    *  used by the share flow to make the image directly actionable. */
   qrUrl?: string;
   /** Stamp the 24houring.com wordmark (default true). Only the Pro export
-   *  toggle may pass false — the free tier always carries the mark. */
+   *  toggle may pass false — the free tier always carries the mark. The
+   *  home-screen widget also passes false: it renders on the user's own phone,
+   *  inside our own app, where a wordmark is noise rather than reach. */
   watermark?: boolean;
+  /** Elements to drop from the export clone (CSS selectors) on top of the
+   *  standard `[data-export-exclude]` strip — e.g. the hub title, when a native
+   *  overlay is going to own that space. */
+  stripSelectors?: string[];
+  /** A soft disc painted BEHIND everything (SVG user units). Transparent
+   *  renders that land on an arbitrary wallpaper use it so the hour numbers
+   *  outside the rim stay legible: the disc carries the theme's background at a
+   *  partial opacity, reading as a frosted-glass puck under the ring. */
+  haloDisc?: { cx: number; cy: number; r: number; opacity: number };
 }
 
 /**
@@ -25,7 +36,7 @@ export async function exportPng(
   sourceSvg: SVGSVGElement,
   opts: PngExportOptions,
 ): Promise<Blob> {
-  const { size, transparent, qrUrl, watermark = true } = opts;
+  const { size, transparent, qrUrl, watermark = true, stripSelectors = [], haloDisc } = opts;
 
   // 1. Deep-clone the SVG
   const clone = sourceSvg.cloneNode(true) as SVGSVGElement;
@@ -38,6 +49,21 @@ export async function exportPng(
   // 1b. Strip any elements tagged data-export-exclude (e.g. now-indicator line)
   for (const el of Array.from(clone.querySelectorAll('[data-export-exclude]'))) {
     el.remove();
+  }
+  for (const sel of stripSelectors) {
+    for (const el of Array.from(clone.querySelectorAll(sel))) el.remove();
+  }
+
+  // 1c. Optional frosted disc under the whole ring (see PngExportOptions).
+  // Inserted as the first child so every slice, tick and label paints over it.
+  if (haloDisc) {
+    const disc = clone.ownerDocument.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    disc.setAttribute('cx', String(haloDisc.cx));
+    disc.setAttribute('cy', String(haloDisc.cy));
+    disc.setAttribute('r', String(haloDisc.r));
+    disc.setAttribute('fill', getComputedStyle(document.body).backgroundColor || '#ffffff');
+    disc.setAttribute('fill-opacity', String(haloDisc.opacity));
+    clone.insertBefore(disc, clone.firstChild);
   }
 
   // 2. Resolve the live font preferences. The standalone SVG is rasterized via
