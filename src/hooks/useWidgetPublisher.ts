@@ -5,6 +5,7 @@ import { useStoreSelector } from '@/hooks/useScheduleStore';
 import { viewSpec } from '@/lib/chart-view';
 import {
   WIDGET_TOKEN_EVENT,
+  adoptWidgetTokenFromUrl,
   isDarkTheme,
   publishWidget,
   readWidgetToken,
@@ -95,6 +96,9 @@ export function useWidgetPublisher(svgRef: RefObject<SVGSVGElement | null>): voi
       if (readWidgetToken()) schedule();
     };
 
+    // Auto-link: a freshly placed widget hands its token over in the launch
+    // URL (?w=…). Adopt it (and strip it) before the first publish decision.
+    adoptWidgetTokenFromUrl(window.location, true);
     schedule();
     document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener(WIDGET_TOKEN_EVENT, onToken);

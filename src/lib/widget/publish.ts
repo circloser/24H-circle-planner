@@ -65,6 +65,47 @@ export function ensureWidgetToken(): string {
   return t;
 }
 
+/**
+ * Auto-link: the Android widget mints a slot token the moment it is placed and
+ * the app's launcher passes it in the launch URL (`?w=<token>`) until the
+ * widget has seen an image in that slot. Adopt it here — replacing any older
+ * token this phone had (its slot is dropped, best effort) — and scrub the
+ * parameter from the address so it is never bookmarked, shared or replayed.
+ * Returns the adopted token, or null when the URL carried none. Only honoured
+ * inside the Play Store app: on the open web the parameter is just stripped.
+ */
+export function adoptWidgetTokenFromUrl(
+  loc: { search: string; pathname: string; hash: string } = window.location,
+  inTwa = true,
+): string | null {
+  let params: URLSearchParams;
+  try {
+    params = new URLSearchParams(loc.search);
+  } catch {
+    return null;
+  }
+  const w = params.get('w');
+  if (w === null) return null;
+  params.delete('w');
+  const rest = params.toString();
+  try {
+    history.replaceState(history.state, '', `${loc.pathname}${rest ? `?${rest}` : ''}${loc.hash}`);
+  } catch {
+    /* history unavailable */
+  }
+  if (!inTwa || !/^[A-Za-z0-9]{16,32}$/.test(w)) return null;
+  const previous = readWidgetToken();
+  if (previous === w) return w;
+  if (previous) void deleteWidgetSlot(previous);
+  try {
+    localStorage.setItem(WIDGET_TOKEN_KEY, w);
+  } catch {
+    /* storage unavailable */
+  }
+  window.dispatchEvent(new Event(WIDGET_TOKEN_EVENT));
+  return w;
+}
+
 export function clearWidgetToken(): void {
   try {
     localStorage.removeItem(WIDGET_TOKEN_KEY);

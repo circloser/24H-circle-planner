@@ -18,10 +18,16 @@ export async function run() {
   const deletes = [];
   try {
     // Look like the TWA + already linked (token present) before the app boots.
+    // Init scripts re-run in every same-origin about:blank iframe the app
+    // creates, so the seed must be one-shot (a sessionStorage guard): a re-run
+    // after step 6's auto-link would otherwise silently put the old token back.
     await page.context().addInitScript((token) => {
       try {
         sessionStorage.setItem('24h-twa', '1');
-        localStorage.setItem('24h-circle-planner.widget-token', token);
+        if (!sessionStorage.getItem('e2e-widget-seeded')) {
+          localStorage.setItem('24h-circle-planner.widget-token', token);
+          sessionStorage.setItem('e2e-widget-seeded', '1');
+        }
       } catch { /* */ }
     }, TOKEN);
     await page.route('**/api/widget/**', async (route) => {
@@ -106,6 +112,19 @@ export async function run() {
     });
     await wait(4000);
     pass('no publish after unlink', puts.length === quiet, `${quiet} → ${puts.length}`);
+
+    // 6. Auto-link: the Android launcher opens the app at /?w=<token> for a
+    //    freshly placed widget. The app must adopt it, scrub the URL and publish
+    //    to THAT slot without any menu interaction.
+    const NATIVE = 'nativeMintedToken0123456';
+    const beforeAuto = puts.length;
+    await page.goto(`${base}/?w=${NATIVE}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
+    await wait(4500);
+    pass('launch URL token is adopted', (await page.evaluate(() => localStorage.getItem('24h-circle-planner.widget-token'))) === NATIVE);
+    pass('launch URL is scrubbed', (await page.evaluate(() => location.search)) === '', await page.evaluate(() => location.href));
+    const auto = puts.slice(beforeAuto);
+    pass('publishes to the launcher token with no user action', auto.length >= 1 && auto[auto.length - 1].url.endsWith(`/api/widget/${NATIVE}`), auto.map((p) => p.url).join(','));
 
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
   } finally {

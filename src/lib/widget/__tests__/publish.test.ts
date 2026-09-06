@@ -1,7 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   WIDGET_PNG_SIZE,
   WIDGET_TOKEN_KEY,
+  WIDGET_TOKEN_EVENT,
+  adoptWidgetTokenFromUrl,
   clearWidgetToken,
   ensureWidgetToken,
   newWidgetToken,
@@ -33,6 +35,59 @@ describe('widget token', () => {
   it('ignores a corrupt stored value', () => {
     localStorage.setItem(WIDGET_TOKEN_KEY, 'not a token!');
     expect(readWidgetToken()).toBeNull();
+  });
+});
+
+describe('adoptWidgetTokenFromUrl (auto-link from the launcher)', () => {
+  const TOKEN = 'nativeMintedToken0123456';
+  beforeEach(() => {
+    localStorage.clear();
+    history.replaceState(null, '', '/');
+  });
+
+  it('adopts the launcher token, strips ?w= and announces the change', () => {
+    const fired = vi.fn();
+    window.addEventListener(WIDGET_TOKEN_EVENT, fired);
+    const got = adoptWidgetTokenFromUrl({ search: `?w=${TOKEN}`, pathname: '/', hash: '' }, true);
+    window.removeEventListener(WIDGET_TOKEN_EVENT, fired);
+    expect(got).toBe(TOKEN);
+    expect(readWidgetToken()).toBe(TOKEN);
+    expect(fired).toHaveBeenCalledTimes(1);
+    expect(location.search).toBe('');
+  });
+
+  it('keeps other query parameters and the hash while scrubbing w', () => {
+    adoptWidgetTokenFromUrl({ search: `?lang=ko&w=${TOKEN}`, pathname: '/', hash: '#coupons' }, true);
+    expect(location.search).toBe('?lang=ko');
+    expect(location.hash).toBe('#coupons');
+  });
+
+  it('is a no-op without the parameter', () => {
+    expect(adoptWidgetTokenFromUrl({ search: '?lang=ko', pathname: '/', hash: '' }, true)).toBeNull();
+    expect(readWidgetToken()).toBeNull();
+  });
+
+  it('replaces an older token (the phone was re-set-up) without re-announcing an identical one', () => {
+    localStorage.setItem(WIDGET_TOKEN_KEY, 'olderToken00000000000000');
+    expect(adoptWidgetTokenFromUrl({ search: `?w=${TOKEN}`, pathname: '/', hash: '' }, true)).toBe(TOKEN);
+    expect(readWidgetToken()).toBe(TOKEN);
+    const fired = vi.fn();
+    window.addEventListener(WIDGET_TOKEN_EVENT, fired);
+    expect(adoptWidgetTokenFromUrl({ search: `?w=${TOKEN}`, pathname: '/', hash: '' }, true)).toBe(TOKEN);
+    window.removeEventListener(WIDGET_TOKEN_EVENT, fired);
+    expect(fired).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed tokens but still scrubs the parameter', () => {
+    expect(adoptWidgetTokenFromUrl({ search: '?w=nope', pathname: '/', hash: '' }, true)).toBeNull();
+    expect(readWidgetToken()).toBeNull();
+    expect(location.search).toBe('');
+  });
+
+  it('never adopts on the open web (outside the Play Store app)', () => {
+    expect(adoptWidgetTokenFromUrl({ search: `?w=${TOKEN}`, pathname: '/', hash: '' }, false)).toBeNull();
+    expect(readWidgetToken()).toBeNull();
+    expect(location.search).toBe('');
   });
 });
 
