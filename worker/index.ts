@@ -1101,7 +1101,7 @@ async function handleNews(request: Request, env: Env, ctx?: Waiter): Promise<Res
     return [];
   };
   const lists = await Promise.all(terms.slice(0, 3).map(fetchTerm));
-  let items: NewsItem[] = [];
+  const items: NewsItem[] = [];
   const seenTitles = new Set<string>();
   for (let i = 0; items.length < 10; i++) {
     let any = false;

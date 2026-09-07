@@ -57,7 +57,7 @@ export function TamagotchiDevice({
   isMobile?: boolean;
   variant?: 'popup' | 'section';
 }) {
-  const { pets, hygiene, selectedId, on, toggle, closeMenu, select, addEgg, release, feed, toggleSleep, rename } = useTamagotchi();
+  const { pets, hygiene, selectedId, on, toggle, closeMenu, select, addEgg, release, feed, toggleSleep, rename, now } = useTamagotchi();
   const { t } = useTranslation();
 
   const pet: Pet | undefined = pets.find((p) => p.id === selectedId) ?? pets[0];
@@ -162,7 +162,7 @@ export function TamagotchiDevice({
         ) : pet.phase === 'egg' ? (
           <div style={{ textAlign: 'center' }}>
             <PetArt species={pet.species} phase="egg" size={54} />
-            <div style={{ fontSize: 11, fontWeight: 700, marginTop: 2 }}>{t('tama.hatchIn', { t: formatHatch(pet.hatchAt - Date.now(), t) })}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, marginTop: 2 }}>{t('tama.hatchIn', { t: formatHatch(pet.hatchAt - now, t) })}</div>
           </div>
         ) : pet.phase === 'dead' ? (
           <div style={{ textAlign: 'center', fontSize: 12 }}>

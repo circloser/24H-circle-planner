@@ -19,7 +19,7 @@ function stateGlyph(p: Pet, hygiene: number): string | null {
 }
 
 export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
-  const { select, play, notePlay, moveTo, setDragging, toggleSleep, menuOpen, hygiene } = useTamagotchi();
+  const { select, play, notePlay, moveTo, setDragging, toggleSleep, menuOpen, hygiene, now } = useTamagotchi();
   const { t } = useTranslation();
   const [dragPos, setDragPos] = useState<{ x: number; y: number } | null>(null);
   const [reacting, setReacting] = useState(false); // brief happy wiggle after a play
@@ -35,7 +35,7 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
   const y = dragPos?.y ?? pet.y;
   const dragging = dragPos != null;
   const glyph = reacting ? '😄' : stateGlyph(pet, hygiene); // happy face while being played with
-  const remaining = pet.phase === 'egg' ? pet.hatchAt - Date.now() : 0;
+  const remaining = pet.phase === 'egg' ? pet.hatchAt - now : 0;
 
   // Adults face the way they walk (mirror by horizontal heading) and lean
   // forward for a dynamic, diagonal look. Younger forms stay upright/front-on.

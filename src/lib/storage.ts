@@ -86,6 +86,11 @@ export function saveScheduleDebounced(schedule: Schedule): void {
   _debounceTimer = setTimeout(() => {
     _debounceTimer = null;
     const envelope: ScheduleEnvelope = { version: 1, schedule };
-    localStorage.setItem(STORAGE_KEY_SCHEDULE, JSON.stringify(envelope));
+    try {
+      localStorage.setItem(STORAGE_KEY_SCHEDULE, JSON.stringify(envelope));
+    } catch {
+      // Quota or browser restrictions must not throw from the delayed callback.
+      // The in-memory schedule remains usable; the next edit retries persistence.
+    }
   }, 500);
 }

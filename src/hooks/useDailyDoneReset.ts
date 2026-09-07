@@ -25,7 +25,7 @@ export function useDailyDoneReset(): void {
   const dispatch = useStoreDispatch();
 
   const ref = useRef({ diaryDate, slices });
-  ref.current = { diaryDate, slices };
+  useEffect(() => { ref.current = { diaryDate, slices }; }, [diaryDate, slices]);
 
   useEffect(() => {
     const id = setTimeout(() => {

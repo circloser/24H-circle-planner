@@ -28,15 +28,21 @@ import { toast } from 'sonner';
  * external-protocol launches without one). After that, useWidgetPublisher
  * keeps the slot fresh on every edit — no reconnecting needed.
  */
-export function WidgetConnectDialog({
-  open,
-  onOpenChange,
-  svgRef,
-}: {
+type WidgetConnectDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   svgRef: React.RefObject<SVGSVGElement | null>;
-}) {
+};
+
+export function WidgetConnectDialog(props: WidgetConnectDialogProps) {
+  return props.open ? <WidgetConnectSession {...props} /> : null;
+}
+
+function WidgetConnectSession({
+  open,
+  onOpenChange,
+  svgRef,
+}: WidgetConnectDialogProps) {
   const { t } = useTranslation();
   const view = useChartView();
   const nowLine = useNowLineStyle();
@@ -49,8 +55,6 @@ export function WidgetConnectDialog({
   useEffect(() => {
     if (!open) return;
     const run = ++runRef.current;
-    setStatus('preparing');
-    setLinked(!!readWidgetToken());
     void (async () => {
       const token = ensureWidgetToken();
       const svg = svgRef.current;
@@ -58,6 +62,7 @@ export function WidgetConnectDialog({
       if (runRef.current !== run) return; // dialog re-opened meanwhile
       setStatus(ok ? 'ready' : 'error');
     })();
+    return () => { runRef.current = run + 1; };
     // Re-render the snapshot each time the dialog opens (not on every edit —
     // the publisher hook handles edits).
     // eslint-disable-next-line react-hooks/exhaustive-deps

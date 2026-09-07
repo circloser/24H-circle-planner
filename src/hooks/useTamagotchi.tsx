@@ -271,6 +271,7 @@ function load(): Stored {
 }
 
 interface TamagotchiApi {
+  now: number;
   on: boolean;
   /** Whether the control console popup is open (transient UI, not persisted). */
   menuOpen: boolean;
@@ -305,11 +306,12 @@ const Ctx = createContext<TamagotchiApi | null>(null);
 
 export function TamagotchiProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<Stored>(load);
+  const [now, setNow] = useState(Date.now);
   // Console popup visibility — transient UI, deliberately NOT persisted so the
   // menu never reopens itself on reload; the roaming pets (state.on) do persist.
   const [menuOpen, setMenuOpen] = useState(false);
   const stateRef = useRef(state);
-  stateRef.current = state;
+  useEffect(() => { stateRef.current = state; }, [state]);
   // Skip the wander step on the tick right after a user drag so it doesn't fight.
   const draggingRef = useRef<Set<string>>(new Set());
   // null = roam the full browser window (desktop). Otherwise a small {w,h} box
@@ -395,6 +397,7 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
     const canMove = (p: Pet) => p.phase !== 'egg' && p.phase !== 'dead' && !p.sleeping && !draggingRef.current.has(p.id);
     const timer = setInterval(() => {
       const now = Date.now();
+      setNow(now);
       // Movement pauses entirely while the tab is hidden — no drifting or big
       // straight-line "catch-up" jump when you come back. Stats still advance.
       const moving = typeof document === 'undefined' || !document.hidden;
@@ -474,6 +477,7 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const api: TamagotchiApi = {
+    now,
     on: state.on,
     menuOpen,
     pets: state.pets,

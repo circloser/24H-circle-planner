@@ -255,7 +255,11 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         setMeta({ version: r.version, baseFp: dataFingerprint(merged), modifiedAt });
         saveBase(merged);
         setLastSyncedAt(r.updatedAt);
-        surface(before, merged, false); // may reload to re-hydrate stores with the union
+        // Edits made while the upload was in flight are newer than this union.
+        // Keep the uploaded snapshot as the cloud base so those edits stay dirty.
+        const latest = collectSyncData();
+        const { merged: target } = mergeSyncData(before, latest, merged, false);
+        surface(latest, target, false); // may reload to re-hydrate stores with the union
       } else if (r.kind === 'conflict') {
         reconcile(r.envelope, r.version); // server advanced again → re-merge and retry
       } else if (r.kind === 'locked') {

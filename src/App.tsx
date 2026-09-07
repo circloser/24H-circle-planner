@@ -242,7 +242,7 @@ function App() {
   // On opening the app on a weekday that has an assigned default schedule, ask
   // once (per local day) whether to load it. Skipped when arriving via a share
   // link. Reads the slot up front so the prompt has its name.
-  const [weekdaySlot, setWeekdaySlot] = useState<Slot | null>(() => {
+  const [weekdaySlot] = useState<Slot | null>(() => {
     try {
       if (readSharedFromHash()) return null;
       if (localStorage.getItem(STORAGE_KEY_WEEKDAY_PROMPTED) === dateKey()) return null;
@@ -476,15 +476,14 @@ function App() {
     // never appeared. A short delay lets the Toaster mount first.
     const day = weekdayName(new Date().getDay(), lang);
     const toastId = window.setTimeout(() => toast.success(t('weekday.autoLoaded', { day })), 600);
-    setWeekdaySlot(null);
     try { localStorage.setItem(STORAGE_KEY_WEEKDAY_PROMPTED, dateKey()); } catch { /* ignore */ }
     return () => window.clearTimeout(toastId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const diaryDateRef = useRef(diaryDate);
-  diaryDateRef.current = diaryDate;
+  useEffect(() => { diaryDateRef.current = diaryDate; }, [diaryDate]);
   const langRef = useRef(lang);
-  langRef.current = lang;
+  useEffect(() => { langRef.current = lang; }, [lang]);
   useEffect(() => {
     let lastDay = dateKey();
     const id = window.setInterval(() => {

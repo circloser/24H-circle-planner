@@ -79,7 +79,12 @@ export async function pullRemote(): Promise<PullResult> {
 
 export async function pushRemote(envelope: SyncEnvelope, baseVersion: number, deviceLabel: string): Promise<PushResult> {
   if (offline()) return { kind: 'offline' };
-  const blob = await toWireBlob(envelope);
+  let blob: string | null;
+  try {
+    blob = await toWireBlob(envelope);
+  } catch {
+    return { kind: 'error' }; // serialization / encryption failed before transport
+  }
   if (blob === null) return { kind: 'locked' }; // shouldn't happen — engine pauses when locked
   let res: Response;
   try {

@@ -63,7 +63,11 @@ const readLs = (k: string) => { try { return localStorage.getItem(k); } catch { 
  * storage, marks the step done (✓) the moment the action happens, and advances
  * automatically. Steps can also be skipped with Next.
  */
-export function TutorialOverlay({ open, onClose, onFinish }: TutorialOverlayProps) {
+export function TutorialOverlay(props: TutorialOverlayProps) {
+  return props.open ? <TutorialSession {...props} /> : null;
+}
+
+function TutorialSession({ open, onClose, onFinish }: TutorialOverlayProps) {
   const { t } = useTranslation();
   const chartView = useChartView();
   const slices = useStoreSelector((s) => s.history.present.slices);
@@ -82,8 +86,6 @@ export function TutorialOverlay({ open, onClose, onFinish }: TutorialOverlayProp
   ];
   const last = step === steps.length - 1;
 
-  useEffect(() => { if (open) setStep(0); }, [open]);
-
   // Capture a baseline when a step becomes active — completion is "something
   // relevant changed since this snapshot".
   useEffect(() => {
@@ -94,7 +96,6 @@ export function TutorialOverlay({ open, onClose, onFinish }: TutorialOverlayProp
       diary: readLs(DIARY_KEY),
       view: chartView,
     };
-    setDone(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, step]);
 
@@ -144,7 +145,10 @@ export function TutorialOverlay({ open, onClose, onFinish }: TutorialOverlayProp
 
   if (!open) return null;
 
-  const go = (d: number) => setStep((s) => Math.min(steps.length - 1, Math.max(0, s + d)));
+  const go = (d: number) => {
+    setDone(false);
+    setStep((s) => Math.min(steps.length - 1, Math.max(0, s + d)));
+  };
 
   // The card stays put. It used to re-anchor under (or over) every target, so
   // the eye chased it around the screen for six steps — testers called that

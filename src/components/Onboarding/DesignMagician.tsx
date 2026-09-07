@@ -44,7 +44,11 @@ interface DesignMagicianProps {
  * change is always visible; each step also nudges the panel to a fresh spot.
  * Reachable on first visit and from the top of the Design settings.
  */
-export function DesignMagician({ open, onClose, onFinish }: DesignMagicianProps) {
+export function DesignMagician(props: DesignMagicianProps) {
+  return props.open ? <DesignMagicianSession {...props} /> : null;
+}
+
+function DesignMagicianSession({ open, onClose, onFinish }: DesignMagicianProps) {
   const { prefs, setPreference } = usePreferences();
   const { theme, setTheme } = useTheme();
   const { t, lang } = useTranslation();
@@ -83,8 +87,6 @@ export function DesignMagician({ open, onClose, onFinish }: DesignMagicianProps)
   // right margin already clears the chart. It stays draggable.
   const home = () => spawnNearCentre(300, -140, 300, 300);
   const [pos, setPos] = useState<Pos>(home);
-  // Restart at the first step whenever it (re)opens.
-  useEffect(() => { if (open) { setStep(0); setPos(home()); } }, [open]);
 
   // The resting place assumes a ~300px panel, but a step's content decides
   // the real height (the font list is much taller). After each step renders,
@@ -107,7 +109,6 @@ export function DesignMagician({ open, onClose, onFinish }: DesignMagicianProps)
     fit();
     window.addEventListener('resize', fit);
     return () => window.removeEventListener('resize', fit);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
   }, [open, step]);
 
   if (!open) return null;

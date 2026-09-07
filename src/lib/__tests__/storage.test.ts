@@ -179,4 +179,24 @@ describe('saveScheduleDebounced', () => {
     const parsed = JSON.parse(value) as { version: number };
     expect(parsed.version).toBe(1);
   });
+
+  it.each(['QuotaExceededError', 'SecurityError'])(
+    'preserves saved data on %s and allows the next save to recover',
+    (errorName) => {
+      const original = makeSchedule({ id: 'original' });
+      saveScheduleDebounced(original);
+      vi.advanceTimersByTime(500);
+
+      storageMock.setItem.mockImplementationOnce(() => {
+        throw new DOMException('Storage unavailable', errorName);
+      });
+      saveScheduleDebounced(makeSchedule({ id: 'failed' }));
+      expect(() => vi.advanceTimersByTime(500)).not.toThrow();
+      expect(loadSchedule()?.id).toBe('original');
+
+      saveScheduleDebounced(makeSchedule({ id: 'recovered' }));
+      vi.advanceTimersByTime(500);
+      expect(loadSchedule()?.id).toBe('recovered');
+    },
+  );
 });

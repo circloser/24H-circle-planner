@@ -41,7 +41,9 @@ export function useWidgetPublisher(svgRef: RefObject<SVGSVGElement | null>): voi
   const againRef = useRef(false);
   // Latest inputs, read at publish time (the effect below only schedules).
   const latestRef = useRef({ view, handColor: nowLine.color, lang: prefs.language });
-  latestRef.current = { view, handColor: nowLine.color, lang: prefs.language };
+  useEffect(() => {
+    latestRef.current = { view, handColor: nowLine.color, lang: prefs.language };
+  }, [view, nowLine.color, prefs.language]);
 
   useEffect(() => {
     if (!isPlayStoreApp()) return;
@@ -109,6 +111,5 @@ export function useWidgetPublisher(svgRef: RefObject<SVGSVGElement | null>): voi
     };
     // `present`/`prefs`/`view`/`nowLine.color` are the change signals; their
     // values are read from latestRef / the DOM at publish time.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [present, prefs, view, nowLine.color, diaryDate, svgRef]);
 }

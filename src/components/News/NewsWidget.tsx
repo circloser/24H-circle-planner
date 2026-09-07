@@ -85,25 +85,40 @@ function NewsCard({ win, inline, canAdd, onChange, onAdd, onRemove }: {
   const renderPos = loadPosProfile(`news.${win.id}`) ?? clampOffset(win.pos, CARD_W, 300);
   const [showSettings, setShowSettings] = useState(() => !win.q.trim());
   const [draft, setDraft] = useState({ q: win.q, country: win.country, intervalH: win.intervalH });
-  const [items, setItems] = useState<NewsItem[]>(() => {
-    try { const raw = localStorage.getItem(cacheKey(win.id)); if (raw) return (JSON.parse(raw) as CacheEntry).items ?? []; } catch { /* */ }
-    return [];
+  const [cached] = useState<CacheEntry | null>(() => {
+    try {
+      const raw = localStorage.getItem(cacheKey(win.id));
+      if (raw) {
+        const entry = JSON.parse(raw) as CacheEntry;
+        if (entry.q === win.q && entry.country === win.country && Array.isArray(entry.items)) return entry;
+      }
+    } catch { /* */ }
+    return null;
   });
-  const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [needsFetch] = useState(() => !!win.q.trim() && (!cached || (win.intervalH > 0 && Date.now() - cached.fetchedAt >= win.intervalH * 3600_000)));
+  const [items, setItems] = useState<NewsItem[]>(cached?.items ?? []);
+  const [status, setStatus] = useState<'idle' | 'loading' | 'error'>(needsFetch ? 'loading' : 'idle');
   const fetchedAt = useRef(0);
+  const active = useRef(true);
+  const requestId = useRef(0);
+
+  useEffect(() => {
+    active.current = true;
+    return () => { active.current = false; };
+  }, []);
 
   const countryName = useCallback((code: string) => {
     if (code === 'WW') return t('news.worldwide');
     try { return new Intl.DisplayNames([lang], { type: 'region' }).of(code) || code; } catch { return code; }
   }, [lang, t]);
 
-  const fetchNews = useCallback(async (q: string, country: string) => {
+  const fetchNews = useCallback((q: string, country: string) => {
     const kw = q.trim();
-    if (!kw) { setItems([]); return; }
-    setStatus('loading');
-    try {
-      const res = await fetch(`/api/news?q=${encodeURIComponent(kw)}&country=${country}`);
+    if (!kw) return;
+    const request = ++requestId.current;
+    return fetch(`/api/news?q=${encodeURIComponent(kw)}&country=${country}`).then(async (res) => {
       const j = await res.json();
+      if (!active.current || request !== requestId.current) return;
       const next: NewsItem[] = Array.isArray(j.items) ? j.items : [];
       if (next.length) {
         setItems(next);
@@ -112,20 +127,15 @@ function NewsCard({ win, inline, canAdd, onChange, onAdd, onRemove }: {
         try { localStorage.setItem(cacheKey(win.id), JSON.stringify({ q: kw, country, items: next, fetchedAt: fetchedAt.current })); } catch { /* */ }
       } else if (res.ok) { setItems([]); setStatus('idle'); }
       else { setItems([]); setStatus('error'); }
-    } catch { setStatus('error'); }
+    }).catch(() => {
+      if (active.current && request === requestId.current) setStatus('error');
+    });
   }, [win.id]);
 
-  // Fetch when config changes or the cache is older than the interval.
+  // Cards remount for a new query/config; state starts from that query's cache.
   useEffect(() => {
-    if (!win.q.trim()) return;
-    let cached: CacheEntry | null = null;
-    try { const raw = localStorage.getItem(cacheKey(win.id)); if (raw) cached = JSON.parse(raw) as CacheEntry; } catch { /* */ }
-    const changed = !cached || cached.q !== win.q || cached.country !== win.country;
-    const aged = win.intervalH > 0 && (!cached || Date.now() - cached.fetchedAt >= win.intervalH * 3600_000);
-    if (changed || aged) void fetchNews(win.q, win.country);
-    else if (cached) { setItems(cached.items); fetchedAt.current = cached.fetchedAt; }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [win.q, win.country, win.intervalH]);
+    if (needsFetch) void fetchNews(win.q, win.country);
+  }, [needsFetch, fetchNews, win.q, win.country]);
 
   function applySearch(e: React.FormEvent) {
     e.preventDefault();
@@ -145,7 +155,7 @@ function NewsCard({ win, inline, canAdd, onChange, onAdd, onRemove }: {
         <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">{win.q.trim() || t('news.title')}</span>
         {win.q.trim() && (
           <button type="button" data-no-drag aria-label={t('news.refresh')} title={t('news.refresh')}
-            onClick={() => void fetchNews(win.q, win.country)} style={hoverCtrl}
+            onClick={() => { setStatus('loading'); void fetchNews(win.q, win.country); }} style={hoverCtrl}
             className="grid h-6 w-6 shrink-0 place-items-center rounded transition-colors hover:bg-black/10">
             <RefreshCw className={`h-3.5 w-3.5 text-muted-foreground ${status === 'loading' ? 'animate-spin' : ''}`} />
           </button>
@@ -282,7 +292,16 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
   const { t } = useTranslation();
   const { prefs, setPreference } = usePreferences();
   const open = prefs.newsOpen;
-  const [windows, setWindows] = useState<NewsWindow[]>(loadWindows);
+  const [windows, setWindows] = useState<NewsWindow[]>(() => {
+    const loaded = loadWindows();
+    return open && !isMobile && loaded.length === 0 ? [newWindow(0)] : loaded;
+  });
+  // Preferences can open this widget externally (for example the design wizard).
+  const [previousVisibility, setPreviousVisibility] = useState({ open, isMobile });
+  if (previousVisibility.open !== open || previousVisibility.isMobile !== isMobile) {
+    setPreviousVisibility({ open, isMobile });
+    if (open && !isMobile && windows.length === 0) setWindows(() => [newWindow(0)]);
+  }
   useEffect(() => { saveWindows(windows); }, [windows]);
 
   // Cloud sync applied a new windows list to localStorage (no reload) — adopt it
@@ -293,13 +312,6 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
     window.addEventListener(NEWS_SYNC_EVENT, onSync);
     return () => window.removeEventListener(NEWS_SYNC_EVENT, onSync);
   }, []);
-
-  // The pref can be flipped on from OUTSIDE this widget (design magician) —
-  // if it opens with no window yet, create the first one so the toggle is
-  // visibly doing something.
-  useEffect(() => {
-    if (open && !isMobile) setWindows((ws) => (ws.length === 0 ? [newWindow(0)] : ws));
-  }, [open, isMobile]);
 
   const patchWindow = (id: string, patch: Partial<NewsWindow>) =>
     setWindows((ws) => ws.map((w) => (w.id === id ? { ...w, ...patch } : w)));
@@ -316,7 +328,7 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
     return (
       <>
         {windows.map((w) => (
-          <NewsCard key={w.id} win={w} inline canAdd={windows.length < MAX_NEWS_WINDOWS}
+          <NewsCard key={JSON.stringify([w.id, w.q, w.country, w.intervalH])} win={w} inline canAdd={windows.length < MAX_NEWS_WINDOWS}
             onChange={(p) => patchWindow(w.id, p)} onAdd={addWindow} onRemove={() => removeWindow(w.id)} />
         ))}
         {windows.length === 0 && null}
@@ -327,7 +339,7 @@ export function NewsWidget({ isMobile = false }: { isMobile?: boolean }) {
   return (
     <>
       {open && windows.map((w) => (
-        <NewsCard key={w.id} win={w} inline={false} canAdd={windows.length < MAX_NEWS_WINDOWS}
+        <NewsCard key={JSON.stringify([w.id, w.q, w.country, w.intervalH])} win={w} inline={false} canAdd={windows.length < MAX_NEWS_WINDOWS}
           onChange={(p) => patchWindow(w.id, p)} onAdd={addWindow} onRemove={() => removeWindow(w.id)} />
       ))}
 

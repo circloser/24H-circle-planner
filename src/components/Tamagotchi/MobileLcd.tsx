@@ -20,7 +20,7 @@ function glyphFor(p: Pet, hygiene: number): string | null {
 /** One pet inside the mobile LCD — positioned absolutely in the box, clamped so
  *  it's always visible, tap to play. No drag (the box is small). */
 function LcdPet({ pet, hygiene }: { pet: Pet; hygiene: number }) {
-  const { select, play } = useTamagotchi();
+  const { select, play, now } = useTamagotchi();
   const { t } = useTranslation();
   const [reacting, setReacting] = useState(false);
 
@@ -68,7 +68,7 @@ function LcdPet({ pet, hygiene }: { pet: Pet; hygiene: number }) {
         </div>
         {pet.phase === 'egg' && (
           <span style={{ position: 'absolute', bottom: -12, fontSize: 9, fontWeight: 700, whiteSpace: 'nowrap', pointerEvents: 'none' }}>
-            {formatHatch(pet.hatchAt - Date.now(), t)}
+            {formatHatch(pet.hatchAt - now, t)}
           </span>
         )}
       </div>
