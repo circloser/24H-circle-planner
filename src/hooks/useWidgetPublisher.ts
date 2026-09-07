@@ -40,8 +40,8 @@ export function useWidgetPublisher(svgRef: RefObject<SVGSVGElement | null>): voi
   const inFlightRef = useRef(false);
   const againRef = useRef(false);
   // Latest inputs, read at publish time (the effect below only schedules).
-  const latestRef = useRef({ view, handColor: nowLine.color });
-  latestRef.current = { view, handColor: nowLine.color };
+  const latestRef = useRef({ view, handColor: nowLine.color, lang: prefs.language });
+  latestRef.current = { view, handColor: nowLine.color, lang: prefs.language };
 
   useEffect(() => {
     if (!isPlayStoreApp()) return;
@@ -60,8 +60,8 @@ export function useWidgetPublisher(svgRef: RefObject<SVGSVGElement | null>): voi
       inFlightRef.current = true;
       dirtyRef.current = false;
       try {
-        const { view: v, handColor } = latestRef.current;
-        await publishWidget(svg, token, widgetMeta(viewSpec(v), handColor, isDarkTheme()));
+        const { view: v, handColor, lang } = latestRef.current;
+        await publishWidget(svg, token, widgetMeta(viewSpec(v), handColor, isDarkTheme(), lang));
       } finally {
         inFlightRef.current = false;
         if (againRef.current) {

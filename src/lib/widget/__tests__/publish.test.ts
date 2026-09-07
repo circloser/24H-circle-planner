@@ -98,13 +98,13 @@ describe('widgetMeta', () => {
   const ring = { cx: 500, cy: 500, innerR: 100, outerR: 460 };
 
   it('maps the ring centre to the image centre', () => {
-    const m = widgetMeta(viewSpec('full'), '#EF4444', false, ring);
+    const m = widgetMeta(viewSpec('full'), '#EF4444', false, 'en', ring);
     expect(m.cx).toBeCloseTo(WIDGET_PNG_SIZE / 2, 5);
     expect(m.cy).toBeCloseTo(WIDGET_PNG_SIZE / 2, 5);
   });
 
   it('scales radii by the viewBox→pixel factor, not the bare 1080/1000', () => {
-    const m = widgetMeta(viewSpec('full'), '#EF4444', false, ring);
+    const m = widgetMeta(viewSpec('full'), '#EF4444', false, 'en', ring);
     const k = WIDGET_PNG_SIZE / 1072;
     expect(m.innerR).toBeCloseTo(100 * k, 1);
     expect(m.outerR).toBeCloseTo(460 * k, 1);
@@ -113,15 +113,23 @@ describe('widgetMeta', () => {
   });
 
   it('carries the view window so 12h views place (or hide) the hand', () => {
-    const day = widgetMeta(viewSpec('day'), '#EF4444', true, ring);
-    expect(day).toMatchObject({ startMin: 360, spanMin: 720, startAngleDeg: 90, dark: true, hand: '#EF4444', v: 1 });
-    const full = widgetMeta(viewSpec('full'), '#000000', false, ring);
+    const day = widgetMeta(viewSpec('day'), '#EF4444', true, 'ko', ring);
+    expect(day).toMatchObject({ startMin: 360, spanMin: 720, startAngleDeg: 90, dark: true, hand: '#EF4444', v: 1, lang: 'ko' });
+    const full = widgetMeta(viewSpec('full'), '#000000', false, 'en', ring);
     expect(full).toMatchObject({ startMin: 0, spanMin: 1440, startAngleDeg: -90 });
   });
 
+  it('carries the app language so the widget dates in it, falling back to English', () => {
+    // The hub date is formatted natively; without this the phone's system
+    // locale would win and an English app showed 한국어 weekdays.
+    expect(widgetMeta(viewSpec('full'), '#EF4444', false, 'en', ring).lang).toBe('en');
+    expect(widgetMeta(viewSpec('full'), '#EF4444', false, 'zh', ring).lang).toBe('zh');
+    expect(widgetMeta(viewSpec('full'), '#EF4444', false, 'not a lang', ring).lang).toBe('en');
+  });
+
   it('follows the adjustable ring radii', () => {
-    const small = widgetMeta(viewSpec('full'), '#EF4444', false, { ...ring, innerR: 200, outerR: 400 });
-    expect(small.outerR).toBeLessThan(widgetMeta(viewSpec('full'), '#EF4444', false, ring).outerR);
+    const small = widgetMeta(viewSpec('full'), '#EF4444', false, 'en', { ...ring, innerR: 200, outerR: 400 });
+    expect(small.outerR).toBeLessThan(widgetMeta(viewSpec('full'), '#EF4444', false, 'en', ring).outerR);
     expect(small.innerR).toBeCloseTo(200 * (WIDGET_PNG_SIZE / 1072), 1);
   });
 

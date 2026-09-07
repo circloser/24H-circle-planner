@@ -58,6 +58,9 @@ export async function run() {
     pass('meta carries ring geometry in pixels', meta.v === 1 && meta.cx === 540 && meta.cy === 540 && meta.innerR > 0 && meta.outerR > meta.innerR, JSON.stringify(meta));
     pass('meta carries the view window', meta.startMin === 0 && meta.spanMin === 1440 && meta.startAngleDeg === -90, JSON.stringify(meta));
     pass('meta carries hand colour + theme', typeof meta.hand === 'string' && meta.hand.startsWith('#') && typeof meta.dark === 'boolean');
+    // The hub date is formatted natively in THIS language (seedBasicData sets ko),
+    // not in the phone's system locale.
+    pass('meta carries the app language', meta.lang === 'ko', String(meta.lang));
 
     // 2. The image is transparent outside the ring (corner) and painted inside (rim band).
     const px = await page.evaluate(async ({ b64, outerR, innerR }) => {

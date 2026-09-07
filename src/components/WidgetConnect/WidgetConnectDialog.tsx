@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Loader2, Smartphone } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useChartView, useNowLineStyle, useTranslation } from '@/hooks/usePreferences';
+import { useChartView, useNowLineStyle, usePreferences, useTranslation } from '@/hooks/usePreferences';
 import { viewSpec } from '@/lib/chart-view';
 import {
   clearWidgetToken,
@@ -40,6 +40,7 @@ export function WidgetConnectDialog({
   const { t } = useTranslation();
   const view = useChartView();
   const nowLine = useNowLineStyle();
+  const { prefs } = usePreferences();
   const [status, setStatus] = useState<'preparing' | 'ready' | 'error'>('preparing');
   const [linked, setLinked] = useState<boolean>(() => !!readWidgetToken());
   const [unlinking, setUnlinking] = useState(false);
@@ -53,7 +54,7 @@ export function WidgetConnectDialog({
     void (async () => {
       const token = ensureWidgetToken();
       const svg = svgRef.current;
-      const ok = svg ? await publishWidget(svg, token, widgetMeta(viewSpec(view), nowLine.color, isDarkTheme())) : false;
+      const ok = svg ? await publishWidget(svg, token, widgetMeta(viewSpec(view), nowLine.color, isDarkTheme(), prefs.language)) : false;
       if (runRef.current !== run) return; // dialog re-opened meanwhile
       setStatus(ok ? 'ready' : 'error');
     })();

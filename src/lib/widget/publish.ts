@@ -132,9 +132,12 @@ export interface WidgetMeta {
   startAngleDeg: number;
   hand: string;
   dark: boolean;
+  /** App UI language (BCP-47 primary tag) — the widget formats the hub date in
+   *  it, not in the phone's system locale. */
+  lang: string;
 }
 
-export function widgetMeta(spec: ViewSpec, handColor: string, dark: boolean, ring: RingGeom = RING): WidgetMeta {
+export function widgetMeta(spec: ViewSpec, handColor: string, dark: boolean, lang: string, ring: RingGeom = RING): WidgetMeta {
   const scale = WIDGET_PNG_SIZE / VB_SIZE;
   return {
     v: 1,
@@ -147,6 +150,7 @@ export function widgetMeta(spec: ViewSpec, handColor: string, dark: boolean, rin
     startAngleDeg: spec.startAngleDeg,
     hand: handColor,
     dark,
+    lang: /^[a-z]{2}(-[A-Za-z]{2,4})?$/.test(lang) ? lang : 'en',
   };
 }
 
