@@ -73,12 +73,26 @@ export async function run() {
       ctx.drawImage(img, 0, 0);
       const at = (x, y) => Array.from(ctx.getImageData(Math.round(x), Math.round(y), 1, 1).data);
       const midR = (outerR + innerR) / 2;
-      return { size: img.width, corner: at(2, 2), band: at(540, 540 - midR), halo: at(540, 540 - outerR - 40) };
+      // Between two hour labels (7.5 deg off the 00 label), just outside the
+      // rim: no backdrop disc -> must be bare wallpaper.
+      const a = (-90 + 7.5) * Math.PI / 180;
+      const gap = at(540 + (outerR + 40) * Math.cos(a), 540 + (outerR + 40) * Math.sin(a));
+      // The "00" label sits at outerR + 32 straight up: count white fill and
+      // black outline pixels in a box around it.
+      const box = ctx.getImageData(540 - 14, 540 - (outerR + 32) - 14, 28, 28).data;
+      let white = 0, black = 0;
+      for (let i = 0; i < box.length; i += 4) {
+        if (box[i + 3] < 200) continue;
+        if (box[i] > 230 && box[i + 1] > 230 && box[i + 2] > 230) white++;
+        else if (box[i] < 40 && box[i + 1] < 40 && box[i + 2] < 40) black++;
+      }
+      return { size: img.width, corner: at(2, 2), band: at(540, 540 - midR), gap, white, black };
     }, { b64: png, outerR: meta.outerR, innerR: meta.innerR });
     pass('renders at 1080px', px.size === 1080, String(px.size));
     pass('corner is fully transparent', px.corner[3] === 0, `alpha=${px.corner[3]}`);
     pass('ring band is painted', px.band[3] > 200, `alpha=${px.band[3]}`);
-    pass('frosted disc under the hour labels is translucent', px.halo[3] > 60 && px.halo[3] < 230, `alpha=${px.halo[3]}`);
+    pass('no backdrop disc outside the rim', px.gap[3] === 0, `alpha=${px.gap[3]}`);
+    pass('hour numbers are white with a black outline', px.white > 5 && px.black > 5, `white=${px.white} black=${px.black}`);
 
     // 3. A preference change (ring size, via the cross-device sync path) republishes.
     const before = puts.length;

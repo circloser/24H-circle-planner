@@ -9,7 +9,6 @@ import {
   newWidgetToken,
   readWidgetToken,
   svgToPx,
-  widgetHaloR,
   widgetMeta,
 } from '../publish';
 import { viewSpec } from '@/lib/chart-view';
@@ -131,12 +130,5 @@ describe('widgetMeta', () => {
     const small = widgetMeta(viewSpec('full'), '#EF4444', false, 'en', { ...ring, innerR: 200, outerR: 400 });
     expect(small.outerR).toBeLessThan(widgetMeta(viewSpec('full'), '#EF4444', false, 'en', ring).outerR);
     expect(small.innerR).toBeCloseTo(200 * (WIDGET_PNG_SIZE / 1072), 1);
-  });
-
-  it('halo disc covers the hour labels outside the rim and stays inside the viewBox', () => {
-    // Labels sit at outerR + 32 with a 30px face → must be under outerR + 47.
-    expect(widgetHaloR(ring)).toBeGreaterThanOrEqual(ring.outerR + 47);
-    // Largest allowed rim (480): the disc must not clip at the viewBox edge (536 from centre).
-    expect(widgetHaloR({ ...ring, outerR: 480 })).toBeLessThanOrEqual(536);
   });
 });

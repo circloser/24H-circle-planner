@@ -150,6 +150,7 @@ function pushHourTick(
         y2={tickEnd.y}
         stroke={isCardinal ? 'hsl(var(--text-muted) / 0.85)' : 'hsl(var(--text-muted) / 0.45)'}
         strokeWidth={isCardinal ? 2.5 : 1}
+        data-hour-tick={isCardinal ? 'cardinal' : 'minor'}
       />,
     );
   }
@@ -166,6 +167,7 @@ function pushHourTick(
       fontWeight={isCardinal ? 800 : 700}
       fill={isCardinal ? 'hsl(var(--foreground) / 0.95)' : 'hsl(var(--foreground) / 0.7)'}
       fontFamily="inherit"
+      data-hour-label={isCardinal ? 'cardinal' : 'minor'}
     >
       {label}
     </text>,

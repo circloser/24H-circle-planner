@@ -28,8 +28,6 @@ const VB_MARGIN = 36;
 const VB_SIZE = 1072;
 /** SVG user unit → pixel in the 1080 render (the viewBox is -36..1036). */
 export const svgToPx = (u: number): number => ((u + VB_MARGIN) / VB_SIZE) * WIDGET_PNG_SIZE;
-/** Disc under the ring must also cover the hour labels (outerR + 32, 30px face). */
-export const widgetHaloR = (ring: RingGeom = RING): number => ring.outerR + 48;
 
 const TOKEN_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 const TOKEN_LEN = 22; // 62^22 ≈ 2^131
@@ -171,7 +169,7 @@ export function isDarkTheme(): boolean {
 export async function publishWidget(svg: SVGSVGElement, token: string, meta: WidgetMeta): Promise<boolean> {
   try {
     const { buildWidgetPngBase64 } = await import('@/lib/export/ogImage');
-    const png = await buildWidgetPngBase64(svg, widgetHaloR());
+    const png = await buildWidgetPngBase64(svg);
     if (!png) return false;
     const res = await fetch(`/api/widget/${token}`, {
       method: 'PUT',

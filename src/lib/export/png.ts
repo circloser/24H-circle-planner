@@ -22,6 +22,10 @@ export interface PngExportOptions {
    *  outside the rim stay legible: the disc carries the theme's background at a
    *  partial opacity, reading as a frosted-glass puck under the ring. */
   haloDisc?: { cx: number; cy: number; r: number; opacity: number };
+  /** Presentation attributes to force on matching elements of the clone —
+   *  e.g. white hour numbers with a dark outline for a render that lands on an
+   *  unknown wallpaper. Applied after inlineComputedPaint, so they win. */
+  restyle?: Array<{ selector: string; attrs: Record<string, string> }>;
 }
 
 /**
@@ -36,7 +40,7 @@ export async function exportPng(
   sourceSvg: SVGSVGElement,
   opts: PngExportOptions,
 ): Promise<Blob> {
-  const { size, transparent, qrUrl, watermark = true, stripSelectors = [], haloDisc } = opts;
+  const { size, transparent, qrUrl, watermark = true, stripSelectors = [], haloDisc, restyle = [] } = opts;
 
   // 1. Deep-clone the SVG
   const clone = sourceSvg.cloneNode(true) as SVGSVGElement;
@@ -52,6 +56,16 @@ export async function exportPng(
   }
   for (const sel of stripSelectors) {
     for (const el of Array.from(clone.querySelectorAll(sel))) el.remove();
+  }
+  for (const { selector, attrs } of restyle) {
+    for (const el of Array.from(clone.querySelectorAll(selector))) {
+      for (const [k, v] of Object.entries(attrs)) {
+        el.setAttribute(k, v);
+        // Inline style too: it outranks any presentation attribute the clone
+        // still carries (e.g. `fill` set by inlineComputedPaint).
+        (el as SVGElement).style.setProperty(k, v);
+      }
+    }
   }
 
   // 1c. Optional frosted disc under the whole ring (see PngExportOptions).

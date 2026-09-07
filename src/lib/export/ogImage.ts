@@ -30,22 +30,36 @@ export async function buildSquarePngBase64(svg: SVGSVGElement): Promise<string |
   }
 }
 
+/** Hour numbers on the widget: white with a dark outline, so they read on any
+ *  wallpaper without a backdrop. Stroke sits BEHIND the fill (paint-order). */
+const WIDGET_LABEL_ATTRS = {
+  fill: '#ffffff',
+  stroke: '#000000',
+  'stroke-linejoin': 'round',
+  'paint-order': 'stroke',
+};
+
 /**
  * Transparent 1080px render for the Android home-screen widget: no page
- * background (the launcher wallpaper shows through), a frosted disc under the
- * ring so the hour numbers stay legible on any wallpaper, no wordmark (it is
- * the user's own phone, inside our own app), and no hub title — the widget
- * paints a live clock into the hub natively. `haloR` is the disc radius in SVG
- * units (the chart's outer radius + enough to cover the hour labels).
+ * background (the launcher wallpaper shows through), no wordmark (it is the
+ * user's own phone, inside our own app), and no hub title — the widget paints
+ * a live clock into the hub natively. The hour numbers outside the rim are
+ * re-inked white with a black outline (and the ticks white) so they stay
+ * legible on any wallpaper without a backdrop disc behind the ring.
  */
-export async function buildWidgetPngBase64(svg: SVGSVGElement, haloR: number): Promise<string | null> {
+export async function buildWidgetPngBase64(svg: SVGSVGElement): Promise<string | null> {
   try {
     const blob = await exportPng(svg, {
       size: 1080,
       transparent: true,
       watermark: false,
       stripSelectors: ['[data-hub-title]'],
-      haloDisc: { cx: 500, cy: 500, r: haloR, opacity: 0.62 },
+      restyle: [
+        { selector: '[data-hour-label="cardinal"]', attrs: { ...WIDGET_LABEL_ATTRS, 'stroke-width': '5' } },
+        { selector: '[data-hour-label="minor"]', attrs: { ...WIDGET_LABEL_ATTRS, 'stroke-width': '4' } },
+        { selector: '[data-hour-tick="cardinal"]', attrs: { stroke: '#ffffff', 'stroke-width': '3', opacity: '0.95' } },
+        { selector: '[data-hour-tick="minor"]', attrs: { stroke: '#ffffff', 'stroke-width': '1.5', opacity: '0.7' } },
+      ],
     });
     const b64 = await blobToBase64(blob);
     return b64.length > MAX_B64 ? null : b64;
