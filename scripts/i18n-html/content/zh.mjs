@@ -16,8 +16,8 @@ export default {
   webAppDescription:
     '一款免费、无需注册的日程规划工具，将你的24小时一天呈现为时钟样式，并支持离线使用。拖动即可编辑时间块，在12/24小时视图间切换，还能保存或分享为图片。',
   faq: [
-    { q: '什么是 24Houring？', a: '24Houring 是一款免费的网页规划工具，像时钟一样将你完整的24小时一天一目了然地呈现出来。它可直接在浏览器中运行，无需注册或安装，数据保存在你的设备上，因此离线也能使用。' },
-    { q: '24Houring 是免费的吗？', a: '是的。核心规划功能完全免费，无需注册。可选的 Pro 订阅（0.99美元/月，首月免费，到期不自动续费）额外提供云同步、无限存储、统计报告和无广告体验。' },
+    { q: '什么是 24Houring？', a: '24Houring是一款将一天编辑为圆形时间表的免费网页规划工具。无需注册即可开始。更改默认保存在本设备的浏览器中；使用Pro账户登录后，支持的数据会与服务器同步。创建分享链接时，时间表副本会上传到服务器。' },
+    { q: '24Houring 是免费的吗？', a: '基本编辑、预设和导出无需注册即可免费使用。免费范围包括3个保存槽位及最近30天范围内的日记查看。可选的Pro提供账户同步、不限数量的保存槽位、较早日记的查看、报告和去广告。购买前请在升级界面确认当前价格与条款。' },
     { q: '可以切换到12小时视图（时钟）吗？', a: '可以。顶部的切换开关可在24小时、白天（6–18点）和夜晚（18–6点）视图之间切换，且每个视图都与同一天保持同步。' },
     { q: '我可以保存或分享我的时间表吗？', a: '可以。你可以导出为 PNG、PDF 或 JSON 格式，也可以直接将时间表图片分享到 Instagram 等平台。同时支持完整的备份与恢复。' },
     { q: '支持哪些语言？', a: '支持8种语言：英语、韩语、德语、日语、中文、法语、西班牙语和俄语。' },
@@ -31,10 +31,9 @@ export default {
   ],
   mainHtml: `      <main style="max-width:760px;margin:0 auto;padding:40px 20px;font-family:'Pretendard',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;color:#1f2430;line-height:1.65">
         <h1 style="font-size:30px;font-weight:800;letter-spacing:-0.5px;margin:0 0 8px">24Houring——一览你的一整天，圆形24小时时间表规划工具</h1>
-        <p style="font-size:17px;color:#3a4150;margin:0 0 20px">
-          24Houring 是一款<strong>免费</strong>的网页规划工具，像时钟一样呈现你的24小时一天。
-          无需注册或安装即可直接在浏览器中使用；数据保存在你的设备上，因此也能<strong>离线</strong>使用。
-        </p>
+        <p class="copy-lead">24Houring是一款将一天编辑为圆形时间表的免费网页规划工具。无需注册即可开始。更改默认保存在本设备的浏览器中；使用Pro账户登录后，支持的数据会与服务器同步。创建分享链接时，时间表副本会上传到服务器。</p>
+        <nav class="copy-actions"><a href="/templates/">时间表模板</a><a href="/guides/">使用指南</a></nav>
+        <details><summary>功能、使用方法与常见问题</summary>
 
         <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">功能</h2>
         <ul style="padding-left:20px;margin:0 0 8px">
@@ -59,7 +58,7 @@ export default {
 
         <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">常见问题</h2>
         <h3 style="font-size:16px;font-weight:700;margin:14px 0 2px">24Houring 是免费的吗？</h3>
-        <p style="margin:0 0 8px">是的——核心规划功能完全免费，无需注册。可选的 Pro 订阅（0.99美元/月，首月免费，到期不自动续费）额外提供云同步、无限存储、统计报告和无广告体验。</p>
+        <p>基本编辑、预设和导出无需注册即可免费使用。免费范围包括3个保存槽位及最近30天范围内的日记查看。可选的Pro提供账户同步、不限数量的保存槽位、较早日记的查看、报告和去广告。购买前请在升级界面确认当前价格与条款。</p>
         <h3 style="font-size:16px;font-weight:700;margin:14px 0 2px">可以切换到12小时视图（时钟）吗？</h3>
         <p style="margin:0 0 8px">可以——顶部的切换开关可在24小时、白天（6–18点）和夜晚（18–6点）之间切换，且每个视图都与同一天保持同步。</p>
         <h3 style="font-size:16px;font-weight:700;margin:14px 0 2px">我可以保存或分享我制作的内容吗？</h3>
@@ -78,7 +77,7 @@ export default {
         <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">如何使用</h2>
         <p style="margin:0 0 8px">初次使用？从符合你情况的<a href="/templates/">模板</a>开始并调整，或按照<a href="/guides/">使用指南</a>中关于时间块划分、时间审计和建立晨间/晚间作息的分步说明操作。</p>
 
-        <p style="margin:24px 0 0;font-size:15px;color:#7e8aa0">交互式规划工具正在 <strong>24houring.com</strong> 加载中……</p>
+        </details><p class="copy-note">浏览器本地保存不等于永久备份。清除网站数据、结束隐私浏览或更换浏览器后，可能无法访问原有计划。请另外保管JSON备份。已缓存的规划功能可离线使用；登录、同步和天气仍需联网。</p>
 
         <hr style="border:none;border-top:1px solid #e3e6ec;margin:28px 0 14px" />
         <nav style="font-size:14px;color:#7e8aa0">

@@ -408,7 +408,7 @@ ${intlVars.map(figureHtml).join('\n')}
 <meta property="og:image" content="${ORIGIN}/gallery/img/${VARIATIONS[0].slug}.png" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="stylesheet" href="/guides/guide.css" />
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6947130056543786" crossorigin="anonymous"></script>
+<meta name="google-adsense-account" content="ca-pub-6947130056543786">
 <script type="application/ld+json">
 ${JSON.stringify(jsonld)}
 </script>${LANG_JS}

@@ -16,8 +16,8 @@ export default {
   webAppDescription:
     '一日を時計のように可視化し、オフラインでも動作する登録不要・無料のデイリープランナー。ドラッグでブロックを編集し、12/24時間表示を切り替え、画像として保存・共有できます。',
   faq: [
-    { q: '24Houringとは何ですか？', a: '24Houringは、24時間の一日を時計のように一目で見せる無料のWebプランナーです。登録もインストールも不要でブラウザですぐに使え、データは端末内にのみ保存されるためオフラインでも動作します。' },
-    { q: '24Houringは無料ですか？', a: 'はい。中核のプランナーは登録不要で完全に無料です。任意のPro（月0.99ドル、1か月無料体験、自動更新なし）でクラウド同期・無制限保存・統計レポート・広告非表示を追加できます。' },
+    { q: '24Houringとは何ですか？', a: '24Houringは1日を円形の時間割として編集できる無料のウェブプランナーです。登録なしで始められます。変更内容はまずこの端末のブラウザーに保存され、Proでログインすると対象データがサーバーと同期されます。共有リンクを作成すると時間割のコピーがサーバーにアップロードされます。' },
+    { q: '24Houringは無料ですか？', a: '基本編集・プリセット・書き出しは登録なしで無料です。無料枠は保存スロット3件と過去30日分の範囲の日記閲覧です。任意のProではアカウント同期、保存スロット制限の解除、古い日記の閲覧、レポート、広告非表示を利用できます。購入前にアップグレード画面で現在の価格と条件をご確認ください。' },
     { q: '12時間（時計）表示に切り替えられますか？', a: 'はい。上部の切り替えで24時間 → 昼（06–18）→ 夜（18–06）を切り替えられ、どの表示も同じ一日と連動します。' },
     { q: '作った時間割を保存・共有できますか？', a: 'はい。PNG・PDF・JSONで書き出すか、共有ボタンで時間割の画像をInstagramなどにそのまま共有できます。全体のバックアップと復元にも対応しています。' },
     { q: '対応言語は？', a: '英語・韓国語・ドイツ語・日本語・中国語・フランス語・スペイン語・ロシア語の8言語に対応しています。' },
@@ -31,10 +31,9 @@ export default {
   ],
   mainHtml: `      <main style="max-width:760px;margin:0 auto;padding:40px 20px;font-family:'Pretendard',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;color:#1f2430;line-height:1.65">
         <h1 style="font-size:30px;font-weight:800;letter-spacing:-0.5px;margin:0 0 8px">24Houring — 一日を一目で、円形24時間プランナー</h1>
-        <p style="font-size:17px;color:#3a4150;margin:0 0 20px">
-          24Houringは、24時間の一日を時計のように可視化する<strong>無料</strong>のWebプランナーです。
-          登録もインストールも不要でブラウザですぐに使え、データは端末内にのみ保存されるので<strong>オフライン</strong>でも動作します。
-        </p>
+        <p class="copy-lead">24Houringは1日を円形の時間割として編集できる無料のウェブプランナーです。登録なしで始められます。変更内容はまずこの端末のブラウザーに保存され、Proでログインすると対象データがサーバーと同期されます。共有リンクを作成すると時間割のコピーがサーバーにアップロードされます。</p>
+        <nav class="copy-actions"><a href="/templates/">時間割テンプレート</a><a href="/guides/">使い方ガイド</a></nav>
+        <details><summary>機能・使い方・よくある質問</summary>
 
         <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">主な機能</h2>
         <ul style="padding-left:20px;margin:0 0 8px">
@@ -59,7 +58,7 @@ export default {
 
         <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">よくある質問</h2>
         <h3 style="font-size:16px;font-weight:700;margin:14px 0 2px">24Houringは無料ですか？</h3>
-        <p style="margin:0 0 8px">はい — 中核のプランナーは登録不要で完全に無料です。任意のPro（月0.99ドル、1か月無料体験、自動更新なし）でクラウド同期・無制限保存・統計レポート・広告非表示を追加できます。</p>
+        <p>基本編集・プリセット・書き出しは登録なしで無料です。無料枠は保存スロット3件と過去30日分の範囲の日記閲覧です。任意のProではアカウント同期、保存スロット制限の解除、古い日記の閲覧、レポート、広告非表示を利用できます。購入前にアップグレード画面で現在の価格と条件をご確認ください。</p>
         <h3 style="font-size:16px;font-weight:700;margin:14px 0 2px">12時間（時計）表示に切り替えられますか？</h3>
         <p style="margin:0 0 8px">はい — 上部の切り替えで24時間 → 昼（06–18）→ 夜（18–06）に切り替えられ、どの表示も同じ一日と連動します。</p>
         <h3 style="font-size:16px;font-weight:700;margin:14px 0 2px">作ったものを保存・共有できますか？</h3>
@@ -78,7 +77,7 @@ export default {
         <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">活用のヒント</h2>
         <p style="margin:0 0 8px">はじめてなら、状況別の<a href="/templates/">テンプレート</a>から始めて自分に合わせて調整するのが近道です。時間の分け方に迷ったら、タイムブロッキング・タイムオーディット・朝夜のルーティンの<a href="/guides/">ガイド</a>が手順を案内します。</p>
 
-        <p style="margin:24px 0 0;font-size:15px;color:#7e8aa0">インタラクティブなプランナーを読み込み中… <strong>24houring.com</strong></p>
+        </details><p class="copy-note">ブラウザー内の保存は永続的なバックアップではありません。サイトデータの削除、プライベートモードの終了、ブラウザーの変更で予定にアクセスできなくなる場合があります。JSONバックアップを別に保管してください。キャッシュ済みのプランナー機能はオフラインで使えますが、ログイン・同期・天気には接続が必要です。</p>
 
         <hr style="border:none;border-top:1px solid #e3e6ec;margin:28px 0 14px" />
         <nav style="font-size:14px;color:#7e8aa0">

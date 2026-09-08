@@ -139,7 +139,7 @@ function shell({ title, desc, canonical, jsonld, body }) {
 <link rel="alternate" type="application/rss+xml" title="24Houring Blog" href="/blog/rss.xml" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="stylesheet" href="/guides/guide.css" />
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6947130056543786" crossorigin="anonymous"></${'script'}>
+<meta name="google-adsense-account" content="ca-pub-6947130056543786">
 ${jsonld}
 ${LANG_SCRIPT}
 </head>

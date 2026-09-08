@@ -14,10 +14,11 @@
 <meta property="og:image" content="https://24houring.com/og-image.png" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="stylesheet" href="/guides/guide.css" />
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6947130056543786" crossorigin="anonymous"></script>
+<meta name="google-adsense-account" content="ca-pub-6947130056543786">
+<script defer src="/publisher-ads.js"></script>
 <script>
-(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');}}catch(e){}})();
-function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');}
+(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');document.documentElement.lang='en';}}catch(e){}})();
+function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');document.documentElement.lang=l==='ko'?'ko':'en';}
 </script>
 </head>
 <body>
@@ -25,7 +26,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
   <header class="site">
     <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
-      <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
+      <span class="langswitch"><button type="button" onclick="setGuideLang('ko')">한국어</button><span class="sep">·</span><button type="button" onclick="setGuideLang('en')">EN</button></span>
       <a href="/guides/"><span class="lang-ko">가이드</span><span class="lang-en">Guides</span></a>
       <a href="/blog/"><span class="lang-ko">블로그</span><span class="lang-en">Blog</span></a>
       <a href="/"><span class="lang-ko">홈</span><span class="lang-en">Home</span></a>
@@ -35,8 +36,10 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
   <main>
     <h1><span class="lang-ko">시간 관리 가이드</span><span class="lang-en">Time-Management Guides</span></h1>
     <p class="lead"><span class="lang-ko">하루를 더 잘 쓰기 위한 실전 가이드 모음입니다. 계획·집중·루틴·기록의 기본기를 쉽고 구체적으로 정리했습니다.</span><span class="lang-en">Practical guides for spending your day better — the fundamentals of planning, focus, routines, and time tracking, explained simply and concretely.</span></p>
-    <p><span class="lang-ko">읽고 나면 곧바로 <a href="/">24Houring</a>에서 하루를 원형 시간표로 그려 보며 적용할 수 있습니다. 모두 무료이고, 회원가입·설치가 필요 없습니다.</span><span class="lang-en">Once you've read them, apply what you learned right away by drawing your day as a circle on <a href="/">24Houring</a> — all free, with no sign-up or install.</span></p>
+    <p><span class="lang-ko">읽고 나면 곧바로 <a href="/">24Houring</a>에서 하루를 원형 시간표로 그려 보며 적용할 수 있습니다. 가이드는 무료이며, 기본 플래너는 회원가입·설치 없이 시작할 수 있습니다.</span><span class="lang-en">Once you've read them, apply what you learned right away by drawing your day as a circle on <a href="/">24Houring</a> — guides are free, and the basic planner needs no sign-up or install.</span></p>
 
+<section class="reading-path" aria-labelledby="reading-path-title"><h2 id="reading-path-title"><span class="lang-ko">처음이라면 이 세 편부터</span><span class="lang-en">Start with these three walkthroughs</span></h2><p><span class="lang-ko">실제 앱 조작 방법과 가상 계산 예시를 함께 담았습니다. 예시 수치는 권장 기준이나 사용자의 실제 성과가 아닙니다.</span><span class="lang-en">Each includes actual app steps and clearly labelled illustrative examples, not prescribed durations or reported user results.</span></p><ol><li><a href="/guides/time-blocking"><span class="lang-ko">계획 만들기</span><span class="lang-en">Build a plan</span></a><span class="lang-ko"> — 9시간 업무일을 배치하고 회의 지연에 맞춰 수정합니다.</span><span class="lang-en"> — Fit a nine-hour workday, then revise it after a meeting overrun.</span></li><li><a href="/guides/time-audit"><span class="lang-ko">실제 시간과 비교하기</span><span class="lang-en">Compare actual time</span></a><span class="lang-ko"> — 180분의 기록을 합산하고 빠진 준비 시간을 찾습니다.</span><span class="lang-en"> — Add 180 minutes of records and identify missing preparation.</span></li><li><a href="/guides/morning-evening-routine"><span class="lang-ko">반복 준비 줄 세우기</span><span class="lang-en">Arrange recurring preparation</span></a><span class="lang-ko"> — 출발과 마무리를 기준으로 평소·바쁜 날 계획을 나눕니다.</span><span class="lang-en"> — Build ordinary-day and busy-day plans around departure and closure.</span></li></ol><p><a href="/editorial-policy"><span class="lang-ko">콘텐츠 작성·수정 원칙</span><span class="lang-en">How we write and update content</span></a></p></section>
+    <h2><span class="lang-ko">주제별 가이드 둘러보기</span><span class="lang-en">Browse by topic</span></h2>
     <div class="grid">
       <a class="gcard" href="/templates/" style="border-color:#FF4D4D">
         <h3><span class="lang-ko">📋 원형 시간표 템플릿 모음</span><span class="lang-en">📋 Timetable Templates</span></h3>
@@ -55,7 +58,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
         <p><span class="lang-ko">우선순위 정하기 · 현실적인 시간 배분 · 저녁 회고까지, 5분이면 되는 계획 사이클.</span><span class="lang-en">Priorities, realistic time budgeting, and an evening review — a planning cycle that takes just five minutes.</span></p>
       </a>
       <a class="gcard" href="/guides/time-blocking">
-        <h3><span class="lang-ko">타임블로킹 완벽 가이드</span><span class="lang-en">Time Blocking: The Complete Guide</span></h3>
+        <h3><span class="lang-ko">타임블로킹 실전 예시</span><span class="lang-en">Time Blocking: A Worked Example</span></h3>
         <p><span class="lang-ko">할 일에 "언제·얼마나"를 붙여 하루를 블록으로 설계하는 실전 5단계.</span><span class="lang-en">Add "when and how long" to your to-dos and design your day in blocks — a practical 5-step method.</span></p>
       </a>
       <a class="gcard" href="/guides/24-hour-circle-method">

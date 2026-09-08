@@ -4,7 +4,7 @@
  * works offline (data lives in localStorage). Navigations are network-first
  * (fresh on every online visit); same-origin assets are stale-while-revalidate.
  */
-const CACHE = '24h-cache-v10';
+const CACHE = '24h-cache-v11';
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/favicon.svg', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -70,14 +70,20 @@ self.addEventListener('fetch', (event) => {
 
   // App navigations: network-first, fall back to the cached shell when offline.
   if (req.mode === 'navigate') {
+    // Articles and server-rendered shares must never replace the offline app.
+    // Keep locale shells under their own keys instead of overwriting '/'.
+    if (!/^\/(?:index\.html|(?:ko|de|ja|zh|fr|es|ru)\/?|)$/.test(url.pathname)) return;
+    const shellKey = url.pathname;
     event.respondWith(
       fetch(req)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put('/', copy)).catch(() => {});
+        .then(async (res) => {
+          if (res.status === 200 && !res.redirected && /^text\/html(?:;|$)/i.test(res.headers.get('content-type') || '')) {
+            const copy = res.clone();
+            await caches.open(CACHE).then((c) => c.put(shellKey, copy)).catch(() => {});
+          }
           return res;
         })
-        .catch(() => caches.match('/').then((r) => r || caches.match('/index.html'))),
+        .catch(async () => (await caches.match(shellKey)) || (await caches.match('/')) || (await caches.match('/index.html')) || Response.error()),
     );
     return;
   }

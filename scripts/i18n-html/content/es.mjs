@@ -16,8 +16,8 @@ export default {
   webAppDescription:
     'Un planificador de día gratuito, sin registro, que muestra tu día de 24 horas como un reloj y funciona sin conexión. Edita bloques arrastrando, cambia entre vista de 12/24 horas y guarda o comparte como imagen.',
   faq: [
-    { q: '¿Qué es 24Houring?', a: '24Houring es un planificador web gratuito que muestra tu día completo de 24 horas de un vistazo, como un reloj. Funciona directamente en el navegador sin necesidad de registro ni instalación, y tus datos permanecen en tu dispositivo, por lo que también funciona sin conexión.' },
-    { q: '¿Es gratis 24Houring?', a: 'Sí. El planificador principal es totalmente gratuito y sin registro. Una suscripción Pro opcional (0,99 $/mes, 1 mes gratis de prueba, sin renovación automática) añade sincronización en la nube, almacenamiento ilimitado, informes de estadísticas y elimina los anuncios.' },
+    { q: '¿Qué es 24Houring?', a: '24Houring es un planificador web gratuito para organizar un día en un círculo. Empieza sin registrarte. Los cambios se guardan en el navegador de este dispositivo; al iniciar sesión con Pro, los datos compatibles se sincronizan con el servidor. Crear un enlace compartido sube una copia del horario al servidor.' },
+    { q: '¿Es gratis 24Houring?', a: 'La edición, las plantillas y la exportación son gratuitas sin registro. El uso gratuito incluye tres espacios de guardado y acceso al diario en un periodo de 30 días. Pro ofrece sincronización de cuenta, espacios ilimitados, acceso a entradas antiguas, informes y eliminación de anuncios. Consulta los precios y condiciones actuales en la pantalla de mejora antes de pagar.' },
     { q: '¿Puedo cambiar a una vista de reloj de 12 horas?', a: 'Sí. Un botón en la parte superior alterna entre las vistas de 24 horas, día (06–18) y noche (18–06), y cada vista permanece sincronizada con el mismo día.' },
     { q: '¿Puedo guardar o compartir mi horario?', a: 'Sí. Exporta como PNG, PDF o JSON, o comparte la imagen del horario directamente en Instagram y otras redes. También se admiten la copia de seguridad y la restauración completas.' },
     { q: '¿Qué idiomas se admiten?', a: 'Ocho idiomas: inglés, coreano, alemán, japonés, chino, francés, español y ruso.' },
@@ -31,10 +31,9 @@ export default {
   ],
   mainHtml: `      <main style="max-width:760px;margin:0 auto;padding:40px 20px;font-family:'Pretendard',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;color:#1f2430;line-height:1.65">
         <h1 style="font-size:30px;font-weight:800;letter-spacing:-0.5px;margin:0 0 8px">24Houring — todo tu día de un vistazo, un planificador circular de 24 horas</h1>
-        <p style="font-size:17px;color:#3a4150;margin:0 0 20px">
-          24Houring es un planificador web <strong>gratuito</strong> que muestra tu día de 24 horas como un reloj.
-          Úsalo directamente en el navegador sin registro ni instalación; tus datos permanecen en tu dispositivo, así que también funciona <strong>sin conexión</strong>.
-        </p>
+        <p class="copy-lead">24Houring es un planificador web gratuito para organizar un día en un círculo. Empieza sin registrarte. Los cambios se guardan en el navegador de este dispositivo; al iniciar sesión con Pro, los datos compatibles se sincronizan con el servidor. Crear un enlace compartido sube una copia del horario al servidor.</p>
+        <nav class="copy-actions"><a href="/templates/">Plantillas de horarios</a><a href="/guides/">Guías prácticas</a></nav>
+        <details><summary>Funciones, uso y preguntas</summary>
 
         <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">Funciones</h2>
         <ul style="padding-left:20px;margin:0 0 8px">
@@ -59,7 +58,7 @@ export default {
 
         <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">Preguntas frecuentes</h2>
         <h3 style="font-size:16px;font-weight:700;margin:14px 0 2px">¿Es gratis 24Houring?</h3>
-        <p style="margin:0 0 8px">Sí — el planificador principal es totalmente gratuito y sin registro. Una suscripción Pro opcional (0,99 $/mes, 1 mes gratis de prueba, sin renovación automática) añade sincronización en la nube, almacenamiento ilimitado, informes de estadísticas y elimina los anuncios.</p>
+        <p>La edición, las plantillas y la exportación son gratuitas sin registro. El uso gratuito incluye tres espacios de guardado y acceso al diario en un periodo de 30 días. Pro ofrece sincronización de cuenta, espacios ilimitados, acceso a entradas antiguas, informes y eliminación de anuncios. Consulta los precios y condiciones actuales en la pantalla de mejora antes de pagar.</p>
         <h3 style="font-size:16px;font-weight:700;margin:14px 0 2px">¿Puedo cambiar a una vista de reloj de 12 horas?</h3>
         <p style="margin:0 0 8px">Sí — un botón en la parte superior alterna entre 24 horas, día (06–18) y noche (18–06), y cada vista permanece sincronizada con el mismo día.</p>
         <h3 style="font-size:16px;font-weight:700;margin:14px 0 2px">¿Puedo guardar o compartir lo que creo?</h3>
@@ -78,7 +77,7 @@ export default {
         <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">Cómo empezar</h2>
         <p style="margin:0 0 8px">¿Eres nuevo aquí? Empieza con una <a href="/templates/">plantilla</a> según tu situación y personalízala, o sigue las <a href="/guides/">guías</a> paso a paso sobre bloqueo de tiempo, auditorías de tiempo y cómo crear una rutina matutina o nocturna.</p>
 
-        <p style="margin:24px 0 0;font-size:15px;color:#7e8aa0">El planificador interactivo se está cargando en <strong>24houring.com</strong> …</p>
+        </details><p class="copy-note">El almacenamiento del navegador no sustituye una copia de seguridad. Borrar datos del sitio, cerrar una sesión privada o cambiar de navegador puede impedir el acceso a los planes. Conserva una copia JSON. Las funciones ya almacenadas en caché pueden funcionar sin conexión; el acceso a la cuenta, la sincronización y el tiempo necesitan Internet.</p>
 
         <hr style="border:none;border-top:1px solid #e3e6ec;margin:28px 0 14px" />
         <nav style="font-size:14px;color:#7e8aa0">

@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && node scripts/i18n-html/build.mjs",
+    "build": "tsc -b && vite build && node scripts/i18n-html/build.mjs && node scripts/verify-publishing.mjs",
+    "verify:publishing": "node scripts/verify-publishing.mjs",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",

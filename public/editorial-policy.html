@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>콘텐츠 작성 기준 · Editorial policy · 24Houring</title>
+<meta name="description" content="24Houring 가이드·템플릿의 작성 범위, 예시와 사실의 구분, 출처와 오류 정정 방법. Editorial standards and corrections." />
+<link rel="canonical" href="https://24houring.com/editorial-policy" />
+<meta name="robots" content="index, follow" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:'Pretendard',system-ui,-apple-system,'Segoe UI',Roboto,'Apple SD Gothic Neo','Noto Sans KR',sans-serif; color:#1f2430; background:#f4f5f7; line-height:1.7; -webkit-font-smoothing:antialiased; }
+  a, p, li { overflow-wrap:anywhere; }
+  a:focus-visible, button:focus-visible { outline:3px solid #2563eb; outline-offset:3px; }
+  header.site { flex-wrap:wrap; gap:12px; }
+  .langswitch button { font:inherit; color:inherit; background:transparent; border:1px solid currentColor; border-radius:6px; min-height:44px; padding:8px; cursor:pointer; }
+  .wrap { max-width:760px; margin:0 auto; padding:28px 22px 64px; }
+  header.site { display:flex; align-items:center; justify-content:space-between; padding:6px 0 22px; border-bottom:1px solid #e3e6ec; margin-bottom:26px; }
+  .logo { font-size:22px; font-weight:800; letter-spacing:-0.5px; color:#1f2430; text-decoration:none; }
+  .logo b { color:#FF4D4D; }
+  h1 { font-size:28px; font-weight:800; letter-spacing:-0.5px; margin:0 0 6px; }
+  h2 { font-size:18px; font-weight:700; margin:28px 0 8px; }
+  p, li { font-size:15px; color:#333a48; }
+  a { color:#ac2929; }
+  .lead { font-size:16px; color:#3a4150; }
+  .card { background:#fff; border:1px solid #e3e6ec; border-radius:12px; padding:16px 18px; margin:16px 0; }
+  footer.site { margin-top:40px; padding-top:18px; border-top:1px solid #e3e6ec; font-size:14px; color:#6b7280; }
+  footer.site a { color:#586172; text-decoration:none; margin-right:14px; }
+  footer.site a:hover { color:#d83a3a; text-decoration:underline; }
+  /* Language toggle — Korean by default; English when <html class="show-en">. */
+  .lang-en { display:none; }
+  html.show-en .lang-ko { display:none; }
+  html.show-en .lang-en { display:revert; }
+  .langswitch { font-size:13px; }
+  .langswitch a { color:#586172; text-decoration:none; cursor:pointer; }
+  .langswitch a:hover { color:#d83a3a; }
+  .langswitch .sep { color:#c9ced8; margin:0 5px; }
+  @media (prefers-color-scheme: dark) {
+    .lead { color:#d7dce4; }
+    a { color:#ff9696; }
+    footer.site, footer.site a, .langswitch a { color:#b8c0cf; }
+    body { background:#15171c; color:#e5e7eb; }
+    .logo, h1 { color:#f3f4f6; }
+    p, li { color:#c5cad3; }
+    header.site, footer.site { border-color:#2a2e37; }
+    .card { background:#1c1f26; border-color:#2a2e37; }
+    footer.site, footer.site a, .langswitch a { color:#b8c0cf; }
+  }
+</style>
+<script>
+(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');document.documentElement.lang='en';}}catch(e){}})();
+function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');document.documentElement.lang=l==='ko'?'ko':'en';}
+</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <a class="logo" href="/">24Hou<b>ring</b></a>
+    <nav style="font-size:14px">
+      <span class="langswitch"><button type="button" onclick="setGuideLang('ko')" lang="ko">한국어</button><span class="sep">·</span><button type="button" onclick="setGuideLang('en')" lang="en">EN</button></span>
+      <a href="/" style="color:inherit;text-decoration:none;margin-left:14px"><span class="lang-ko">홈</span><span class="lang-en">Home</span></a>
+    </nav>
+  </header>
+
+  <main><div class="lang-ko"><h1>콘텐츠 작성 기준</h1><p class="lead">24Houring의 읽을거리는 하루를 계획하고 플래너를 사용하는 데 도움을 주기 위한 자료입니다. 운영자 Circloser가 콘텐츠에 대한 문의와 정정을 받습니다.</p><h2>어떤 내용을 다루나요?</h2><p>기능 사용법, 시간표 작성 과정, 상황별 계획 예시를 다룹니다. 각 글은 독자가 직접 적용하거나 수정할 수 있는 설명을 제공하는 것을 목표로 합니다. 템플릿은 일정 입력의 출발점이며 정답이 아닙니다.</p><h2>예시와 사실을 구분합니다</h2><p>실제 사례라고 별도로 명시하지 않은 인물·시간표·전후 비교는 설명을 위한 예시로 읽어 주세요. 예시는 실제 이용자의 후기나 검증된 성과를 의미하지 않습니다. 효과를 단정하거나 모든 사람에게 같은 루틴을 권장하는 근거로 사용하지 않습니다.</p><h2>출처와 제품 설명</h2><p>외부 연구나 수치를 근거로 제시할 때는 해당 주장을 확인할 수 있는 출처를 함께 표시하는 것이 작성 기준입니다. 출처가 없는 예시 시간은 권장량이나 연구 결과가 아닙니다. 제품 설명은 제공되는 기능과 무료·유료 범위를 구분합니다. 가격·체험·갱신 조건은 앱과 결제 화면의 현재 안내를 확인하세요.</p><h2>건강과 학습 관련 글의 범위</h2><p>수면·운동·공부 시간이 등장하더라도 개인별 진단, 치료 또는 성과 보장을 제공하는 자료가 아닙니다. 교대근무, 돌봄, 건강 상태 등 자신의 제약을 먼저 반영해 시간표를 조정하세요. 개인에게 적절한 건강 조언은 해당 전문가와 상의해야 합니다.</p><h2>오류를 발견했다면</h2><ol><li>글의 주소와 문제가 있는 문장을 복사합니다.</li><li>부정확한 이유와 확인 가능한 출처 또는 재현 방법을 함께 적습니다.</li><li><a href="/contact">문의 페이지</a> 또는 <a href="mailto:singlena@gmail.com">singlena@gmail.com</a>으로 보냅니다.</li></ol><p>확인된 오류는 해당 설명을 수정하는 대상으로 삼습니다. 본문에 없는 전문 검토나 실제 사용 시험을 했다고 표시하지 않습니다. 작성·수정 날짜를 표시할 때도 단순한 배포 시각을 내용 검토 날짜로 사용하지 않는 것이 기준입니다.</p><h2>광고와 서비스 안내</h2><p>광고가 표시되는 경우에도 가이드의 예시가 광고 상품의 효능을 입증하는 것은 아닙니다. Pro 기능 설명은 24Houring 자체 서비스에 대한 안내입니다. 문의를 보내는 데 구매나 구독은 필요하지 않습니다.</p><p><a href="/guides/">가이드 보기</a> · <a href="/templates/">템플릿 보기</a> · <a href="/about">서비스 소개</a></p></div>
+<div class="lang-en"><h1>Editorial policy</h1><p class="lead">24Houring’s reading material helps readers plan a day and use the planner. Operator Circloser receives content questions and correction requests.</p><h2>Scope</h2><p>We cover feature instructions, schedule-building steps and example plans for different situations. The aim is to explain something readers can apply or adapt. Templates are starting points, not universal answers.</p><h2>Examples and facts</h2><p>Unless explicitly described as real cases, people, schedules and before-and-after comparisons are illustrative examples. They are not customer testimonials or verified results, and do not establish that a routine works for everyone.</p><h2>Sources and product descriptions</h2><p>Our writing standard is to link a verifiable source when using external research or numerical claims as evidence. Unsourced example durations are not recommendations or research findings. Product descriptions should distinguish available features and free versus paid access. Check the app and checkout for current pricing, trial and renewal terms.</p><h2>Health and learning topics</h2><p>References to sleep, exercise or study time are not individualized diagnosis, treatment or guaranteed outcomes. Adjust a schedule to constraints such as shift work, care duties and health needs. Consult an appropriate professional for personal health advice.</p><h2>Requesting a correction</h2><ol><li>Copy the article URL and the passage in question.</li><li>Explain the issue and include a verifiable source or reproduction steps.</li><li>Use the <a href="/contact">Contact page</a> or email <a href="mailto:singlena@gmail.com">singlena@gmail.com</a>.</li></ol><p>Confirmed errors are candidates for correction in the relevant explanation. We should not claim expert review or firsthand testing that did not occur. A deployment timestamp should not be presented as a date of substantive content review.</p><h2>Ads and service information</h2><p>Where ads appear, a guide’s examples do not establish the effectiveness of an advertised product. Pro feature descriptions concern 24Houring’s own service. No purchase or subscription is required to contact us.</p><p><a href="/guides/">Read guides</a> · <a href="/templates/">Browse templates</a> · <a href="/about">About the service</a></p></div></main>
+
+  <footer class="site">
+    <nav>
+      <a href="/">홈 Home</a>
+      <a href="/life-planner">생활계획표 Life Planner</a> <a href="/guides/">가이드 Guides</a>
+      <a href="/blog/">블로그 Blog</a>
+      <a href="/templates/">템플릿 Templates</a>
+      <a href="/gallery/">갤러리 Gallery</a>
+      <a href="/stories/">스토리 Stories</a>
+      <a href="/health/">건강 Health</a>
+      <a href="/faq">자주 묻는 질문 FAQ</a>
+      <a href="/about">소개 About</a>
+      <a href="/editorial-policy">콘텐츠 작성 기준 Editorial policy</a>
+      <a href="/privacy">개인정보처리방침 Privacy</a>
+      <a href="/terms">이용약관 Terms</a>
+      <a href="/refund">환불 Refund</a>
+      <a href="/contact">문의 Contact</a>
+    </nav>
+    <p style="margin:10px 0 0">© 2026 Circloser · 24houring.com</p>
+  </footer>
+</div>
+</body>
+</html>

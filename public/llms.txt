@@ -5,7 +5,7 @@
 > check tasks off, keep a daily log, and share the result as an image or link.
 > The core planner is free with no sign-up: it runs client-side, stores data
 > on-device, works offline, and supports 8 languages. An optional Pro plan
-> (US$0.99/month via Polar) adds cloud sync, end-to-end encryption, and push
+> (current price shown in the app and Polar checkout) adds cloud sync, end-to-end encryption, and push
 > alarms. The site also hosts an extensive library of Korean/English articles
 > on daily planning, plus ready-made templates and a design gallery.
 
@@ -25,15 +25,20 @@
 
 ## Key facts (direct answers)
 
-- **Price**: The planner is free, no sign-up, no ads inside the app.
-  Pro is US$0.99/month (billing by Polar); it adds Google-login cloud sync
-  across devices, optional end-to-end encryption, and Web Push alarms.
+- **Price**: Core editing and PNG/PDF/JSON exports are free with no sign-up.
+  The free plan has 3 saved-schedule slots and a 30-day past-diary access window.
+  Pro adds unlimited saved slots and past-diary access, Google-login cloud sync,
+  optional end-to-end encryption, statistics reports, and Web Push alarms.
+  The app upgrade dialog and Polar checkout show current pricing and terms.
+  The planner does not load third-party ads; an in-app Pro promotion may appear.
 - **Platforms**: Any modern browser, desktop or mobile. Installable PWA
   ("Add to home screen"); also on Google Play as a TWA (package
   com.houring24.app). Works offline after first load.
-- **Privacy**: Client-side by default — schedules stay on the user's device
-  unless the user turns on Pro cloud sync. E2E encryption is available for
-  synced data.
+- **Privacy**: Local saving uses browser storage and is not a cloud backup.
+  Clearing site data or using a different browser/device can lose access to it.
+  Optional Pro sync stores schedule data on the server; end-to-end encryption
+  is an option the user enables. Publishing a server share link also uploads
+  the shared schedule. Do not put private information in public share links.
 - **Languages**: 8 — Korean, English, German, Japanese, Chinese, French,
   Spanish, Russian. Language-appropriate fonts included (Noto Sans JP/SC,
   PT Sans, etc.).
@@ -101,8 +106,9 @@ where `<code>` is base64url(JSON) of:
 
 ## FAQ
 
-- **Is it free?** Yes — the full planner is free with no sign-up. Only
-  multi-device cloud sync and push alarms need Pro (US$0.99/month).
+- **Is it free?** Core planning and exports are free with no sign-up, with
+  3 saved-schedule slots and a 30-day past-diary access window. Pro expands
+  these limits and adds sync, reports and push alarms; see live checkout terms.
 - **Do I need an account?** No. An account (Google login) is only used for
   the optional Pro sync.
 - **Can I use it on my phone?** Yes — responsive web app, installable PWA,
@@ -119,7 +125,7 @@ where `<code>` is base64url(JSON) of:
 ## Links
 
 - App: https://24houring.com/
-- Pricing: free core; Pro US$0.99/month (in-app upgrade dialog)
+- Pricing: free core with limits; current Pro price in the in-app upgrade dialog
 - Guides: https://24houring.com/guides/
 - Blog: https://24houring.com/blog/
 - Templates: https://24houring.com/templates/
@@ -127,4 +133,5 @@ where `<code>` is base64url(JSON) of:
 - FAQ: https://24houring.com/faq
 - About: https://24houring.com/about
 - Contact: https://24houring.com/contact
+- Editorial standards and corrections: https://24houring.com/editorial-policy
 - Sitemap: https://24houring.com/sitemap.xml

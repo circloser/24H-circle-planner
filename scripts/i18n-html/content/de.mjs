@@ -16,8 +16,8 @@ export default {
   webAppDescription:
     'Ein kostenloser Tagesplaner ohne Anmeldung, der deinen 24-Stunden-Tag wie eine Uhr darstellt und offline funktioniert. Blöcke per Ziehen bearbeiten, zwischen 12/24-Stunden-Ansicht wechseln und als Bild speichern oder teilen.',
   faq: [
-    { q: 'Was ist 24Houring?', a: '24Houring ist ein kostenloser Web-Planer, der deinen ganzen 24-Stunden-Tag wie eine Uhr auf einen Blick zeigt. Er läuft direkt im Browser ohne Anmeldung oder Installation, und deine Daten bleiben auf deinem Gerät, sodass er auch offline funktioniert.' },
-    { q: 'Ist 24Houring kostenlos?', a: 'Ja. Der Kern-Planer ist völlig kostenlos und ohne Anmeldung. Ein optionales Pro-Abo (0,99 $/Monat, 1 Monat gratis, keine automatische Verlängerung) ergänzt Cloud-Sync, unbegrenzten Speicher, Statistik-Berichte und Werbefreiheit.' },
+    { q: 'Was ist 24Houring?', a: '24Houring ist ein kostenloser Webplaner für einen kreisförmigen Tagesplan. Beginnen Sie ohne Anmeldung. Ihre Änderungen werden zunächst im Browser auf diesem Gerät gespeichert; bei Anmeldung mit Pro werden unterstützte Daten mit dem Server synchronisiert. Beim Erstellen eines Freigabelinks wird eine Kopie des Zeitplans auf den Server geladen.' },
+    { q: 'Ist 24Houring kostenlos?', a: 'Bearbeiten, Vorlagen und Export sind ohne Anmeldung kostenlos. Kostenlos verfügbar sind drei Speicherplätze und Tagebucheinträge im 30-Tage-Zeitraum. Optionales Pro bietet Kontosynchronisierung, unbegrenzte Speicherplätze, ältere Tagebucheinträge, Berichte und Werbefreiheit. Aktuelle Preise und Bedingungen stehen vor dem Kauf im Upgrade-Dialog.' },
     { q: 'Kann ich auf eine 12-Stunden-Ansicht (Uhr) wechseln?', a: 'Ja. Ein Umschalter oben wechselt zwischen 24-Stunden-, Tag- (06–18) und Nacht-Ansicht (18–06), und jede Ansicht bleibt mit demselben Tag synchron.' },
     { q: 'Kann ich meinen Stundenplan speichern oder teilen?', a: 'Ja. Exportiere als PNG, PDF oder JSON oder teile das Stundenplan-Bild direkt bei Instagram und anderen. Vollständige Sicherung und Wiederherstellung werden ebenfalls unterstützt.' },
     { q: 'Welche Sprachen werden unterstützt?', a: 'Acht Sprachen: Englisch, Koreanisch, Deutsch, Japanisch, Chinesisch, Französisch, Spanisch und Russisch.' },
@@ -31,10 +31,9 @@ export default {
   ],
   mainHtml: `      <main style="max-width:760px;margin:0 auto;padding:40px 20px;font-family:'Pretendard',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;color:#1f2430;line-height:1.65">
         <h1 style="font-size:30px;font-weight:800;letter-spacing:-0.5px;margin:0 0 8px">24Houring — dein ganzer Tag auf einen Blick, ein 24-Stunden-Kreisplaner</h1>
-        <p style="font-size:17px;color:#3a4150;margin:0 0 20px">
-          24Houring ist ein <strong>kostenloser</strong> Web-Planer, der deinen 24-Stunden-Tag wie eine Uhr darstellt.
-          Nutze ihn direkt im Browser ohne Anmeldung oder Installation; deine Daten bleiben auf deinem Gerät, also funktioniert er auch <strong>offline</strong>.
-        </p>
+        <p class="copy-lead">24Houring ist ein kostenloser Webplaner für einen kreisförmigen Tagesplan. Beginnen Sie ohne Anmeldung. Ihre Änderungen werden zunächst im Browser auf diesem Gerät gespeichert; bei Anmeldung mit Pro werden unterstützte Daten mit dem Server synchronisiert. Beim Erstellen eines Freigabelinks wird eine Kopie des Zeitplans auf den Server geladen.</p>
+        <nav class="copy-actions"><a href="/templates/">Zeitplan-Vorlagen</a><a href="/guides/">Anleitungen</a></nav>
+        <details><summary>Funktionen, Anleitung und Fragen</summary>
 
         <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">Funktionen</h2>
         <ul style="padding-left:20px;margin:0 0 8px">
@@ -59,7 +58,7 @@ export default {
 
         <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">Häufige Fragen</h2>
         <h3 style="font-size:16px;font-weight:700;margin:14px 0 2px">Ist 24Houring kostenlos?</h3>
-        <p style="margin:0 0 8px">Ja — der Kern-Planer ist völlig kostenlos und ohne Anmeldung. Ein optionales Pro-Abo (0,99 $/Monat, 1 Monat gratis, keine automatische Verlängerung) ergänzt Cloud-Sync, unbegrenzten Speicher, Statistik-Berichte und Werbefreiheit.</p>
+        <p>Bearbeiten, Vorlagen und Export sind ohne Anmeldung kostenlos. Kostenlos verfügbar sind drei Speicherplätze und Tagebucheinträge im 30-Tage-Zeitraum. Optionales Pro bietet Kontosynchronisierung, unbegrenzte Speicherplätze, ältere Tagebucheinträge, Berichte und Werbefreiheit. Aktuelle Preise und Bedingungen stehen vor dem Kauf im Upgrade-Dialog.</p>
         <h3 style="font-size:16px;font-weight:700;margin:14px 0 2px">Kann ich auf eine 12-Stunden-Ansicht (Uhr) wechseln?</h3>
         <p style="margin:0 0 8px">Ja — ein Umschalter oben wechselt zwischen 24-Stunden, Tag (06–18) und Nacht (18–06), und jede Ansicht bleibt mit demselben Tag synchron.</p>
         <h3 style="font-size:16px;font-weight:700;margin:14px 0 2px">Kann ich speichern oder teilen, was ich erstelle?</h3>
@@ -78,7 +77,7 @@ export default {
         <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">So nutzt du es</h2>
         <p style="margin:0 0 8px">Neu hier? Beginne mit einer situationsbezogenen <a href="/templates/">Vorlage</a> und passe sie an oder folge den Schritt-für-Schritt-<a href="/guides/">Anleitungen</a> zu Time-Blocking, Zeit-Audits und dem Aufbau einer Morgen-/Abendroutine.</p>
 
-        <p style="margin:24px 0 0;font-size:15px;color:#7e8aa0">Der interaktive Planer wird geladen auf <strong>24houring.com</strong> …</p>
+        </details><p class="copy-note">Lokaler Browserspeicher ersetzt kein Backup. Beim Löschen von Websitedaten, beim Beenden privater Sitzungen oder beim Browserwechsel kann der Zugriff auf Pläne verloren gehen. Bewahren Sie ein JSON-Backup auf. Bereits zwischengespeicherte Planerfunktionen sind offline nutzbar; Anmeldung, Synchronisierung und Wetter benötigen Internet.</p>
 
         <hr style="border:none;border-top:1px solid #e3e6ec;margin:28px 0 14px" />
         <nav style="font-size:14px;color:#7e8aa0">

@@ -12,6 +12,10 @@
   :root { color-scheme: light dark; }
   * { box-sizing: border-box; }
   body { margin:0; font-family:'Pretendard',system-ui,-apple-system,'Segoe UI',Roboto,'Apple SD Gothic Neo','Noto Sans KR',sans-serif; color:#1f2430; background:#f4f5f7; line-height:1.7; -webkit-font-smoothing:antialiased; }
+  a, p, li { overflow-wrap:anywhere; }
+  a:focus-visible, button:focus-visible { outline:3px solid #2563eb; outline-offset:3px; }
+  header.site { flex-wrap:wrap; gap:12px; }
+  .langswitch button { font:inherit; color:inherit; background:transparent; border:1px solid currentColor; border-radius:6px; min-height:44px; padding:8px; cursor:pointer; }
   .wrap { max-width:760px; margin:0 auto; padding:28px 22px 64px; }
   header.site { display:flex; align-items:center; justify-content:space-between; padding:6px 0 22px; border-bottom:1px solid #e3e6ec; margin-bottom:26px; }
   .logo { font-size:22px; font-weight:800; letter-spacing:-0.5px; color:#1f2430; text-decoration:none; }
@@ -19,32 +23,35 @@
   h1 { font-size:28px; font-weight:800; letter-spacing:-0.5px; margin:0 0 6px; }
   h2 { font-size:18px; font-weight:700; margin:28px 0 8px; }
   p, li { font-size:15px; color:#333a48; }
-  a { color:#d83a3a; }
+  a { color:#ac2929; }
   .lead { font-size:16px; color:#3a4150; }
   .card { background:#fff; border:1px solid #e3e6ec; border-radius:12px; padding:16px 18px; margin:16px 0; }
   footer.site { margin-top:40px; padding-top:18px; border-top:1px solid #e3e6ec; font-size:14px; color:#6b7280; }
-  footer.site a { color:#6b7280; text-decoration:none; margin-right:14px; }
+  footer.site a { color:#586172; text-decoration:none; margin-right:14px; }
   footer.site a:hover { color:#d83a3a; text-decoration:underline; }
   /* Language toggle — Korean by default; English when <html class="show-en">. */
   .lang-en { display:none; }
   html.show-en .lang-ko { display:none; }
   html.show-en .lang-en { display:revert; }
   .langswitch { font-size:13px; }
-  .langswitch a { color:#6b7280; text-decoration:none; cursor:pointer; }
+  .langswitch a { color:#586172; text-decoration:none; cursor:pointer; }
   .langswitch a:hover { color:#d83a3a; }
   .langswitch .sep { color:#c9ced8; margin:0 5px; }
   @media (prefers-color-scheme: dark) {
+    .lead { color:#d7dce4; }
+    a { color:#ff9696; }
+    footer.site, footer.site a, .langswitch a { color:#b8c0cf; }
     body { background:#15171c; color:#e5e7eb; }
     .logo, h1 { color:#f3f4f6; }
     p, li { color:#c5cad3; }
     header.site, footer.site { border-color:#2a2e37; }
     .card { background:#1c1f26; border-color:#2a2e37; }
-    footer.site, footer.site a, .langswitch a { color:#9aa3b2; }
+    footer.site, footer.site a, .langswitch a { color:#b8c0cf; }
   }
 </style>
 <script>
-(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');}}catch(e){}})();
-function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');}
+(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');document.documentElement.lang='en';}}catch(e){}})();
+function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');document.documentElement.lang=l==='ko'?'ko':'en';}
 </script>
 </head>
 <body>
@@ -52,7 +59,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
   <header class="site">
     <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav style="font-size:14px">
-      <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
+      <span class="langswitch"><button type="button" onclick="setGuideLang('ko')" lang="ko">한국어</button><span class="sep">·</span><button type="button" onclick="setGuideLang('en')" lang="en">EN</button></span>
       <a href="/" style="color:inherit;text-decoration:none;margin-left:14px"><span class="lang-ko">홈</span><span class="lang-en">Home</span></a>
     </nav>
   </header>
@@ -63,7 +70,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
       <p class="lead">24Houring은 하루 24시간을 원형 시계처럼 그리는 <strong>무료</strong> 시간표 플래너입니다. 원을 드래그해 일정을 편집하고, 저장·내보내기·공유까지 한곳에서 할 수 있습니다.</p>
 
       <h2>서비스 목적</h2>
-      <p>하루를 한눈에 보기 쉽게 시각화해, 누구나 회원가입·설치 없이 시간을 계획하고 되돌아볼 수 있도록 돕는 것이 목표입니다. 모든 데이터는 사용자의 브라우저(기기)에만 저장되며, 오프라인에서도 동작합니다.</p>
+      <p>하루를 한눈에 보기 쉽게 시각화해, 누구나 회원가입·설치 없이 시간을 계획하고 되돌아볼 수 있도록 돕는 것이 목표입니다. 시간표는 기본적으로 현재 브라우저에 저장됩니다. 계정 없이 핵심 편집 기능을 이용할 수 있으며, Pro 계정으로 동기화를 사용하면 일정 데이터가 서버에도 저장됩니다. 처음 페이지를 불러온 후에는 주요 편집 기능을 오프라인으로 사용할 수 있습니다.</p>
 
       <h2>주요 기능</h2>
       <ul>
@@ -75,6 +82,10 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
         <li>8개 언어 지원, 오프라인 동작, 홈 화면 설치 가능</li>
       </ul>
 
+<h2>처음 이용한다면</h2><ol><li><a href="/">플래너</a>에서 수면·출근·수업처럼 이미 정해진 시간부터 배치합니다.</li><li>원형 경계를 움직이거나 시간표 보기에서 시간을 바꾸고, 이동·식사·휴식 시간을 빠뜨리지 않았는지 확인합니다.</li><li>기기에 저장 상태를 확인합니다. 다시 편집할 데이터는 JSON으로, 인쇄하거나 전달할 시간표는 이미지 또는 PDF로 내보냅니다.</li><li>다음 날 실제로 달라진 구간 하나를 고쳐 보세요. 완벽한 시간표보다 수정할 수 있는 계획을 만드는 도구입니다.</li></ol>
+<h2>무료 범위와 선택형 Pro</h2><p>핵심 편집·프리셋·내보내기는 무료입니다. 무료 저장 슬롯은 3개이며, 일기에서 30일보다 오래된 기록에 접근하려면 Pro가 필요합니다. 이는 편집 중인 시간표에 넣을 수 있는 활동 수가 3개라는 뜻이 아닙니다. Pro에는 기기 간 동기화, 저장 슬롯과 과거 일기 접근 제한 해제, 통계 리포트가 포함됩니다. 현재 가격과 결제 조건은 앱의 Pro 안내 및 결제 화면에서 확인하세요.</p>
+<h2>저장과 공유를 선택할 때</h2><p>브라우저 데이터 삭제, 시크릿 모드 종료, 기기 분실은 로컬 기록을 잃는 원인이 될 수 있습니다. 중요한 기록은 내보내기의 전체 백업으로 별도 보관하세요. 이미지·PDF는 열람용이고, 전체 백업 JSON은 복원용입니다. 시간표를 공유하기 전에는 이름·장소·개인 메모가 포함됐는지 확인하세요. <a href="/faq">저장 문제와 백업 안내</a> · <a href="/privacy">개인정보처리방침</a></p>
+<h2>읽을거리의 역할</h2><p>가이드와 템플릿은 플래너를 활용하는 방법과 계획 예시를 제공합니다. 예시 시간표는 실제 이용자의 성과나 모든 사람에게 맞는 권장 생활을 뜻하지 않습니다. 콘텐츠와 제품 설명의 오류는 운영자에게 제보할 수 있습니다. <a href="/editorial-policy">작성 기준과 정정 안내</a></p>
       <h2>운영자</h2>
       <div class="card">
         <p style="margin:0 0 6px"><strong>Circloser</strong> — 1인 창업(인디) 프로젝트</p>
@@ -90,7 +101,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
       <p class="lead">24Houring is a <strong>free</strong> day-planner that draws your 24 hours as a clock. Edit your schedule by dragging the ring, then save, export and share — all in one place.</p>
 
       <h2>Purpose</h2>
-      <p>Our goal is to make a day easy to see at a glance, so anyone can plan and reflect on their time without sign-up or installation. All data is stored only in your browser (on your device) and works offline.</p>
+      <p>Our goal is to make a day easy to see at a glance, so anyone can plan and reflect on their time without sign-up or installation. Schedules are saved in the current browser by default. Core editing needs no account; using sync with a Pro account also stores schedule data on the server. After an initial load, core editing can work offline.</p>
 
       <h2>Features</h2>
       <ul>
@@ -102,6 +113,10 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
         <li>8 languages, offline support, installable to your home screen</li>
       </ul>
 
+<h2>Your first plan</h2><ol><li>Open the <a href="/">planner</a> and enter fixed commitments such as sleep, work or classes first.</li><li>Move ring boundaries or edit times in the timetable view. Include travel, meals and breaks.</li><li>Check the device-save status. Export JSON for later editing, or an image or PDF for reading and printing.</li><li>On the following day, adjust one block that differed from reality. The aim is a plan you can revise.</li></ol>
+<h2>Free features and optional Pro</h2><p>Core editing, presets and export are free. The free plan has 3 saved-schedule slots; accessing diary records older than 30 days requires Pro. This does not limit a schedule to 3 activities. Pro includes cross-device sync, removal of the saved-slot and past-diary access limits, and statistics reports. Check the current price and payment terms in the app’s Pro panel and checkout.</p>
+<h2>Choosing how to save and share</h2><p>Clearing browser data, ending a private-browsing session or losing a device can remove local records. Keep a separate full backup from Export for important plans. Images and PDFs are for viewing; a full-backup JSON file is for restoring data. Before sharing, check for names, locations and private notes. <a href="/faq">Saving and backup help</a> · <a href="/privacy">Privacy policy</a></p>
+<h2>What our reading material is for</h2><p>Guides and templates explain how to use the planner and offer example schedules. Examples are not customer outcomes or routines recommended for everyone. Report errors in content or product explanations to the operator. <a href="/editorial-policy">Editorial and correction policy</a></p>
       <h2>Operator</h2>
       <div class="card">
         <p style="margin:0 0 6px"><strong>Circloser</strong> — a one-person (indie) studio</p>
@@ -124,6 +139,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
       <a href="/health/">건강 Health</a>
       <a href="/faq">자주 묻는 질문 FAQ</a>
       <a href="/about">소개 About</a>
+      <a href="/editorial-policy">콘텐츠 작성 기준 Editorial policy</a>
       <a href="/privacy">개인정보처리방침 Privacy</a>
       <a href="/terms">이용약관 Terms</a>
       <a href="/refund">환불 Refund</a>

@@ -121,22 +121,22 @@
           {
             "@type": "Question",
             "name": "What is 24Houring?",
-            "acceptedAnswer": { "@type": "Answer", "text": "24Houring is a free web planner that shows your whole 24-hour day at a glance like a clock. It works right in the browser with no sign-up or install, and your data stays on your device, so it also works offline." }
+            "acceptedAnswer": { "@type": "Answer", "text": "24Houring is a free web planner that shows your whole 24-hour day at a glance like a clock. Core editing needs no sign-up or install and saves in the current browser by default. Signing in with Pro enables server sync, and creating a share link uploads a schedule copy. Previously cached planner functions can work offline; network features need a connection." }
           },
           {
             "@type": "Question",
             "name": "Is 24Houring free?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Yes. The core planner is completely free with no sign-up. An optional Pro subscription ($0.99/month, 1-month free trial, no auto-renewal) adds cloud sync, unlimited storage, stats reports, and ad removal." }
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. The core planner is completely free with no sign-up. Free use includes three saved-schedule slots and a 30-day diary history window. Optional Pro adds account sync, unlimited saved slots, older diary access, reports and ad removal. The upgrade screen shows current prices and terms." }
           },
           {
             "@type": "Question",
             "name": "Can I switch to a 12-hour (clock) view?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Yes. A toggle at the top switches between 24-hour, day (06–18), and night (18–06) views, and every view stays in sync with the same day." }
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. Full-day, day (06–18), night (18–06) and table views display the same planned timetable. Record mode maintains a separate record of what you actually did." }
           },
           {
             "@type": "Question",
             "name": "Can I save or share the timetable I make?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Yes. Export to PNG, PDF, or JSON, or use the share button to post the timetable image straight to Instagram and others. Full backup and restore are supported too." }
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. Export to PNG, PDF, or JSON, or share the timetable image using the options supported by your browser and device. Full backup and restore are supported too." }
           },
           {
             "@type": "Question",
@@ -161,14 +161,8 @@
       }
     </script>
 
-    <!-- Google AdSense — site-level verification/connection loader (required so
-         AdSense can verify the site during review). IMPORTANT: keep Auto ads OFF
-         (or URL-restricted to /guides/*) in the AdSense dashboard so ads are NOT
-         auto-placed on the app itself — the planner is a tool with no article
-         content, and serving ads there breaks policy. Ads are intended only for
-         the content pages under /guides/*. -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6947130056543786"
-         crossorigin="anonymous"></script>
+    <!-- AdSense ownership verification; the interactive planner has no ad loader. -->
+    <meta name="google-adsense-account" content="ca-pub-6947130056543786" />
 
     <!-- Google tag (gtag.js) — loaded only on the deployed http(s) site, so
          local dev and the offline single-file build (file://) don't pollute
@@ -190,14 +184,7 @@
     </script>
   </head>
   <body>
-    <!--
-      The app is a client-rendered SPA. The static content inside #root below is
-      the initial HTML so non-JavaScript crawlers (incl. AI search/answer bots
-      such as OAI-SearchBot, ClaudeBot and PerplexityBot) can read what 24Houring
-      is. React (createRoot) replaces this with the live app on load, so users
-      only see it briefly while the bundle loads. The copy is accurate — no
-      hidden/cloaked content.
-    -->
+    <!-- React mounts the planner here; persistent reading content follows #root. -->
     <div id="root">
       <!-- Boot splash: a symbolic loading mark shown while the bundle loads.
            React replaces all of #root on mount, so the splash disappears the
@@ -219,115 +206,71 @@
       </div>
     </div>
 
-    <!-- Site content — persists after the app mounts (outside #root). -->
+    <!-- Visible editorial content stays outside React on every screen size. -->
     <style>
-      #site-copy-wrap { background:#ffffff; border-top:1px solid #e3e6ec }
-      /* Phones get the planner only — the copy block is desktop-side
-         context, and on a small screen it just turns the app into a long
-         scroll. The markup stays in the document either way. */
-      @media (max-width: 767px) { #site-copy-wrap { display:none } }
-      [data-theme='dark'] #site-copy-wrap { background:#0f131a; border-top-color:#232a36 }
-      /* The app's global reset strips link colour/underline; this block is
-         plain content, so its links must look like links. */
-      #site-copy a { color:#1a4fd6; text-decoration:underline; text-underline-offset:2px }
+      #site-copy-wrap { --copy-bg:#fff; --copy-ink:#202735; --copy-muted:#4d586b; --copy-line:#dde3eb; --copy-soft:#f5f7fb; --copy-link:#174bb5; background:var(--copy-bg);color:var(--copy-ink);border-top:1px solid var(--copy-line) }
+      [data-theme='dark'] #site-copy-wrap { --copy-bg:#111722; --copy-ink:#edf1f8; --copy-muted:#b8c3d4; --copy-line:#354153; --copy-soft:#1b2534; --copy-link:#9cc1ff }
+      #site-copy { max-width:1000px;margin:0 auto;padding:44px 24px 48px;font-family:'Pretendard',system-ui,sans-serif;font-size:16px;line-height:1.75;color:var(--copy-ink) }
+      #site-copy * { box-sizing:border-box }
+      #site-copy h1 { font-size:clamp(24px,3vw,34px);line-height:1.3;letter-spacing:-.6px;font-weight:800;margin:6px 0 16px;color:var(--copy-ink)!important }
+      #site-copy h2 { font-size:21px;line-height:1.4;font-weight:750;margin:28px 0 12px;color:var(--copy-ink)!important }
+      #site-copy h3 { font-size:17px;font-weight:700;margin:0 0 8px;color:var(--copy-ink)!important }
+      #site-copy p { margin:0 0 16px;color:var(--copy-muted)!important }
+      #site-copy strong { color:var(--copy-ink)!important }
+      #site-copy a { color:var(--copy-link)!important;text-decoration:underline;text-underline-offset:3px }
       #site-copy a:hover { text-decoration-thickness:2px }
-      [data-theme='dark'] #site-copy { color:#c6ccd8 !important }
-      [data-theme='dark'] #site-copy h1,
-      [data-theme='dark'] #site-copy h2,
-      [data-theme='dark'] #site-copy h3,
-      [data-theme='dark'] #site-copy strong { color:#e8ebf1 !important }
-      [data-theme='dark'] #site-copy summary,
-      [data-theme='dark'] #site-copy p,
-      [data-theme='dark'] #site-copy li { color:#c6ccd8 !important }
-      [data-theme='dark'] #site-copy a { color:#7fb0ff !important }
-      [data-theme='dark'] #site-copy hr { border-top-color:#232a36 !important }
-      [data-theme='dark'] #site-copy nav,
-      [data-theme='dark'] #site-copy nav a { color:#98a1b3 !important }
+      #site-copy a:focus-visible,#site-copy summary:focus-visible { outline:3px solid var(--copy-link);outline-offset:4px;border-radius:4px }
+      #site-copy .copy-eyebrow { margin:0;color:var(--copy-muted);font-size:12px;font-weight:750;letter-spacing:1.6px;text-transform:uppercase }
+      #site-copy .copy-lead { max-width:720px;font-size:17px }
+      #site-copy .copy-actions,#site-copy .copy-footer { display:flex;flex-wrap:wrap;gap:8px 20px;margin:20px 0 }
+      #site-copy .copy-actions a,#site-copy .copy-footer a { display:inline-flex;align-items:center;min-height:44px }
+      #site-copy .copy-grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:20px 0 26px }
+      #site-copy .copy-card { padding:20px;border:1px solid var(--copy-line);border-radius:12px;background:var(--copy-soft) }
+      #site-copy .copy-card p { font-size:15px;margin-bottom:12px }
+      #site-copy .copy-card a { display:inline-flex;align-items:center;min-height:44px;font-weight:650 }
+      #site-copy details { margin:14px 0;border:1px solid var(--copy-line);border-radius:12px;padding:0 20px }
+      #site-copy summary { cursor:pointer;min-height:56px;padding:14px 0;font-weight:700;color:var(--copy-ink)!important }
+      #site-copy details[open] { padding-bottom:12px }
+      #site-copy ul,#site-copy ol { padding-left:24px;margin:12px 0 20px;list-style:revert }
+      #site-copy li { margin:8px 0;color:var(--copy-muted)!important }
+      #site-copy .copy-example { border-left:3px solid var(--copy-link);padding:4px 0 4px 18px;margin:20px 0 }
+      #site-copy .copy-note { font-size:14px;margin-top:24px }
+      #site-copy .copy-footer { border-top:1px solid var(--copy-line);padding-top:16px;font-size:14px }
+      #site-copy hr { border:0;border-top:1px solid var(--copy-line)!important }
+      #site-copy nav { color:var(--copy-muted)!important }
+      @media(max-width:640px) { #site-copy { padding:28px 18px 36px } #site-copy .copy-grid { grid-template-columns:1fr;gap:12px } #site-copy .copy-card { padding:16px } #site-copy details { padding-left:16px;padding-right:16px } }
     </style>
     <div id="site-copy-wrap">
-    <main id="site-copy" style="max-width:760px;margin:0 auto;padding:28px 20px 36px;font-family:'Pretendard',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;color:#1f2430;line-height:1.65">
-        <h1 style="font-size:21px;font-weight:800;letter-spacing:-0.4px;margin:0 0 6px">24Houring — your whole day at a glance, a 24-hour circle planner</h1>
-        <p style="font-size:14px;color:#3a4150;margin:0 0 14px">
-          24Houring is a <strong>free</strong> web planner that visualizes your 24-hour day like a clock.
-          Use it right in the browser with no sign-up or install, and your data stays on your device, so it works <strong>offline</strong> too.
-          하루 24시간을 원형 시계처럼 시각화하는 무료 웹 시간표 플래너 — 회원가입·설치 없이 브라우저에서 바로, 오프라인에서도 동작합니다.
-        </p>
-        <p style="font-size:14px;color:#3a4150;margin:0 0 14px">
-          24Houring은 사용자의 상황과 목표(공부·업무·운동·가족생활·자기계발)를 바탕으로 하루 일정을 구성하고 <a href="/life-planner"><strong>생활계획표</strong></a>를 만들 수 있는 웹 서비스입니다.
-          24Houring helps you build a daily <a href="/life-planner"><strong>life planner</strong></a> around your own situation and goals — study, work, exercise, family life, and self-development.
-        </p>
-
-        <details style="margin:0 0 14px">
-          <summary style="cursor:pointer;font-size:14px;font-weight:700;color:#3a4150">About the planner · 기능 · 사용법 · FAQ</summary>
-        <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">Features · 주요 기능</h2>
-        <ul style="padding-left:20px;margin:0 0 8px">
-          <li>24-hour circular timetable and 12-hour clock views (day 06–18 · night 18–06) — every view stays in sync with the same day</li>
-          <li>Drag to adjust times; split and merge blocks with one click</li>
-          <li>Lifestyle presets and multi-day schedules</li>
-          <li>Export to PNG, PDF and JSON; full backup and restore</li>
-          <li>Share the timetable as an image (Instagram, KakaoTalk, …)</li>
-          <li>8 languages, works offline, installable to the home screen</li>
-        </ul>
-
-        <p style="font-size:15px;color:#3a4150;margin:8px 0 0">
-          Great as a vacation planner, daily routine planner, circular timetable, and daily schedule.
-          방학 계획표·생활 계획표·하루 일과표·원형 시간표·하루 시간표 등 다양한 용도로 활용할 수 있습니다.
-        </p>
-
-        <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">How to use · 사용 방법</h2>
-        <ol style="padding-left:20px;margin:0 0 8px">
-          <li>Pick a preset or start from an empty day.</li>
-          <li>Click the circle to split time blocks, set each name, color and icon, then drag the boundaries to adjust the times.</li>
-          <li>Export to PNG, PDF or JSON, or share the image with the share button.</li>
-        </ol>
-
-        <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">FAQ · 자주 묻는 질문</h2>
-        <h3 style="font-size:16px;font-weight:700;margin:14px 0 2px">Is 24Houring free?</h3>
-        <p style="margin:0 0 8px">Yes — the core planner is completely free with no sign-up. An optional Pro subscription ($0.99/month, 1-month free trial, no auto-renewal) adds cloud sync, unlimited storage, stats reports, and ad removal. 핵심 플래너는 완전 무료이며, 선택형 Pro 구독으로 동기화·무제한 보관·리포트·광고 제거를 제공합니다.</p>
-        <h3 style="font-size:16px;font-weight:700;margin:14px 0 2px">Can I switch to a 12-hour (clock) view?</h3>
-        <p style="margin:0 0 8px">Yes — a top toggle switches 24-hour → day (06–18) → night (18–06), and every view stays in sync with the same day. 상단 토글로 24시간 → 낮 → 밤 보기를 전환할 수 있습니다.</p>
-        <h3 style="font-size:16px;font-weight:700;margin:14px 0 2px">Can I save or share what I make?</h3>
-        <p style="margin:0 0 8px">Yes — export to PNG, PDF or JSON, or share the timetable image straight to Instagram and others. PNG·PDF·JSON으로 내보내거나 공유 버튼으로 이미지를 바로 공유할 수 있습니다.</p>
-
-        <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">Why a circular timetable? · 왜 원형 시간표인가요?</h2>
-        <p style="margin:0 0 8px">A day loops back on itself, so a circle mirrors it better than a list. Placing your plan on a midnight-to-midnight clock makes the <strong>balance of sleep and waking hours, the empty gaps, and the overlaps</strong> obvious at a glance — each wedge's size is the share of the day that activity takes.</p>
-        <p style="margin:0 0 8px">하루는 직선이 아니라 원으로 돌아옵니다. 원형 시계 위에 일정을 올리면 <strong>수면과 기상의 균형, 비어 있는 시간, 겹치는 일정</strong>이 한눈에 드러나고, 각 시간대의 넓이가 곧 그 활동에 쓰는 시간의 비중이라 "계획"과 "실제"의 간극을 직관적으로 확인할 수 있습니다.</p>
-
-        <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">Who it's for · 이런 분께 좋아요</h2>
-        <ul style="padding-left:20px;margin:0 0 8px">
-          <li><strong>Students</strong> planning for exams or vacations, and parents planning a day with their kids</li>
-          <li><strong>Shift workers</strong> whose day/night flips, and <strong>freelancers / remote workers</strong> who set their own boundaries</li>
-          <li><strong>Office workers</strong> carving out deep-work time and anyone building a morning/evening routine</li>
-          <li>학생·교대 근무자·프리랜서·재택근무자·직장인, 그리고 자녀와 함께 계획을 짜는 부모께 좋아요.</li>
-        </ul>
-
-        <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">Ways to use it · 이렇게 활용하세요</h2>
-        <p style="margin:0 0 8px">New here? Start from a situation-based <a href="/templates/">template</a> (office worker, exam student, freelancer, miracle morning, weekend reset, …) and adjust it, or follow the step-by-step <a href="/guides/">guides</a> on time blocking, time audits, and building a morning/evening routine.</p>
-        <p style="margin:0 0 8px">처음이라면 상황별 <a href="/templates/">템플릿</a>에서 시작해 고쳐 쓰는 것이 가장 빠르고, <a href="/guides/time-blocking">타임블로킹</a>·<a href="/guides/time-audit">시간 점검</a>·<a href="/guides/morning-evening-routine">아침·저녁 루틴</a> 가이드가 방법을 단계별로 안내합니다.</p>
-
+      <!-- editorial-content:start -->
+      <section id="site-copy" aria-labelledby="planner-guide-title">
+        <p class="copy-eyebrow">24Houring · A practical planning companion</p>
+        <h1 id="planner-guide-title">Make a day that fits your real life.</h1>
+        <p class="copy-lead">The circle above gives every hour a place. Use this free browser planner to set fixed commitments, make room for a task that matters, and leave space when the day changes. No account is needed to start editing.</p>
+        <nav class="copy-actions" aria-label="Planning resources"><a href="/templates/">Choose a starting timetable</a><a href="/guides/">Learn how to adapt your plan</a><a href="/ko/#site-copy" lang="ko">한국어 사용 안내</a></nav>
+        <div class="copy-grid">
+          <article class="copy-card"><h2 style="margin:0 0 10px;font-size:18px">Study around fixed classes</h2><p>Start with your classes and travel time. Give one study block a clear task, then keep a buffer for work that runs over.</p><a href="/templates/exam-student">Adapt a student timetable</a></article>
+          <article class="copy-card"><h2 style="margin:0 0 10px;font-size:18px">Protect time after work</h2><p>Include the commute and dinner before adding an evening goal. A smaller block you can keep is more useful than a full evening you cannot.</p><a href="/templates/office-worker">Adapt a workday timetable</a></article>
+          <article class="copy-card"><h2 style="margin:0 0 10px;font-size:18px">Find where the plan slips</h2><p>Record what actually happened for a day. Compare it with your plan and adjust the block that repeatedly needs more time.</p><a href="/guides/time-audit">Try a time audit</a></article>
+        </div>
+        <details><summary>Build, check and revise your first timetable</summary>
+          <ol><li><strong>Place what cannot move.</strong> Begin with work, classes, appointments and your own sleep schedule. A template is a worked example, not a recommended lifestyle.</li><li><strong>Edit one block at a time.</strong> Select a block to change its label; adjust its boundaries to change the time. Switch between full-day, day, night and table views to check the same schedule.</li><li><strong>Name an action you can finish.</strong> “Review chapter 2 and mark questions” is easier to evaluate than “study harder.” Keep meals, travel and breaks visible too.</li><li><strong>Revisit the plan after the day.</strong> Note what ran late. Move or shorten the next day's optional task instead of squeezing every remaining hour.</li></ol>
+          <div class="copy-example"><h3>A worked adjustment: the commute runs over</h3><p>Suppose your plan has travel from 18:00–18:30, dinner from 18:30–19:00 and study from 19:00–20:00. If travel actually ends at 19:00, move dinner to 19:00–19:30 and reduce study to 19:30–20:00. Rename that smaller block “review today's notes.” The example preserves dinner and changes the task to fit the time available; it is not a claim about the ideal study duration.</p></div>
+          <p>For a fuller method, read <a href="/guides/time-blocking">the time-blocking guide</a> or <a href="/life-planner">how to build a life planner</a>.</p>
         </details>
-
-        <h2 style="font-size:15px;font-weight:700;margin:0 0 6px">Reading · 읽을거리</h2>
-        <p style="font-size:13px;color:#3a4150;margin:0 0 8px">Original, hand-written articles on spending a day well — in Korean and English. 하루를 잘 쓰는 법에 관한 글을 직접 써서 싣습니다.</p>
-        <ul style="padding-left:18px;margin:0 0 6px;font-size:13.5px">
-          <li><a href="/life-planner"><strong>Life Planner · 생활계획표</strong></a> — what it is, how to build one, by situation</li>
-          <li><a href="/guides/"><strong>Guides · 가이드</strong></a> — 22 in-depth how-tos</li>
-          <li><a href="/blog/"><strong>Blog · 블로그</strong></a> — 20 short essays on everyday time problems</li>
-          <li><a href="/templates/"><strong>Templates · 템플릿</strong></a> — 10 ready-made day plans</li>
-          <li><a href="/gallery/"><strong>Gallery · 갤러리</strong></a> — 102 timetable designs: palettes, backgrounds, fonts &amp; 8 languages</li>
-          <li><a href="/health/"><strong>Health · 건강</strong></a> — sleep, meals, movement, mind, rhythm</li>
-          <li><a href="/stories/"><strong>Stories · 스토리</strong></a> — how notable people structured their days</li>
-          <li><a href="/faq"><strong>FAQ · 자주 묻는 질문</strong></a> — pricing, privacy, offline, exports</li>
-        </ul>
-
-        <hr style="border:none;border-top:1px solid #e3e6ec;margin:16px 0 10px" />
-        <nav style="font-size:14px;color:#7e8aa0">
-          <a href="/about" style="color:#7e8aa0;margin-right:14px">About · 소개</a>
-          <a href="/privacy" style="color:#7e8aa0;margin-right:14px">Privacy Policy · 개인정보처리방침</a>
-          <a href="/contact" style="color:#7e8aa0">Contact · 문의</a>
-          <div style="margin-top:8px">© 2026 Circloser · <a href="mailto:singlena@gmail.com" style="color:#7e8aa0">singlena@gmail.com</a></div>
-        </nav>
-    </main>
+        <details><summary>Saving, backups and the limits of browser storage</summary>
+          <p>Edits are saved in this browser on this device. Check the save indicator after editing. If saving fails, use its retry option or download the emergency backup before closing the page.</p><p><strong>Local saving is not a permanent backup.</strong> Clearing site data, using a private window or changing browsers can make a local plan unavailable. Export a JSON backup and keep it somewhere you control. PNG and PDF are useful for viewing or printing; JSON is the format for restoring editable data.</p><p>Local browser saving is the default. Signing in with Pro enables server sync for supported data; confirm the sync status before relying on another device. Creating a share link also uploads a schedule copy to the server. Previously cached planner functions can work offline; sign-in, sync, weather and other network services still need a connection.</p>
+        </details>
+        <details><summary>Questions about features, cost and sharing</summary>
+          <h3>What is 24Houring?</h3><p>A browser timetable editor that shows a day as a 24-hour circle. The block sizes show how much of your day each activity occupies. Use the table view when exact start and end times are easier to read as a list.</p>
+          <h3>Is 24Houring free?</h3><p>Core editing, presets and exports are free without signing up. Free use includes three saved-schedule slots and diary access within the free 30-day window. Optional Pro adds account sync, unlimited saved slots, older diary access, reports and ad removal. Check the upgrade screen for the current price and terms before paying.</p>
+          <h3>Can I switch to a 12-hour (clock) view?</h3><p>Yes. Full-day, day (06:00–18:00), night (18:00–06:00) and table views display the same planned timetable. Record mode is different: it maintains a separate record of what you actually did, so editing that record does not change your plan.</p>
+          <h3>Can I save or share the timetable I make?</h3><p>Export PNG or PDF for a visual copy, or JSON for an editable backup. Image sharing depends on your browser and the apps installed on your device. Review the labels before sharing because they may contain personal information.</p>
+          <h3>Which languages are supported?</h3><p>The app supports English, Korean, German, Japanese, Chinese, French, Spanish and Russian. Some reading resources have fewer translations; their language controls show the versions available.</p>
+        </details>
+        <p class="copy-note">The guides offer planning methods and examples, not medical advice or guaranteed productivity results. See <a href="/about">who operates 24Houring</a>, or <a href="/contact">send a correction or ask for help</a>.</p>
+        <nav class="copy-footer" aria-label="Site information"><a href="/about">About</a><a href="/contact">Contact</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/faq">More questions</a></nav>
+      </section>
+      <!-- editorial-content:end -->
     </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

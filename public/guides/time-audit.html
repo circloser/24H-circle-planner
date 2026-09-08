@@ -3,269 +3,144 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>시간 가계부 쓰는 법 — 하루가 어디로 새는지 기록·분석 · 24Houring</title>
-<meta name="description" content="시간을 기록하고(타임 트래킹) 분석해 낭비를 찾는 방법. 실시간 기록·주간 분석으로 하루를 되돌아보는 실전 가이드." />
+<title>시간 가계부 실전 예시 — 계획과 실제의 차이 읽기 · 24Houring</title>
+<meta name="description" content="24Houring 기록 보기 사용법과 180분 가상 기록 계산. 빠진 준비 시간을 찾고 다음 계획에 반영하는 방법." />
 <link rel="canonical" href="https://24houring.com/guides/time-audit" />
 <meta name="robots" content="index, follow" />
-<meta property="og:title" content="시간 가계부 쓰는 법 — 하루가 어디로 새는지 기록·분석" />
-<meta property="og:description" content="시간을 기록·분석해 낭비를 찾아내는 실전 가이드." />
+<meta property="og:title" content="시간 가계부 실전 예시 — 계획과 실제의 차이 읽기" />
+<meta property="og:description" content="24Houring 기록 보기 사용법과 180분 가상 기록 계산. 빠진 준비 시간을 찾고 다음 계획에 반영하는 방법." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://24houring.com/guides/time-audit" />
 <meta property="og:image" content="https://24houring.com/og-image.png" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="stylesheet" href="/guides/guide.css" />
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6947130056543786" crossorigin="anonymous"></script>
+<meta name="google-adsense-account" content="ca-pub-6947130056543786">
+<script defer src="/publisher-ads.js"></script>
 <script>
-(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');}}catch(e){}})();
-function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');}
+(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');document.documentElement.lang='en';}}catch(e){}})();
+function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');document.documentElement.lang=l==='ko'?'ko':'en';}
 </script>
 </head>
 <body>
+<a class="skip-link" href="#main-content"><span class="lang-ko">본문으로 이동</span><span class="lang-en">Skip to content</span></a>
 <div class="wrap">
   <header class="site">
     <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
-      <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
+      <span class="langswitch"><button type="button" onclick="setGuideLang('ko')">한국어</button><span class="sep">·</span><button type="button" onclick="setGuideLang('en')">EN</button></span>
       <a href="/guides/"><span class="lang-ko">가이드</span><span class="lang-en">Guides</span></a>
       <a href="/blog/"><span class="lang-ko">블로그</span><span class="lang-en">Blog</span></a>
       <a href="/"><span class="lang-ko">홈</span><span class="lang-en">Home</span></a>
     </nav>
   </header>
-  <main class="article">
-    <p class="crumb"><a href="/guides/"><span class="lang-ko">← 가이드 목록</span><span class="lang-en">← All guides</span></a></p>
-    <div class="lang-ko">
-    <h1>시간 가계부 쓰는 법 <span class="en">/ Time Audit</span></h1>
-    <p class="lead">돈을 관리하려면 가계부를 쓰듯, 시간을 관리하려면 먼저 '어디에 썼는지'를 알아야 합니다. 며칠만 기록해도 하루의 진짜 모습이 드러납니다.</p>
-
-    <h2>왜 '추측'보다 '기록'인가</h2>
-    <p>대부분의 사람은 자기 하루를 꽤 잘 안다고 생각합니다. 하지만 "오늘 스마트폰 얼마나 봤어요?"라고 물으면 실제보다 절반쯤 낮게 답하는 경우가 흔합니다. 기억은 인상적인 순간만 남기고, 5분짜리 확인 습관이나 회의 사이의 어정쩡한 공백은 통째로 지워버리기 때문입니다. 시간 가계부(타임 오딧, time audit)는 바로 이 기억의 왜곡을 걷어내는 작업입니다.</p>
-    <p>돈을 아끼려는 사람이 가장 먼저 하는 일은 지출을 줄이는 것이 아니라 '적는 것'입니다. 카드 내역을 펼쳐 보고 나서야 커피값이 한 달에 얼마인지 실감하듯, 시간도 적어봐야 어디로 새는지 보입니다. 계획을 세우기 전에 현실을 측정하는 이 순서가 핵심입니다. 측정 없이 세운 계획은 대개 '이상적인 나'를 위한 계획이라 며칠 만에 무너집니다.</p>
-    <p>또 하나 중요한 점은, 시간 가계부의 목적이 '자책'이 아니라는 것입니다. 스크롤로 흘려보낸 시간을 발견했을 때 죄책감에 빠지면 기록 자체를 그만두게 됩니다. 이 작업은 자기를 심판하려는 게 아니라, 하루라는 예산이 실제로 어떻게 집행되는지 담담하게 들여다보는 회계 업무에 가깝습니다. 숫자를 판단 없이 바라볼 수 있을 때 비로소 개선의 여지가 보입니다.</p>
-
-    <h2>두 가지 기록 방법</h2>
-    <p>시간을 기록하는 방식은 크게 두 가지입니다. 각각 장단점이 뚜렷하니 자기 성향과 상황에 맞춰 고르거나 섞어 쓰면 됩니다.</p>
-
-    <h3>1) 실시간 기록 (real-time logging)</h3>
-    <p>활동을 시작하고 끝낼 때마다 그 자리에서 바로 적는 방식입니다. 정확도가 가장 높습니다.</p>
-    <ul>
-      <li>장점: 기억에 의존하지 않아 오차가 적고, '방금 15분 동안 뭐 했지?' 하는 공백이 남지 않습니다.</li>
-      <li>단점: 매번 멈춰서 적어야 하니 번거롭고, 기록 자체가 흐름을 끊을 수 있습니다.</li>
-    </ul>
-    <p>이 번거로움을 줄이려면 도구의 도움을 받는 편이 좋습니다. 예를 들어 24Houring(<a href="/">홈</a>)은 실시간 기록 모드를 지원해, 지금 하는 일을 원형 시간표 위에 바로 얹어둘 수 있습니다. 버튼 한 번으로 시작·종료가 찍히니 수첩에 손으로 적을 때보다 마찰이 훨씬 적습니다.</p>
-
-    <h3>2) 하루 끝 복기 (end-of-day reconstruction)</h3>
-    <p>일과가 끝난 뒤 그날을 시간대별로 되짚어 채워 넣는 방식입니다.</p>
-    <ul>
-      <li>장점: 하루 중 방해받지 않고, 저녁에 10분만 투자하면 됩니다. 시작 문턱이 낮아 꾸준히 하기 쉽습니다.</li>
-      <li>단점: 자잘한 활동은 놓치기 쉽고, 애매한 시간대는 '대충 이랬겠지'로 뭉개집니다. 낭비 시간이 실제보다 적게 잡히는 경향이 있습니다.</li>
-    </ul>
-    <p>추천은 이렇습니다. 처음 이틀은 실시간 기록으로 감을 잡아 자기 하루의 '해상도'를 높이고, 이후엔 하루 끝 복기로 부담 없이 이어가는 절충안입니다. 실시간 기록으로 자기 하루의 리듬을 한 번 몸에 익혀 두면, 나중에 복기할 때도 '이 시간대엔 보통 이랬지' 하는 기준선이 생겨 빈칸을 훨씬 정확하게 채울 수 있습니다.</p>
-    <p>어떤 방식이든 '완벽한 기록'에 집착하지 마세요. 30분쯤 놓친 구간이 있어도 괜찮습니다. 시간 가계부의 가치는 소수점까지 맞추는 정밀함이 아니라, 큰 덩어리가 어디로 가는지 파악하는 데 있습니다. 90퍼센트만 채워도 하루의 윤곽은 충분히 드러납니다.</p>
-
-    <h2>며칠이나 기록해야 할까</h2>
-    <p>하루만 기록하면 우연에 휘둘립니다. 하필 그날 회식이 있었거나 아파서 누워 있었다면 평소와 전혀 다른 그림이 나옵니다. 반대로 한 달을 기록하겠다고 마음먹으면 대개 사흘째 포기합니다. 현실적인 균형점은 <strong>3~7일</strong>입니다.</p>
-    <ul>
-      <li>최소 3일: 평일 이틀 + 주말 하루를 포함해 '리듬'을 확인합니다.</li>
-      <li>이상적 7일: 한 주를 통째로 담으면 요일별 편차와 반복 패턴까지 보입니다.</li>
-    </ul>
-    <p>주중과 주말은 시간 쓰임이 완전히 다르므로 반드시 둘 다 포함하세요. 평일만 기록하면 '주말의 나'라는 절반의 진실을 놓치게 됩니다.</p>
-
-    <h2>무엇을 적을 것인가</h2>
-    <p>기록 항목이 너무 많으면 부담스러워 오래 못 갑니다. 다음 네 가지면 충분합니다.</p>
-    <ol>
-      <li><strong>활동</strong>: 무엇을 했는지 (예: 이메일 정리, 유튜브 시청, 점심).</li>
-      <li><strong>시작·종료 시각</strong>: 몇 시 몇 분부터 몇 분까지. 5~15분 단위로 반올림해도 됩니다.</li>
-      <li><strong>분류(카테고리/라벨)</strong>: 나중에 합산할 큰 묶음 (아래 참고).</li>
-      <li><strong>에너지</strong>: 그때 집중이 잘 됐는지 (상/중/하). 이 한 칸이 나중에 '언제 무슨 일을 배치할지' 정하는 데 결정적입니다.</li>
-    </ol>
-
-    <h3>카테고리 나누기</h3>
-    <p>분류는 5~8개로 단순하게 잡으세요. 너무 잘게 나누면 합산할 때 오히려 헷갈립니다. 기본 골격은 다음과 같습니다.</p>
-    <ul>
-      <li>수면 — 잠, 낮잠</li>
-      <li>일/공부 — 업무, 학습, 몰입이 필요한 작업</li>
-      <li>이동 — 출퇴근, 오가는 시간</li>
-      <li>식사 — 준비·먹기·정리</li>
-      <li>여가 — 운동, 취미, 사람 만나기 등 '의도한' 쉼</li>
-      <li>낭비 — 무한 스크롤, 목적 없이 켠 영상 등 '의도하지 않은' 시간</li>
-    </ul>
-    <p>여기서 '여가'와 '낭비'를 가르는 기준은 활동 종류가 아니라 <strong>의도</strong>입니다. 마음먹고 즐긴 30분 드라마는 여가지만, 그냥 손이 가서 흘려보낸 40분 스크롤은 낭비입니다. 같은 유튜브라도 배우려고 튼 강의는 '공부'이고, 무심코 다음 영상으로 넘어간 30분은 '낭비'입니다. 이 구분이 흐릿하면 감정만 남고 개선점은 안 보입니다.</p>
-    <p>분류 이름은 자기 삶에 맞게 바꿔도 됩니다. 육아 시간이 큰 사람은 '돌봄'을, 창작을 하는 사람은 '집필'이나 '연습'을 별도 라벨로 두는 편이 유용합니다. 중요한 것은 남의 기준이 아니라, 나중에 합계를 봤을 때 '아, 이만큼 썼구나' 하고 의미가 잡히는 단위로 묶는 것입니다.</p>
-
-    <h2>결과 분석하기</h2>
-    <p>기록은 재료일 뿐이고, 분석에서 통찰이 나옵니다. 세 가지 축으로 들여다보세요.</p>
-    <h3>① 카테고리별 합계</h3>
-    <p>먼저 분류별로 시간을 모두 더합니다. 24시간이라는 고정 예산이 어떻게 쪼개졌는지 한눈에 보이면, 막연한 '바쁨'이 구체적인 숫자로 바뀝니다. 손으로 합산하기 번거롭다면 라벨별 자동 집계를 지원하는 도구를 쓰면 이 과정이 거의 자동으로 끝납니다.</p>
-    <h3>② 계획 대비 실제</h3>
-    <p>아침에 세운 계획이 있었다면 실제 기록과 나란히 놓아 비교합니다. "오전을 집중 작업에 쓰겠다"고 했지만 실제로는 그 시간의 절반이 회신과 알림 대응이었다면, 그 간극이 바로 개선 지점입니다. 계획과 실제의 차이는 능력 부족이 아니라 대개 '예상하지 못한 방해'에서 옵니다. 어떤 방해가 반복되는지 이름을 붙일 수 있으면, 다음 계획에 미리 그 완충 시간을 넣어둘 수 있습니다.</p>
-    <p>반대로 계획보다 실제가 더 잘 굴러간 구간도 눈여겨보세요. '이 시간대엔 유독 집중이 잘 됐다'는 기록이 있다면, 그 시간은 가장 중요한 일을 위해 지켜야 할 황금 시간대입니다. 낭비를 줄이는 것만큼, 잘되는 시간을 알아채고 보호하는 것도 시간 가계부의 수확입니다.</p>
-    <h3>③ 시간을 새게 하는 범인 찾기</h3>
-    <p>합계가 클 것 같은 항목보다, '자잘하게 반복되는' 항목이 진짜 도둑인 경우가 많습니다. 대표적 범인 셋:</p>
-    <ul>
-      <li><strong>무한 스크롤</strong>: 한 번에 5분씩이라 가벼워 보이지만 하루에 20번이면 100분입니다.</li>
-      <li><strong>목적 없는 회의</strong>: 안건 없이 늘어지거나 참석할 필요 없던 자리.</li>
-      <li><strong>잦은 전환</strong>: 작업을 자꾸 바꾸면 매번 '다시 몰입하는 비용'이 붙습니다. 기록에 '전환 직후 에너지 하'가 반복되면 이 신호입니다.</li>
-    </ul>
-
-    <h2>작은 예시: 숫자로 보기</h2>
-    <p>한 직장인이 사흘을 기록해 하루 평균을 냈습니다.</p>
-    <blockquote>
-      <p>수면 6h50m · 일 8h20m · 이동 1h10m · 식사 1h30m · 여가 2h20m · <strong>스마트폰(낭비) 2h10m</strong> · 기타 1h40m</p>
-    </blockquote>
-    <p>본인은 스마트폰을 "하루 30분쯤" 본다고 믿었지만 실제는 <strong>2시간 10분</strong>이었습니다. 대부분 회의 사이 5~10분짜리 스크롤이 쌓인 결과였죠. 이때 "폰을 끊자"는 결심은 대개 실패합니다. 대신 이렇게 바꿉니다.</p>
-    <ul>
-      <li>회의와 회의 사이 공백에는 폰 대신 '2분 스트레칭'을 배치 (틈을 다른 행동으로 채움).</li>
-      <li>알림을 묶어 하루 3번만 확인 (전환 횟수를 줄임).</li>
-      <li>스크롤 앱을 홈 화면 두 번째 페이지로 옮김 (손이 가는 마찰을 늘림).</li>
-    </ul>
-    <p>목표는 2h10m를 0으로 만드는 게 아니라 '의도한 40분 여가'로 바꾸고 나머지 90분을 회수하는 것입니다. 완벽한 금욕보다 현실적인 재배치가 오래갑니다. 회수한 90분이 어디로 갈지도 미리 정해 두면 좋습니다. '남는 시간'은 진공 상태를 싫어해서, 계획해 두지 않으면 금세 또 다른 스크롤이 그 자리를 채웁니다. 운동 30분, 독서 30분처럼 갈 곳을 지정해 두면 회수한 시간이 실제로 남습니다.</p>
-
-    <h2>발견을 변화로 바꾸기</h2>
-    <p>분석에서 나온 통찰은 딱 한 문장짜리 '실험'으로 옮기세요. "내일부터 오전 첫 90분은 알림을 끄고 가장 중요한 일 하나만 한다" 같은 식입니다. 한 번에 하나씩만 바꿔야 무엇이 효과 있었는지 알 수 있습니다. 그리고 그 실험을 다음 며칠간 다시 기록해 검증합니다. 이때 <a href="/guides/24-hour-circle-method">원형 시간표 활용법</a>을 함께 보면, 회수한 시간을 하루 어느 자리에 새로 배치할지 설계하는 데 도움이 됩니다.</p>
-
-    <h2>주간 리뷰 의식</h2>
-    <p>시간 가계부는 한 번 하고 끝내는 이벤트가 아니라 되풀이하는 습관일 때 힘을 냅니다. 주말에 15분만 떼어 이 세 질문에 답해 보세요.</p>
-    <ol>
-      <li>이번 주 가장 많은 시간을 삼킨 항목은? 그럴 만한 값어치였나?</li>
-      <li>계획과 가장 크게 어긋난 시간대는 언제였나?</li>
-      <li>다음 주에 딱 하나만 바꾼다면 무엇을?</li>
-    </ol>
-    <p>매주 이 짧은 복기를 반복하면, 시간 감각이 조금씩 정교해지고 계획과 실제의 간극이 좁혀집니다. 처음 한 주가 가장 낯설고 이후로는 점점 가벼워집니다. 몇 주치 기록이 쌓이면 '이번 달 여가가 유독 줄었네'처럼 주 단위를 넘어선 흐름도 보이기 시작합니다. 24Houring 같은 도구로 라벨별 집계를 남겨두면 이런 장기 추세를 다시 손으로 계산할 필요 없이 확인할 수 있습니다.</p>
-    <p>그리고 매번 전면적으로 다시 기록할 필요는 없습니다. 처음 한 주를 제대로 감사한 뒤에는, 분기에 한 번씩 3일만 다시 기록해 '가계부를 리셋'하는 정도로 충분합니다. 습관은 시간이 지나면 다시 슬금슬금 늘어지기 마련이라, 이 정기 점검이 감각이 무뎌지는 것을 막아 줍니다. 하루의 기본 틀을 처음부터 다시 설계하고 싶을 때도 이 3일 재점검이 좋은 출발점이 됩니다.</p>
-
-    <h2>핵심 요약</h2>
-    <ul>
-      <li>추측은 틀립니다 — 먼저 기록하세요. 시간 가계부는 하루의 진짜 모습을 드러냅니다.</li>
-      <li>실시간 기록은 정확하고, 하루 끝 복기는 지속하기 쉽습니다. 둘을 섞어 쓰세요.</li>
-      <li>평일과 주말을 포함해 3~7일 기록하고, 활동·시작/종료·분류·에너지 네 가지만 적으면 충분합니다.</li>
-      <li>'여가'와 '낭비'는 활동이 아니라 의도로 나뉩니다.</li>
-      <li>카테고리 합계, 계획 대비 실제, 시간 도둑(스크롤·회의·잦은 전환)을 찾아 한 번에 하나씩 바꾸세요.</li>
-      <li>주간 15분 리뷰로 감각을 다듬으면 계획과 현실의 간극이 좁혀집니다.</li>
-    </ul>
-    </div>
-    <div class="lang-en">
-    <h1>How to Keep a Time Budget <span class="en">/ Time Audit</span></h1>
-    <p class="lead">Just as managing money starts with keeping a budget, managing time starts with knowing "where it went." A few days of tracking is enough to reveal what your day really looks like.</p>
-
-    <h2>Why "Recording" Beats "Guessing"</h2>
-    <p>Most people think they know their own day pretty well. But ask "How much did you look at your phone today?" and it's common for people to answer at about half the real figure. That's because memory keeps only the striking moments and erases, wholesale, the five-minute checking habits and the awkward gaps between meetings. A time budget (a time audit) is precisely the work of stripping away this distortion of memory.</p>
-    <p>The first thing someone trying to save money does is not to cut spending but to "write it down." Just as you only grasp how much your monthly coffee costs after spreading out your card statement, you only see where time leaks once you record it. This order — measuring reality before making a plan — is the crux. A plan built without measurement is usually a plan for an "ideal me," so it collapses within a few days.</p>
-    <p>One more important point: the purpose of a time budget is not "self-blame." If you sink into guilt when you discover time lost to scrolling, you'll quit the recording itself. This work is not about judging yourself; it's closer to accounting — calmly examining how the budget of a single day is actually spent. Only when you can look at the numbers without judgment does room for improvement become visible.</p>
-
-    <h2>Two Ways to Record</h2>
-    <p>There are broadly two ways to record time. Each has clear pros and cons, so choose the one that fits your temperament and situation, or mix them.</p>
-
-    <h3>1) Real-time logging</h3>
-    <p>You write it down on the spot every time you start and finish an activity. This has the highest accuracy.</p>
-    <ul>
-      <li>Pro: It doesn't rely on memory, so there's less error, and you don't end up with gaps like "What did I just do for the last 15 minutes?"</li>
-      <li>Con: You have to stop and write every time, which is a hassle, and the recording itself can break your flow.</li>
-    </ul>
-    <p>To reduce this hassle, it's good to get help from a tool. For example, 24Houring (<a href="/">Home</a>) supports a real-time logging mode, so you can drop what you're doing right now straight onto a circular timetable. Start and end are stamped with a single button press, so there's far less friction than jotting it in a notebook by hand.</p>
-
-    <h3>2) End-of-day reconstruction</h3>
-    <p>After your day is done, you retrace it hour by hour and fill it in.</p>
-    <ul>
-      <li>Pro: You're not interrupted during the day, and you only need to invest ten minutes in the evening. The starting threshold is low, so it's easy to keep up.</li>
-      <li>Con: It's easy to miss small activities, and ambiguous stretches get smudged into "it was probably something like this." Wasted time tends to be logged as less than it really was.</li>
-    </ul>
-    <p>Here's the recommendation. For the first two days, use real-time logging to get a feel and raise the "resolution" of your day; after that, continue with end-of-day reconstruction, which carries less burden. This is the compromise. Once you've learned the rhythm of your day through real-time logging, you'll have a baseline like "this time slot is usually like this" when you reconstruct later, letting you fill the blanks far more accurately.</p>
-    <p>Whichever method you use, don't fixate on a "perfect record." It's fine if there's a stretch of about 30 minutes you missed. The value of a time budget lies not in precision down to the decimal, but in grasping where the big chunks go. Even at 90 percent filled, the outline of your day emerges clearly enough.</p>
-
-    <h2>How Many Days Should You Record</h2>
-    <p>Record just one day and you're at the mercy of chance. If that happened to be the day of a company dinner or you were sick in bed, you'll get a picture completely different from usual. Conversely, if you resolve to record for a month, most people give up on the third day. A realistic balance point is <strong>3 to 7 days</strong>.</p>
-    <ul>
-      <li>At least 3 days: include two weekdays plus one weekend day to check your "rhythm."</li>
-      <li>Ideally 7 days: capturing a whole week reveals day-to-day variation and even recurring patterns.</li>
-    </ul>
-    <p>Weekdays and weekends use time completely differently, so be sure to include both. Record only weekdays and you'll miss the half-truth that is "weekend you."</p>
-
-    <h2>What to Record</h2>
-    <p>If there are too many things to log, it becomes a burden and you won't last long. The following four are enough.</p>
-    <ol>
-      <li><strong>Activity</strong>: what you did (e.g., clearing email, watching YouTube, lunch).</li>
-      <li><strong>Start and end times</strong>: from what hour and minute to what minute. You can round to 5–15 minute units.</li>
-      <li><strong>Classification (category/label)</strong>: the large bundle you'll total later (see below).</li>
-      <li><strong>Energy</strong>: whether you were focused at the time (high/medium/low). This one column is decisive later for deciding "when to schedule what work."</li>
-    </ol>
-
-    <h3>Dividing Into Categories</h3>
-    <p>Keep the classification simple, at 5–8 categories. Divide too finely and it actually gets confusing when you total things up. The basic skeleton is as follows.</p>
-    <ul>
-      <li>Sleep — sleep, naps</li>
-      <li>Work/Study — work, learning, tasks that require immersion</li>
-      <li>Commute/Travel — commuting, time spent going back and forth</li>
-      <li>Meals — preparing, eating, cleaning up</li>
-      <li>Leisure — exercise, hobbies, meeting people, and other "intended" rest</li>
-      <li>Waste — infinite scrolling, videos turned on with no purpose, and other "unintended" time</li>
-    </ul>
-    <p>The criterion that separates "leisure" from "waste" here is not the type of activity but <strong>intent</strong>. A 30-minute drama you set out to enjoy is leisure, but 40 minutes of scrolling you let slip because your hand just went there is waste. Even with the same YouTube, a lecture you turned on to learn is "study," while the 30 minutes you drifted into the next video absentmindedly is "waste." If this distinction is fuzzy, only the feeling remains and no improvement point comes into view.</p>
-    <p>You can change the category names to fit your own life. If childcare takes up a lot of time, it's useful to keep "care" as a separate label; if you do creative work, "writing" or "practice." What matters is not someone else's standard, but bundling things into units so that, when you look at the totals later, they carry meaning — "ah, I spent this much."</p>
-
-    <h2>Analyzing the Results</h2>
-    <p>The record is only raw material; the insight comes from the analysis. Examine it along three axes.</p>
-    <h3>① Totals by category</h3>
-    <p>First, add up all the time by classification. Once you can see at a glance how the fixed budget of 24 hours was split, a vague "busyness" turns into concrete numbers. If totaling by hand is a hassle, using a tool that supports automatic tallying by label finishes this process almost automatically.</p>
-    <h3>② Plan versus actual</h3>
-    <p>If you had a plan set that morning, place it side by side with the actual record and compare. If you said "I'll spend the morning on focused work" but in reality half of that time was replies and responding to notifications, that gap is exactly the improvement point. The difference between plan and actual comes not from a lack of ability but usually from "unexpected interruptions." If you can name which interruptions recur, you can build that buffer time into your next plan in advance.</p>
-    <p>Conversely, pay attention to the stretches where the actual ran better than the plan. If there's a record that "I was unusually focused during this time slot," that time is a golden window to protect for your most important work. As much as reducing waste, noticing and protecting the times that go well is also a harvest of the time budget.</p>
-    <h3>③ Finding the culprit that leaks your time</h3>
-    <p>More often than the items that look like they'd total high, the "small, repetitive" items are the real thieves. Three representative culprits:</p>
-    <ul>
-      <li><strong>Infinite scrolling</strong>: it's only 5 minutes at a time, so it looks light, but 20 times a day is 100 minutes.</li>
-      <li><strong>Purposeless meetings</strong>: sessions that drag on with no agenda, or seats you didn't need to attend.</li>
-      <li><strong>Frequent switching</strong>: keep switching tasks and each time you pay the "cost of re-immersing." If your record repeatedly shows "energy low right after a switch," that's the signal.</li>
-    </ul>
-
-    <h2>A Small Example: Seeing It in Numbers</h2>
-    <p>An office worker recorded three days and took the daily average.</p>
-    <blockquote>
-      <p>Sleep 6h50m · Work 8h20m · Commute 1h10m · Meals 1h30m · Leisure 2h20m · <strong>Phone (waste) 2h10m</strong> · Other 1h40m</p>
-    </blockquote>
-    <p>He believed he looked at his phone "about 30 minutes a day," but the reality was <strong>2 hours 10 minutes</strong>. Most of it was the result of 5–10 minute scrolls between meetings piling up. At this point, the resolution to "quit the phone" usually fails. Instead, change it like this.</p>
-    <ul>
-      <li>In the gaps between meetings, place a "2-minute stretch" instead of the phone (fill the gap with another behavior).</li>
-      <li>Bundle notifications and check only 3 times a day (reduce the number of switches).</li>
-      <li>Move the scrolling app to the second page of the home screen (increase the friction of your hand reaching for it).</li>
-    </ul>
-    <p>The goal is not to turn 2h10m into zero, but to convert it into "an intended 40 minutes of leisure" and recover the remaining 90 minutes. Realistic reallocation lasts longer than perfect abstinence. It's good to decide in advance where the recovered 90 minutes will go, too. "Leftover time" hates a vacuum, so if you don't plan for it, another bout of scrolling quickly fills that spot. Designate a destination — 30 minutes of exercise, 30 minutes of reading — and the recovered time actually stays.</p>
-
-    <h2>Turning Discovery Into Change</h2>
-    <p>Move the insight from your analysis into a single-sentence "experiment." Something like: "Starting tomorrow, for the first 90 minutes of the morning I turn off notifications and do only the one most important thing." Change just one thing at a time so you can tell what worked. Then record the following few days again to verify that experiment. Reading the <a href="/guides/24-hour-circle-method">how to use the circular timetable</a> guide alongside this helps you design where in the day to newly place the recovered time.</p>
-
-    <h2>The Weekly Review Ritual</h2>
-    <p>A time budget shows its power when it's a recurring habit, not a one-and-done event. Set aside just 15 minutes on the weekend and answer these three questions.</p>
-    <ol>
-      <li>What item swallowed the most time this week? Was it worth it?</li>
-      <li>When was the time slot that diverged most from the plan?</li>
-      <li>If you changed just one thing next week, what would it be?</li>
-    </ol>
-    <p>Repeat this short review every week and your sense of time gradually sharpens, and the gap between plan and actual narrows. The first week is the most unfamiliar, and it gets lighter from there. Once a few weeks of records accumulate, flows beyond the weekly level begin to show, like "leisure was unusually down this month." If you leave tallies by label with a tool like 24Houring, you can check these long-term trends without having to calculate by hand again.</p>
-    <p>And you don't need to redo the full recording every time. After you've properly audited the first week, it's enough to "reset the budget" by recording just 3 days once a quarter. Habits tend to creep back and sprawl over time, so this regular checkup keeps your sense from dulling. When you want to redesign the basic frame of your day from scratch, this 3-day recheck also makes a good starting point.</p>
-
-    <h2>Key Takeaways</h2>
-    <ul>
-      <li>Guesses are wrong — record first. A time budget reveals what your day really looks like.</li>
-      <li>Real-time logging is accurate, and end-of-day reconstruction is easy to sustain. Mix the two.</li>
-      <li>Record for 3–7 days including weekdays and weekends, and logging just four things — activity, start/end, classification, energy — is enough.</li>
-      <li>"Leisure" and "waste" are divided not by activity but by intent.</li>
-      <li>Find your category totals, plan versus actual, and time thieves (scrolling, meetings, frequent switching), and change one thing at a time.</li>
-      <li>Sharpen your sense with a 15-minute weekly review and the gap between plan and reality narrows.</li>
-    </ul>
-    </div>
-    <div class="cta card">
-      <div class="lang-ko">
-        <p style="margin:0 0 4px"><strong>지금 바로 해보기</strong></p>
-        <p style="margin:0">24Houring에서 하루를 원형 시간표로 그려보세요. 설치·회원가입 없이 무료로 시작할 수 있습니다.</p>
-        <p style="margin:8px 0 0"><a class="btn" href="/">24Houring 열기 →</a></p>
-      </div>
-      <div class="lang-en">
-        <p style="margin:0 0 4px"><strong>Try it now</strong></p>
-        <p style="margin:0">Sketch your day as a 24-hour circle on 24Houring — free, with no sign-up or install.</p>
-        <p style="margin:8px 0 0"><a class="btn" href="/">Open 24Houring →</a></p>
-      </div>
-    </div>
-  </main>
+  <main class="article" id="main-content" data-publisher-content>
+<p class="crumb"><a href="/guides/"><span class="lang-ko">← 가이드 목록</span><span class="lang-en">← All guides</span></a></p>
+<p class="editorial-meta"><span class="lang-ko">발행: 24Houring · 내용 갱신: <time datetime="2026-09-08">2026년 9월 8일</time> · <a href="/contact">오류 제보</a> · <a href="/editorial-policy">콘텐츠 작성 원칙</a></span><span class="lang-en">Published by 24Houring · Updated <time datetime="2026-09-08">8 September 2026</time> · <a href="/contact">Report an error</a> · <a href="/editorial-policy">Editorial policy</a></span></p>
+<div class="lang-ko">
+<h1>시간 가계부: 계획과 실제의 차이 읽기</h1>
+<p class="lead">기록의 목적은 하루에 점수를 매기는 것이 아닙니다. 다음 계획에서 무엇을 더하고, 줄이고, 옮길지 판단할 자료를 남기는 것입니다.</p>
+<div class="note"><strong>이 가이드의 예시는 가상 기록입니다.</strong>
+<p>소요 시간과 차이는 계산 방법을 보여주기 위한 값입니다. 특정 활동을 낭비로 규정하거나 생산성 향상을 입증하는 데이터가 아닙니다.</p></div>
+<h2>1. 알아보고 싶은 질문 하나 고르기</h2>
+<p>‘시간을 잘 쓰고 싶다’ 대신 ‘보고서 작업은 어디에서 늘어나는가?’처럼 질문을 정합니다. 그러면 보고서 초안, 자료 찾기, 회신을 구분할 이유가 생깁니다. 식사 중 음악을 듣는 것까지 나누는 등 질문에 필요 없는 세부 기록은 생략해도 됩니다. 기록 자체가 부담이 되면 활동 전환 때마다 적는 대신, 일정이 끝난 뒤 기억나는 범위만 채우세요.</p>
+<h2>2. 24Houring 기록 보기에서 시작하기</h2>
+<ol>
+<li><a href="/">플래너</a>의 보기 메뉴에서 <strong>기록</strong>을 선택합니다. 계획 원과 기록 원은 별도입니다. 기록한다고 계획의 블록이 자동으로 바뀌지는 않습니다.</li>
+<li>활동 이름을 입력하고 <strong>시작</strong>을 누릅니다. 활동이 끝나면 <strong>종료</strong>를 누릅니다. 다음 활동은 새 이름으로 시작합니다.</li>
+<li>이미 끝난 활동은 이름과 시작·종료 시간을 입력해 수동으로 추가할 수 있습니다. 기억이 불확실한 구간을 정확한 측정값처럼 채우지 마세요.</li>
+<li>잘못 추가한 항목은 목록의 삭제 버튼으로 지운 뒤 올바른 시간을 다시 입력합니다. 삭제 전에 필요한 내용이 아닌지 확인하세요.</li></ol>
+<p>기록은 직접 입력한 활동을 담습니다. 다른 앱 사용이나 집중도를 자동으로 감지하지 않습니다. 목록을 보고 비교하는 방법이며, 이 가이드의 아래 비교표가 앱에서 자동으로 생성되는 것은 아닙니다.</p>
+<h2>3. 겹치지 않는 기록으로 합계 만들기</h2>
+<div class="table-scroll" role="region" tabindex="0" aria-label="가상 기록: 09:00–12:00, 총 180분">
+<table><caption>가상 기록: 09:00–12:00, 총 180분</caption>
+<thead>
+<tr><th scope="col">시각</th><th scope="col">활동</th><th scope="col">분</th></tr></thead>
+<tbody>
+<tr><th scope="row">09:00–09:40</th><td>보고서 초안</td><td>40</td></tr>
+<tr><th scope="row">09:40–10:00</th><td>요청 회신</td><td>20</td></tr>
+<tr><th scope="row">10:00–10:30</th><td>자료 찾기</td><td>30</td></tr>
+<tr><th scope="row">10:30–11:10</th><td>보고서 초안</td><td>40</td></tr>
+<tr><th scope="row">11:10–11:30</th><td>휴식</td><td>20</td></tr>
+<tr><th scope="row">11:30–12:00</th><td>자료 검토</td><td>30</td></tr></tbody></table></div>
+<p>보고서 초안은 40 + 40 = 80분입니다. 전체는 40 + 20 + 30 + 40 + 20 + 30 = 180분으로, 09:00부터 12:00까지와 맞습니다. 두 활동이 겹쳐 적혔다면 그대로 더하지 말고 주 활동 하나로 합치거나 겹친 구간을 따로 표시하세요. 합계가 실제 경과 시간보다 커지면 비교가 왜곡됩니다.</p>
+<h2>4. 계획과 비교하고 다음 행동 고르기</h2>
+<div class="table-scroll" role="region" tabindex="0" aria-label="같은 180분의 계획과 실제 비교">
+<table><caption>같은 180분의 계획과 실제 비교</caption>
+<thead>
+<tr><th scope="col">활동</th><th scope="col">계획 → 실제</th><th scope="col">다음 계획에서 바꿀 점</th></tr></thead>
+<tbody>
+<tr><th scope="row">보고서 초안</th><td>90 → 80분 (−10)</td><td>자료가 준비된 부분부터 작성</td></tr>
+<tr><th scope="row">요청 회신</th><td>0 → 20분 (+20)</td><td>응답이 필요한 시간대를 별도 확보</td></tr>
+<tr><th scope="row">자료 찾기</th><td>0 → 30분 (+30)</td><td>작성 전 준비 작업으로 명시</td></tr>
+<tr><th scope="row">휴식</th><td>30 → 20분 (−10)</td><td>계획에 남기고 업무로 자동 대체하지 않기</td></tr>
+<tr><th scope="row">자료 검토</th><td>60 → 30분 (−30)</td><td>오늘 필요한 검토 범위 재선정</td></tr></tbody></table></div>
+<p>초안이 10분 짧았다는 것만 보고 집중이 부족했다고 결론 내릴 수 없습니다. 애초에 회신과 자료 찾기 50분이 계획에 없었습니다. 다음에는 준비를 별도 활동으로 잡고, 초안과 검토 범위를 줄여 같은 180분에 맞출 수 있습니다. 이 비교만으로 더 빠르게 일하게 된다는 결과를 예측하지는 않습니다.</p>
+<h2>기록이 불완전할 때</h2>
+<dl>
+<dt>종료를 누르지 않았어요.</dt>
+<dd>기록을 종료하고 실제 종료 시각을 확인하세요. 잘못 늘어난 항목은 삭제 후 수동으로 다시 추가할 수 있습니다. 앱의 경과 시간은 활동을 계속했다는 증거가 아닙니다.</dd>
+<dt>중간 시간이 기억나지 않아요.</dt>
+<dd>비워 두고 ‘미기록’으로 해석합니다. 기록이 없는 구간이 휴식·낭비·업무 중 무엇이었는지 추정으로 단정하지 않습니다.</dd>
+<dt>한 번의 기록으로 다음 주를 바꿔도 되나요?</dt>
+<dd>첫 기록은 가설을 만드는 데 씁니다. 약속이 많은 날과 적은 날처럼 조건이 다른 날도 비교한 뒤, 반복되는 문제인지 확인하세요. 필요한 관찰 기간은 질문과 일정에 따라 달라집니다.</dd>
+<dt>회사·개인 정보가 이름에 들어가요.</dt>
+<dd>고객명이나 비밀 프로젝트명 대신 ‘자료 검토’처럼 일반적인 이름을 사용하세요. 공유 전에 이미지·링크·내보낸 파일에 어떤 내용이 담겼는지 확인하세요.</dd></dl>
+<h2>다음 계획에 적용하기</h2>
+<p>한꺼번에 모든 시간을 최적화하기보다 ‘작성 전에 자료 찾는 구간을 만든다’ 한 가지를 바꿔 보세요. <a href="/guides/time-blocking">타임블로킹 가이드</a>에서 고정 일정과 작업 범위를 다시 배치할 수 있습니다.</p></div>
+<div class="lang-en" lang="en">
+<h1>A time audit: read the gap between plan and reality</h1>
+<p class="lead">A record is not a score for your day. It gives you information for deciding what to add, reduce, or move in the next plan.</p>
+<div class="note"><strong>These are fictional records.</strong>
+<p>The durations illustrate calculations. They are not evidence of productivity gains, and they do not classify any activity as wasted time.</p></div>
+<h2>1. Choose a question</h2>
+<p>Replace “use time better” with “where does report work expand?” That gives you a reason to distinguish drafting, finding data, and answering requests. Skip detail unrelated to your question. If logging at every transition becomes a burden, reconstruct only what you can remember after the activity.</p>
+<h2>2. Use the Record view in 24Houring</h2>
+<ol>
+<li>Open the <a href="/">planner</a> and choose <strong>Record</strong> in the view menu. Planned and recorded circles are separate; recording does not automatically rewrite the plan.</li>
+<li>Enter an activity name and select <strong>Start</strong>. Select <strong>Stop</strong> when it ends, then begin the next activity under a new name.</li>
+<li>For finished activities, enter a name and start/end times to add a manual record. Do not present an uncertain recollection as an exact measurement.</li>
+<li>Delete an incorrect item using its list control, then add the correct interval manually. Check the item before deleting it.</li></ol>
+<p>The tool records activities you enter. It does not automatically detect other app usage or your attention. The comparison tables below are a manual method, not an automatically generated app report.</p>
+<h2>3. Add intervals without double-counting</h2>
+<div class="table-scroll" role="region" tabindex="0" aria-label="Fictional record: 09:00–12:00, 180 minutes">
+<table><caption>Fictional record: 09:00–12:00, 180 minutes</caption>
+<thead>
+<tr><th scope="col">Time</th><th scope="col">Activity</th><th scope="col">Minutes</th></tr></thead>
+<tbody>
+<tr><th scope="row">09:00–09:40</th><td>Draft report</td><td>40</td></tr>
+<tr><th scope="row">09:40–10:00</th><td>Answer requests</td><td>20</td></tr>
+<tr><th scope="row">10:00–10:30</th><td>Find data</td><td>30</td></tr>
+<tr><th scope="row">10:30–11:10</th><td>Draft report</td><td>40</td></tr>
+<tr><th scope="row">11:10–11:30</th><td>Break</td><td>20</td></tr>
+<tr><th scope="row">11:30–12:00</th><td>Review material</td><td>30</td></tr></tbody></table></div>
+<p>Drafting totals 40 + 40 = 80 minutes. All entries total 40 + 20 + 30 + 40 + 20 + 30 = 180 minutes, matching the elapsed period. If activities overlap, do not simply add them: select a primary activity or identify the overlap separately. A total greater than elapsed time makes the comparison misleading.</p>
+<h2>4. Compare and choose a change</h2>
+<div class="table-scroll" role="region" tabindex="0" aria-label="Plan versus record for the same 180 minutes">
+<table><caption>Plan versus record for the same 180 minutes</caption>
+<thead>
+<tr><th scope="col">Activity</th><th scope="col">Planned → recorded</th><th scope="col">Possible next change</th></tr></thead>
+<tbody>
+<tr><th scope="row">Draft report</th><td>90 → 80 minutes (−10)</td><td>Start with material already available</td></tr>
+<tr><th scope="row">Answer requests</th><td>0 → 20 minutes (+20)</td><td>Reserve time for necessary replies</td></tr>
+<tr><th scope="row">Find data</th><td>0 → 30 minutes (+30)</td><td>Name preparation explicitly</td></tr>
+<tr><th scope="row">Break</th><td>30 → 20 minutes (−10)</td><td>Keep it visible in the plan</td></tr>
+<tr><th scope="row">Review material</th><td>60 → 30 minutes (−30)</td><td>Reconsider what must be reviewed today</td></tr></tbody></table></div>
+<p>Ten fewer drafting minutes do not establish poor concentration. The plan omitted 50 minutes of replies and preparation. A revised plan can name those tasks and reduce the drafting/review scope to fit the same 180 minutes. This comparison does not predict that the work will become faster.</p>
+<h2>Incomplete records and other problems</h2>
+<dl>
+<dt>I forgot to stop.</dt>
+<dd>Stop the record and check the actual end time. Delete an overstated item and enter the corrected interval manually. Elapsed time is not proof that the activity continued.</dd>
+<dt>I cannot remember a gap.</dt>
+<dd>Leave it unrecorded. Missing data does not establish whether you were resting, working, or doing something else.</dd>
+<dt>Can one day determine next week's plan?</dt>
+<dd>Use it to form a hypothesis. Compare days with different conditions, such as many versus few appointments, before deciding the problem repeats. Observation length depends on your question.</dd>
+<dt>Labels contain confidential information.</dt>
+<dd>Use generic labels such as “review material” instead of client names. Inspect images, links, and exported files before sharing.</dd></dl>
+<h2>Apply one change</h2>
+<p>Try “reserve a preparation block before drafting” rather than redesigning every minute at once. Continue with <a href="/guides/time-blocking">time blocking</a> to fit the revised tasks around fixed commitments.</p></div>
+<div class="cta card">
+<p><span class="lang-ko">예시에서 자신의 고정 일정으로 바꿔 직접 계획해 보세요. 기본 플래너는 가입 없이 시작할 수 있습니다.</span><span class="lang-en">Replace the example with your own commitments. Start the basic planner without signing up.</span></p><a class="btn" href="/"><span class="lang-ko">내 하루 계획하기</span><span class="lang-en">Plan my day</span></a></div>
+</main>
   <footer class="site">
     <nav>
       <a href="/"><span class="lang-ko">홈 Home</span><span class="lang-en">Home</span></a>

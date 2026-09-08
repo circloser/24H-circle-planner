@@ -16,8 +16,8 @@ export default {
   webAppDescription:
     'Un planificateur de journée gratuit, sans inscription, qui représente votre journée de 24 heures comme une horloge et fonctionne hors ligne. Modifiez les blocs par glisser-déposer, basculez entre les vues 12/24 heures, et enregistrez ou partagez en image.',
   faq: [
-    { q: 'Qu\'est-ce que 24Houring ?', a: '24Houring est un planificateur web gratuit qui affiche toute votre journée de 24 heures d\'un coup d\'œil, comme une horloge. Il fonctionne directement dans le navigateur sans inscription ni installation, et vos données restent sur votre appareil, ce qui le rend utilisable hors ligne.' },
-    { q: '24Houring est-il gratuit ?', a: 'Oui. Le planificateur de base est entièrement gratuit et sans inscription. Un abonnement Pro optionnel (0,99 $/mois, 1 mois gratuit, sans renouvellement automatique) ajoute la synchronisation cloud, un archivage illimité, des rapports statistiques et la suppression des publicités.' },
+    { q: 'Qu\'est-ce que 24Houring ?', a: '24Houring est un planificateur web gratuit pour organiser une journée sur un cercle. Commencez sans inscription. Les modifications sont enregistrées dans le navigateur de cet appareil ; une connexion avec Pro synchronise les données prises en charge avec le serveur. La création d’un lien de partage envoie une copie du planning au serveur.' },
+    { q: '24Houring est-il gratuit ?', a: 'La modification, les modèles et les exports sont gratuits sans inscription. La formule gratuite comprend trois emplacements de sauvegarde et un accès au journal dans une fenêtre de 30 jours. Pro propose la synchronisation de compte, des emplacements illimités, les anciennes entrées du journal, des rapports et la suppression des publicités. Vérifiez les prix et conditions actuels dans la fenêtre de mise à niveau avant de payer.' },
     { q: 'Puis-je passer à une vue 12 heures (horloge) ?', a: 'Oui. Un bouton en haut permet de basculer entre les vues 24 heures, Jour (06–18) et Nuit (18–06), et chaque vue reste synchronisée avec la même journée.' },
     { q: 'Puis-je enregistrer ou partager mon emploi du temps ?', a: 'Oui. Exportez en PNG, PDF ou JSON, ou partagez directement l\'image de l\'emploi du temps sur Instagram et ailleurs. La sauvegarde et la restauration complètes sont également prises en charge.' },
     { q: 'Quelles langues sont prises en charge ?', a: 'Huit langues : anglais, coréen, allemand, japonais, chinois, français, espagnol et russe.' },
@@ -31,10 +31,9 @@ export default {
   ],
   mainHtml: `      <main style="max-width:760px;margin:0 auto;padding:40px 20px;font-family:'Pretendard',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;color:#1f2430;line-height:1.65">
         <h1 style="font-size:30px;font-weight:800;letter-spacing:-0.5px;margin:0 0 8px">24Houring — toute votre journée en un coup d'œil, un planificateur circulaire de 24 heures</h1>
-        <p style="font-size:17px;color:#3a4150;margin:0 0 20px">
-          24Houring est un planificateur web <strong>gratuit</strong> qui représente votre journée de 24 heures comme une horloge.
-          Utilisez-le directement dans le navigateur sans inscription ni installation ; vos données restent sur votre appareil, il fonctionne donc aussi <strong>hors ligne</strong>.
-        </p>
+        <p class="copy-lead">24Houring est un planificateur web gratuit pour organiser une journée sur un cercle. Commencez sans inscription. Les modifications sont enregistrées dans le navigateur de cet appareil ; une connexion avec Pro synchronise les données prises en charge avec le serveur. La création d’un lien de partage envoie une copie du planning au serveur.</p>
+        <nav class="copy-actions"><a href="/templates/">Modèles de journée</a><a href="/guides/">Guides pratiques</a></nav>
+        <details><summary>Fonctions, mode d’emploi et questions</summary>
 
         <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">Fonctionnalités</h2>
         <ul style="padding-left:20px;margin:0 0 8px">
@@ -59,7 +58,7 @@ export default {
 
         <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">Questions fréquentes</h2>
         <h3 style="font-size:16px;font-weight:700;margin:14px 0 2px">24Houring est-il gratuit ?</h3>
-        <p style="margin:0 0 8px">Oui — le planificateur de base est entièrement gratuit et sans inscription. Un abonnement Pro optionnel (0,99 $/mois, 1 mois gratuit, sans renouvellement automatique) ajoute la synchronisation cloud, un archivage illimité, des rapports statistiques et la suppression des publicités.</p>
+        <p>La modification, les modèles et les exports sont gratuits sans inscription. La formule gratuite comprend trois emplacements de sauvegarde et un accès au journal dans une fenêtre de 30 jours. Pro propose la synchronisation de compte, des emplacements illimités, les anciennes entrées du journal, des rapports et la suppression des publicités. Vérifiez les prix et conditions actuels dans la fenêtre de mise à niveau avant de payer.</p>
         <h3 style="font-size:16px;font-weight:700;margin:14px 0 2px">Puis-je passer à une vue 12 heures (horloge) ?</h3>
         <p style="margin:0 0 8px">Oui — un bouton en haut permet de basculer entre les vues 24 heures, Jour (06–18) et Nuit (18–06), et chaque vue reste synchronisée avec la même journée.</p>
         <h3 style="font-size:16px;font-weight:700;margin:14px 0 2px">Puis-je enregistrer ou partager ce que je crée ?</h3>
@@ -78,7 +77,7 @@ export default {
         <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">Comment l'utiliser</h2>
         <p style="margin:0 0 8px">Nouveau ici ? Commencez avec un <a href="/templates/">modèle</a> adapté à votre situation et personnalisez-le, ou suivez les <a href="/guides/">guides</a> étape par étape sur le time-blocking, les audits de temps et la construction d'une routine matinale ou du soir.</p>
 
-        <p style="margin:24px 0 0;font-size:15px;color:#7e8aa0">Le planificateur interactif se charge sur <strong>24houring.com</strong> …</p>
+        </details><p class="copy-note">Le stockage local du navigateur ne remplace pas une sauvegarde. Effacer les données du site, fermer une session privée ou changer de navigateur peut rendre les plans inaccessibles. Conservez une sauvegarde JSON. Les fonctions déjà mises en cache peuvent fonctionner hors ligne ; connexion au compte, synchronisation et météo nécessitent Internet.</p>
 
         <hr style="border:none;border-top:1px solid #e3e6ec;margin:28px 0 14px" />
         <nav style="font-size:14px;color:#7e8aa0">

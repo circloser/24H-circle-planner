@@ -1,13 +1,8 @@
 /*
  * Post-build: generate localized landing pages from dist/index.html.
  *
- * The pre-mount #root block + <head> meta are the SEO payload, so each language
- * needs its OWN static HTML (crawlers can't see client-side language switching).
- * We clone the built dist/index.html (which already has the hashed bundle refs +
- * all head scripts), swap the localized head meta / #root / JSON-LD, add the
- * hreflang cluster, and write dist/{lang}/index.html. Root (/) stays English and
- * is the x-default; every page cross-links to all of them.
- *
+ * Localized metadata and visible editorial content are generated together.
+ * Editorial content stays outside React so it remains available after mount.
  * Ships only FULLY-prepared locales — see docs/multilingual-seo-plan.md.
  */
 import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
@@ -93,12 +88,14 @@ function buildLocale(base, L) {
   html = html.replace(/(<meta property="og:locale" content=")[^"]*(")/, `$1${L.ogLocale}$2`);
   html = html.replace(/(<meta property="og:locale:alternate" content=")[^"]*(")/, `$1en_US$2`);
   html = html.replace(/(<link rel="canonical" href=")[^"]*(")/, `$1${localeHref(L.lang)}$2`);
-  // Vite moves the module script into <head>, so #root is the last body element:
-  // match up to the </div> that closes #root (the first one before </body>).
-  html = html.replace(
-    /(<div id="root">)[\s\S]*?(<\/div>)(\s*<\/body>)/,
-    `$1\n${L.mainHtml}\n    </div>$3`,
-  );
+  // Replace only the explicit editorial region. Matching #root through the last
+  // body div would swallow the persistent content and React would remove it.
+  const region = /<!-- editorial-content:start -->[\s\S]*?<!-- editorial-content:end -->/;
+  if (!region.test(html)) throw new Error('Missing persistent editorial content markers');
+  const visibleContent = L.mainHtml
+    .replace(/<main\b[^>]*>/, '<section id="site-copy" aria-label="24Houring">')
+    .replace(/<\/main>/, '</section>');
+  html = html.replace(region, () => '<!-- editorial-content:start -->\n' + visibleContent + '\n<!-- editorial-content:end -->');
   html = localizeJsonLd(html, L);
   html = withHreflang(html);
   return html;
