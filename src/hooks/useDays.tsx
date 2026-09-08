@@ -6,6 +6,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
 } from 'react';
 import { v4 as uuid } from 'uuid';
 import type { Schedule } from '@/types/schedule';
@@ -13,6 +14,7 @@ import type { TimeSlice } from '@/types/time-slice';
 import { loadSchedule, STORAGE_KEY_DAYS } from '@/lib/storage';
 import { createInitialSchedule } from '@/lib/initial-schedule';
 import { createDemoSchedule } from '@/data/demo-schedule';
+import { persistLocal } from '@/lib/persistence';
 import { useStoreDispatch, useStoreSelector } from '@/hooks/useScheduleStore';
 
 /**
@@ -95,12 +97,8 @@ export function DaysProvider({ children }: { children: React.ReactNode }) {
 
   // Persist on change.
   useEffect(() => {
-    try {
-      const env: DaysEnvelope = { version: 1, days, activeId };
-      localStorage.setItem(STORAGE_KEY_DAYS, JSON.stringify(env));
-    } catch {
-      // storage unavailable — won't persist
-    }
+    const env: DaysEnvelope = { version: 1, days, activeId };
+    persistLocal(STORAGE_KEY_DAYS, env);
   }, [days, activeId]);
 
   const switchTo = useCallback(
@@ -222,6 +220,7 @@ function DayStoreBridge() {
   const diaryDate = useStoreSelector((s) => s.diaryDate);
   const dispatch = useStoreDispatch();
   const ctx = useContext(DaysContext);
+  const initialPresent = useRef<Schedule | null>(present);
 
   // Mount: make the active day authoritative for what the chart shows.
   useEffect(() => {
@@ -238,6 +237,12 @@ function DayStoreBridge() {
   // loaded: that would overwrite the working day the diary temporarily replaced.
   useEffect(() => {
     if (diaryDate) return;
+    if (initialPresent.current) {
+      // Skip the pre-hydration editor snapshot (including StrictMode replay).
+      // Any subsequent schedule may win the mount batch, e.g. a weekday import.
+      if (present === initialPresent.current) return;
+      initialPresent.current = null;
+    }
     ctx?.syncActive(present);
   }, [present, diaryDate, ctx]);
 

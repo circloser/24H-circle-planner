@@ -43,7 +43,7 @@ export async function run() {
       localStorage.setItem('24h-circle-planner.diary', JSON.stringify(d));
     }, key);
     await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
+    await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
     await page.keyboard.press('Escape').catch(() => {});
     await wait(400);
 

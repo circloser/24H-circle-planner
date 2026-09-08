@@ -1,5 +1,6 @@
 import { Clock, Sun, Moon, Table as TableIcon, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
 import { CHART_VIEWS, type ChartView } from '@/lib/chart-view';
 import type { TKey } from '@/i18n/translations';
@@ -12,6 +13,8 @@ const ICON: Record<ChartView, typeof Clock> = {
   record: Timer,
 };
 
+const SELECTABLE_VIEWS: ChartView[] = [...CHART_VIEWS, 'record'];
+
 const LABEL_KEY: Record<ChartView, TKey> = {
   full: 'view.full',
   day: 'view.day',
@@ -20,34 +23,27 @@ const LABEL_KEY: Record<ChartView, TKey> = {
   record: 'view.record',
 };
 
-/**
- * Independent top-of-title control that cycles the view: 24h → 12h day (06–18)
- * → 12h night (18–06) → table (list) → 24h. Shows the current view; one click
- * advances. The schedule data is shared across all views, so editing in any view
- * (including the table) edits the same underlying 24h timetable.
- */
+/** Choose any view directly; all views edit the same underlying schedule. */
 export function ChartViewToggle() {
   const { prefs, setPreference } = usePreferences();
   const { t } = useTranslation();
   const view = prefs.chartView ?? 'full';
   const Icon = ICON[view];
-
-  const cycle = () => {
-    const i = CHART_VIEWS.indexOf(view);
-    setPreference('chartView', CHART_VIEWS[(i + 1) % CHART_VIEWS.length]);
-  };
-
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      className="gap-1.5 px-2 sm:px-3"
-      onClick={cycle}
-      aria-label={t('view.cycle')}
-      title={t('view.cycle')}
-    >
-      <Icon className="h-4 w-4" />
-      <span className="hidden sm:inline">{t(LABEL_KEY[view])}</span>
-    </Button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="min-h-11 gap-1.5 px-2 sm:px-3" aria-label={t('view.select')} title={t('view.select')}>
+          <Icon className="h-4 w-4 shrink-0" />
+          <span className="max-w-24 truncate">{t(LABEL_KEY[view])}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuRadioGroup value={view} onValueChange={(value) => {
+          if (SELECTABLE_VIEWS.includes(value as ChartView)) setPreference('chartView', value as ChartView);
+        }}>
+          {SELECTABLE_VIEWS.map((option) => <DropdownMenuRadioItem key={option} value={option} className="min-h-11">{t(LABEL_KEY[option])}</DropdownMenuRadioItem>)}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

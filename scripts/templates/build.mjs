@@ -445,6 +445,7 @@ ${JSON.stringify({
       <img src="/templates/img/${t.slug}.png" alt="${t.ko.title} — 24시간 원형 시간표" width="520" style="max-width:100%;height:auto;border-radius:16px" loading="lazy" />
     </p>
 
+    ${['exam-student', 'office-worker'].includes(t.slug) ? `<p style="text-align:center;margin:16px 0 8px"><span class="lang-ko">${t.slug === 'exam-student' ? '공부와 쉬는 시간이 함께 보이는 내 하루.' : '퇴근 후 내 시간을 먼저 확보하세요.'} 가입 없이 예시를 불러오고, 내 기상 시간과 일정에 맞게 수정하세요.</span><span class="lang-en">${t.slug === 'exam-student' ? 'See study and rest together in your day.' : 'Make room for your time after work.'} Load this example without signing up, then adjust it to your wake-up time and commitments.</span></p>` : ''}
     <p style="text-align:center;margin:0 0 6px">
       <a class="btn" href="/#p=${p}"><span class="lang-ko">이 계획표로 바로 시작하기 →</span><span class="lang-en">Start with this template →</span></a>
     </p>

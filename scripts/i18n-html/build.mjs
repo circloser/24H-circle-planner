@@ -10,7 +10,7 @@
  *
  * Ships only FULLY-prepared locales — see docs/multilingual-seo-plan.md.
  */
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -118,3 +118,18 @@ for (const lang of LOCALES.filter((l) => l !== 'en')) {
   writeFileSync(join(outDir, 'index.html'), buildLocale(base, L), 'utf8');
   console.log(`i18n-html: wrote /${lang}/`);
 }
+
+// Instrument only static editorial/template pages, never the app locale roots.
+function instrumentContent(dir) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) instrumentContent(path);
+    else if (entry.name.endsWith('.html')) {
+      const html = readFileSync(path, 'utf8');
+      if (/rel="canonical" href="https:\/\/24houring\.com\/(?:[a-z]{2}\/)?(?:templates|guides|stories|health)(?:\/|"|$)/.test(html) && !html.includes('/content-analytics.js')) {
+        writeFileSync(path, html.replace('</head>', '<script defer src="/content-analytics.js"></script>\n</head>'));
+      }
+    }
+  }
+}
+instrumentContent(dist);

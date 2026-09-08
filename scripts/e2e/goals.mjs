@@ -11,7 +11,7 @@ export async function run() {
       localStorage.setItem('24h-circle-planner.goals', JSON.stringify({ version: 1, goals: [{ id: 'g1', label: '수면', targetMinutes: 60, period: 'day' }] }));
     });
     await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
+    await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
     await page.keyboard.press('Escape').catch(() => {});
     await wait(400);
 

@@ -34,11 +34,6 @@ function formatPrice(p: PriceInfo, perMonth: string, perYear: string): string {
   return `${sym}${num} / ${per}`;
 }
 
-/**
- * Pro paywall. Explains what Pro unlocks (cloud sync + diary lock — the only
- * server-backed features; everything else stays free) with a 1-month free trial,
- * shows the live price read from Polar, and starts the hosted checkout.
- */
 /** Map a redeem error code to a localized message. */
 function redeemError(code: string | undefined, ko: boolean): string {
   switch (code) {
@@ -52,6 +47,11 @@ function redeemError(code: string | undefined, ko: boolean): string {
 }
 
 export function UpgradeDialog({ open, onOpenChange }: UpgradeDialogProps) {
+  // Each opening starts a fresh price request, including programmatic reopen.
+  return open ? <UpgradeDialogSession open={open} onOpenChange={onOpenChange} /> : null;
+}
+
+function UpgradeDialogSession({ open, onOpenChange }: UpgradeDialogProps) {
   const { t, lang } = useTranslation();
   const { user, login, refresh, admin } = useAuth();
   const ko = lang === 'ko';
@@ -59,6 +59,8 @@ export function UpgradeDialog({ open, onOpenChange }: UpgradeDialogProps) {
   // Billing, so the dialog turns informational — no prices, no checkout CTA.
   const inPlayApp = isPlayStoreApp();
   const [prices, setPrices] = useState<PriceInfo[] | null>(null);
+  const [priceError, setPriceError] = useState(false);
+  const [priceAttempt, setPriceAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
   const [code, setCode] = useState('');
   const [redeeming, setRedeeming] = useState(false);
@@ -115,23 +117,43 @@ export function UpgradeDialog({ open, onOpenChange }: UpgradeDialogProps) {
     }
   };
 
-  // Fetch the live price once the dialog opens (never blocks the CTA).
+  // Checkout is available only after a current, valid price has been shown.
   useEffect(() => {
     if (!open) return;
     track('upgrade_open');
-    let cancelled = false;
-    void fetch('/api/billing/product', { headers: { accept: 'application/json' } })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { prices?: PriceInfo[] } | null) => {
-        if (!cancelled && d?.prices) setPrices(d.prices.filter((p) => typeof p.amount === 'number'));
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
   }, [open]);
 
+  useEffect(() => {
+    if (!open || inPlayApp) return;
+    let cancelled = false;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15000);
+    void fetch('/api/billing/product', { headers: { accept: 'application/json' }, signal: controller.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { prices?: PriceInfo[] } | null) => {
+        const valid = Array.isArray(d?.prices) ? d.prices.filter((p) => p && Number.isSafeInteger(p.amount) && p.amount >= 0 && /^[a-z]{3}$/i.test(p.currency) && (p.interval === 'month' || p.interval === 'year')) : [];
+        if (!valid.length) throw new Error('No valid recurring price');
+        if (!cancelled) {
+          setPrices(valid);
+          track('price_loaded');
+        }
+      })
+      .catch(() => { if (!cancelled) setPriceError(true); })
+      .finally(() => window.clearTimeout(timeout));
+    return () => {
+      cancelled = true;
+      controller.abort();
+      window.clearTimeout(timeout);
+    };
+  }, [open, inPlayApp, priceAttempt]);
+
+  const changeOpen = (next: boolean) => {
+    if (!next) { setPrices(null); setPriceError(false); }
+    onOpenChange(next);
+  };
+
   const onCta = () => {
+    if (!prices?.length || priceError || busy || inPlayApp) return;
     if (!user) {
       login(); // not signed in → send to sign-in first (checkout needs a session)
       return;
@@ -152,7 +174,7 @@ export function UpgradeDialog({ open, onOpenChange }: UpgradeDialogProps) {
   ];
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={changeOpen}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>{t('upgrade.title')}</DialogTitle>
@@ -195,11 +217,17 @@ export function UpgradeDialog({ open, onOpenChange }: UpgradeDialogProps) {
               ))}
             </div>
           )}
+          {!inPlayApp && !prices && (
+            <div role="status" className="text-sm text-muted-foreground">
+              {priceError ? t('upgrade.priceError') : t('upgrade.priceLoading')}
+              {priceError && <Button variant="outline" className="mt-2 min-h-11 w-full" onClick={() => { setPriceError(false); setPriceAttempt((n) => n + 1); }}>{t('upgrade.priceRetry')}</Button>}
+            </div>
+          )}
 
           {inPlayApp ? (
             <p className="rounded-md bg-muted/40 px-3 py-2 text-xs text-muted-foreground">{t('upgrade.playInfo')}</p>
           ) : (
-            <Button onClick={onCta} disabled={busy} className="w-full">
+            <Button onClick={onCta} disabled={busy || !prices?.length || priceError} className="min-h-11 w-full">
               {busy ? t('upgrade.ctaBusy') : t('upgrade.cta')}
             </Button>
           )}

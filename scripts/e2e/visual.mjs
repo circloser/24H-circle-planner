@@ -203,7 +203,7 @@ const STATES = [
       await seedBasicData(page);
       await page.evaluate(() => localStorage.removeItem('24h-circle-planner.onboarded'));
       await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
-      await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
+      await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
       await wait(600); // welcome overlay entrance
     },
   },

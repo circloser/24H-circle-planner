@@ -361,6 +361,12 @@ function SlicePath({
       tabIndex={isInteractive ? 0 : undefined}
       // The scissors cursor comes from the .slice-cut class; don't override it.
       style={{ cursor: isInteractive && !cutMode ? 'pointer' : undefined }}
+      onKeyDown={isInteractive ? (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onSliceDoubleClick?.(slice.id);
+        }
+      } : undefined}
       onClick={handleClick}
       onDoubleClick={
         isInteractive && onSliceDoubleClick ? () => onSliceDoubleClick(slice.id) : undefined
@@ -619,6 +625,7 @@ export function CircleTimeline({
 
   const svgElement = (
     <svg
+      data-circle-timeline=""
       ref={svgRef}
       viewBox={`${-VB_MARGIN} ${-VB_MARGIN} ${VB_SIZE} ${VB_SIZE}`}
       preserveAspectRatio="xMidYMid meet"
@@ -628,7 +635,7 @@ export function CircleTimeline({
         fontFamily: 'var(--app-font-family, Pretendard), Pretendard, system-ui, sans-serif',
       }}
       aria-label={t('circle.ariaTimeline')}
-      role="img"
+      role={isInteractive ? 'group' : 'img'}
     >
       <defs>
         <filter id="glass-blur" x="-5%" y="-5%" width="110%" height="110%">

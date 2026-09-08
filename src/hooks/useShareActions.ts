@@ -27,7 +27,7 @@ export function useShareActions(svgRef: React.RefObject<SVGSVGElement | null>) {
     }
     try {
       const outcome = await shareChartImage(svgRef.current, present.name || t('shareview.untitled'), t('share.text'));
-      track('share', { method: 'image' });
+      track('share', { method: 'image', outcome });
       if (outcome === 'downloaded') toast.success(t('share.saved'));
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return; // user cancelled

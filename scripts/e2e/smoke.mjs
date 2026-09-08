@@ -8,7 +8,7 @@ export async function run() {
     await gotoApp(page);
     await seedBasicData(page);
 
-    pass('chart renders', await page.locator('svg[role="img"]').first().isVisible().catch(() => false));
+    pass('chart renders', await page.locator('svg[data-circle-timeline]').first().isVisible().catch(() => false));
     pass('header export button present', (await page.locator('button[aria-label="내보내기"]').count()) > 0);
     pass('design menu present', (await page.locator('button[aria-label="디자인"]').count()) > 0);
 
@@ -24,10 +24,10 @@ export async function run() {
     // name lingered.
     {
       const hubText = () => page.evaluate(() =>
-        [...document.querySelectorAll('svg[role="img"] text')].map((t) => t.textContent.trim()));
+        [...document.querySelectorAll('svg[data-circle-timeline] text')].map((t) => t.textContent.trim()));
       pass('hub shows the schedule name', (await hubText()).includes('테스트 하루'));
 
-      await page.locator('svg[role="img"] circle.glass-hub-disc').first().click();
+      await page.locator('svg[data-circle-timeline] circle.glass-hub-disc').first().click();
       await wait(300);
       const editor = page.locator('div[aria-label="시간표 제목 편집"]');
       pass('hub title editor opens', await editor.isVisible().catch(() => false));

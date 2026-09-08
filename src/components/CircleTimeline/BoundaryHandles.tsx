@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { TimeSlice } from '@/types/time-slice';
 import { boundaryHandlePosition, RING, polarToCartesian } from '@/lib/svg-geometry';
-import { hhmmToMinutes } from '@/lib/time-utils';
+import { hhmmToMinutes, minutesToHhmm, SNAP_MINUTES, sliceWidthMinutes } from '@/lib/time-utils';
 import { FULL_SPEC, isInWindow, type ViewSpec } from '@/lib/chart-view';
 import { useStoreDispatch, useStoreSelector } from '@/hooks/useScheduleStore';
 import { useCoarsePointer } from '@/hooks/useCoarsePointer';
@@ -212,6 +212,11 @@ function BoundaryHandle({ slice, slices, index, spec, onPointerDownHandle }: Bou
   // The boundary's time (= end of the CCW slice). "24:00" shows as "00:00".
   const boundaryTime = slice.endTime === '24:00' ? '00:00' : slice.endTime;
 
+  // Unwrap the pair across midnight so the slider has a contiguous range.
+  const boundaryValue = hhmmToMinutes(ccwSlice.startTime) + sliceWidthMinutes(ccwSlice);
+  const boundaryMin = hhmmToMinutes(ccwSlice.startTime) + SNAP_MINUTES;
+  const boundaryMax = boundaryValue + sliceWidthMinutes(cwSlice) - SNAP_MINUTES;
+
   const handleMinus = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!canMinus) return;
@@ -323,7 +328,21 @@ function BoundaryHandle({ slice, slices, index, spec, onPointerDownHandle }: Bou
         stroke="none"
         role="slider"
         aria-label={`경계 ${index + 1} 드래그`}
+        aria-valuemin={boundaryMin}
+        aria-valuemax={boundaryMax}
+        aria-valuenow={boundaryValue}
+        aria-valuetext={boundaryTime}
         tabIndex={0}
+        onKeyDown={(event) => {
+          const direction = ['ArrowRight', 'ArrowUp'].includes(event.key) ? 1 : ['ArrowLeft', 'ArrowDown'].includes(event.key) ? -1 : 0;
+          if ((!direction && event.key !== 'Home' && event.key !== 'End') || isDraggingBoundary) return;
+          event.preventDefault();
+          event.stopPropagation();
+          const value = event.key === 'Home' ? boundaryMin : event.key === 'End' ? boundaryMax : Math.max(boundaryMin, Math.min(boundaryMax, boundaryValue + direction * SNAP_MINUTES));
+          const minute = value % 1440;
+          if (value === boundaryValue) return;
+          dispatch({ type: 'RESIZE_BOUNDARY', boundaryIndex: index, newHHmm: minutesToHhmm(minute), direction: value > boundaryValue ? 'clockwise' : 'counterclockwise' });
+        }}
         style={{ cursor: 'ew-resize', touchAction: 'none' }}
         onPointerDown={(e) => onPointerDownHandle(e, index)}
         onClick={handleTap}

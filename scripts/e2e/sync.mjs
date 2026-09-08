@@ -70,7 +70,7 @@ export async function run() {
       localStorage.setItem(goalsKey, goalVal);
     }, [GOALS, goal('GOALBASE')]);
     await page.goto(`${base}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
+    await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
     await page.keyboard.press('Escape').catch(() => {});
 
     // 1. Device A seeds the cloud (v1).

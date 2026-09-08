@@ -52,7 +52,7 @@ export async function run() {
 
       // Reload → open clocks persist.
       await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
-      await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
+      await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
       await page.keyboard.press('Escape').catch(() => {});
       await wait(400);
       pass('desktop: clocks persist across reload', (await count()) === base + 1);
@@ -65,7 +65,7 @@ export async function run() {
       // undoable mutation). Aim the 06:00 direction at a small radius — inside
       // the seeded 수면(00–08h) wedge, well below its label hit-circle (~04:00
       // at r≈298) and 30° away from the nearest boundary strip.
-      const chart = page.locator('svg[role="img"]').first();
+      const chart = page.locator('svg[data-circle-timeline]').first();
       const box = await chart.boundingBox();
       await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.69);
       await wait(300);

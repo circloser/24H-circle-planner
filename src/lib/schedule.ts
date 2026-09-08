@@ -538,6 +538,7 @@ export function resizeBoundary(
   schedule: Schedule,
   boundaryIndex: number,
   newHHmm: string,
+  direction?: 'clockwise' | 'counterclockwise',
 ): Schedule {
   const action = 'resizeBoundary';
   const rawMin = hhmmToMinutes(newHHmm);
@@ -556,8 +557,8 @@ export function resizeBoundary(
 
   // Determine drag direction using circular delta from currentBoundary to snapped
   const delta = (snappedMin - currentBoundaryMin + 1440) % 1440;
-  const isCW = delta > 0 && delta <= 720;
-  const isCCW = delta > 720;
+  const isCW = delta > 0 && (direction ? direction === 'clockwise' : delta <= 720);
+  const isCCW = delta > 0 && (direction ? direction === 'counterclockwise' : delta > 720);
 
   if (!isCW && !isCCW) {
     return { ...schedule, updatedAt: now() };

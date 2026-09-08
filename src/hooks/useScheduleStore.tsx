@@ -29,6 +29,8 @@ import { createInitialSchedule } from '@/lib/initial-schedule';
 
 export interface StoreState {
   history: HistoryState;
+  /** Counts semantic mutations only; loads, appearance and undo/redo do not activate. */
+  semanticEditRevision?: number;
   isDraggingBoundary: boolean;
   dragRef: DragRef | null;
   /** When a diary record is loaded for viewing, its date key (YYYY-MM-DD). */
@@ -51,6 +53,7 @@ export type StoreAction =
       type: 'RESIZE_BOUNDARY';
       boundaryIndex: number;
       newHHmm: string;
+      direction?: 'clockwise' | 'counterclockwise';
       baseSnapshot?: Schedule;
     }
   | { type: 'REPLACE_SLICE'; id: string; patch: Partial<TimeSlice> }
@@ -115,6 +118,14 @@ function deepCloneSlicesWithNewIds(slices: TimeSlice[]): TimeSlice[] {
 
 // ─── Reducer ─────────────────────────────────────────────────────────────────
 
+function hasSemanticEdit(previous: Schedule, next: Schedule): boolean {
+  if (previous.name !== next.name) return true;
+  const content = (schedule: Schedule) => schedule.slices
+    .map((slice) => JSON.stringify([slice.label, slice.startTime, slice.endTime]))
+    .sort();
+  return JSON.stringify(content(previous)) !== JSON.stringify(content(next));
+}
+
 function applyMutation(
   state: StoreState,
   compute: (present: Schedule) => Schedule,
@@ -131,6 +142,7 @@ function applyMutation(
     return {
       ...state,
       history: pushHistory(state.history, finalNext),
+      semanticEditRevision: (state.semanticEditRevision ?? 0) + (hasSemanticEdit(base, finalNext) ? 1 : 0),
     };
   } catch (err) {
     if (err instanceof ContiguityError) {
@@ -197,7 +209,7 @@ function reducer(state: StoreState, action: StoreAction): StoreState {
       const base = action.baseSnapshot ?? state.history.present;
       return applyMutation(
         { ...state, history: { ...state.history, present: base } },
-        (present) => resizeBoundary(present, action.boundaryIndex, action.newHHmm),
+        (present) => resizeBoundary(present, action.boundaryIndex, action.newHHmm, action.direction),
       );
     }
 

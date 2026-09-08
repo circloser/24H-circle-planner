@@ -44,7 +44,7 @@ export async function run() {
     });
 
     await page.goto(`${base}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
+    await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
     await seedBasicData(page);
 
     // 1. Boot with a linked token → one publish after the debounce.
@@ -136,7 +136,7 @@ export async function run() {
     const NATIVE = 'nativeMintedToken0123456';
     const beforeAuto = puts.length;
     await page.goto(`${base}/?w=${NATIVE}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
+    await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
     await wait(4500);
     pass('launch URL token is adopted', (await page.evaluate(() => localStorage.getItem('24h-circle-planner.widget-token'))) === NATIVE);
     pass('launch URL is scrubbed', (await page.evaluate(() => location.search)) === '', await page.evaluate(() => location.href));

@@ -28,7 +28,8 @@ import { HubTitleEditor } from '@/components/HubTitleEditor/HubTitleEditor';
 import { SlotSheet } from '@/components/SlotSheet/SlotSheet';
 import { SaveAsDialog } from '@/components/SaveAsDialog/SaveAsDialog';
 import { SavePresetDialog } from '@/components/SavePresetDialog/SavePresetDialog';
-import { ExportDialog } from '@/components/ExportPanel/ExportDialog';
+import { LazyExportDialog as ExportDialog } from '@/components/ExportPanel/LazyExportDialog';
+import { FirstPlanPrompt } from '@/components/Onboarding/FirstPlanPrompt';
 import { SettingsDialog, type SettingsSection } from '@/components/Settings/SettingsDialog';
 import { MemoLayer } from '@/components/Memo/MemoLayer';
 import { MobileMemoSection } from '@/components/Memo/MobileMemoSection';
@@ -126,29 +127,21 @@ function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   // A schedule arriving via a share link (#p=…) → confirm before it replaces.
   const [shareImport, setShareImport] = useState<Schedule | null>(() => readSharedFromHash());
-  // First visit = a CLEAN start: just the timetable on a quiet screen — no
-  // welcome card, no banners, no widgets, no insight. After ~5s of taking it
-  // in, the design magician starts. (The persona picker stays available via
-  // the preset gallery.)
-  const [firstRunClean, setFirstRunClean] = useState<boolean>(() => isFirstVisit() && shareImport === null);
-  // True for the visitor's ENTIRE first session (captured before markOnboarded
-  // runs). Keeps first-visit noise away — banners, nudges, the insight card —
-  // even after the 5s clean phase hands over to the design magician.
+  // Keep the first session focused on making a plan. Decoration is opt-in.
+  const [firstPlanPending, setFirstRunClean] = useState<boolean>(() => isFirstVisit() && shareImport === null);
+  const hasEditedPlan = useStoreSelector((state) => state.history.past.length > 0);
+  const firstRunClean = firstPlanPending && !hasEditedPlan;
+  useEffect(() => {
+    if (hasEditedPlan) {
+      markOnboarded();
+      // Remember completion even if the user later undoes their first edit.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFirstRunClean(false);
+    }
+  }, [hasEditedPlan]);
   const [firstSession] = useState<boolean>(() => isFirstVisit());
   const [welcomeOpen, setWelcomeOpen] = useState(false);
-  // Design magician — a guided decorate-your-app flow. First-timers get it once
-  // (5s after the clean first screen); anyone can relaunch it from Design.
   const [magicianOpen, setMagicianOpen] = useState(false);
-  useEffect(() => {
-    if (!firstRunClean) return;
-    const id = window.setTimeout(() => {
-      markOnboarded();
-      setFirstRunClean(false);
-      setMagicianOpen(true);
-    }, 5000);
-    return () => window.clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   const [tutorialOpen, setTutorialOpen] = useState(false);
   // "Shall we do the tutorial?" — asked once, right after the magician finishes
   // (its final button, not the X), and only if the tutorial was never opened.
@@ -188,7 +181,7 @@ function App() {
   const dismissWelcome = () => {
     markOnboarded();
     setWelcomeOpen(false);
-    try { if (!localStorage.getItem(MAGICIAN_KEY)) setMagicianOpen(true); } catch { /* */ }
+    setFirstRunClean(false);
   };
 
   // Apply the chosen colour theme (if any) to a preset and load it, so content +
@@ -566,7 +559,13 @@ function App() {
       <ReferralDialog open={referralOpen} onOpenChange={setReferralOpen} />
 
       {!firstSession && <ActivationNudge onSendToPhone={() => setTransferOpen(true)} />}
-      <EnablePushBanner />
+      {!firstSession && <EnablePushBanner />}
+      <FirstPlanPrompt
+        open={firstRunClean}
+        onDismiss={dismissWelcome}
+        onAdd={() => { dismissWelcome(); setTimeBlockOpen(true); }}
+        onTemplates={() => { dismissWelcome(); setPresetOpen(true); }}
+      />
       {!firstSession && <GetAppBanner />}
       {!firstSession && <IosInstallBanner onOpen={() => setHomeOpen(true)} />}
 
@@ -787,6 +786,7 @@ function App() {
       <PlayStoreBanner open={getAppOpen} onClose={closeGetApp} />
 
       {/* T9: Export dialog */}
+      {exportOpen && (
       <ExportDialog
         open={exportOpen}
         onOpenChange={setExportOpen}
@@ -795,6 +795,7 @@ function App() {
         schedule={present}
         onImport={(s: Schedule) => dispatch({ type: 'LOAD_SCHEDULE', schedule: s })}
       />
+      )}
 
       {/* Add-to-home-screen helper (install prompt + instructions) */}
       <AddToHomeDialog
@@ -861,7 +862,7 @@ function App() {
         schedule={shareImport}
         onClose={() => setShareImport(null)}
         onImport={(s) => {
-          track('schedule_import', { name: s.name ?? '' });
+          track('schedule_import', { source: 'share_link' });
           dispatch({ type: 'LOAD_SCHEDULE', schedule: s });
         }}
       />

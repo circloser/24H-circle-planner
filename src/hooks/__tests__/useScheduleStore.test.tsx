@@ -592,3 +592,23 @@ describe('ScheduleStoreProvider', () => {
     });
   });
 });
+
+
+describe('explicit keyboard boundary direction', () => {
+  it('moves End over 12 hours without absorbing unrelated slices and uses one undo entry', () => {
+    const original: Schedule = { id: 'keyboard-plan', version: 1, name: 'keyboard', updatedAt: new Date().toISOString(), presetSource: null,
+      slices: [makeSlice('00:00', '01:00'), makeSlice('01:00', '23:00'), makeSlice('23:00', '00:00')] };
+    const { result, unmount } = renderHook(() => ({ dispatch: useStoreDispatch(), history: useStoreSelector((state) => state.history) }),
+      { wrapper: ({ children }: { children: ReactNode }) => <ScheduleStoreProvider>{children}</ScheduleStoreProvider> });
+    act(() => result.current.dispatch({ type: 'LOAD_SCHEDULE', schedule: original }));
+    act(() => result.current.dispatch({ type: 'RESIZE_BOUNDARY', boundaryIndex: 0, newHHmm: '22:55', direction: 'clockwise' }));
+    expect(result.current.history.present.slices).toHaveLength(3);
+    expect(result.current.history.present.slices[0].endTime).toBe('22:55');
+    expect(result.current.history.present.slices[1].startTime).toBe('22:55');
+    expect(result.current.history.present.slices[2]).toEqual(original.slices[2]);
+    expect(result.current.history.past).toHaveLength(1);
+    act(() => result.current.dispatch({ type: 'UNDO' }));
+    expect(result.current.history.present).toEqual(original);
+    unmount();
+  });
+});

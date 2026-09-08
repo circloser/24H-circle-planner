@@ -68,11 +68,11 @@ export async function run() {
     try {
       await page.addInitScript(seedBase({ assignToday: true }));
       await page.goto(FILE, { waitUntil: "domcontentloaded", timeout: 30000 });
-      await page.waitForSelector("svg[role='img']", { timeout: 15000 });
+      await page.waitForSelector("svg[data-circle-timeline]", { timeout: 15000 });
       await wait(600);
 
       pass('no prompt dialog (auto-load)', (await page.locator('text=오늘의 기본 시간표').count()) === 0);
-      pass("chart auto-loads the weekday's schedule", (await page.locator('svg[role="img"] >> text=요일테스트').count()) > 0);
+      pass("chart auto-loads the weekday's schedule", (await page.locator('svg[data-circle-timeline] >> text=요일테스트').count()) > 0);
       // The toast is deliberately deferred ~600ms (fired before <Toaster>
       // mounts, sonner would drop it) — poll briefly instead of a one-shot count.
       const toastSeen = await page.waitForSelector('text=시간표를 불러왔어요', { timeout: 4000 }).then(() => true).catch(() => false);
@@ -91,9 +91,9 @@ export async function run() {
       }
       pass('loaded day flushed to storage', persisted);
       await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
-      await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
+      await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
       await wait(500);
-      pass('schedule persists across reload', (await page.locator('svg[role="img"] >> text=요일테스트').count()) > 0);
+      pass('schedule persists across reload', (await page.locator('svg[data-circle-timeline] >> text=요일테스트').count()) > 0);
       pass('still no prompt after reload', (await page.locator('text=오늘의 기본 시간표').count()) === 0);
       pass('auto-load flow: no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
     } finally {
@@ -108,11 +108,11 @@ export async function run() {
     try {
       await page.addInitScript(seedBase({ assignToday: true, promptedToday: true }));
       await page.goto(FILE, { waitUntil: "domcontentloaded", timeout: 30000 });
-      await page.waitForSelector("svg[role='img']", { timeout: 15000 });
+      await page.waitForSelector("svg[data-circle-timeline]", { timeout: 15000 });
       await wait(600);
 
-      pass('guarded day keeps the original schedule', (await page.locator('svg[role="img"] >> text=원본라벨').count()) > 0);
-      pass("guarded day does NOT load the weekday's schedule", (await page.locator('svg[role="img"] >> text=요일테스트').count()) === 0);
+      pass('guarded day keeps the original schedule', (await page.locator('svg[data-circle-timeline] >> text=원본라벨').count()) > 0);
+      pass("guarded day does NOT load the weekday's schedule", (await page.locator('svg[data-circle-timeline] >> text=요일테스트').count()) === 0);
       pass('guarded flow: no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
     } finally {
       await browser.close();

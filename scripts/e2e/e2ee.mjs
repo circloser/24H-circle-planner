@@ -59,7 +59,7 @@ export async function run() {
         localStorage.setItem('24h-circle-planner.diary', JSON.stringify({ version: 1, entries: { '2026-07-01': { date: '2026-07-01', name: '내 하루', slices: [], note: secret, savedAt: 1 } } }));
       }, SECRET);
       await page.goto(`${base}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-      await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
+      await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
       await page.keyboard.press('Escape').catch(() => {});
 
       // The engine seeds the cloud plaintext; wait until the NOTE is present.
@@ -96,7 +96,7 @@ export async function run() {
         localStorage.setItem('24h-circle-planner.sync-consent', '1');
       });
       await page.goto(`${base}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-      await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
+      await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
       await page.keyboard.press('Escape').catch(() => {});
 
       // The engine reports the locked state in the settings menu (and auto-opens
@@ -148,7 +148,7 @@ export async function run() {
         localStorage.setItem('24h-circle-planner.diary', JSON.stringify({ version: 1, entries: { '2026-07-02': { date: '2026-07-02', name: '내 하루', slices: [], note: secret, savedAt: 1 } } }));
       }, SECRET);
       await page.goto(`${base}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-      await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
+      await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
 
       pass('the privacy step is shown before any upload',
         await until(async () => (await page.locator('text=동기화 전에 확인해 주세요').count()) > 0));

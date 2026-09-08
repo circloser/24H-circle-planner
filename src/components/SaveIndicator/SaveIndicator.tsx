@@ -1,57 +1,36 @@
-import { useEffect, useRef, useState } from 'react';
-import { Check, Loader2 } from 'lucide-react';
-import { useStoreSelector } from '@/hooks/useScheduleStore';
+import { useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
+import { Check, Loader2, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/hooks/usePreferences';
+import { createPersistenceBackup, getPersistenceStatus, retryPersistence, subscribePersistence } from '@/lib/persistence';
 
-/**
- * Auto-save trust signal. Every edit persists to localStorage on a debounce;
- * this briefly shows "Saving…" after a change, then settles on "Saved", so users
- * can see their work is being kept (reduces the "will I lose this?" anxiety).
- * Tied to the schedule store (the primary editing surface).
- */
-/** Show "Saved" for this long after the save settles, then fade the indicator out. */
-const SAVED_LINGER_MS = 10_000;
-
-type Phase = 'idle' | 'saving' | 'saved';
+function downloadBackup() {
+  const url = URL.createObjectURL(new Blob([createPersistenceBackup()], { type: 'application/json' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `24houring-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 export function SaveIndicator() {
-  const present = useStoreSelector((s) => s.history.present);
+  const phase = useSyncExternalStore(subscribePersistence, getPersistenceStatus, getPersistenceStatus);
   const { t } = useTranslation();
-  const [phase, setPhase] = useState<Phase>('idle');
-  const firstRef = useRef(true);
-
-  useEffect(() => {
-    if (firstRef.current) {
-      firstRef.current = false; // skip the initial mount (no edit happened)
-      return;
-    }
-    setPhase('saving');
-    const savedId = setTimeout(() => setPhase('saved'), 800);
-    // ~10s after it settles on "Saved", hide the indicator for a clean header.
-    const hideId = setTimeout(() => setPhase('idle'), 800 + SAVED_LINGER_MS);
-    return () => {
-      clearTimeout(savedId);
-      clearTimeout(hideId);
-    };
-  }, [present]);
-
-  // Idle (initial, or 10s after the last save): show nothing.
   if (phase === 'idle') return null;
-
-  const saving = phase === 'saving';
-  return (
-    <div
-      className="inline-flex shrink-0 items-center gap-1 text-xs text-muted-foreground"
-      data-save-indicator // stable hook — the visual harness hides this transient chip
-      aria-live="polite"
-      title={saving ? t('app.saving') : t('app.saved')}
-    >
-      {saving ? (
-        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-      ) : (
-        <Check className="h-3.5 w-3.5" />
-      )}
-      <span className="hidden sm:inline">{saving ? t('app.saving') : t('app.saved')}</span>
+  const failed = phase === 'failed';
+  const label = t(failed ? 'app.saveFailed' : phase === 'saving' ? 'app.saving' : 'app.saved');
+  const indicator = (
+    <div className={`flex flex-wrap items-center gap-1 text-xs ${failed ? 'fixed left-4 right-4 top-16 z-[100] mx-auto max-w-xl rounded-lg border border-destructive bg-background p-3 text-destructive shadow-lg' : 'text-muted-foreground'}`} data-save-indicator>
+      <span role="status" aria-live="polite" className="inline-flex items-center gap-1" title={label}>
+        {failed ? <AlertCircle aria-hidden="true" className="h-3.5 w-3.5" /> : phase === 'saving' ?
+          <Loader2 aria-hidden="true" className="h-3.5 w-3.5 motion-safe:animate-spin" /> : <Check aria-hidden="true" className="h-3.5 w-3.5" />}
+        <span className={failed ? '' : 'sr-only sm:not-sr-only'}>{label}</span>
+      </span>
+      {failed && <>
+        <button type="button" className="min-h-11 px-2 underline" onClick={retryPersistence}>{t('app.retrySave')}</button>
+        <button type="button" className="min-h-11 px-2 underline" onClick={downloadBackup}>{t('app.backupSave')}</button>
+      </>}
     </div>
   );
+  return failed ? createPortal(indicator, document.body) : indicator;
 }

@@ -20,9 +20,9 @@ export async function run() {
 
     // 1. Viewer with schedule + note.
     await page.goto(`${base}/s#d=${b64url(payload)}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
+    await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
     await wait(400);
-    pass('viewer renders the chart', await page.locator('svg[role="img"]').first().isVisible().catch(() => false));
+    pass('viewer renders the chart', await page.locator('svg[data-circle-timeline]').first().isVisible().catch(() => false));
     pass('shows the shared name', (await page.locator('h1:has-text("테스트 하루")').count()) > 0);
     pass('shows the note body', (await page.getByText('둘째 줄 노트입니다.').count()) > 0);
     pass('shows the CTA', (await page.locator('a:has-text("나만의 하루 시간표 만들기")').count()) > 0);
@@ -33,7 +33,7 @@ export async function run() {
     //    don't remount the SPA; real share links always open fresh.)
     await page.goto('about:blank');
     await page.goto(`${base}/s#d=${b64url({ ...payload, t: undefined })}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
+    await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
     await wait(300);
     pass('note section absent when no note', (await page.getByText('둘째 줄 노트입니다.').count()) === 0);
 
@@ -45,7 +45,7 @@ export async function run() {
 
     // 4. Regression: / still loads the full app.
     await page.goto(`${base}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForSelector('svg[role="img"]', { timeout: 15000 });
+    await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
     await wait(400);
     pass('/ still loads the full app', (await page.locator('button[aria-label="내보내기"]').count()) > 0);
 

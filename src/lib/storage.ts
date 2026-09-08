@@ -1,3 +1,4 @@
+import { persistLocal } from './persistence';
 import type { Schedule, ScheduleEnvelope } from '@/types/schedule';
 import type { TimeSlice } from '@/types/time-slice';
 
@@ -73,24 +74,7 @@ export function loadSchedule(): Schedule | null {
   }
 }
 
-let _debounceTimer: ReturnType<typeof setTimeout> | null = null;
-
-/**
- * Debounced save — coalesces rapid calls into one write after 500ms.
- * Persists only the present schedule (not undo/redo history).
- */
 export function saveScheduleDebounced(schedule: Schedule): void {
-  if (_debounceTimer !== null) {
-    clearTimeout(_debounceTimer);
-  }
-  _debounceTimer = setTimeout(() => {
-    _debounceTimer = null;
-    const envelope: ScheduleEnvelope = { version: 1, schedule };
-    try {
-      localStorage.setItem(STORAGE_KEY_SCHEDULE, JSON.stringify(envelope));
-    } catch {
-      // Quota or browser restrictions must not throw from the delayed callback.
-      // The in-memory schedule remains usable; the next edit retries persistence.
-    }
-  }, 500);
+  const envelope: ScheduleEnvelope = { version: 1, schedule };
+  persistLocal(STORAGE_KEY_SCHEDULE, envelope, 500);
 }

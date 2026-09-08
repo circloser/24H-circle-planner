@@ -364,7 +364,7 @@ function DesignMagicianSession({ open, onClose, onFinish }: DesignMagicianProps)
       </div>
 
       <div className="mt-3 flex items-center gap-2" data-no-drag>
-        <button type="button" onClick={() => go(-1)} disabled={step === 0}
+        <button type="button" onClick={() => go(-1)} disabled={step === 0} aria-label={t('tama.back')}
           className="grid h-8 w-8 place-items-center rounded-md border border-border disabled:opacity-40">
           <ChevronLeft className="h-4 w-4" />
         </button>
