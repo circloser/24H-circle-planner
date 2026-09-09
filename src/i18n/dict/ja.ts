@@ -455,8 +455,6 @@ export const ja: Record<TKey, string> = {
   'app.retrySave': "保存を再試行",
   'app.backupSave': "JSONバックアップ",
   'view.select': "表示を選択",
-  'onboarding.firstPlan': "最初の予定を作りましょう",
-  'onboarding.firstPlanBody': "時間枠を追加するかテンプレートを選び、自分の一日に合わせて編集しましょう。",
   'upgrade.title': 'Proにアップグレード',
   'upgrade.trialBadge': '1か月無料トライアル',
   'upgrade.subtitle': "Proではクラウド同期、無制限のアーカイブ、統計、広告非表示を利用できます。",

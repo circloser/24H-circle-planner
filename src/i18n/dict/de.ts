@@ -458,8 +458,6 @@ export const de: Record<TKey, string> = {
   'app.retrySave': "Erneut speichern",
   'app.backupSave': "JSON-Sicherung",
   'view.select': "Ansicht wählen",
-  'onboarding.firstPlan': "Erstelle deinen ersten Plan",
-  'onboarding.firstPlanBody': "Füge einen Zeitblock hinzu oder wähle eine Vorlage und passe sie an deinen Tag an.",
   'upgrade.title': 'Auf Pro upgraden',
   'upgrade.trialBadge': '1 Monat kostenlos testen',
   'upgrade.subtitle': "Pro bietet Cloud-Synchronisierung, unbegrenzte Archive, Statistiken und Werbefreiheit.",

@@ -455,8 +455,6 @@ export const fr: Record<TKey, string> = {
   'app.retrySave': "Réessayer",
   'app.backupSave': "Sauvegarde JSON",
   'view.select': "Choisir la vue",
-  'onboarding.firstPlan': "Créez votre premier planning",
-  'onboarding.firstPlanBody': "Ajoutez un créneau ou choisissez un modèle, puis adaptez-le à votre journée.",
   'upgrade.title': 'Passer à Pro',
   'upgrade.trialBadge': "Essai gratuit d'un mois",
   'upgrade.subtitle': "Pro propose la synchronisation, des archives illimitées, des statistiques et une expérience sans publicité.",

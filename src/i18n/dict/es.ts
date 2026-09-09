@@ -455,8 +455,6 @@ export const es: Record<TKey, string> = {
   'app.retrySave': "Reintentar guardado",
   'app.backupSave': "Copia JSON",
   'view.select': "Elegir vista",
-  'onboarding.firstPlan': "Crea tu primer plan",
-  'onboarding.firstPlanBody': "Añade un bloque de tiempo o elige una plantilla y adáptala a tu día.",
   'upgrade.title': 'Mejorar a Pro',
   'upgrade.trialBadge': '1 mes de prueba gratis',
   'upgrade.subtitle': "Pro ofrece sincronización, archivo ilimitado, estadísticas y una experiencia sin anuncios.",

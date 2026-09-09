@@ -455,8 +455,6 @@ export const ru: Record<TKey, string> = {
   'app.retrySave': "Повторить сохранение",
   'app.backupSave': "Резервная копия JSON",
   'view.select': "Выбрать вид",
-  'onboarding.firstPlan': "Создайте первый план",
-  'onboarding.firstPlanBody': "Добавьте временной блок или выберите шаблон и адаптируйте его под свой день.",
   'upgrade.title': 'Перейти на Pro',
   'upgrade.trialBadge': '1 месяц бесплатно',
   'upgrade.subtitle': "Pro включает синхронизацию, неограниченный архив, статистику и отключение рекламы.",

@@ -458,8 +458,6 @@ export const en: Record<TKey, string> = {
   'app.retrySave': "Retry save",
   'app.backupSave': "JSON backup",
   'view.select': "Select view",
-  'onboarding.firstPlan': "Make your first plan",
-  'onboarding.firstPlanBody': "Add a time block or choose a template, then make it your own.",
   'upgrade.title': 'Upgrade to Pro',
   'upgrade.trialBadge': '1-month free trial',
   'upgrade.subtitle': "Pro adds cloud sync, unlimited archives, stats and an ad-free experience.",

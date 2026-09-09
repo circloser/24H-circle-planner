@@ -29,7 +29,6 @@ import { SlotSheet } from '@/components/SlotSheet/SlotSheet';
 import { SaveAsDialog } from '@/components/SaveAsDialog/SaveAsDialog';
 import { SavePresetDialog } from '@/components/SavePresetDialog/SavePresetDialog';
 import { LazyExportDialog as ExportDialog } from '@/components/ExportPanel/LazyExportDialog';
-import { FirstPlanPrompt } from '@/components/Onboarding/FirstPlanPrompt';
 import { SettingsDialog, type SettingsSection } from '@/components/Settings/SettingsDialog';
 import { MemoLayer } from '@/components/Memo/MemoLayer';
 import { MobileMemoSection } from '@/components/Memo/MobileMemoSection';
@@ -127,21 +126,32 @@ function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   // A schedule arriving via a share link (#p=…) → confirm before it replaces.
   const [shareImport, setShareImport] = useState<Schedule | null>(() => readSharedFromHash());
-  // Keep the first session focused on making a plan. Decoration is opt-in.
-  const [firstPlanPending, setFirstRunClean] = useState<boolean>(() => isFirstVisit() && shareImport === null);
-  const hasEditedPlan = useStoreSelector((state) => state.history.past.length > 0);
-  const firstRunClean = firstPlanPending && !hasEditedPlan;
-  useEffect(() => {
-    if (hasEditedPlan) {
-      markOnboarded();
-      // Remember completion even if the user later undoes their first edit.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFirstRunClean(false);
-    }
-  }, [hasEditedPlan]);
+  // First visit = a CLEAN start: just the timetable on a quiet screen — no
+  // welcome card, no banners, no widgets, nothing asking for a decision. After
+  // ~5s of taking it in, the design magician opens, and finishing it offers the
+  // tutorial. Meeting a newcomer with a form to fill in gets the order wrong:
+  // let them see what the thing IS before asking them to put anything into it.
+  // (The persona picker stays available via the preset gallery.)
+  const [firstRunClean, setFirstRunClean] = useState<boolean>(() => isFirstVisit() && shareImport === null);
+  // True for the visitor's ENTIRE first session (captured before markOnboarded
+  // runs). Keeps first-visit noise away — banners, nudges — even after the 5s
+  // clean phase hands over to the design magician.
   const [firstSession] = useState<boolean>(() => isFirstVisit());
   const [welcomeOpen, setWelcomeOpen] = useState(false);
+  // Design magician — a guided decorate-your-app flow. First-timers get it once
+  // (5s after the clean first screen); anyone can relaunch it from Design.
   const [magicianOpen, setMagicianOpen] = useState(false);
+  useEffect(() => {
+    if (!firstRunClean) return;
+    const id = window.setTimeout(() => {
+      markOnboarded();
+      setFirstRunClean(false);
+      setMagicianOpen(true);
+    }, 5000);
+    return () => window.clearTimeout(id);
+    // Mount only: the handover happens once, on the very first visit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [tutorialOpen, setTutorialOpen] = useState(false);
   // "Shall we do the tutorial?" — asked once, right after the magician finishes
   // (its final button, not the X), and only if the tutorial was never opened.
@@ -182,6 +192,7 @@ function App() {
     markOnboarded();
     setWelcomeOpen(false);
     setFirstRunClean(false);
+    try { if (!localStorage.getItem(MAGICIAN_KEY)) setMagicianOpen(true); } catch { /* storage unavailable */ }
   };
 
   // Apply the chosen colour theme (if any) to a preset and load it, so content +
@@ -560,12 +571,6 @@ function App() {
 
       {!firstSession && <ActivationNudge onSendToPhone={() => setTransferOpen(true)} />}
       {!firstSession && <EnablePushBanner />}
-      <FirstPlanPrompt
-        open={firstRunClean}
-        onDismiss={dismissWelcome}
-        onAdd={() => { dismissWelcome(); setTimeBlockOpen(true); }}
-        onTemplates={() => { dismissWelcome(); setPresetOpen(true); }}
-      />
       {!firstSession && <GetAppBanner />}
       {!firstSession && <IosInstallBanner onOpen={() => setHomeOpen(true)} />}
 

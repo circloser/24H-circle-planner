@@ -459,8 +459,6 @@ export const ko = {
   'app.retrySave': "다시 저장",
   'app.backupSave': "JSON 백업",
   'view.select': "보기 선택",
-  'onboarding.firstPlan': "첫 일정을 만들어 보세요",
-  'onboarding.firstPlanBody': "일정을 추가하거나 템플릿을 골라 내 하루에 맞게 수정하세요.",
   'upgrade.title': 'Pro로 업그레이드',
   'upgrade.trialBadge': '1개월 무료 체험',
   'upgrade.subtitle': "Pro로 기기 간 동기화, 무제한 아카이브, 통계와 광고 없는 환경을 이용하세요.",

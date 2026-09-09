@@ -453,8 +453,6 @@ export const zh: Record<TKey, string> = {
   'app.retrySave': "重新保存",
   'app.backupSave': "JSON 备份",
   'view.select': "选择视图",
-  'onboarding.firstPlan': "创建你的第一个计划",
-  'onboarding.firstPlanBody': "添加时间段或选择模板，然后按自己的需要修改。",
   'upgrade.title': '升级到 Pro',
   'upgrade.trialBadge': '1个月免费试用',
   'upgrade.subtitle': "Pro 提供云同步、无限归档、统计和无广告体验。",
