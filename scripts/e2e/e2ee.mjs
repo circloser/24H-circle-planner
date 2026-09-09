@@ -65,8 +65,8 @@ export async function run() {
       // The engine seeds the cloud plaintext; wait until the NOTE is present.
       pass('standard sync stores PLAINTEXT (operator can read the note)', await until(() => !!store.blob && store.blob.includes(SECRET)));
 
-      // Enable E2EE via the settings menu (only shown when signed in).
-      await page.locator('button[aria-label="설정"]').first().click();
+      // Enable E2EE from the diary menu (only shown to a signed-in Pro account).
+      await page.locator('button[aria-label="일기"]').first().click();
       await wait(200);
       await page.locator('[role="menuitem"]:has-text("일기 잠금")').first().click();
       await wait(400);
@@ -99,19 +99,21 @@ export async function run() {
       await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
       await page.keyboard.press('Escape').catch(() => {});
 
-      // The engine reports the locked state in the settings menu (and auto-opens
-      // the unlock dialog). Verify the status, then open the dialog the reliable
-      // way — the settings → 일기 잠금 menu item — to run the unlock flow.
+      // The engine reports the locked state in the ⚙ menu's sync row (and
+      // auto-opens the unlock dialog). Verify the status there, then open the
+      // dialog the reliable way — 일기 → 일기 잠금 — to run the unlock flow.
       const locked = await until(async () => {
         await page.locator('button[aria-label="설정"]').first().click().catch(() => {});
         await wait(200);
         const shown = (await page.locator('text=잠김 (암호 필요)').count()) > 0;
-        if (!shown) await page.keyboard.press('Escape').catch(() => {});
+        await page.keyboard.press('Escape').catch(() => {});
         return shown;
       }, 15000);
       pass('device B reports LOCKED (passphrase needed)', locked);
 
-      // Open the unlock dialog from the (already open) settings menu.
+      // Open the unlock dialog from the diary menu.
+      await page.locator('button[aria-label="일기"]').first().click();
+      await wait(200);
       await page.locator('[role="menuitem"]:has-text("일기 잠금")').first().click();
       await wait(500);
       pass('unlock dialog opens', (await page.locator('text=일기 잠금 해제').count()) > 0);

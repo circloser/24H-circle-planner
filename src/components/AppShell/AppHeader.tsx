@@ -190,6 +190,18 @@ export function AppHeader({
                 <Target className="h-4 w-4" />
                 {t('goals.open')}
               </DropdownMenuItem>
+              {/* Diary lock (E2EE). It encrypts the diary, so it belongs with
+                  the diary — it sat under ⚙ only because it rides on sync,
+                  which is why it still needs a signed-in Pro account. */}
+              {!authLoading && user && plan === 'pro' && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={onOpenE2ee} className="gap-2">
+                    <Lock className="h-4 w-4" />
+                    {t('e2ee.menu')}
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
           <DropdownMenu>
@@ -236,6 +248,26 @@ export function AppHeader({
                 <Palette className="h-4 w-4" />
                 {t('settings.colorTheme')}
               </DropdownMenuItem>
+              {/* Light/dark sits with the colour theme it switches between. */}
+              <DropdownMenuItem
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="gap-2"
+              >
+                {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                {t(theme === 'dark' ? 'theme.lightMode' : 'theme.darkMode')}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {/* What's on the screen and how it's laid out — design, not setup. */}
+              <DropdownMenuItem onClick={() => onOpenSettings('widgets')} className="gap-2">
+                <LayoutGrid className="h-4 w-4" />
+                {t('settings.widgets')}
+              </DropdownMenuItem>
+              {onOpenPip && (
+                <DropdownMenuItem onClick={onOpenPip} className="gap-2">
+                  <PictureInPicture2 className="h-4 w-4" />
+                  {t('pip.menu')}
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
           <Button
@@ -305,11 +337,6 @@ export function AppHeader({
                             <CreditCard className="h-4 w-4" />
                             {t('billing.manage')}
                           </DropdownMenuItem>
-                          {/* Diary lock (E2EE) rides on sync → Pro only. */}
-                          <DropdownMenuItem onClick={onOpenE2ee} className="gap-2">
-                            <Lock className="h-4 w-4" />
-                            {t('e2ee.menu')}
-                          </DropdownMenuItem>
                         </>
                       ) : billingEnabled ? (
                         <DropdownMenuItem onClick={onOpenUpgrade} className="gap-2">
@@ -339,20 +366,9 @@ export function AppHeader({
                 <BellRing className="h-4 w-4" />
                 {t('settings.alarms')}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onOpenSettings('widgets')} className="gap-2">
-                <LayoutGrid className="h-4 w-4" />
-                {t('settings.widgets')}
-              </DropdownMenuItem>
               <DropdownMenuItem onClick={onOpenReferral} className="gap-2">
                 <UserPlus className="h-4 w-4" />
                 {t('referral.menu')}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="gap-2"
-              >
-                {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                {t(theme === 'dark' ? 'theme.lightMode' : 'theme.darkMode')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={onShareImage} className="gap-2">
@@ -363,12 +379,6 @@ export function AppHeader({
                 <Link2 className="h-4 w-4" />
                 {t('sharelink.copy')}
               </DropdownMenuItem>
-              {onOpenPip && (
-                <DropdownMenuItem onClick={onOpenPip} className="gap-2">
-                  <PictureInPicture2 className="h-4 w-4" />
-                  {t('pip.menu')}
-                </DropdownMenuItem>
-              )}
               {onOpenWidgetConnect && (
                 <DropdownMenuItem onClick={onOpenWidgetConnect} className="gap-2">
                   <LayoutGrid className="h-4 w-4" />
