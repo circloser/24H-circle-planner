@@ -2,14 +2,24 @@ import { track } from './track';
 import { APP_STORAGE_PREFIX } from './backup';
 
 type Phase = 'idle' | 'saving' | 'saved' | 'failed';
-type Entry = { value: unknown; phase: Phase; timer?: ReturnType<typeof setTimeout> };
+type Entry = { value: unknown; phase: Phase; timer?: ReturnType<typeof setTimeout>; dwell?: ReturnType<typeof setTimeout> };
 const entries = new Map<string, Entry>();
 const listeners = new Set<() => void>();
+
+/**
+ * How long a successful save stays announced before the indicator steps out of
+ * the way. "Saved" is a moment, not a condition: the entry map lives for the
+ * whole session (it backs the backup export and retry), so reporting 'saved'
+ * merely because an entry exists pinned the badge to the header forever.
+ * Failures never expire — they need the user to act.
+ */
+export const SAVED_DWELL_MS = 3000;
+
 export function getPersistenceStatus(): Phase {
   const states = [...entries.values()].map((entry) => entry.phase);
   if (states.includes('failed')) return 'failed';
   if (states.includes('saving')) return 'saving';
-  return states.length ? 'saved' : 'idle';
+  return states.includes('saved') ? 'saved' : 'idle';
 }
 export function subscribePersistence(listener: () => void) {
   listeners.add(listener);
@@ -20,9 +30,20 @@ function write(key: string, entry: Entry) {
   // A replaced debounce must never report success for a newer edit.
   if (entries.get(key) !== entry) return;
   entry.timer = undefined;
+  // A retry of this same entry restarts the announcement rather than letting an
+  // older countdown clear a newer "saved".
+  if (entry.dwell) clearTimeout(entry.dwell);
+  entry.dwell = undefined;
   try {
     localStorage.setItem(key, JSON.stringify(entry.value));
     entry.phase = 'saved';
+    entry.dwell = setTimeout(() => {
+      entry.dwell = undefined;
+      // Only retire an announcement that is still the current one.
+      if (entries.get(key) !== entry || entry.phase !== 'saved') return;
+      entry.phase = 'idle';
+      notify();
+    }, SAVED_DWELL_MS);
   } catch {
     entry.phase = 'failed';
   }
@@ -32,6 +53,7 @@ function write(key: string, entry: Entry) {
 export function persistLocal(key: string, value: unknown, delay = 0) {
   const previous = entries.get(key);
   if (previous?.timer) clearTimeout(previous.timer);
+  if (previous?.dwell) clearTimeout(previous.dwell);
   const entry: Entry = { value, phase: 'saving' };
   entries.set(key, entry);
   notify();
@@ -43,6 +65,16 @@ export function retryPersistence() {
     if (entry.timer) clearTimeout(entry.timer);
     write(key, entry);
   }
+}
+
+/** Test seam: drop every pending timer and entry. */
+export function resetPersistence() {
+  for (const entry of entries.values()) {
+    if (entry.timer) clearTimeout(entry.timer);
+    if (entry.dwell) clearTimeout(entry.dwell);
+  }
+  entries.clear();
+  notify();
 }
 /** Includes in-memory changes even when localStorage is unavailable. */
 export function createPersistenceBackup() {

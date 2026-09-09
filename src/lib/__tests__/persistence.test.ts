@@ -40,6 +40,40 @@ describe('persistence truth and recovery', () => {
     expect(JSON.parse(localStorage.getItem('24h-circle-planner.days')!)).toEqual({ latest: 2 });
   });
 
+  it('retires "saved" after the dwell without losing the data behind it', async () => {
+    const p = await import('../persistence');
+    p.persistLocal('24h-circle-planner.days', { a: 1 });
+    expect(p.getPersistenceStatus()).toBe('saved');
+    vi.advanceTimersByTime(p.SAVED_DWELL_MS - 1);
+    expect(p.getPersistenceStatus()).toBe('saved');
+    vi.advanceTimersByTime(1);
+    expect(p.getPersistenceStatus()).toBe('idle');
+    // Going quiet is a UI concern only — the entry still backs retry and backup.
+    expect(JSON.parse(localStorage.getItem('24h-circle-planner.days')!)).toEqual({ a: 1 });
+    expect(JSON.parse(JSON.parse(p.createPersistenceBackup()).data['24h-circle-planner.days'])).toEqual({ a: 1 });
+  });
+
+  it('never retires a failure — that one needs the user', async () => {
+    const p = await import('../persistence');
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('Full', 'QuotaExceededError'); });
+    p.persistLocal('24h-circle-planner.days', { a: 1 });
+    expect(p.getPersistenceStatus()).toBe('failed');
+    vi.advanceTimersByTime(p.SAVED_DWELL_MS * 10);
+    expect(p.getPersistenceStatus()).toBe('failed');
+  });
+
+  it('re-announces on a later save, so an older countdown cannot cut it short', async () => {
+    const p = await import('../persistence');
+    p.persistLocal('24h-circle-planner.days', { a: 1 });
+    vi.advanceTimersByTime(p.SAVED_DWELL_MS - 200);
+    p.persistLocal('24h-circle-planner.days', { a: 2 });
+    expect(p.getPersistenceStatus()).toBe('saved');
+    vi.advanceTimersByTime(300); // the first countdown would have expired here
+    expect(p.getPersistenceStatus()).toBe('saved');
+    vi.advanceTimersByTime(p.SAVED_DWELL_MS);
+    expect(p.getPersistenceStatus()).toBe('idle');
+  });
+
   it('does not mark pending changes saved after an older deadline and retry cancels pending writes', async () => {
     const p = await import('../persistence');
     p.persistLocal('24h-circle-planner.schedule', { revision: 1 }, 500);
