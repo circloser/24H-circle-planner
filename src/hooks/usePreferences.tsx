@@ -94,7 +94,9 @@ export interface Preferences {
   showNowLine: boolean; // current-time indicator line
   nowLineColor: string; // colour of the current-time line
   nowLineWidth: number; // stroke width of the current-time line
-  /** Seconds hand: a time line sweeping one revolution per minute (24h view). */
+  /** Seconds hand: a time line sweeping one revolution per minute (24h view).
+   *  Off by default — a hand that ticks every second pulls the eye on a page
+   *  meant for looking at a whole day. */
   showSecondsHand: boolean;
   secondsHandColor: string; // colour of the seconds hand (default blue)
   /** Snap floating widgets (clocks/goals/news/post-its/polaroids) to a 20px
@@ -158,7 +160,7 @@ const DEFAULT_PREFS: Preferences = {
   showNowLine: true,
   nowLineColor: NOW_LINE_DEFAULT_COLOR,
   nowLineWidth: NOW_LINE_DEFAULT_WIDTH,
-  showSecondsHand: true,
+  showSecondsHand: false,
   secondsHandColor: SECONDS_HAND_DEFAULT_COLOR,
   widgetSnap: true,
   showWidgets: true,
@@ -216,7 +218,34 @@ function pathLocale(): Lang | null {
   }
 }
 
+/**
+ * The seconds hand used to default to ON, and every saved profile has that old
+ * value written into it — so changing the default alone would reach nobody who
+ * has ever used the app. This flips it off ONCE per device.
+ *
+ * The marker is written on the very first load after the change, whatever that
+ * load found, so a later deliberate "show it" in Settings is never undone: the
+ * flip cannot run twice.
+ */
+const SECONDS_HAND_FLIP_KEY = '24h-circle-planner.seconds-hand-off-v1';
+
+function applyOneTimeDefaults(prefs: Preferences): Preferences {
+  try {
+    if (localStorage.getItem(SECONDS_HAND_FLIP_KEY)) return prefs;
+    localStorage.setItem(SECONDS_HAND_FLIP_KEY, '1');
+    return { ...prefs, showSecondsHand: false };
+  } catch {
+    // Storage unavailable: leave the profile alone rather than flipping it on
+    // every single load.
+    return prefs;
+  }
+}
+
 function loadPrefs(): Preferences {
+  return applyOneTimeDefaults(loadStoredPrefs());
+}
+
+function loadStoredPrefs(): Preferences {
   const pinned = pathLocale();
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -351,7 +380,7 @@ export function useNowLineStyle(): { color: string; width: number } {
 export function useSecondsHand(): { on: boolean; color: string } {
   const ctx = useContext(PreferencesContext);
   return {
-    on: ctx?.prefs.showSecondsHand ?? true,
+    on: ctx?.prefs.showSecondsHand ?? false,
     color: ctx?.prefs.secondsHandColor ?? SECONDS_HAND_DEFAULT_COLOR,
   };
 }
