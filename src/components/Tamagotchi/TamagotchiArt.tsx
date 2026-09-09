@@ -1,4 +1,5 @@
 import type { Species, Phase } from '@/hooks/useTamagotchi';
+import type { Mood } from '@/lib/tama-mood';
 
 /**
  * Line-only creature art (stroke = currentColor, no fills except tiny eye dots),
@@ -7,14 +8,123 @@ import type { Species, Phase } from '@/hooks/useTamagotchi';
  * side-view walkers (cat/puppy/bear/rabbit trot on four legs, chick/duck strut
  * on two, mole burrows along the ground), drawn facing right and mirrored by
  * the Creature to match their heading.
+ *
+ * Every form wears a FACE chosen by its mood (see lib/tama-mood): the eyes,
+ * brows and mouth are drawn by the shared helpers below, at each species' own
+ * anchor points, so all seven animals emote the same way without losing their
+ * silhouettes. That is what tells the user a pet is hungry or queasy — the
+ * emoji badges that used to float above their heads are gone.
  */
 
-const eye = (x: number, y: number, r = 1.6) => <circle key={`e${x}`} cx={x} cy={y} r={r} fill="currentColor" stroke="none" />;
+// ─── Face parts (mood-driven) ────────────────────────────────────────────────
+// At 40px on screen a 64-unit eye dot is barely over a pixel, so expression has
+// to come from SHAPE: open dot vs arc vs closed lid, brows present or absent,
+// and the direction the mouth curves. Those three read at any size.
 
-/** Two soft diagonal cheek-blush strokes — a light, cute accent. */
-const blush = (x: number, y: number) => (
-  <path key={`b${x}`} d={`M${x} ${y} l-2.4 1.3 M${x + 2.2} ${y + 1.5} l-2.4 1.3`} opacity={0.45} strokeWidth={0.6} />
+const dot = (x: number, y: number, r: number) => (
+  <circle cx={x} cy={y} r={r} fill="currentColor" stroke="none" />
 );
+
+/**
+ * Both eyes, in the given mood. `lx/ly` and `rx/ry` are each species' existing
+ * eye centres, so shapes stay registered with the head they belong to.
+ */
+function Eyes({
+  mood, lx, ly, rx, ry, r = 2, sw,
+}: { mood: Mood; lx: number; ly: number; rx: number; ry: number; r?: number; sw?: number }) {
+  // Closed, gently bowed lids.
+  if (mood === 'sleeping') {
+    return (
+      <>
+        <path d={`M${lx - r} ${ly} q${r} ${r * 1.2} ${r * 2} 0`} strokeWidth={sw} />
+        <path d={`M${rx - r} ${ry} q${r} ${r * 1.2} ${r * 2} 0`} strokeWidth={sw} />
+      </>
+    );
+  }
+  // Half-lidded: a low dot under a heavy lid line.
+  if (mood === 'tired') {
+    return (
+      <>
+        {dot(lx, ly + r * 0.35, r * 0.62)}
+        {dot(rx, ry + r * 0.35, r * 0.62)}
+        <path d={`M${lx - r} ${ly - r * 0.3} h${r * 2}`} strokeWidth={sw} />
+        <path d={`M${rx - r} ${ry - r * 0.3} h${r * 2}`} strokeWidth={sw} />
+      </>
+    );
+  }
+  // Delighted ^ ^ arcs.
+  if (mood === 'happy') {
+    return (
+      <>
+        <path d={`M${lx - r} ${ly + r * 0.55} q${r} ${-r * 1.7} ${r * 2} 0`} strokeWidth={sw} />
+        <path d={`M${rx - r} ${ry + r * 0.55} q${r} ${-r * 1.7} ${r * 2} 0`} strokeWidth={sw} />
+      </>
+    );
+  }
+  // Squinted, with brows pulled down toward the nose — the hungry scowl.
+  if (mood === 'hungry') {
+    return (
+      <>
+        {dot(lx, ly + r * 0.2, r * 0.7)}
+        {dot(rx, ry + r * 0.2, r * 0.7)}
+        <path d={`M${lx - r * 1.1} ${ly - r * 1.5} l${r * 2.1} ${r * 0.95}`} strokeWidth={sw} />
+        <path d={`M${rx + r * 1.1} ${ry - r * 1.5} l${-r * 2.1} ${r * 0.95}`} strokeWidth={sw} />
+      </>
+    );
+  }
+  // Queasy: wide eyes under raised, uneven brows.
+  if (mood === 'dirty') {
+    return (
+      <>
+        {dot(lx, ly, r * 0.85)}
+        {dot(rx, ry, r * 0.85)}
+        <path d={`M${lx - r} ${ly - r * 1.6} q${r} ${-r * 0.8} ${r * 2} ${r * 0.2}`} strokeWidth={sw} />
+        <path d={`M${rx - r} ${ry - r * 1.3} q${r} ${-r * 0.8} ${r * 2} ${-r * 0.2}`} strokeWidth={sw} />
+      </>
+    );
+  }
+  // content / dead fall back to plain eyes.
+  return (
+    <>
+      {dot(lx, ly, r)}
+      {dot(rx, ry, r)}
+    </>
+  );
+}
+
+/**
+ * A mouth spanning `w` units to the right of (`x`,`y`). Species with a beak or
+ * a bill skip this and emote through the eyes alone.
+ */
+function Mouth({ mood, x, y, w = 5, sw }: { mood: Mood; x: number; y: number; w?: number; sw?: number }) {
+  const h = w * 0.45;
+  switch (mood) {
+    case 'happy':
+      return <path d={`M${x} ${y} q${w / 2} ${h * 1.7} ${w} 0`} strokeWidth={sw} />;
+    case 'hungry': // downturned
+      return <path d={`M${x} ${y + h * 0.9} q${w / 2} ${-h * 1.5} ${w} 0`} strokeWidth={sw} />;
+    case 'dirty': // wavy, about to be sick
+      return <path d={`M${x} ${y} q${w / 4} ${h} ${w / 2} 0 q${w / 4} ${-h} ${w / 2} 0`} strokeWidth={sw} />;
+    case 'tired':
+      return <path d={`M${x + w * 0.15} ${y} h${w * 0.7}`} strokeWidth={sw} />;
+    case 'sleeping':
+      return <path d={`M${x + w * 0.28} ${y} q${w * 0.22} ${h} ${w * 0.44} 0`} strokeWidth={sw} />;
+    case 'content':
+      return <path d={`M${x} ${y} q${w / 2} ${h} ${w} 0`} strokeWidth={sw} />;
+    default:
+      return null;
+  }
+}
+
+/** Two soft diagonal cheek-blush strokes — a light, cute accent. Hidden when
+ *  the pet is in no mood for it. */
+const blush = (x: number, y: number, mood: Mood) =>
+  mood === 'hungry' || mood === 'dirty' || mood === 'dead' ? null : (
+    <path key={`b${x}`} d={`M${x} ${y} l-2.4 1.3 M${x + 2.2} ${y + 1.5} l-2.4 1.3`} opacity={0.45} strokeWidth={0.6} />
+  );
+
+/** Adult line art is stroked at 0.9; face lines need more weight to read. */
+const FACE_SW = 1.5;
 
 function Egg() {
   return (
@@ -25,19 +135,20 @@ function Egg() {
   );
 }
 
-function Amoeba() {
+function Amoeba({ mood }: { mood: Mood }) {
   return (
     <>
       <path d="M32 20 c10 0 16 7 15 16 c-1 8 -8 12 -16 12 c-9 0 -16 -6 -15 -15 c1 -8 7 -13 16 -13 Z" />
-      {eye(27, 34)}
-      {eye(37, 34)}
-      <path d="M29 40 q3 3 6 0" />
+      <Eyes mood={mood} lx={27} ly={34} rx={37} ry={34} r={1.6} />
+      <Mouth mood={mood} x={29} y={40} w={6} />
     </>
   );
 }
 
 // ── Baby: a rounder, mostly-face form (a touch smaller) ──────────────────────
-function BabyBody({ species }: { species: Species }) {
+function BabyBody({ species, mood }: { species: Species; mood: Mood }) {
+  // Species markers only — the eyes and mouth come from the shared face so
+  // every baby emotes identically.
   const feature = () => {
     switch (species) {
       case 'chick':
@@ -50,7 +161,7 @@ function BabyBody({ species }: { species: Species }) {
       case 'rabbit':
         return (<>
           <path d="M26 15 C24 4 21 4 23 15 M38 15 C40 4 43 4 41 15" />
-          <path d="M30 31 q2 2 4 0" />
+          <Mouth mood={mood} x={30} y={31} w={4} />
         </>);
       case 'bear':
         return (<>
@@ -60,16 +171,18 @@ function BabyBody({ species }: { species: Species }) {
       case 'puppy':
         return (<>
           <path d="M20 20 q-6 4 -2 12 M44 20 q6 4 2 12" />
-          <path d="M32 30 v3 M29 33 q3 3 6 0" />
+          <path d="M32 30 v3" />
+          <Mouth mood={mood} x={29} y={33} w={6} />
         </>);
       case 'cat':
         return (<>
           <path d="M22 18 l-3 -8 l8 4 M42 18 l3 -8 l-8 4" />
           <path d="M18 27 h6 M40 27 h6" />
+          <Mouth mood={mood} x={29.5} y={31} w={5} />
         </>);
       case 'mole':
         return (<>
-          <path d="M24 32 q8 6 16 0" />
+          <Mouth mood={mood} x={26} y={32} w={12} />
           <path d="M20 24 q-4 2 -1 6 M44 24 q4 2 1 6" />
         </>);
     }
@@ -77,8 +190,7 @@ function BabyBody({ species }: { species: Species }) {
   return (
     <g transform="translate(32 32) scale(0.82) translate(-32 -32)">
       <circle cx={32} cy={26} r={13} />
-      {eye(27, 25)}
-      {eye(37, 25)}
+      <Eyes mood={mood} lx={27} ly={25} rx={37} ry={25} r={1.6} />
       {feature()}
       <path d="M27 50 v4 M37 50 v4" />
     </g>
@@ -101,7 +213,9 @@ function Leg({ x, top, len, cls, walk, far = false, w }: { x: number; top: numbe
   );
 }
 
-function AdultCat({ walk }: { walk: boolean }) {
+interface BodyProps { walk: boolean; mood: Mood }
+
+function AdultCat({ walk, mood }: BodyProps) {
   return (
     <g>
       {/* fluffy raised tail (one tapered outline), wags from the rump */}
@@ -117,18 +231,22 @@ function AdultCat({ walk }: { walk: boolean }) {
       {/* big chibi head, gently curved ears */}
       <circle cx={45} cy={20.5} r={10.5} />
       <path d="M38.5 12.5 C37.2 8.8 36.6 5.8 37 3.5 C39.8 5.2 42.5 6.8 45 8.5 M48.5 8.5 C50 6.2 51.8 4.2 53.5 2.5 C54.5 5.6 55.2 8.5 55.5 11.5" />
-      {eye(42.5, 21, 2)}
-      {eye(49, 21, 2)}
+      <Eyes mood={mood} lx={42.5} ly={21} rx={49} ry={21} r={2} sw={FACE_SW} />
       <circle cx={45.8} cy={24.8} r={1.2} fill="currentColor" stroke="none" />
-      <path d="M43.4 26.8 q1.2 1.6 2.4 0 M45.8 26.8 q1.2 1.6 2.4 0" />
+      {/* the signature w-mouth stays for the calm faces; moods redraw it */}
+      {mood === 'content' || mood === 'happy' ? (
+        <path d="M43.4 26.8 q1.2 1.6 2.4 0 M45.8 26.8 q1.2 1.6 2.4 0" strokeWidth={FACE_SW} />
+      ) : (
+        <Mouth mood={mood} x={43.4} y={26.8} w={4.8} sw={FACE_SW} />
+      )}
       <path d="M55.5 21.6 q3.4 -1.1 6.6 -1.3 M55.5 25 q3.4 .5 6.6 1.1" />
-      {blush(37.6, 24.2)}
-      {blush(50.8, 24.2)}
+      {blush(37.6, 24.2, mood)}
+      {blush(50.8, 24.2, mood)}
     </g>
   );
 }
 
-function AdultPuppy({ walk }: { walk: boolean }) {
+function AdultPuppy({ walk, mood }: BodyProps) {
   return (
     <g>
       {/* shiba tail curled over the back */}
@@ -143,18 +261,20 @@ function AdultPuppy({ walk }: { walk: boolean }) {
       {/* big chibi head, gently curved ears */}
       <circle cx={45} cy={20.5} r={10.5} />
       <path d="M39 11.5 C38.2 8.4 37.9 5.4 38 2.5 C40.8 4.3 43.3 6.1 45.5 8 M48.5 8 C49.4 5.7 50.4 3.5 51.5 1.5 C52.7 4.3 53.7 7.1 54.5 10" />
-      {eye(42.5, 20.5, 2)}
-      {eye(48.5, 20.5, 2)}
-      {/* nose + smile + happy tongue */}
+      <Eyes mood={mood} lx={42.5} ly={20.5} rx={48.5} ry={20.5} r={2} sw={FACE_SW} />
+      {/* nose + mouth; the lolling tongue is a happy-only flourish */}
       <circle cx={45.5} cy={24.4} r={1.3} fill="currentColor" stroke="none" />
-      <path d="M43 26.6 q2.5 2.2 5 0 M45.5 28.3 q0 2.6 -1.9 2.8" />
-      {blush(37.6, 24)}
-      {blush(50.8, 24)}
+      <Mouth mood={mood} x={43} y={26.6} w={5} sw={FACE_SW} />
+      {mood === 'happy' || mood === 'content' ? (
+        <path d="M45.5 28.3 q0 2.6 -1.9 2.8" strokeWidth={FACE_SW} />
+      ) : null}
+      {blush(37.6, 24, mood)}
+      {blush(50.8, 24, mood)}
     </g>
   );
 }
 
-function AdultBear({ walk }: { walk: boolean }) {
+function AdultBear({ walk, mood }: BodyProps) {
   return (
     <g>
       <path d="M14 36 q-3.5 .5 -2.5 4" />{/* stubby tail */}
@@ -168,17 +288,17 @@ function AdultBear({ walk }: { walk: boolean }) {
       <circle cx={45} cy={21} r={11} />
       <circle cx={37.5} cy={12} r={3.4} />
       <circle cx={52} cy={11.4} r={3.4} />
-      {eye(41.5, 20.5, 2)}
-      {eye(48, 20.5, 2)}
+      <Eyes mood={mood} lx={41.5} ly={20.5} rx={48} ry={20.5} r={2} sw={FACE_SW} />
       {/* round muzzle */}
       <circle cx={48.2} cy={25.2} r={3.2} />
       <circle cx={48.2} cy={24} r={1.4} fill="currentColor" stroke="none" />
-      {blush(37.4, 24.4)}
+      <Mouth mood={mood} x={46.2} y={26.4} w={4} sw={FACE_SW} />
+      {blush(37.4, 24.4, mood)}
     </g>
   );
 }
 
-function AdultRabbit({ walk }: { walk: boolean }) {
+function AdultRabbit({ walk, mood }: BodyProps) {
   return (
     <g>
       <circle cx={13.8} cy={36.5} r={2.6} />{/* cotton tail */}
@@ -192,17 +312,16 @@ function AdultRabbit({ walk }: { walk: boolean }) {
       <circle cx={44.5} cy={23} r={10} />
       {/* long ears swept back */}
       <path d="M40 14.5 C35.5 3 42 -.5 44.5 11.5 M47 12.5 C48.5 -1 55.5 1.5 51 15" />
-      {eye(41.5, 23, 2)}
-      {eye(47.5, 23, 2)}
+      <Eyes mood={mood} lx={41.5} ly={23} rx={47.5} ry={23} r={2} sw={FACE_SW} />
       <circle cx={44.5} cy={26.6} r={1.2} fill="currentColor" stroke="none" />
-      <path d="M42.8 28.6 q1.7 1.7 3.4 0" />
-      {blush(37.8, 26)}
-      {blush(49.4, 26)}
+      <Mouth mood={mood} x={42.8} y={28.6} w={3.4} sw={FACE_SW} />
+      {blush(37.8, 26, mood)}
+      {blush(49.4, 26, mood)}
     </g>
   );
 }
 
-function AdultChick({ walk }: { walk: boolean }) {
+function AdultChick({ walk, mood }: BodyProps) {
   return (
     <g>
       {/* trident feet on stick legs */}
@@ -215,16 +334,16 @@ function AdultChick({ walk }: { walk: boolean }) {
       <g className={walk ? 'tama-armL' : undefined} style={pivotTop}>
         <path d="M22.5 38.5 q5.5 3 10.5 .8" />
       </g>
-      {eye(37.5, 26.5, 2)}
-      {eye(43.5, 26.5, 2)}
-      <path d="M47 28.5 l6.5 2.6 l-6.5 2.6 Z" fill="currentColor" stroke="none" />{/* beak */}
-      {blush(33.4, 29.8)}
-      {blush(44.6, 30.2)}
+      {/* beak stays put; the eyes carry the mood */}
+      <Eyes mood={mood} lx={37.5} ly={26.5} rx={43.5} ry={26.5} r={2} sw={FACE_SW} />
+      <path d="M47 28.5 l6.5 2.6 l-6.5 2.6 Z" fill="currentColor" stroke="none" />
+      {blush(33.4, 29.8, mood)}
+      {blush(44.6, 30.2, mood)}
     </g>
   );
 }
 
-function AdultDuck({ walk }: { walk: boolean }) {
+function AdultDuck({ walk, mood }: BodyProps) {
   return (
     <g>
       {/* webbed waddling feet */}
@@ -238,10 +357,9 @@ function AdultDuck({ walk }: { walk: boolean }) {
       <circle cx={45.5} cy={16} r={8} />
       {/* flat bill */}
       <path d="M53 14 q7 .5 7 3 q0 2.5 -7 2.8 M53.4 17 h6" />
-      {eye(43, 14.5, 2)}
-      {eye(48.5, 14.5, 2)}
-      {blush(40.4, 17.6)}
-      {blush(49.6, 17.6)}
+      <Eyes mood={mood} lx={43} ly={14.5} rx={48.5} ry={14.5} r={2} sw={FACE_SW} />
+      {blush(40.4, 17.6, mood)}
+      {blush(49.6, 17.6, mood)}
       {/* folded wing, flaps */}
       <g className={walk ? 'tama-armL' : undefined} style={pivotTop}>
         <path d="M20.5 37.5 q7.5 -4.5 13.5 -.5" />
@@ -250,7 +368,7 @@ function AdultDuck({ walk }: { walk: boolean }) {
   );
 }
 
-function AdultMole({ walk }: { walk: boolean }) {
+function AdultMole({ walk, mood }: BodyProps) {
   return (
     <g>
       <path d="M15.5 46 q-4.5 -.5 -4 3.5" />{/* skinny tail */}
@@ -262,23 +380,27 @@ function AdultMole({ walk }: { walk: boolean }) {
       <g className={walk ? 'tama-armL' : undefined} style={pivotTop}>
         <path d="M46 51 q5 0 5.5 4 M51.5 55 l3 1 M50.8 56.3 l2.6 1.8" />
       </g>
-      {/* blissful closed eyes */}
-      <path d="M39.5 42 q2.2 -2.6 4.4 0 M46 43 q2.2 -2.6 4.4 0" />
+      {/* a mole's eyes are shut by default — its mood shows in the same lids */}
+      {mood === 'content' ? (
+        <path d="M39.5 42 q2.2 -2.6 4.4 0 M46 43 q2.2 -2.6 4.4 0" strokeWidth={FACE_SW} />
+      ) : (
+        <Eyes mood={mood} lx={41.7} ly={42} rx={48.2} ry={43} r={2} sw={FACE_SW} />
+      )}
       <circle cx={56.5} cy={44.5} r={1.7} fill="currentColor" stroke="none" />
       <path d="M56 41.5 q2.9 -1 5.5 -1.4 M57 45 q2.8 .5 5.5 .9" />{/* whiskers */}
     </g>
   );
 }
 
-function AdultBody({ species, walk }: { species: Species; walk: boolean }) {
+function AdultBody({ species, walk, mood }: { species: Species } & BodyProps) {
   switch (species) {
-    case 'cat': return <AdultCat walk={walk} />;
-    case 'puppy': return <AdultPuppy walk={walk} />;
-    case 'bear': return <AdultBear walk={walk} />;
-    case 'rabbit': return <AdultRabbit walk={walk} />;
-    case 'chick': return <AdultChick walk={walk} />;
-    case 'duck': return <AdultDuck walk={walk} />;
-    case 'mole': return <AdultMole walk={walk} />;
+    case 'cat': return <AdultCat walk={walk} mood={mood} />;
+    case 'puppy': return <AdultPuppy walk={walk} mood={mood} />;
+    case 'bear': return <AdultBear walk={walk} mood={mood} />;
+    case 'rabbit': return <AdultRabbit walk={walk} mood={mood} />;
+    case 'chick': return <AdultChick walk={walk} mood={mood} />;
+    case 'duck': return <AdultDuck walk={walk} mood={mood} />;
+    case 'mole': return <AdultMole walk={walk} mood={mood} />;
   }
 }
 
@@ -295,7 +417,7 @@ const SPECIES_FILL: Record<Species, string> = {
   mole: '#C7B9A5', // warm grey
 };
 
-export function PetArt({ species, phase, size = 56, className = '', walk = true }: { species: Species; phase: Phase; size?: number; className?: string; walk?: boolean }) {
+export function PetArt({ species, phase, size = 56, className = '', walk = true, mood = 'content' }: { species: Species; phase: Phase; size?: number; className?: string; walk?: boolean; mood?: Mood }) {
   const grown = phase === 'adult' || phase === 'super';
   return (
     <svg
@@ -311,7 +433,7 @@ export function PetArt({ species, phase, size = 56, className = '', walk = true 
       aria-hidden
     >
       {phase === 'egg' ? <Egg />
-        : phase === 'amoeba' ? <Amoeba />
+        : phase === 'amoeba' ? <Amoeba mood={mood} />
         : phase === 'dead' ? (<>
             <circle cx={32} cy={30} r={14} />
             <path d="M25 26 l6 6 M31 26 l-6 6 M39 26 l6 6 M45 26 l-6 6" />
@@ -321,12 +443,12 @@ export function PetArt({ species, phase, size = 56, className = '', walk = true 
             {/* Super (stage 4): coloured — silhouette underlay, lines on top. */}
             {phase === 'super' && (
               <g stroke={SPECIES_FILL[species]} fill={SPECIES_FILL[species]} strokeWidth={5} strokeLinejoin="round" aria-hidden>
-                <AdultBody species={species} walk={walk} />
+                <AdultBody species={species} walk={walk} mood={mood} />
               </g>
             )}
-            <AdultBody species={species} walk={walk} />
+            <AdultBody species={species} walk={walk} mood={mood} />
           </>)
-        : <BabyBody species={species} />}
+        : <BabyBody species={species} mood={mood} />}
     </svg>
   );
 }

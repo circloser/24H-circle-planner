@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useCallback, useEffect, useRef, useState } from 'react';
+import { petMood, moodJitterFactor, moodSpeedFactor } from '@/lib/tama-mood';
 import {
   TAMA_SYNC_EVENT,
   mergeCheckpointPets,
@@ -129,6 +130,17 @@ const SEP_R = 54; // but push apart when closer than this
 const COH_W = 0.35; // cohesion — steer toward the group centre
 const ALI_W = 0.5; // alignment — match the group heading
 const SEP_W = 1.4; // separation — avoid crowding (strongest)
+
+// ── Poop avoidance ───────────────────────────────────────────────────────────
+// Pets refuse to linger near a dropping and drift away from it. This replaces
+// the unreadable "dirty" badge as the cleanup cue: the animals vacate the
+// fouled area, so the mess is what's left standing there on its own.
+const POOP_R = 170; // full-window avoidance radius (px)
+const POOP_R_WORLD = 55; // …and inside the small mobile terrarium
+const POOP_W = 2.6; // stronger than any flocking term, so it always wins
+/** A pet actively fleeing keeps at least this much of its speed, however
+ *  hungry or queasy it is — otherwise it would sit in the mess it is avoiding. */
+const FLEE_MIN_SPEED = 0.6;
 
 const clamp = (n: number) => Math.max(0, Math.min(100, n));
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
@@ -428,16 +440,44 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
             hy += (cy / cl) * COH_W + (aliY / al) * ALI_W;
           }
           if (sn > 0) { const sl = Math.hypot(sepX, sepY) || 1; hx += (sepX / sl) * SEP_W; hy += (sepY / sl) * SEP_W; }
+          // ── Poop avoidance: steer away, harder the closer it is ──────────────
+          const poopR = world ? POOP_R_WORLD : POOP_R;
+          let awayX = 0, awayY = 0, qn = 0;
+          for (const q of s.poops) {
+            const dx = p.x - q.x, dy = p.y - q.y;
+            const d = Math.hypot(dx, dy);
+            if (d >= poopR) continue;
+            if (d > 0.5) {
+              const push = 1 - d / poopR;
+              awayX += (dx / d) * push; awayY += (dy / d) * push;
+            } else {
+              // Standing exactly on it (a pet poops under itself) — leave in any
+              // direction rather than dividing by ~0.
+              const a = Math.random() * Math.PI * 2;
+              awayX += Math.cos(a); awayY += Math.sin(a);
+            }
+            qn++;
+          }
+          const fleeing = qn > 0;
+          if (fleeing) {
+            const al = Math.hypot(awayX, awayY) || 1;
+            hx += (awayX / al) * POOP_W; hy += (awayY / al) * POOP_W;
+          }
+          // Mood shapes the walk: a hungry pet plants itself and barely turns,
+          // which is now the only tell that it wants feeding.
+          const mood = petMood(p, s.hygiene);
           // Wander jitter. A confined world gets far LESS of it: the same ±20°
           // per second that reads as pleasant wandering across a whole window
           // becomes visible trembling inside a 240×150 box.
-          const jitter = world ? 0.1 : 0.35;
+          const jitter = (world ? 0.1 : 0.35) * moodJitterFactor(mood);
           hx += (Math.random() - 0.5) * jitter; hy += (Math.random() - 0.5) * jitter;
           let heading = Math.atan2(hy, hx);
           // Confined worlds (mobile LCD) are tiny, so pets drift slowly there —
           // a couple of px per second, which the 1s CSS transition renders as a
           // continuous glide rather than a step.
-          const speed = (p.phase === 'amoeba' ? 8 : 13) * (now < (p.boostUntil ?? 0) ? 3.8 : 1) * (world ? 0.18 : 1);
+          const boosted = now < (p.boostUntil ?? 0);
+          const pace = boosted ? 3.8 : Math.max(moodSpeedFactor(mood), fleeing ? FLEE_MIN_SPEED : 0);
+          const speed = (p.phase === 'amoeba' ? 8 : 13) * pace * (world ? 0.18 : 1);
           let nx = p.x + Math.cos(heading) * speed;
           let ny = p.y + Math.sin(heading) * speed;
           // Bounds: a small margin inside the LCD box, or the whole window (with

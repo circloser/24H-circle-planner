@@ -2,20 +2,22 @@ import { useRef, useState, type CSSProperties } from 'react';
 import { PetArt } from './TamagotchiArt';
 import { formatHatch, fireTamaFx } from './tama-utils';
 import { useTamagotchi, type Pet } from '@/hooks/useTamagotchi';
+import { petMood } from '@/lib/tama-mood';
 import { useTranslation } from '@/hooks/usePreferences';
 
 // Baby matches the amoeba stage's footprint (same rendered size → same visual
 // stroke weight); the two stages differ in shape only.
 const SIZE: Record<string, number> = { egg: 46, amoeba: 40, baby: 40, adult: 40, super: 40, dead: 52 };
 
-/** State glyph bubble shown above the creature. Hygiene is shared across pets. */
-function stateGlyph(p: Pet, hygiene: number): string | null {
-  if (p.phase === 'dead') return '💀';
-  if (p.energy < 20) return '⚡'; // exhausted → auto-napping / recharging
-  if (p.sleeping) return '💤';
-  if (hygiene < 20) return '🤒';
-  if (p.hunger < 30) return '🍽️';
-  return null;
+/**
+ * The only badge left above a pet is 💤, because "asleep" has no face of its
+ * own beyond shut eyes and needs to read at a glance. Hunger, exhaustion,
+ * queasiness and death are all in the face now (see lib/tama-mood): a bowl or a
+ * thermometer floating overhead was unreadable at this size and told the user
+ * nothing they could act on.
+ */
+function stateGlyph(p: Pet): string | null {
+  return p.sleeping && p.phase !== 'dead' ? '💤' : null;
 }
 
 export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
@@ -34,7 +36,8 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
   const x = dragPos?.x ?? pet.x;
   const y = dragPos?.y ?? pet.y;
   const dragging = dragPos != null;
-  const glyph = reacting ? '😄' : stateGlyph(pet, hygiene); // happy face while being played with
+  const mood = petMood(pet, hygiene, reacting); // drives the face (and how it moves)
+  const glyph = stateGlyph(pet);
   const remaining = pet.phase === 'egg' ? pet.hatchAt - now : 0;
 
   // Adults face the way they walk (mirror by horizontal heading) and lean
@@ -174,7 +177,7 @@ export function Creature({ pet, selected }: { pet: Pet; selected: boolean }) {
         )}
         <div style={flipStyle}>
           <div className={dragging || reacting ? 'tama-wiggle' : pet.sleeping ? '' : 'tama-bob'}>
-            <PetArt species={pet.species} phase={pet.phase} size={size} walk={grown && !pet.sleeping} />
+            <PetArt species={pet.species} phase={pet.phase} size={size} walk={grown && !pet.sleeping} mood={mood} />
           </div>
         </div>
         {pet.phase === 'egg' && (

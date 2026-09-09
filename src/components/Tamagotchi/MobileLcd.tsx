@@ -3,18 +3,14 @@ import { PetArt, PoopArt } from './TamagotchiArt';
 import { formatHatch } from './tama-utils';
 import { MOBILE_LCD } from './tama-utils';
 import { useTamagotchi, type Pet } from '@/hooks/useTamagotchi';
+import { petMood } from '@/lib/tama-mood';
 import { useTranslation } from '@/hooks/usePreferences';
 
 const SIZE: Record<string, number> = { egg: 34, amoeba: 30, baby: 30, adult: 28, super: 28, dead: 38 };
 
-/** State glyph above the pet (shared hygiene). Mirrors Creature.stateGlyph. */
-function glyphFor(p: Pet, hygiene: number): string | null {
-  if (p.phase === 'dead') return '💀';
-  if (p.energy < 20) return '⚡';
-  if (p.sleeping) return '💤';
-  if (hygiene < 20) return '🤒';
-  if (p.hunger < 30) return '🍽️';
-  return null;
+/** Mirrors Creature: only sleep gets a badge, everything else is in the face. */
+function glyphFor(p: Pet): string | null {
+  return p.sleeping && p.phase !== 'dead' ? '💤' : null;
 }
 
 /** One pet inside the mobile LCD — positioned absolutely in the box, clamped so
@@ -30,7 +26,8 @@ function LcdPet({ pet, hygiene }: { pet: Pet; hygiene: number }) {
   // parked off-screen, independent of its stored world coordinate.
   const x = Math.max(half, Math.min(MOBILE_LCD.w - half, pet.x));
   const y = Math.max(half, Math.min(MOBILE_LCD.h - half, pet.y));
-  const glyph = reacting ? '😄' : glyphFor(pet, hygiene);
+  const mood = petMood(pet, hygiene, reacting);
+  const glyph = glyphFor(pet);
 
   const faceDir = Math.cos(pet.heading) >= 0 ? 1 : -1;
   const flip: CSSProperties | undefined =
@@ -63,7 +60,7 @@ function LcdPet({ pet, hygiene }: { pet: Pet; hygiene: number }) {
         {glyph && <span style={{ position: 'absolute', top: -14, fontSize: 12, pointerEvents: 'none' }}>{glyph}</span>}
         <div style={flip}>
           <div className={reacting ? 'tama-wiggle' : pet.sleeping ? '' : 'tama-bob'}>
-            <PetArt species={pet.species} phase={pet.phase} size={size} walk={(pet.phase === 'adult' || pet.phase === 'super') && !pet.sleeping} />
+            <PetArt species={pet.species} phase={pet.phase} size={size} walk={(pet.phase === 'adult' || pet.phase === 'super') && !pet.sleeping} mood={mood} />
           </div>
         </div>
         {pet.phase === 'egg' && (
