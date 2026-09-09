@@ -2,6 +2,7 @@ import { PetArt } from './TamagotchiArt';
 import { MobileLcd } from './MobileLcd';
 import { formatHatch, fireTamaFx, MOBILE_LCD } from './tama-utils';
 import { useTamagotchi, MAX_PETS, EVOLVE_PLAYS, canFeed, type Pet } from '@/hooks/useTamagotchi';
+import { petMood } from '@/lib/tama-mood';
 import { useTranslation } from '@/hooks/usePreferences';
 
 /** One stat as a donut ring (2×2 grid). Hover shows what it means + the value. */
@@ -67,6 +68,9 @@ export function TamagotchiDevice({
   // refusal reads as "already full" rather than a dead button.
   const full = !!pet && !canFeed(pet) && !!isCreature && !sleeping;
   const hasEgg = pets.some((p) => p.phase === 'egg'); // can't lay a new egg until it hatches
+  // The portrait in the console window is the SAME animal that roams the page,
+  // so it wears the same face — hygiene is shared, hunger and energy are its own.
+  const mood = pet ? petMood(pet, hygiene) : 'content';
 
   const onFeed = () => {
     if (!pet || full) return;
@@ -161,17 +165,17 @@ export function TamagotchiDevice({
           </div>
         ) : pet.phase === 'egg' ? (
           <div style={{ textAlign: 'center' }}>
-            <PetArt species={pet.species} phase="egg" size={54} />
+            <PetArt species={pet.species} phase="egg" size={54} mood={mood} />
             <div style={{ fontSize: 11, fontWeight: 700, marginTop: 2 }}>{t('tama.hatchIn', { t: formatHatch(pet.hatchAt - now, t) })}</div>
           </div>
         ) : pet.phase === 'dead' ? (
           <div style={{ textAlign: 'center', fontSize: 12 }}>
-            <PetArt species={pet.species} phase="dead" size={48} />
+            <PetArt species={pet.species} phase="dead" size={48} mood={mood} />
             <div style={{ marginTop: 2 }}>{t('tama.died')}</div>
           </div>
         ) : (
           <div className={sleeping ? '' : 'tama-bob'} style={{ display: 'grid', placeItems: 'center' }}>
-            <PetArt species={pet.species} phase={pet.phase} size={60} />
+            <PetArt species={pet.species} phase={pet.phase} size={60} mood={mood} />
             {sleeping && <span style={{ position: 'absolute', top: 8, right: 12, fontSize: 16 }}>💤</span>}
           </div>
         )}

@@ -417,7 +417,8 @@ const SPECIES_FILL: Record<Species, string> = {
   mole: '#C7B9A5', // warm grey
 };
 
-export function PetArt({ species, phase, size = 56, className = '', walk = true, mood = 'content' }: { species: Species; phase: Phase; size?: number; className?: string; walk?: boolean; mood?: Mood }) {
+export function PetArt({ species, phase, size = 56, className = '', walk = true, mood }: { species: Species; phase: Phase; size?: number; className?: string; walk?: boolean; /** Required on purpose: a defaulted mood is how a render site quietly
+  *  disagrees with the rest of the app about how a pet feels. */ mood: Mood }) {
   const grown = phase === 'adult' || phase === 'super';
   return (
     <svg
