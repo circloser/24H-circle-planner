@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>초등학생 여름방학 생활계획표 템플릿 · 24Houring</title>
-<meta name="description" content="기상·공부·놀이·운동·취침의 균형을 잡은 초등학생 여름방학 하루 계획표. 원형 시간표로 한눈에 보고, 클릭 한 번으로 내 계획표로 가져와 수정할 수 있습니다." />
+<meta name="description" content="방학 중 공부·놀이·돌봄 시간을 배치해 보는 예시입니다. 실제 학교 일정과 가족 사정에 맞춰 바꾸세요." />
 <link rel="canonical" href="https://24houring.com/templates/elementary-summer" />
 <link rel="alternate" hreflang="ko" href="https://24houring.com/templates/elementary-summer" />
 <link rel="alternate" hreflang="en" href="https://24houring.com/templates/elementary-summer" />
@@ -13,7 +13,7 @@
 <link rel="alternate" hreflang="x-default" href="https://24houring.com/templates/elementary-summer" />
 <meta name="robots" content="index, follow" />
 <meta property="og:title" content="초등학생 여름방학 생활계획표 템플릿 · 24Houring" />
-<meta property="og:description" content="기상·공부·놀이·운동·취침의 균형을 잡은 초등학생 여름방학 하루 계획표. 원형 시간표로 한눈에 보고, 클릭 한 번으로 내 계획표로 가져와 수정할 수 있습니다." />
+<meta property="og:description" content="방학 중 공부·놀이·돌봄 시간을 배치해 보는 예시입니다. 실제 학교 일정과 가족 사정에 맞춰 바꾸세요." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://24houring.com/templates/elementary-summer" />
 <meta property="og:image" content="https://24houring.com/templates/img/elementary-summer.png" />
@@ -25,14 +25,14 @@
  "@context": "https://schema.org",
  "@type": "Article",
  "headline": "초등학생 여름방학 생활계획표 템플릿",
- "description": "기상·공부·놀이·운동·취침의 균형을 잡은 초등학생 여름방학 하루 계획표. 원형 시간표로 한눈에 보고, 클릭 한 번으로 내 계획표로 가져와 수정할 수 있습니다.",
+ "description": "방학 중 공부·놀이·돌봄 시간을 배치해 보는 예시입니다. 실제 학교 일정과 가족 사정에 맞춰 바꾸세요.",
  "inLanguage": [
   "ko",
   "en"
  ],
  "image": "https://24houring.com/templates/img/elementary-summer.png",
  "datePublished": "2026-07-12",
- "dateModified": "2026-07-12",
+ "dateModified": "2026-09-11",
  "author": {
   "@type": "Organization",
   "name": "24Houring",
@@ -67,8 +67,9 @@
 }
 </script>
 <script>
-(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');}}catch(e){}})();
-function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');}
+(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');document.documentElement.lang='en';}}catch(e){}})();
+function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');document.documentElement.lang=l;document.querySelectorAll('[data-template-lang]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.templateLang===l));});}
+document.addEventListener('DOMContentLoaded',function(){setGuideLang(document.documentElement.lang==='en'?'en':'ko');});
 </script>
 </head>
 <body>
@@ -76,7 +77,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
   <header class="site">
     <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
-      <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
+      <span class="langswitch"><button type="button" data-template-lang="ko" aria-pressed="true" onclick="setGuideLang('ko')">한국어</button><span class="sep">·</span><button type="button" data-template-lang="en" aria-pressed="false" onclick="setGuideLang('en')">EN</button></span>
       <a href="/templates/"><span class="lang-ko">템플릿</span><span class="lang-en">Templates</span></a>
       <a href="/"><span class="lang-ko">홈</span><span class="lang-en">Home</span></a>
     </nav>
@@ -85,16 +86,17 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
     <p class="crumb"><a href="/templates/"><span class="lang-ko">← 템플릿 목록</span><span class="lang-en">← All templates</span></a></p>
     <div class="lang-ko">
     <h1>초등학생 여름방학 생활계획표 템플릿</h1>
-    <p class="lead">기상·공부·놀이·운동·취침의 균형을 잡은 초등학생 여름방학 하루 계획표. 원형 시간표로 한눈에 보고, 클릭 한 번으로 내 계획표로 가져와 수정할 수 있습니다.</p>
+    <p class="lead">방학 중 공부·놀이·돌봄 시간을 배치해 보는 예시입니다. 실제 학교 일정과 가족 사정에 맞춰 바꾸세요.</p><p>2026년 9월 11일 검토 · 편집용 가상 일정입니다.</p>
     </div>
     <div class="lang-en">
     <h1>Elementary Summer-Break Daily Planner Template</h1>
-    <p class="lead">A balanced summer-break day for elementary kids — wake, study, play, exercise, sleep. See it as a circle and import it into your own planner with one click.</p>
+    <p class="lead">This example places study, play and care in a school-break day. Adapt it to school commitments and your household.</p><p>Reviewed September 11, 2026. The chart and imported activity labels are in Korean; rename them after import.</p>
     </div>
 
     <p style="text-align:center;margin:18px 0">
       <img src="/templates/img/elementary-summer.png" alt="초등학생 여름방학 생활계획표 템플릿 — 24시간 원형 시간표" width="520" style="max-width:100%;height:auto;border-radius:16px" loading="lazy" />
     </p>
+
 
     <p style="text-align:center;margin:0 0 6px">
       <a class="btn" href="/#p=eyJ2IjoxLCJuIjoi7LSI65OxIOyXrOumhOuwqe2VmSDqs4Ttmo3tkZwiLCJzIjpbWzQ1MCwi6riw7IOBwrfshLjsiJgiLCIjZmJiZjI0Iiwi8J-MhSJdLFs0ODAsIuyVhOy5qOuwpSIsIiNmY2E1YTUiLCLwn42aIl0sWzUxMCwi7Jik7KCEIOqzteu2gCIsIiM5M2M1ZmQiLCLwn5OaIl0sWzYwMCwi7J6Q7Jyg64aA7J20IiwiIzg2ZWZhYyIsIvCfp7giXSxbNzIwLCLsoJDsi6wiLCIjZmNhNWE1Iiwi8J-Nve-4jyJdLFs3ODAsIuuPheyEnMK37IiZ7KCcIiwiI2E1YjRmYyIsIuKcj--4jyJdLFs4NzAsIu2ctOyLncK364Ku7J6gIiwiI2RkZDZmZSIsIvCfmLQiXSxbOTMwLCLrsJTquaXrhoDsnbTCt-yatOuPmSIsIiM2ZWU3YjciLCLimr0iXSxbMTA1MCwi7J6Q7Jyg7Iuc6rCEIiwiI2ZkYmE3NCIsIvCfjqgiXSxbMTExMCwi7KCA64WB67ClIiwiI2ZjYTVhNSIsIvCfjbIiXSxbMTE3MCwi6rCA7KGx7Iuc6rCEIiwiI2Y5YThkNCIsIvCfkajigI3wn5Gp4oCN8J-RpyJdLFsxMjYwLCLslLvqs6Ag7KCV66asIiwiI2E3ZjNkMCIsIvCfm4EiXSxbMTI5MCwi7IiY66m0IiwiI2M3ZDJmZSIsIvCfjJkiXV19"><span class="lang-ko">이 계획표로 바로 시작하기 →</span><span class="lang-en">Start with this template →</span></a>
@@ -124,11 +126,11 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
     </ul>
     <h2>활용 팁</h2>
     <ul>
-      <li>기상·취침 시간은 방학 내내 같게 유지하는 것이 계획표 절반의 성공입니다.</li>
-      <li>오전 공부 블록(50분 공부+10분 휴식)을 아이 컨디션에 맞게 1~3개로 조절하세요.</li>
-      <li>바깥놀이·운동은 더위를 피해 아침이나 해 질 무렵으로 옮겨도 좋습니다.</li>
+      <li>이동·식사 준비 시간도 블록에 포함하세요.</li>
+      <li>공부 구간 안에 필요한 휴식을 직접 추가하세요.</li>
+      <li>아이와 함께 남길 활동과 줄일 활동을 정하세요.</li>
     </ul>
-    <p><a href="/guides/vacation-study-planner">관련 가이드</a> · <a href="/guides/24-hour-circle-method">원형 시간표 활용법</a></p>
+    <p><a href="/guides/vacation-study-planner">관련 자료</a> · <a href="/guides/24-hour-circle-method">원형 시간표 활용법</a></p>
     </div>
     <div class="lang-en">
     <h2>The schedule</h2>
@@ -149,9 +151,9 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
     </ul>
     <h2>Tips</h2>
     <ul>
-      <li>Keeping the same wake/sleep times all break is half the battle.</li>
-      <li>Adjust the morning study blocks (50 min study + 10 min rest) to 1–3 per day.</li>
-      <li>Move outdoor play to early morning or dusk to beat the heat.</li>
+      <li>Include travel and meal preparation in the blocks.</li>
+      <li>Add the breaks needed inside each study period.</li>
+      <li>Choose activities to keep or shorten together with the child.</li>
     </ul>
     </div>
 
@@ -172,10 +174,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
     <nav>
       <a href="/"><span class="lang-ko">홈 Home</span><span class="lang-en">Home</span></a>
       <a href="/templates/"><span class="lang-ko">템플릿 Templates</span><span class="lang-en">Templates</span></a>
-      <a href="/gallery/"><span class="lang-ko">갤러리 Gallery</span><span class="lang-en">Gallery</span></a>
-      <a href="/life-planner"><span class="lang-ko">생활계획표 Life Planner</span><span class="lang-en">Life Planner</span></a>
       <a href="/guides/"><span class="lang-ko">가이드 Guides</span><span class="lang-en">Guides</span></a>
-      <a href="/blog/"><span class="lang-ko">블로그 Blog</span><span class="lang-en">Blog</span></a>
       <a href="/stories/"><span class="lang-ko">스토리 Stories</span><span class="lang-en">Stories</span></a>
       <a href="/health/"><span class="lang-ko">건강 Health</span><span class="lang-en">Health</span></a>
       <a href="/faq"><span class="lang-ko">FAQ</span><span class="lang-en">FAQ</span></a>

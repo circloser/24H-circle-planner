@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>교대근무자 생활계획표 템플릿 (야간 근무) · 24Houring</title>
-<meta name="description" content="낮과 밤이 뒤바뀌는 교대근무자를 위한 야간 근무일 계획표. 원형 시간표는 자정을 넘겨 이어지는 수면·근무 시간을 끊김 없이 보여줘, 근무·수면·회복의 균형을 잡기 좋습니다." />
+<meta name="description" content="자정을 넘는 야간 근무를 표시하는 편집 예시입니다. 수면 조정이나 건강 관리를 위한 처방이 아닙니다." />
 <link rel="canonical" href="https://24houring.com/templates/shift-worker" />
 <link rel="alternate" hreflang="ko" href="https://24houring.com/templates/shift-worker" />
 <link rel="alternate" hreflang="en" href="https://24houring.com/templates/shift-worker" />
@@ -13,7 +13,7 @@
 <link rel="alternate" hreflang="x-default" href="https://24houring.com/templates/shift-worker" />
 <meta name="robots" content="index, follow" />
 <meta property="og:title" content="교대근무자 생활계획표 템플릿 (야간 근무) · 24Houring" />
-<meta property="og:description" content="낮과 밤이 뒤바뀌는 교대근무자를 위한 야간 근무일 계획표. 원형 시간표는 자정을 넘겨 이어지는 수면·근무 시간을 끊김 없이 보여줘, 근무·수면·회복의 균형을 잡기 좋습니다." />
+<meta property="og:description" content="자정을 넘는 야간 근무를 표시하는 편집 예시입니다. 수면 조정이나 건강 관리를 위한 처방이 아닙니다." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://24houring.com/templates/shift-worker" />
 <meta property="og:image" content="https://24houring.com/templates/img/shift-worker.png" />
@@ -25,14 +25,14 @@
  "@context": "https://schema.org",
  "@type": "Article",
  "headline": "교대근무자 생활계획표 템플릿 (야간 근무)",
- "description": "낮과 밤이 뒤바뀌는 교대근무자를 위한 야간 근무일 계획표. 원형 시간표는 자정을 넘겨 이어지는 수면·근무 시간을 끊김 없이 보여줘, 근무·수면·회복의 균형을 잡기 좋습니다.",
+ "description": "자정을 넘는 야간 근무를 표시하는 편집 예시입니다. 수면 조정이나 건강 관리를 위한 처방이 아닙니다.",
  "inLanguage": [
   "ko",
   "en"
  ],
  "image": "https://24houring.com/templates/img/shift-worker.png",
  "datePublished": "2026-07-12",
- "dateModified": "2026-07-12",
+ "dateModified": "2026-09-11",
  "author": {
   "@type": "Organization",
   "name": "24Houring",
@@ -67,8 +67,9 @@
 }
 </script>
 <script>
-(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');}}catch(e){}})();
-function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');}
+(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');document.documentElement.lang='en';}}catch(e){}})();
+function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');document.documentElement.lang=l;document.querySelectorAll('[data-template-lang]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.templateLang===l));});}
+document.addEventListener('DOMContentLoaded',function(){setGuideLang(document.documentElement.lang==='en'?'en':'ko');});
 </script>
 </head>
 <body>
@@ -76,7 +77,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
   <header class="site">
     <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
-      <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
+      <span class="langswitch"><button type="button" data-template-lang="ko" aria-pressed="true" onclick="setGuideLang('ko')">한국어</button><span class="sep">·</span><button type="button" data-template-lang="en" aria-pressed="false" onclick="setGuideLang('en')">EN</button></span>
       <a href="/templates/"><span class="lang-ko">템플릿</span><span class="lang-en">Templates</span></a>
       <a href="/"><span class="lang-ko">홈</span><span class="lang-en">Home</span></a>
     </nav>
@@ -85,16 +86,17 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
     <p class="crumb"><a href="/templates/"><span class="lang-ko">← 템플릿 목록</span><span class="lang-en">← All templates</span></a></p>
     <div class="lang-ko">
     <h1>교대근무자 생활계획표 템플릿 (야간 근무)</h1>
-    <p class="lead">낮과 밤이 뒤바뀌는 교대근무자를 위한 야간 근무일 계획표. 원형 시간표는 자정을 넘겨 이어지는 수면·근무 시간을 끊김 없이 보여줘, 근무·수면·회복의 균형을 잡기 좋습니다.</p>
+    <p class="lead">자정을 넘는 야간 근무를 표시하는 편집 예시입니다. 수면 조정이나 건강 관리를 위한 처방이 아닙니다.</p><p>2026년 9월 11일 검토 · 편집용 가상 일정입니다.</p>
     </div>
     <div class="lang-en">
     <h1>Shift Worker Daily Planner Template (Night Shift)</h1>
-    <p class="lead">A night-shift day for workers whose day and night flip. The circle shows sleep and work that cross midnight without a break, making it easy to balance work, sleep and recovery.</p>
+    <p class="lead">An editing example for a night shift crossing midnight. It does not prescribe sleep changes or health management.</p><p>Reviewed September 11, 2026. The chart and imported activity labels are in Korean; rename them after import.</p>
     </div>
 
     <p style="text-align:center;margin:18px 0">
       <img src="/templates/img/shift-worker.png" alt="교대근무자 생활계획표 템플릿 (야간 근무) — 24시간 원형 시간표" width="520" style="max-width:100%;height:auto;border-radius:16px" loading="lazy" />
     </p>
+
 
     <p style="text-align:center;margin:0 0 6px">
       <a class="btn" href="/#p=eyJ2IjoxLCJuIjoi6rWQ64yA6re866y0IOyDne2ZnOqzhO2aje2RnCIsInMiOltbMCwi7JW86rCEIOq3vOustCIsIiM4MThjZjgiLCLwn4-tIl0sWzM2MCwi7Ye06re8wrfsnbTrj5kiLCIjYTdmM2QwIiwi8J-alyJdLFs0MjAsIuyVhOy5qMK37JS76riwIiwiI2ZjYTVhNSIsIvCfm4EiXSxbNDgwLCLsiJjrqbQiLCIjYzdkMmZlIiwi8J-YtCJdLFs5MDAsIuq4sOyDgcK37Iud7IKsIiwiI2ZiYmYyNCIsIvCfjZoiXSxbOTYwLCLsnpDsnKDCt-yatOuPmSIsIiM2ZWU3YjciLCLwn4-DIl0sWzEwODAsIuynkeyViOydvMK37Jqp66y0IiwiI2ZkYmE3NCIsIvCfp7oiXSxbMTIwMCwi7KCA64WBwrftnLTsi50iLCIjZjlhOGQ0Iiwi8J-NsiJdLFsxMzIwLCLqt7zrrLQg7KSA67mEwrfsnbTrj5kiLCIjOTNjNWZkIiwi4piVIl0sWzEzODAsIuyVvOqwhCDqt7zrrLQiLCIjODE4Y2Y4Iiwi8J-PrSJdXX0"><span class="lang-ko">이 계획표로 바로 시작하기 →</span><span class="lang-en">Start with this template →</span></a>
@@ -121,11 +123,11 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
     </ul>
     <h2>활용 팁</h2>
     <ul>
-      <li>야간 근무 후 수면은 암막·귀마개로 "밤처럼" 만들어야 질이 삽니다.</li>
-      <li>근무 전 가벼운 식사와 카페인 타이밍을 블록으로 고정하세요.</li>
-      <li>쉬는 날 수면 시간을 급격히 되돌리지 말고 2~3시간씩 서서히 옮기세요.</li>
+      <li>근무가 자정 전후 두 구간으로 보이는지 확인하세요.</li>
+      <li>퇴근 이동과 돌봄 등 실제 의무를 먼저 반영하세요.</li>
+      <li>수면 구간은 개인 상황에 맞춰 조정하고 지속적인 어려움은 의료진과 상의하세요.</li>
     </ul>
-    <p><a href="/guides/daily-life-planner">관련 가이드</a> · <a href="/guides/morning-evening-routine">관련 가이드</a> · <a href="/guides/24-hour-circle-method">원형 시간표 활용법</a></p>
+    <p><a href="/guides/daily-life-planner">관련 자료</a> · <a href="/guides/morning-evening-routine">관련 자료</a> · <a href="/guides/24-hour-circle-method">원형 시간표 활용법</a></p>
     </div>
     <div class="lang-en">
     <h2>The schedule</h2>
@@ -143,9 +145,9 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
     </ul>
     <h2>Tips</h2>
     <ul>
-      <li>Make post-shift sleep “feel like night” with blackout and earplugs for quality.</li>
-      <li>Fix a light pre-shift meal and your caffeine timing as blocks.</li>
-      <li>On days off, shift sleep back gradually (2–3 h), not all at once.</li>
+      <li>Check that work appears on both sides of midnight.</li>
+      <li>Enter real obligations such as the journey home and care duties.</li>
+      <li>Adapt sleep to your circumstances and discuss persistent difficulties with a clinician.</li>
     </ul>
     </div>
 
@@ -166,10 +168,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
     <nav>
       <a href="/"><span class="lang-ko">홈 Home</span><span class="lang-en">Home</span></a>
       <a href="/templates/"><span class="lang-ko">템플릿 Templates</span><span class="lang-en">Templates</span></a>
-      <a href="/gallery/"><span class="lang-ko">갤러리 Gallery</span><span class="lang-en">Gallery</span></a>
-      <a href="/life-planner"><span class="lang-ko">생활계획표 Life Planner</span><span class="lang-en">Life Planner</span></a>
       <a href="/guides/"><span class="lang-ko">가이드 Guides</span><span class="lang-en">Guides</span></a>
-      <a href="/blog/"><span class="lang-ko">블로그 Blog</span><span class="lang-en">Blog</span></a>
       <a href="/stories/"><span class="lang-ko">스토리 Stories</span><span class="lang-en">Stories</span></a>
       <a href="/health/"><span class="lang-ko">건강 Health</span><span class="lang-en">Health</span></a>
       <a href="/faq"><span class="lang-ko">FAQ</span><span class="lang-en">FAQ</span></a>

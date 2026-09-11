@@ -1,80 +1,50 @@
 ---
 slug: summer-break-reset
 date: 2026-07-17
-title_ko: 여름방학 2주 차, 무너진 계획표를 다시 세우는 법
-title_en: Two Weeks into Summer Break — How to Rebuild a Collapsed Plan
-desc_ko: "방학 계획표는 원래 2주 차에 무너집니다. 자책 대신 리셋이 필요할 뿐이에요. 기상 시간 하나부터 다시 세우는 3단계 리셋법과 남은 방학을 지키는 원형 시간표 활용법."
-desc_en: "Break-time plans collapse around week two — that calls for a reset, not guilt. A three-step rebuild starting from a single wake-up time, with a circular timetable to hold the rest of the break."
+updated: 2026-09-11
+title_ko: 방학 계획 다시 세우기 — 남은 날짜에서 목표 분량 계산하기
+title_en: Rebuild a School-Break Plan from the Days Actually Left
+desc_ko: "방학 계획의 남은 분량과 실제 가능한 날을 대조하고, 정상일·일정 있는 날을 나눠 조정하는 예시입니다."
+desc_en: "Compare unfinished work with available days and build different versions for open days and days with commitments."
 ---
 <!--ko-->
-7월 중순, 방학 2주 차. 첫 주의 의욕으로 만든 계획표는 대개 지금쯤 무너져 있습니다. 기상은 두 시간 밀렸고, 문제집은 첫 단원에 멈춰 있고, 계획표는 쳐다보기도 싫어졌을지 모릅니다. 그런데 이건 실패가 아니라 **거의 모든 방학의 정상 경로**입니다. 필요한 건 자책이 아니라 리셋입니다.
+방학 계획이 언제 무너지는지 정해진 법칙은 없습니다. 이미 세운 계획이 맞지 않는다면, 처음의 의욕을 재현하기보다 **남은 날짜와 남은 작업을 다시 계산**하세요. 이 글은 기상 시각을 급히 당기는 수면 교정법이 아닙니다.
 
-## 계획표는 원래 2주 차에 무너진다
+## 남은 날에서 실제 가능한 날 고르기
 
-첫 주의 계획표는 '방학 첫날의 의욕'이 만든 것이라 대부분 과적재 상태입니다. 하루 6블록 공부, 매일 운동, 독서까지 — 학기 중에도 못 하던 밀도를 방학이라고 해낼 리 없습니다. 하루 이틀 어긋나기 시작하면 "이미 틀렸다"는 생각에 계획표 전체를 버리게 되죠.
+개학일을 확인하고 여행·가족 행사·수업·돌봄처럼 이미 정해진 일정을 먼저 표시합니다. 일정이 있는 날도 일부 작업이 가능할 수 있지만 온전한 하루와 같은 분량을 넣지 않습니다. 쉬는 날 역시 계획에서 지우지 마세요.
 
-> 계획이 무너지는 건 의지의 문제가 아니라 설계의 문제입니다. 무너진 계획표는 버리는 게 아니라 가볍게 다시 설계하는 것입니다.
+## 계산 예시: 남은 12일, 연습 18쪽
 
-## 리셋 1단계 — 기상 시간 '하나만' 되돌린다
+설명용으로 12일 중 충분히 공부할 수 있는 날 6일, 짧게만 가능한 날 3일, 작업을 넣지 않을 날 3일을 가정합니다. 긴 날에 2쪽씩, 짧은 날에 1쪽씩이면 15쪽입니다. 남은 3쪽은 저절로 들어가지 않습니다. 꼭 필요한 범위를 다시 고르거나, 가능한 날의 작업량을 실제로 확인한 뒤 조정해야 합니다.
 
-전부 한 번에 되돌리려 하면 다시 무너집니다. 첫 3일은 딱 하나, **기상 시간**만 고정하세요. 밀린 두 시간을 한 번에 당기지 말고 30분씩, 사흘에 걸쳐 되돌립니다. 기상이 돌아오면 식사와 취침이 따라오고, 하루의 뼈대가 저절로 다시 섭니다. 나머지 계획은 그다음입니다.
+쪽수는 난이도를 반영하지 않을 수 있습니다. 첫 작업에서 2쪽이 예상보다 오래 걸렸다면 시간을 늘리기 전에 범위와 우선순위를 다시 확인합니다. 교사와 정한 필수 과제는 임의로 생략하지 말고 도움을 요청하세요.
 
-## 리셋 2단계 — 남은 방학을 '실제 크기'로 다시 잰다
+## 하루를 두 가지로 만들기
 
-달력을 열고 개학까지 남은 날을 세어 보세요. 그중 여행·가족 행사·학원 일정이 있는 날을 빼면, 온전히 쓸 수 있는 날이 나옵니다. 그 숫자에 맞춰 목표를 **절반으로** 줄이세요. 처음 계획의 절반을 제대로 해내는 것이, 전부를 계획하고 4분의 1을 하는 것보다 결과도 기분도 낫습니다.
+‘일정 없는 날’에는 식사와 휴식 사이에 작업 구간 하나를, ‘일정 있는 날’에는 이동과 준비를 포함한 뒤 가능한 작은 작업만 넣습니다. [방학 템플릿](/templates/elementary-summer)은 출발점이며 그대로 따라야 하는 권장 시간표가 아닙니다. [24Houring](/)에서 실제 날짜의 조건에 맞춰 시각과 활동을 바꿉니다.
 
-- 문제집 3권 → **1권을 확실히 끝내기**
-- 매일 운동 1시간 → **주 4회 30분**
-- 매일 독서 → **자기 전 20분, 되는 날만**
+## 다음 점검에서 볼 것
 
-## 리셋 3단계 — 하루를 원으로 다시 그린다
+정해둔 점검일에 끝낸 범위, 예상보다 오래 걸린 작업, 새로 생긴 일정을 확인합니다. 늦어진 분량을 모두 다음 날에 얹지 말고 남은 날 전체에 다시 대조합니다. 하루를 놓쳤다면 다음 가능한 작업 하나부터 재개하세요. 개학일까지 쓸 수 있는 시간이 줄었다면 목표 범위를 줄이는 결정도 필요합니다.
 
-리스트형 계획표가 무너졌다면, 이번엔 하루를 **원형 시간표**로 그려 보세요. 원으로 그리면 두 가지가 달라집니다.
-
-- 잠·밥·자유시간까지 하루 전체가 보여서, 공부를 욱여넣을 수 있는 **진짜 빈자리**가 어디인지 드러납니다.
-- 원의 40%쯤은 비워 두게 됩니다. 여백이 눈에 보이면 과적재를 스스로 알아채게 되거든요.
-
-[24Houring](/)에서 바로 그릴 수 있고, 처음부터 만들기 귀찮다면 [초등 여름방학 계획표](/templates/elementary-summer)나 [수험생 방학 공부 계획표](/templates/exam-student) 템플릿을 불러와 내 하루에 맞게 고치면 5분이면 끝납니다.
-
-## 다시 무너지지 않게 하는 두 가지 장치
-
-- **주 1회 점검**: 일요일 저녁 10분, 이번 주에 지킨 것과 어긋난 것을 보고 다음 주 계획을 살짝 고칩니다. 계획표는 한 번 만들고 끝나는 게 아니라 매주 다듬는 것입니다.
-- **어긋난 날의 복귀 지점 정하기**: "늦잠 잔 날은 점심부터 재시작", "하루를 통째로 날린 날은 내일 기상부터 재시작" — 복귀 규칙이 미리 있으면 하루의 실패가 방학 전체의 실패로 번지지 않습니다.
-
-무너지지 않는 계획표의 원칙(고정 축·블록·여백 60% 법칙)은 [방학 계획표 만드는 법](/guides/vacation-study-planner) 가이드에 자세히 정리해 두었습니다. 남은 방학은 아직 충분히 깁니다 — 오늘 저녁, 기상 시간 하나부터 다시 시작해 보세요.
 <!--en-->
-Mid-July, week two of the break. The plan you drew with day-one enthusiasm has probably collapsed by now: wake-up has drifted two hours, the workbook is stuck on chapter one, and you'd rather not look at the planner at all. Here's the thing — this isn't failure, it's the **normal trajectory of almost every school break**. What you need is a reset, not guilt.
+There is no rule that school-break plans collapse in a particular week. If the original plan no longer fits, **recalculate remaining days and unfinished work**. This is not a sleep-correction protocol or a reason to force an earlier wake-up.
 
-## Break plans are designed to collapse in week two
+## Identify usable days
 
-A first-week plan is built by first-day motivation, so it's almost always overloaded: six study blocks a day, daily exercise, plus reading — a density you didn't manage even during the term. Slip for a day or two and the "it's already ruined" feeling makes you throw out the whole planner.
+Confirm the school return date and mark travel, family events, classes, and care responsibilities. Busy days may contain some usable time, but they should not carry the workload of a fully open day. Keep rest visible too.
 
-> A collapsed plan is a design problem, not a willpower problem. You don't discard it — you redesign it lighter.
+## Worked example: 12 days, 18 exercise pages
 
-## Step 1 — Restore ONE thing: the wake-up time
+Suppose six days allow a longer task, three allow only a short task, and three will contain no assigned work. Two pages on each longer day and one on each shorter day total 15 pages. The remaining three do not fit automatically. Reconsider the required scope or check actual capacity before increasing the allocation.
 
-Try to restore everything at once and it collapses again. For the first three days fix exactly one thing: **when you get up**. Don't yank the drifted two hours back in one go — pull back 30 minutes at a time over three days. Once waking stabilises, meals and bedtime follow, and the skeleton of the day rebuilds itself. Everything else comes after.
+Page counts do not capture difficulty. If the first two pages take longer than expected, review scope and priorities before extending the hours. Discuss required schoolwork with the teacher rather than silently dropping it.
 
-## Step 2 — Re-measure the remaining break at its REAL size
+## Make two versions of the day
 
-Open the calendar and count the days left until school. Subtract trips, family events, academy days — what remains is what you actually have. Now cut your goals **in half** to fit that number. Finishing half of the original plan properly beats planning everything and doing a quarter, in results and in morale.
+On an open day, place one work interval between meals and rest. On a busy day, include travel and preparation before selecting a smaller task. The [school-break template](/templates/elementary-summer) is a starting point, not a prescribed routine. Edit activities and times in [24Houring](/) to match the actual day.
 
-- Three workbooks → **finish one, completely**
-- One hour of daily exercise → **30 minutes, four times a week**
-- Daily reading → **20 minutes before bed, on days it works**
+## At the next review
 
-## Step 3 — Redraw the day as a circle
-
-If the list-style planner collapsed, draw the day as a **circular timetable** this time. Two things change.
-
-- The whole day — sleep, meals, free time — is visible at once, so the **real empty slots** for study reveal themselves.
-- You end up leaving about 40% of the circle open. When the margin is visible, you catch yourself overloading before it happens.
-
-You can draw one on [24Houring](/) right away, or skip the setup by importing the [elementary summer-break template](/templates/elementary-summer) or the [exam-prep study template](/templates/exam-student) and adjusting it to your day — five minutes, done.
-
-## Two devices that keep it from collapsing again
-
-- **A weekly review**: ten minutes on Sunday evening — what held, what slipped, and one small adjustment for next week. A planner isn't made once; it's tuned weekly.
-- **Pre-agreed re-entry points**: "overslept → restart at lunch", "lost the whole day → restart at tomorrow's wake-up". With a re-entry rule in place, one bad day can't spread into a bad break.
-
-The principles of a plan that survives (fixed anchors, blocks, the 60% margin rule) are laid out in [How to Make a Vacation Planner](/guides/vacation-study-planner). There's plenty of break left — start tonight, with the wake-up time alone.
+Check completed work, tasks that exceeded their estimates, and new commitments. Do not pile every delay onto tomorrow; compare it against all remaining days again. After a missed day, resume with the next feasible task. If available time has shrunk, reducing the target's scope may be necessary.

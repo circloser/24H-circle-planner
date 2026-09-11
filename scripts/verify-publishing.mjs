@@ -1,7 +1,7 @@
 // Validate the published HTML, not just source templates: locale generation
 // must retain reader-visible content and may not reintroduce global ad loaders.
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import { JSDOM } from 'jsdom';
 
 const dist = 'dist';
@@ -32,8 +32,11 @@ for (const locale of locales) {
   check(!doc.querySelector('script[src="/publisher-ads.js"]'), `${path}: app entry should not load publisher ads`);
 }
 const guides = ['time-blocking', 'time-audit', 'morning-evening-routine'];
-const critical = ['index.html', ...locales.slice(1).map((l) => `${l}index.html`), 'about.html', 'contact.html', 'faq.html', 'editorial-policy.html', 'privacy.html', 'guides/index.html', ...guides.map((s) => `guides/${s}.html`)];
+const editorial = pages.map(p => relative(dist,p).replaceAll('\\','/')).filter(p => /^(?:(?:guides|health|stories|blog)\/[^/]+|(?:(?:de|ja)\/)?templates\/[^/]+)\.html$/.test(p));
+const critical = [...new Set(['index.html', ...locales.slice(1).map((l) => `${l}index.html`), 'about.html', 'contact.html', 'faq.html', 'editorial-policy.html', 'privacy.html', 'life-planner.html', 'for-students.html', 'for-workers.html', 'for-parents.html', 'weekend-planner.html', 'gallery/index.html', ...editorial])];
 function resolveLocal(path) {
+  // Shared schedule import is handled by the app, not a static HTML file.
+  if (path === "/s") return existsSync(join(dist, "index.html"));
   const base = join(dist, decodeURIComponent(path));
   return [base, `${base}.html`, join(base, 'index.html')].find((p) => existsSync(p) && statSync(p).isFile());
 }
@@ -42,6 +45,15 @@ for (const path of critical) {
   const doc = new JSDOM(readFileSync(join(dist, path), 'utf8'), { url: `${origin}/${path.replace(/index\.html$/, '')}` }).window.document;
   check(doc.querySelector('title')?.textContent.trim(), `${path}: missing title`);
   check(doc.querySelector('link[rel="canonical"]'), `${path}: missing canonical`);
+  for (const script of doc.querySelectorAll('script[type="application/ld+json"]')) {
+    try { JSON.parse(script.textContent); } catch { check(false, `${path}: invalid structured data`); }
+  }
+  if (/^(health|stories)\/(?!index\.html)/.test(path)) {
+    for (const lang of ['ko', 'en']) {
+      check(doc.querySelector(`[id="source-${lang}-1"] a[href^="https://"]`), `${path}: missing ${lang} primary source`);
+    }
+    check(doc.querySelector('a[href="/editorial-policy"]'), `${path}: missing editorial policy`);
+  }
   for (const node of doc.querySelectorAll('a[href], img[src], script[src], link[rel="stylesheet"]')) {
     const raw = node.getAttribute('href') ?? node.getAttribute('src');
     const url = new URL(raw, doc.URL);

@@ -3,35 +3,36 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>아침형 vs 저녁형 — 크로노타입에 맞춰 하루 시간표를 설계하는 법 · 24Houring 블로그</title>
-<meta name="description" content="미라클모닝이 누군가에게만 기적인 이유는 크로노타입 때문입니다. 내 유형을 확인하는 간단한 방법과, 아침형·저녁형·중간형별 하루 시간표 설계 원칙을 정리했습니다." />
+<title>아침과 저녁 중 언제 공부할까 — 내 기록으로 시간대 비교하기 · 24Houring 블로그</title>
+<meta name="description" content="아침형·저녁형을 단정하지 않고, 비슷한 과제를 서로 다른 시간대에 배치해 비교하는 계획 실험입니다." />
 <link rel="canonical" href="https://24houring.com/blog/chronotype-day-design" />
 <meta name="robots" content="index, follow" />
-<meta property="og:title" content="아침형 vs 저녁형 — 크로노타입에 맞춰 하루 시간표를 설계하는 법 · 24Houring 블로그" />
-<meta property="og:description" content="미라클모닝이 누군가에게만 기적인 이유는 크로노타입 때문입니다. 내 유형을 확인하는 간단한 방법과, 아침형·저녁형·중간형별 하루 시간표 설계 원칙을 정리했습니다." />
+<meta property="og:title" content="아침과 저녁 중 언제 공부할까 — 내 기록으로 시간대 비교하기 · 24Houring 블로그" />
+<meta property="og:description" content="아침형·저녁형을 단정하지 않고, 비슷한 과제를 서로 다른 시간대에 배치해 비교하는 계획 실험입니다." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://24houring.com/blog/chronotype-day-design" />
 <meta property="og:image" content="https://24houring.com/og-image.png" />
 <link rel="alternate" type="application/rss+xml" title="24Houring Blog" href="/blog/rss.xml" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="stylesheet" href="/guides/guide.css" />
+<style>.langswitch button{font:inherit;color:inherit;background:transparent;border:0;padding:6px;cursor:pointer}.langswitch button[aria-pressed="true"]{font-weight:700;text-decoration:underline}.langswitch button:focus-visible{outline:2px solid currentColor;outline-offset:2px}</style>
 <meta name="google-adsense-account" content="ca-pub-6947130056543786">
 <script type="application/ld+json">
 {
  "@context": "https://schema.org",
  "@type": "BlogPosting",
- "headline": "아침형 vs 저녁형 — 크로노타입에 맞춰 하루 시간표를 설계하는 법",
- "description": "미라클모닝이 누군가에게만 기적인 이유는 크로노타입 때문입니다. 내 유형을 확인하는 간단한 방법과, 아침형·저녁형·중간형별 하루 시간표 설계 원칙을 정리했습니다.",
+ "headline": "아침과 저녁 중 언제 공부할까 — 내 기록으로 시간대 비교하기",
+ "description": "아침형·저녁형을 단정하지 않고, 비슷한 과제를 서로 다른 시간대에 배치해 비교하는 계획 실험입니다.",
  "inLanguage": [
   "ko",
   "en"
  ],
  "image": "https://24houring.com/og-image.png",
  "datePublished": "2026-07-17",
- "dateModified": "2026-07-17",
+ "dateModified": "2026-09-11",
  "author": {
-  "@type": "Person",
-  "name": "Circloser",
+  "@type": "Organization",
+  "name": "24Houring",
   "url": "https://24houring.com/about"
  },
  "publisher": {
@@ -56,15 +57,16 @@
   {
    "@type": "ListItem",
    "position": 2,
-   "name": "아침형 vs 저녁형 — 크로노타입에 맞춰 하루 시간표를 설계하는 법",
+   "name": "아침과 저녁 중 언제 공부할까 — 내 기록으로 시간대 비교하기",
    "item": "https://24houring.com/blog/chronotype-day-design"
   }
  ]
 }
 </script>
 <script>
-(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');}}catch(e){}})();
-function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');}
+function applyGuideLang(l){l=l==='ko'?'ko':'en';document.documentElement.classList.toggle('show-en',l==='en');document.documentElement.lang=l;document.querySelectorAll('[data-guide-lang]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.guideLang===l));});}
+(function(){var l='ko';try{l=localStorage.getItem('24h-guides-lang');if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}}catch(e){}applyGuideLang(l);document.addEventListener('DOMContentLoaded',function(){applyGuideLang(document.documentElement.lang);});})();
+function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}applyGuideLang(l);}
 </script>
 </head>
 <body>
@@ -72,7 +74,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
   <header class="site">
     <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
-      <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
+      <span class="langswitch"><button type="button" data-guide-lang="ko" aria-pressed="true" onclick="setGuideLang('ko')">한국어</button><span class="sep">·</span><button type="button" data-guide-lang="en" aria-pressed="false" onclick="setGuideLang('en')">EN</button></span>
       <a href="/blog/"><span class="lang-ko">블로그</span><span class="lang-en">Blog</span></a>
       <a href="/"><span class="lang-ko">홈</span><span class="lang-en">Home</span></a>
     </nav>
@@ -80,105 +82,50 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
   <main class="article">
     <p class="crumb"><a href="/blog/"><span class="lang-ko">← 블로그 목록</span><span class="lang-en">← All posts</span></a></p>
     <div class="lang-ko">
-    <h1>아침형 vs 저녁형 — 크로노타입에 맞춰 하루 시간표를 설계하는 법</h1>
-    <p class="en" style="margin:0 0 14px">글 <a href="/about">Circloser</a> · 2026년 7월 17일</p>
-<p>새벽 5시 기상으로 인생이 바뀌었다는 사람과, 밤 11시에 최고의 집중이 오는 사람이 동시에 존재합니다. 둘 중 하나가 게으른 게 아닙니다 — <strong>크로노타입(chronotype)</strong>, 즉 몸에 내장된 하루 리듬이 다를 뿐입니다. 남의 시간표를 베끼는 대신 내 리듬 위에 하루를 설계하는 법을 정리했습니다.</p>
-<h2>크로노타입이란</h2>
-<p>크로노타입은 체온·호르몬·각성도가 하루 동안 오르내리는 <strong>개인별 생체 시계의 위상</strong>입니다. 유전 요인이 크고, 나이에 따라 변합니다(청소년기는 늦어지고, 나이가 들수록 빨라집니다). 대략적으로는 이렇게 나뉩니다.</p>
+    <h1>아침과 저녁 중 언제 공부할까 — 내 기록으로 시간대 비교하기</h1>
+    <p class="en" style="margin:0 0 14px">작성 <a href="/about">24Houring</a> · 2026년 7월 17일 · 수정 2026년 9월 11일</p>
+<p>같은 과제를 오전에 할 때와 저녁에 할 때 어느 쪽이 덜 힘든지 궁금하다면, 먼저 바꿀 수 있는 일정 하나를 고르세요. 이 글은 크로노타입 진단법이 아니라 <strong>일정 배치를 비교하는 방법</strong>입니다. 일주일의 기상 시각만으로 생체 유형을 확정하거나, 졸린 시간을 의지 문제로 판단하지 않습니다.</p>
+<h2>기록할 항목과 제외할 날</h2>
+<p>한 주 동안 공부 시작·종료 시각, 과제, 끝낸 범위, 체감 난이도를 메모합니다. 전날 잠을 설쳤거나 몸이 아픈 날, 유난히 긴 회의가 있던 날은 별도로 표시하세요. 그런 조건을 모르면 시간대와 다른 원인의 영향을 구별하기 어렵습니다. 주말의 늦은 기상도 그 자체로 저녁형의 증거는 아닙니다.</p>
+<p><a href="https://www.nigms.nih.gov/education/fact-sheets/Pages/circadian-rhythms">미국 NIH의 생체리듬 설명</a>은 하루 주기의 변화가 수면 등에 영향을 주며 빛·어둠을 비롯한 환경과 관련된다고 설명합니다. 이 설명이 개인에게 특정 공부 시각을 처방해 주지는 않습니다.</p>
+<h2>비교 예시: 같은 종류의 과제로</h2>
+<p>아래는 실측 결과가 아닌 설계 예시입니다.</p>
 <ul>
-  <li><strong>아침형(종달새)</strong>: 이른 오전에 각성도가 최고. 오후 늦게부터 급격히 떨어짐. 인구의 약 25%.</li>
-  <li><strong>저녁형(올빼미)</strong>: 오전엔 시동이 느리고, 늦은 오후~밤에 최고 컨디션. 약 25%.</li>
-  <li><strong>중간형</strong>: 다수인 나머지 50%. 오전 중반과 초저녁에 두 번의 峰이 옵니다.</li>
+  <li>화요일 09:30–10:00: 이미 배운 단원의 연습문제. 시작까지 걸린 시간과 완료 범위를 적습니다.</li>
+  <li>목요일 19:30–20:00: 난이도가 비슷한 다른 연습문제. 같은 항목을 기록합니다.</li>
+  <li>두 날 모두 어려웠다면 시간대보다 과제 크기나 설명 자료를 먼저 검토합니다.</li>
 </ul>
-<p>핵심은 이것입니다: <strong>의지로 유형을 바꾸긴 어렵지만, 시간표는 유형에 맞출 수 있습니다.</strong></p>
-<h2>내 유형을 확인하는 간단한 방법</h2>
-<p>설문지 없이도 일주일이면 알 수 있습니다.</p>
-<ol>
-  <li>알람 없이 자유롭게 자는 날(주말·휴가), <strong>자연히 깨는 시각</strong>을 기록합니다.</li>
-  <li>하루 중 <strong>머리가 가장 맑았던 시간대</strong>를 매일 저녁 한 줄로 적습니다.</li>
-  <li>카페인 없이 <strong>가장 졸린 시간대</strong>도 함께 적습니다.</li>
-</ol>
-<p>일주일 치를 <a href="/">원형 시간표</a>에 표시해 보면 패턴이 원 위에 그대로 드러납니다. 자연 기상이 7시 이전이고 오전에 맑으면 아침형, 9시 이후 기상에 밤에 맑으면 저녁형에 가깝습니다.</p>
-<h2>아침형의 하루 설계</h2>
-<ul>
-  <li><strong>황금 시간: 기상 후 1~4시간.</strong> 가장 어려운 일(기획·공부·글쓰기)을 아침 첫 블록에 배치하세요. 이메일로 이 시간을 태우는 것이 아침형의 가장 흔한 낭비입니다.</li>
-  <li><strong>오후 2~4시의 골짜기</strong>엔 회의·정리·이동 같은 가벼운 일을 두고, 짧은 산책이나 낮잠으로 넘기세요.</li>
-  <li><strong>저녁은 회복에.</strong> 밤 집중을 억지로 짜내기보다 일찍 마감하고 일찍 자는 쪽이 총량에서 이깁니다.</li>
-  <li>미라클모닝이 잘 맞는 유형입니다. 다만 성패는 기상이 아니라 <strong>취침 시간 사수</strong>에 있습니다 — <a href="/templates/miracle-morning">미라클모닝 템플릿</a>도 22시 취침이 뼈대입니다.</li>
-</ul>
-<h2>저녁형의 하루 설계</h2>
-<ul>
-  <li><strong>오전을 포기하지 말고 '가볍게' 쓰세요.</strong> 시동이 늦는 것뿐이니, 오전엔 루틴·정리·회신처럼 각성도가 낮아도 되는 일을 배치합니다.</li>
-  <li><strong>황금 시간: 늦은 오후~밤.</strong> 가장 중요한 일을 16시 이후에 두세요. 사회의 시간표(9 to 6)와 어긋나는 게 문제라면, 하루 중 옮길 수 있는 집중 블록 하나만이라도 저녁으로 옮기는 것부터.</li>
-  <li><strong>밤의 함정</strong>은 집중이 아니라 '끝없는 연장'입니다. 잘 되는 밤일수록 <strong>끝나는 시각</strong>을 정해 두세요. 수면 부족은 다음 날 황금 시간까지 무너뜨립니다.</li>
-  <li>억지 새벽 기상은 저녁형에게 기적이 아니라 만성 수면 부채를 만듭니다. 남의 아침 루틴을 베끼지 마세요.</li>
-</ul>
-<h2>중간형의 하루 설계</h2>
-<ul>
-  <li>峰이 두 번(오전 중반, 초저녁) 오므로 <strong>집중 블록을 두 개로 나눠</strong> 배치하는 것이 유리합니다.</li>
-  <li>점심 직후의 골짜기가 뚜렷한 편이라, 이 시간대의 중요한 회의나 시험공부는 피하는 게 좋습니다.</li>
-</ul>
-<h2>유형이 무엇이든 지켜지는 세 가지</h2>
-<ul>
-  <li><strong>기상·취침의 고정</strong>: 유형에 맞는 시각이면 됩니다. 중요한 건 이른 기상이 아니라 <strong>매일 같은 기상</strong>입니다.</li>
-  <li><strong>황금 시간의 방어</strong>: 언제든 하루 60~90분의 최고 집중 블록 하나는 알림을 끄고 지키세요. 방법은 <a href="/guides/deep-work-focus">집중 시간 확보하기</a>에 정리되어 있습니다.</li>
-  <li><strong>원으로 확인</strong>: 내 峰과 골짜기 위에 일이 제대로 얹혀 있는지는 목록으론 안 보입니다. 하루를 원으로 그려 에너지 곡선과 겹쳐 보세요 — <a href="/">24Houring</a>에서 무료로 그릴 수 있습니다.</li>
-</ul>
-<p>같은 24시간이라도, 리듬 위에 얹은 하루와 리듬을 거스르는 하루는 완전히 다릅니다. 이번 주엔 남의 루틴이 아니라 내 크로노타입부터 확인해 보세요.</p>
+<p>쉬운 복습과 처음 배우는 개념을 비교해서 ‘밤이 더 좋다’고 결론 내리지 마세요. 몇 차례의 기록은 다음 계획의 단서이며 능력 평가나 의학적 검사 결과가 아닙니다.</p>
+<h2>24Houring에 적용하기</h2>
+<p><a href="/">플래너</a>에서 수면·등교·근무처럼 이미 정해진 시간을 먼저 입력합니다. 남은 시간에 비교할 공부 구간 하나를 넣고, 다음 날에는 같은 종류의 구간을 다른 시각에 배치합니다. 작은 구간의 시각은 표 보기에서 확인하세요. 결과는 메모에 남기고, 실제로 가능했던 배치만 다음 계획에 반영합니다.</p>
+<h2>시간을 옮길 수 없다면</h2>
+<p>필수 수업이나 돌봄을 밀어내지 말고, 해당 구간의 과제 순서·준비물·분량부터 바꿔보세요. 저녁에 잘됐다는 이유로 취침을 계속 늦추는 실험은 하지 않습니다. 지속적인 수면 문제는 계획표로 진단할 수 없으므로 의료진과 상담할 사안입니다. 수면 시간을 먼저 배치하는 방법은 <a href="/blog/sleep-anchor-day">수면을 남는 시간으로 두지 않는 계획</a>에 정리했습니다.</p>
     </div>
     <div class="lang-en">
-    <h1>Morning Lark or Night Owl — Designing Your Day Around Your Chronotype</h1>
-    <p class="en" style="margin:0 0 14px">By <a href="/about">Circloser</a> · 2026-07-17</p>
-<p>Some people's lives are transformed by a 5 a.m. wake-up; others hit their sharpest focus at 11 p.m. Neither group is lazy — they have different <strong>chronotypes</strong>, the daily rhythm built into the body. Instead of copying someone else's timetable, here's how to design your day on top of your own rhythm.</p>
-<h2>What a chronotype is</h2>
-<p>Your chronotype is the <strong>phase of your personal body clock</strong> — how body temperature, hormones and alertness rise and fall across the day. It's strongly genetic and shifts with age (later in adolescence, earlier as you get older). Roughly:</p>
+    <h1>Morning or Evening Study — Compare Your Own Records</h1>
+    <p class="en" style="margin:0 0 14px">By <a href="/about">24Houring</a> · 2026-07-17 · Updated 2026-09-11</p>
+<p>If you want to know whether morning or evening study suits your current day, choose one task you can actually move. This is <strong>a scheduling comparison, not a chronotype test</strong>. A week's wake-up times cannot establish your biological type, and feeling sleepy is not a judgment about effort.</p>
+<h2>What to record</h2>
+<p>Note the start and end time, task, completed portion, and perceived difficulty. Mark unusual conditions such as a poor night's sleep, illness, or a long meeting. Without that context, you cannot distinguish a time-of-day effect from other explanations. Sleeping late on a weekend is not, by itself, evidence of being an evening type.</p>
+<p><a href="https://www.nigms.nih.gov/education/fact-sheets/Pages/circadian-rhythms">NIH's circadian-rhythm overview</a> explains that daily rhythms influence sleep and relate to environmental factors including light and darkness. It does not prescribe an individual's best study hour.</p>
+<h2>An illustrative comparison</h2>
 <ul>
-  <li><strong>Morning larks</strong>: peak alertness in the early morning, steep decline from late afternoon. About 25% of people.</li>
-  <li><strong>Night owls</strong>: slow to start in the morning, best condition from late afternoon into the night. About 25%.</li>
-  <li><strong>Intermediate</strong>: the remaining half, with two peaks — mid-morning and early evening.</li>
+  <li>Tuesday, 09:30–10:00: practice from a previously studied chapter. Note the delay before starting and the portion completed.</li>
+  <li>Thursday, 19:30–20:00: different exercises of similar difficulty. Record the same measures.</li>
+  <li>If both sessions were difficult, review task size or instructional material before blaming the time slot.</li>
 </ul>
-<p>The key point: <strong>you can't will your type away, but you can fit your timetable to it.</strong></p>
-<h2>A simple way to find your type</h2>
-<p>No questionnaire needed — one week will tell you.</p>
-<ol>
-  <li>On alarm-free days (weekends, holidays), record <strong>when you wake naturally</strong>.</li>
-  <li>Each evening, note in one line <strong>when your head felt clearest</strong> that day.</li>
-  <li>Also note <strong>when you felt sleepiest</strong> (without caffeine).</li>
-</ol>
-<p>Mark a week of this on a <a href="/">circular timetable</a> and the pattern shows up right on the ring. Natural wake before 7 with clear mornings leans lark; waking after 9 with clear nights leans owl.</p>
-<h2>Designing a lark's day</h2>
-<ul>
-  <li><strong>Golden hours: 1–4 hours after waking.</strong> Put the hardest work (planning, study, writing) in the first morning block. Burning this window on email is the lark's most common waste.</li>
-  <li>Put light work (meetings, admin, errands) in the <strong>2–4 p.m. dip</strong>, and cross it with a short walk or nap.</li>
-  <li><strong>Evenings are for recovery.</strong> Closing early and sleeping early beats squeezing out forced night focus — in total output, not just comfort.</li>
-  <li>The miracle morning suits this type. Its success, though, is won at <strong>bedtime, not wake-up</strong> — our <a href="/templates/miracle-morning">miracle-morning template</a> is built around a 10 p.m. bedtime for exactly that reason.</li>
-</ul>
-<h2>Designing an owl's day</h2>
-<ul>
-  <li><strong>Don't write off the morning — use it lightly.</strong> You're slow to start, not broken: put routines, tidying and replies in the low-alertness morning.</li>
-  <li><strong>Golden hours: late afternoon into night.</strong> Schedule the most important work after 4 p.m. If the 9-to-6 world fights you, start by moving just one movable focus block into the evening.</li>
-  <li>The night's trap isn't focus — it's <strong>endless extension</strong>. The better the night is going, the more you need a pre-set stopping time; sleep debt destroys tomorrow's golden hours too.</li>
-  <li>Forced dawn wake-ups give owls chronic sleep debt, not miracles. Don't copy someone else's morning routine.</li>
-</ul>
-<h2>Designing an intermediate day</h2>
-<ul>
-  <li>With two peaks (mid-morning, early evening), it pays to <strong>split focus into two blocks</strong> and place one on each peak.</li>
-  <li>The post-lunch dip tends to be pronounced — keep important meetings and exam study out of it.</li>
-</ul>
-<h2>Three things that hold for every type</h2>
-<ul>
-  <li><strong>Fixed wake and sleep times</strong> — at hours that fit your type. What matters isn't waking early; it's waking at the <strong>same time every day</strong>.</li>
-  <li><strong>Defend the golden block</strong>: whatever your type, protect one 60–90 minute peak-focus block a day with notifications off. See <a href="/guides/deep-work-focus">Protecting Focus Time</a>.</li>
-  <li><strong>Check it on a circle</strong>: whether your work actually sits on your peaks is invisible in a list. Draw the day as a circle and overlay your energy curve — free at <a href="/">24Houring</a>.</li>
-</ul>
-<p>The same 24 hours make a completely different day depending on whether they ride your rhythm or fight it. This week, before copying anyone's routine, find your chronotype first.</p>
+<p>Do not compare easy revision with unfamiliar concepts and conclude that evenings are better. A few records can inform the next schedule; they are neither an ability assessment nor a medical result.</p>
+<h2>Apply it in 24Houring</h2>
+<p>In the <a href="/">planner</a>, enter existing sleep, class, and work commitments first. Place one study interval in the remaining space, then try a comparable interval at another time on another day. Use table view to check small intervals precisely. Keep results in a memo and carry forward only arrangements that proved feasible.</p>
+<h2>When the hour cannot move</h2>
+<p>Keep required classes and caring responsibilities in place. Try changing task order, preparation, or scope instead. A productive evening is not a reason to keep delaying bedtime. Persistent sleep problems need clinical advice, not a timetable diagnosis. For budgeting around sleep, see <a href="/blog/sleep-anchor-day">placing sleep before optional tasks</a>.</p>
     </div>
     <div class="card" style="margin-top:26px">
       <p style="margin:0 0 8px"><strong><span class="lang-ko">함께 읽으면 좋은 글</span><span class="lang-en">Related posts</span></strong></p>
       <ul style="margin:0;padding-left:20px">
-        <li style="margin:4px 0"><a href="/blog/sleep-anchor-day"><span class="lang-ko">수면을 중심에 놓고 하루를 역설계하는 법 — 잠을 잔반으로 남기지 않기</span><span class="lang-en">Designing the Day Backward from Sleep — Stop Leaving Sleep as Leftovers</span></a></li>
-        <li style="margin:4px 0"><a href="/blog/phone-time-audit"><span class="lang-ko">스마트폰이 삼킨 시간을 원으로 마주하기 — 숫자가 아니라 모양으로 보는 화면 시간</span><span class="lang-en">Facing the Time Your Phone Ate — Seeing Screen Time as a Shape, Not a Number</span></a></li>
-        <li style="margin:4px 0"><a href="/blog/habit-stacking-circle"><span class="lang-ko">습관 쌓기를 원형 시간표에 앉히는 법</span><span class="lang-en">How to Seat Habit Stacking on a Circular Timetable</span></a></li>
+        <li style="margin:4px 0"><a href="/blog/sleep-anchor-day"><span class="lang-ko">수면을 먼저 표시하는 계획 — 취침 준비와 약속을 함께 계산하기</span><span class="lang-en">Mark Sleep First — Budget Preparation and Commitments Together</span></a></li>
+        <li style="margin:4px 0"><a href="/blog/phone-time-audit"><span class="lang-ko">스크린 타임을 하루 기록과 비교할 때 중복을 피하는 법</span><span class="lang-en">Compare Screen Time with Your Day Without Double-Counting</span></a></li>
+        <li style="margin:4px 0"><a href="/blog/habit-stacking-circle"><span class="lang-ko">기존 행동 뒤에 작은 행동 붙이기 — 준비와 예외까지 정하기</span><span class="lang-en">Attach a Small Action to an Existing Event — Include Setup and Exceptions</span></a></li>
       </ul>
     </div>
 
@@ -200,13 +147,12 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
       <a href="/"><span class="lang-ko">홈 Home</span><span class="lang-en">Home</span></a>
       <a href="/blog/"><span class="lang-ko">블로그 Blog</span><span class="lang-en">Blog</span></a>
       <a href="/templates/"><span class="lang-ko">템플릿 Templates</span><span class="lang-en">Templates</span></a>
-      <a href="/gallery/"><span class="lang-ko">갤러리 Gallery</span><span class="lang-en">Gallery</span></a>
-      <a href="/life-planner"><span class="lang-ko">생활계획표 Life Planner</span><span class="lang-en">Life Planner</span></a>
       <a href="/guides/"><span class="lang-ko">가이드 Guides</span><span class="lang-en">Guides</span></a>
       <a href="/stories/"><span class="lang-ko">스토리 Stories</span><span class="lang-en">Stories</span></a>
       <a href="/health/"><span class="lang-ko">건강 Health</span><span class="lang-en">Health</span></a>
       <a href="/faq"><span class="lang-ko">FAQ</span><span class="lang-en">FAQ</span></a>
       <a href="/about"><span class="lang-ko">소개 About</span><span class="lang-en">About</span></a>
+      <a href="/editorial-policy"><span class="lang-ko">편집 원칙</span><span class="lang-en">Editorial policy</span></a>
       <a href="/privacy"><span class="lang-ko">개인정보처리방침 Privacy</span><span class="lang-en">Privacy</span></a>
       <a href="/terms"><span class="lang-ko">이용약관 Terms</span><span class="lang-en">Terms</span></a>
       <a href="/contact"><span class="lang-ko">문의 Contact</span><span class="lang-en">Contact</span></a>

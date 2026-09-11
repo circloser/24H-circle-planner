@@ -1,87 +1,56 @@
 ---
 slug: kant-daily-routine-circle
 date: 2026-07-17
-image: /blog/img/kant-daily-routine.png
-title_ko: 칸트의 하루를 원형 플래너로 그려봤다 — 이웃들이 시계를 맞췄다는 그 일과
-title_en: I Drew Kant's Day on a Circular Planner — The Routine Neighbours Set Their Clocks By
-desc_ko: "쾨니히스베르크 사람들이 시계를 맞췄다는 칸트의 일과를 원형 플래너에 그대로 넣어봤습니다. 집필은 4시간이 안 되고, 점심이 하루에서 두 번째로 큰 블록이었습니다 — '모양이 있는 하루'가 주는 것."
-desc_en: "I put Kant's famously clockwork routine onto a circular planner. Writing took under four hours a day; lunch was the second-biggest block — what a day WITH a shape can teach us."
+updated: 2026-09-11
+title_ko: 칸트의 일과를 그대로 따라도 될까 — 유명인 시간표를 읽는 기준
+title_en: Should You Copy Kant’s Routine? Reading Celebrity Schedules Carefully
+desc_ko: "칸트의 정확한 일과를 재현한다는 주장을 철회하고, 출처와 생략된 조건을 확인해 자기 계획으로 옮기는 방법을 설명합니다."
+desc_en: "A correction to our claimed reconstruction of Kant’s day, with checks for sources and missing context before adapting any celebrity routine."
 ---
 <!--ko-->
-쾨니히스베르크 사람들이 임마누엘 칸트가 지나가는 걸 보고 시계를 맞췄다는 이야기가 있습니다. 과장이 섞였겠지만, 그의 규칙성이 당대에도 화제였던 건 분명합니다. 하이네를 비롯한 여러 기록자들이 이 철학자의 시계 같은 일과를 남겼습니다.
+**정정 안내:** 이전 글은 칸트의 기상·집필·식사·산책 시각을 정확한 하루처럼 나열하고, 직접 재현한 경험처럼 표현했습니다. 이를 뒷받침할 출처와 재현 기록을 제시하지 못해 해당 시간표와 이미지를 삭제했습니다. 이 페이지는 칸트의 전기나 검증된 역사적 일과를 제공하지 않습니다.
 
-그래서 그 일과를 원형 플래너에 그대로 넣어봤습니다. 결과가 흥미로웠습니다.
+## 일화와 시간표는 다른 정보다
 
-## 전해지는 칸트의 하루
+‘규칙적으로 산책했다’는 문장과 ‘매일 특정 시각부터 특정 시각까지 걸었다’는 문장은 검증해야 할 내용이 다릅니다. 한 시기의 관찰을 평생의 일과로 늘리거나, 빈 시간을 추정해서 24시간을 채우면 그럴듯해 보여도 역사 자료가 되지는 않습니다. 글을 읽을 때는 원문·기록 시점·대상 기간이 제시돼 있는지 확인하세요.
 
-- **05:00** 기상. 하인 람페가 깨웠고, 칸트는 절대 다시 눕지 않았다고 합니다.
-- **05:00–07:00** 홍차 두 잔과 파이프 담배 한 대. 그리고 강의 준비.
-- **07:00–09:00** 대학 강의.
-- **09:00–12:45** 집필. 『순수이성비판』이 이 시간대에서 나왔습니다.
-- **12:45–16:00** 점심. 하루의 유일한 식사였고, 언제나 손님을 불러 대화하며 세 시간 넘게 이어졌습니다.
-- **16:00–17:00** 산책. 보리수길을 정해진 횟수만큼 왕복했고, 훗날 그 길은 '철학자의 길'로 불립니다.
-- **17:00–22:00** 독서와 다음 날 강의 준비.
-- **22:00** 취침.
+## 따라 하기 전에 물을 네 가지
 
-## 원으로 그리자 드러난 것
+- 정확한 시각은 어떤 자료에서 왔는가? 출처가 없으면 확정된 약속처럼 옮기지 않습니다.
+- 그 사람의 생애 중 어느 시기인가? 서로 다른 시기의 활동을 한 날에 섞지 않습니다.
+- 이동·식사 준비·돌봄은 누가 담당했는가? 생략된 일이 내 하루에서는 시간을 쓸 수 있습니다.
+- 성과가 그 시간표 때문에 생겼다는 근거가 있는가? 성과와 루틴이 함께 소개됐다는 이유만으로 인과관계를 인정하지 않습니다.
 
-숫자로 나열했을 때는 그냥 부지런한 사람의 일과입니다. 그런데 원에 색을 채우고 나니 세 가지가 즉시 보였습니다.
+## 명성 대신 조건을 옮기는 예시
 
-**첫째, 점심이 하루에서 두 번째로 큰 블록입니다.** 세 시간이 넘습니다. 근대 철학의 기틀을 세운 사람이 하루의 8분의 1을 밥 먹으며 수다 떠는 데 썼습니다. 그것도 매일. 원 위에서 이 부채꼴은 집필 시간과 거의 맞먹습니다. 칸트는 이 시간을 낭비로 보지 않았습니다. 혼자 살았던 그에게 이건 사고를 검증하는 시간이었습니다.
+유명인의 오전 집필에서 ‘방해가 적은 작업 구간을 두자’는 아이디어만 가져온다고 합시다. 이는 특정 인물의 실제 일과를 뜻하지 않는 **가상 계획 예시**입니다. 출근 전 시간이 없다면 새벽 기상을 복제하지 않고, 자신의 오후 빈 구간에 30분짜리 초안 작성을 넣을 수 있습니다. 그 전후에 준비와 다른 약속이 들어가는지 함께 확인합니다.
 
-**둘째, 실제 집필은 하루 4시간이 안 됩니다.** 우리가 상상하는 '밤새 책상에 앉은 철학자'는 없습니다. 가장 맑은 머리를 오전에 통째로 몰아넣고, 그걸로 끝냅니다. 원 위에서 집필 블록은 놀랄 만큼 작습니다.
+성공 기준도 ‘그 사람처럼 살기’가 아니라 ‘초안의 첫 항목을 정리했는가’로 정합니다. 해보니 맞지 않으면 구간을 옮기거나 삭제합니다. 유명인의 이름은 그 배치가 나에게 맞는다는 증거가 아닙니다.
 
-**셋째, 수면 7시간이 온전히 지켜집니다.** 원의 3분의 1에 가까운 이 블록에 칸트는 손대지 않았습니다.
+## 플래너에 옮길 때
 
-## 이것이 오늘 우리에게 주는 것
+[24Houring](/)에 자신의 실제 고정 일정부터 입력하고, 참고 아이디어 하나만 남은 시간에 추가하세요. 검증되지 않은 역사적 이름 대신 ‘글 초안’처럼 할 일을 적습니다. 예시와 실제 기록을 구별하는 원칙은 [콘텐츠 작성 기준](/editorial-policy), 도구의 선택은 [원과 목록 비교](/blog/circle-vs-square-planner)에 설명했습니다.
 
-칸트의 일과를 그대로 따라 하라는 얘기가 아닙니다. 18세기 독신 교수의 하루는 21세기 직장인에게 이식되지 않습니다.
-
-다만 원으로 그려보면 그의 하루가 **'많이 하는 하루'가 아니라 '모양이 있는 하루'**였다는 게 보입니다. 깊은 집중은 오전에 몰아서 짧게, 회복과 대화는 아깝게 여기지 않고 크게, 수면은 건드리지 않고, 산책은 매일 같은 자리에. 40년 넘게 같은 모양이 반복됐습니다.
-
-우리 하루를 원으로 그려보면 어떨까요. 아마 대부분 모양이 없을 겁니다. 매일 다르고, 조각나 있고, 오전의 가장 좋은 시간이 회의와 메신저로 흩어져 있을 겁니다. 문제는 게으름이 아니라 **모양의 부재**일지도 모릅니다.
-
-## 직접 그려보기
-
-[24houring.com](https://24houring.com)에서 칸트의 하루를 그대로 입력해보거나, 자기 하루와 나란히 놓고 비교해볼 수 있습니다. 가입 없이 바로 됩니다. 나에게 맞는 하루의 모양을 찾고 싶다면 [크로노타입에 맞춘 하루 설계](/blog/chronotype-day-design)도 함께 읽어 보세요.
-
-**다음 편 예고:** 무라카미 하루키의 하루 — 새벽 4시에 일어나 오후에 달리는 소설가의 원은 어떤 모양일까.
 <!--en-->
-The story goes that the people of Königsberg set their clocks by Immanuel Kant's daily walk. Exaggerated, surely — but his regularity was famous even in his own time, and chroniclers from Heine onward recorded the philosopher's clockwork days.
+**Correction:** The earlier article presented exact times for Kant's waking, writing, meals, and walking, and described the timetable as a personal reconstruction. We could not substantiate those details or that experience with sources and records, so we removed the timetable and image. This page does not offer a biography or a verified historical day.
 
-So I entered that routine into a circular planner, exactly as recorded. The result was more interesting than expected.
+## An anecdote is not a timetable
 
-## Kant's day, as handed down
+The statement that someone walked regularly is different from a claim that they walked between exact hours every day. Extending one observation to a lifetime, or filling unknown hours with guesses, does not create historical evidence. Look for the original text, when it was recorded, and the period it describes.
 
-- **05:00** Rise. His servant Lampe woke him, and Kant — so it's said — never once lay back down.
-- **05:00–07:00** Two cups of tea, one pipe, and lecture preparation.
-- **07:00–09:00** University lectures.
-- **09:00–12:45** Writing. The Critique of Pure Reason came out of these hours.
-- **12:45–16:00** Lunch — the day's only meal, always with invited guests, always stretching past three hours of conversation.
-- **16:00–17:00** The walk: the same linden avenue, the same number of laps, later nicknamed the Philosopher's Walk.
-- **17:00–22:00** Reading and preparing the next day's lectures.
-- **22:00** Bed.
+## Four questions before copying a routine
 
-## What the circle revealed
+- Where did the exact times come from? Do not import unsourced times as established facts.
+- Which period of the person's life is represented? Do not combine different periods into one day.
+- Who handled travel, meal preparation, and care? Omitted work may consume time in your own day.
+- Is there evidence that the routine caused the achievement? Presenting the two together does not establish causation.
 
-Listed as numbers, it's merely the schedule of a diligent man. Colour it onto a circle, though, and three things jump out at once.
+## Adapt a condition, not a reputation
 
-**First, lunch is the day's second-largest block.** Over three hours. The man who laid the foundations of modern philosophy spent an eighth of every day eating and talking. On the circle, that wedge nearly equals his writing time. Kant didn't consider it waste — for a man who lived alone, this was where his thinking got tested.
+Suppose an account of morning writing gives you the idea of reserving a less interrupted work interval. The following is **an invented planning example**, not anyone's historical routine. If there is no room before work, try a 30-minute draft in an available afternoon interval instead of copying an early wake-up. Check preparation and neighbouring commitments too.
 
-**Second, actual writing took less than four hours a day.** The all-night philosopher at his desk doesn't exist here. He poured his clearest morning head into one block — and stopped. On the circle, the writing wedge is startlingly small.
+Define success as outlining the first section, rather than living like a famous person. Move or remove the interval if it does not fit. A name is not evidence that a schedule suits you.
 
-**Third, seven hours of sleep, fully protected.** Kant never touched that block — nearly a third of the circle.
+## Put your own day in the planner
 
-## What this offers us
-
-This isn't a call to copy Kant's schedule. An 18th-century bachelor professor's day doesn't transplant into a 21st-century working life.
-
-But drawn as a circle, you can see that his day was **not a day of doing more — it was a day with a shape**. Deep focus packed short into the morning; recovery and conversation given generous space without guilt; sleep untouched; the walk in the same place every day. The same shape, repeated for over forty years.
-
-What would our own days look like as circles? Mostly shapeless, I suspect: different every day, fragmented, the best morning hours scattered across meetings and messages. Perhaps the problem isn't laziness but **the absence of a shape**.
-
-## Try it yourself
-
-At [24houring.com](https://24houring.com) you can enter Kant's day exactly as above, or draw your own beside it and compare — no sign-up needed. To find the shape that fits you (not Kant), read [designing your day around your chronotype](/blog/chronotype-day-design).
-
-**Next in the series:** Haruki Murakami's day — what shape is the circle of a novelist who rises at 4 a.m. and runs in the afternoon?
+Enter your actual fixed commitments in [24Houring](/), then add one borrowed idea in the space remaining. Name the task, such as draft writing, rather than assigning an unverified historical label. Our [editorial policy](/editorial-policy) distinguishes examples from records; the [circle-and-list comparison](/blog/circle-vs-square-planner) explains tool choices.

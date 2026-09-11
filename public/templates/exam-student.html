@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>수험생·중고생 방학 공부 계획표 템플릿 · 24Houring</title>
-<meta name="description" content="공부 블록 사이에 휴식과 운동을 끼워 하루 8시간 학습을 지속 가능하게 설계한 수험생 방학 계획표. 원형 시간표로 공부·휴식 균형이 한눈에 보입니다." />
+<meta name="description" content="공부와 생활 일정을 비교하기 위한 수험생 예시입니다. 표시된 공부 구간은 휴식이 세분화되지 않은 예약 시간이며 권장 학습량이 아닙니다." />
 <link rel="canonical" href="https://24houring.com/templates/exam-student" />
 <link rel="alternate" hreflang="ko" href="https://24houring.com/templates/exam-student" />
 <link rel="alternate" hreflang="en" href="https://24houring.com/templates/exam-student" />
@@ -13,7 +13,7 @@
 <link rel="alternate" hreflang="x-default" href="https://24houring.com/templates/exam-student" />
 <meta name="robots" content="index, follow" />
 <meta property="og:title" content="수험생·중고생 방학 공부 계획표 템플릿 · 24Houring" />
-<meta property="og:description" content="공부 블록 사이에 휴식과 운동을 끼워 하루 8시간 학습을 지속 가능하게 설계한 수험생 방학 계획표. 원형 시간표로 공부·휴식 균형이 한눈에 보입니다." />
+<meta property="og:description" content="공부와 생활 일정을 비교하기 위한 수험생 예시입니다. 표시된 공부 구간은 휴식이 세분화되지 않은 예약 시간이며 권장 학습량이 아닙니다." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://24houring.com/templates/exam-student" />
 <meta property="og:image" content="https://24houring.com/templates/img/exam-student.png" />
@@ -25,14 +25,14 @@
  "@context": "https://schema.org",
  "@type": "Article",
  "headline": "수험생·중고생 방학 공부 계획표 템플릿",
- "description": "공부 블록 사이에 휴식과 운동을 끼워 하루 8시간 학습을 지속 가능하게 설계한 수험생 방학 계획표. 원형 시간표로 공부·휴식 균형이 한눈에 보입니다.",
+ "description": "공부와 생활 일정을 비교하기 위한 수험생 예시입니다. 표시된 공부 구간은 휴식이 세분화되지 않은 예약 시간이며 권장 학습량이 아닙니다.",
  "inLanguage": [
   "ko",
   "en"
  ],
  "image": "https://24houring.com/templates/img/exam-student.png",
  "datePublished": "2026-07-12",
- "dateModified": "2026-07-12",
+ "dateModified": "2026-09-11",
  "author": {
   "@type": "Organization",
   "name": "24Houring",
@@ -67,8 +67,9 @@
 }
 </script>
 <script>
-(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');}}catch(e){}})();
-function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');}
+(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');document.documentElement.lang='en';}}catch(e){}})();
+function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');document.documentElement.lang=l;document.querySelectorAll('[data-template-lang]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.templateLang===l));});}
+document.addEventListener('DOMContentLoaded',function(){setGuideLang(document.documentElement.lang==='en'?'en':'ko');});
 </script>
 </head>
 <body>
@@ -76,7 +77,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
   <header class="site">
     <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
-      <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
+      <span class="langswitch"><button type="button" data-template-lang="ko" aria-pressed="true" onclick="setGuideLang('ko')">한국어</button><span class="sep">·</span><button type="button" data-template-lang="en" aria-pressed="false" onclick="setGuideLang('en')">EN</button></span>
       <a href="/templates/"><span class="lang-ko">템플릿</span><span class="lang-en">Templates</span></a>
       <a href="/"><span class="lang-ko">홈</span><span class="lang-en">Home</span></a>
     </nav>
@@ -85,11 +86,11 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
     <p class="crumb"><a href="/templates/"><span class="lang-ko">← 템플릿 목록</span><span class="lang-en">← All templates</span></a></p>
     <div class="lang-ko">
     <h1>수험생·중고생 방학 공부 계획표 템플릿</h1>
-    <p class="lead">공부 블록 사이에 휴식과 운동을 끼워 하루 8시간 학습을 지속 가능하게 설계한 수험생 방학 계획표. 원형 시간표로 공부·휴식 균형이 한눈에 보입니다.</p>
+    <p class="lead">공부와 생활 일정을 비교하기 위한 수험생 예시입니다. 표시된 공부 구간은 휴식이 세분화되지 않은 예약 시간이며 권장 학습량이 아닙니다.</p><p>2026년 9월 11일 검토 · 편집용 가상 일정입니다.</p>
     </div>
     <div class="lang-en">
     <h1>Exam-Prep Study Planner Template (School Break)</h1>
-    <p class="lead">A sustainable 8-hour study day for exam students — focus blocks with rest and exercise between them, visible at a glance on the circle.</p>
+    <p class="lead">An exam-preparation example for comparing study with daily commitments. Study periods are reserved time without detailed breaks, not a recommended workload.</p><p>Reviewed September 11, 2026. The chart and imported activity labels are in Korean; rename them after import.</p>
     </div>
 
     <p style="text-align:center;margin:18px 0">
@@ -124,11 +125,11 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
     </ul>
     <h2>활용 팁</h2>
     <ul>
-      <li>공부는 "몇 시간"이 아니라 50분 블록 몇 개로 세세요 — 이 표는 하루 8블록입니다.</li>
-      <li>가장 어려운 과목을 오전 첫 블록(뇌가 가장 맑을 때)에 두세요.</li>
-      <li>운동 30분이 오후 집중력을 살립니다. 아깝다고 빼지 마세요.</li>
+      <li>과목명 대신 이번 구간에서 풀 문제나 읽을 범위를 적으세요.</li>
+      <li>긴 공부 구간을 나누고 휴식과 식사를 먼저 확인하세요.</li>
+      <li>실제로 끝낸 분량을 기록한 뒤 다음 날 배정을 줄이거나 늘리세요.</li>
     </ul>
-    <p><a href="/guides/vacation-study-planner">관련 가이드</a> · <a href="/guides/daily-planning-basics">관련 가이드</a> · <a href="/guides/24-hour-circle-method">원형 시간표 활용법</a></p>
+    <p><a href="/guides/vacation-study-planner">관련 자료</a> · <a href="/guides/daily-planning-basics">관련 자료</a> · <a href="/guides/24-hour-circle-method">원형 시간표 활용법</a></p>
     </div>
     <div class="lang-en">
     <h2>The schedule</h2>
@@ -148,9 +149,9 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
     </ul>
     <h2>Tips</h2>
     <ul>
-      <li>Count study in 50-minute blocks, not hours — this day has 8 blocks.</li>
-      <li>Put the hardest subject in the first morning block, when your head is clearest.</li>
-      <li>30 minutes of exercise revives afternoon focus — don’t cut it.</li>
+      <li>Name the questions or pages for each period.</li>
+      <li>Split long periods and check breaks and meals first.</li>
+      <li>Record completed work before adjusting the next day.</li>
     </ul>
     </div>
 
@@ -171,10 +172,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
     <nav>
       <a href="/"><span class="lang-ko">홈 Home</span><span class="lang-en">Home</span></a>
       <a href="/templates/"><span class="lang-ko">템플릿 Templates</span><span class="lang-en">Templates</span></a>
-      <a href="/gallery/"><span class="lang-ko">갤러리 Gallery</span><span class="lang-en">Gallery</span></a>
-      <a href="/life-planner"><span class="lang-ko">생활계획표 Life Planner</span><span class="lang-en">Life Planner</span></a>
       <a href="/guides/"><span class="lang-ko">가이드 Guides</span><span class="lang-en">Guides</span></a>
-      <a href="/blog/"><span class="lang-ko">블로그 Blog</span><span class="lang-en">Blog</span></a>
       <a href="/stories/"><span class="lang-ko">스토리 Stories</span><span class="lang-en">Stories</span></a>
       <a href="/health/"><span class="lang-ko">건강 Health</span><span class="lang-en">Health</span></a>
       <a href="/faq"><span class="lang-ko">FAQ</span><span class="lang-en">FAQ</span></a>

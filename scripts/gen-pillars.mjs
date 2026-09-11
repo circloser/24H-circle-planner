@@ -29,27 +29,27 @@ const SECTIONS = {
   health: {
     ko: '건강', en: 'Health',
     order: ['sleep', 'nutrition', 'movement', 'mind', 'rhythm'],
-    hubTitle: '건강 — 하루 시간표로 실천하는 건강 습관 · 24Houring',
-    hubDesc: '수면·식사·움직임·회복·리듬을 시간 관리로 챙기는 심층 가이드. Deep guides on building healthy habits through how you spend your 24 hours.',
-    hubLeadKo: '건강은 대단한 결심이 아니라 하루의 시간을 어떻게 쓰느냐에서 시작됩니다. 수면·식사·움직임·마음·리듬 다섯 축을 깊이 있게 다루고, 24Houring 원형 시간표로 매일 실천하는 법을 담았습니다.',
-    hubLeadEn: 'Health starts less from grand resolutions than from how you spend the hours of your day. Five in-depth pillars — sleep, meals, movement, mind, and rhythm — and how to keep them on your 24Houring circular timetable.',
+    hubTitle: '건강과 일상 계획 — 수면·식사·움직임을 위한 시간 · 24Houring',
+    hubDesc: '공공 보건 자료의 일반 정보와 시간표 작성 예시를 구분해 읽는 일상 계획 안내. Planning examples alongside clearly attributed public-health information.',
+    hubLeadKo: '수면·식사·움직임·회복에 필요한 시간이 다른 일정에 밀리고 있나요? 공공 보건 자료에서 확인한 일반 정보와 시간표 작성 예시를 나누어 설명합니다. 자신의 상황에 맞는 계획을 점검하는 자료이며, 건강 상태를 진단하거나 치료 효과를 약속하지 않습니다.',
+    hubLeadEn: 'Are sleep, meals, movement or recovery getting crowded out of your day? These pages distinguish general information from public-health sources from illustrative planning exercises. Use them to examine your schedule; they do not diagnose conditions or promise treatment outcomes.',
     disclaimer: true,
   },
   stories: {
     ko: '스토리', en: 'Stories',
     order: ['entrepreneurs', 'thinkers', 'writers', 'leaders', 'modern'],
-    hubTitle: '스토리 — 위대한 인물들의 하루 습관 · 24Houring',
-    hubDesc: '기업가·사상가·작가·리더·현대 인물들이 하루를 어떻게 설계했는지, 그리고 당신의 원형 시간표에 무엇을 빌려올 수 있는지. How remarkable people structured their days — and what you can borrow.',
-    hubLeadKo: '위대한 성취 뒤에는 화려한 비법이 아니라, 반복 가능한 하루의 구조가 있었습니다. 기업가·사상가·작가·리더·현대 인물들의 하루 습관을 살펴보고, 당신의 24Houring 원형 시간표에 빌려올 수 있는 것을 정리했습니다.',
-    hubLeadEn: "Behind great work is rarely a secret trick — it is a repeatable shape to the day. Here is how entrepreneurs, thinkers, writers, leaders, and modern high performers structured theirs, and what you can borrow for your own 24Houring circle.",
+    hubTitle: '기록으로 읽는 인물과 시간 — 출처와 계획 연습 · 24Houring',
+    hubDesc: '연설·자서전·인터뷰·기록에서 확인한 내용과 오늘의 계획 연습을 구분합니다. Primary-source accounts and separate planning exercises.',
+    hubLeadKo: '유명인의 하루를 그대로 따라 하기 전에, 원문이 실제로 무엇을 말하는지 살펴봅니다. 확인 가능한 기록, 확인하지 못해 제외한 일화, 오늘 적용해 볼 계획 연습을 구분했습니다. 한 사람의 습관이 성공의 원인이었다고 단정하지 않습니다.',
+    hubLeadEn: 'Before copying a famous person’s day, look at what the original record actually says. These pages separate documented accounts, anecdotes removed for lack of verification, and planning exercises for your own circumstances. A reported habit is not proof of what caused someone’s success.',
     disclaimer: false,
   },
 };
 
 const HEAD_SCRIPTS = `<meta name="google-adsense-account" content="ca-pub-6947130056543786">
 <script>
-(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');}}catch(e){}})();
-function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');}
+function setGuideLang(l,save){l=l==='ko'?'ko':'en';document.documentElement.lang=l;document.documentElement.classList.toggle('show-en',l==='en');document.querySelectorAll('[data-guide-lang]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.guideLang===l));});if(save!==false){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}}}
+(function(){var l=(navigator.language||'ko').slice(0,2);try{var o=localStorage.getItem('24h-guides-lang');var r=localStorage.getItem('24h-circle-planner.prefs');var p=r?JSON.parse(r):null;l=o||(p&&p.prefs&&p.prefs.language)||l;}catch(e){}setGuideLang(l,false);document.addEventListener('DOMContentLoaded',function(){setGuideLang(document.documentElement.lang,false);});})();
 </script>`;
 
 const FOOTER = `  <footer class="site">
@@ -64,6 +64,7 @@ const FOOTER = `  <footer class="site">
       <a href="/health/"><span class="lang-ko">건강 Health</span><span class="lang-en">Health</span></a>
       <a href="/faq"><span class="lang-ko">자주 묻는 질문 FAQ</span><span class="lang-en">FAQ</span></a>
       <a href="/about"><span class="lang-ko">소개 About</span><span class="lang-en">About</span></a>
+      <a href="/editorial-policy"><span class="lang-ko">콘텐츠 작성 기준</span><span class="lang-en">Editorial policy</span></a>
       <a href="/privacy"><span class="lang-ko">개인정보처리방침 Privacy</span><span class="lang-en">Privacy</span></a>
       <a href="/contact"><span class="lang-ko">문의 Contact</span><span class="lang-en">Contact</span></a>
     </nav>
@@ -77,21 +78,30 @@ const DISCLAIMER = `    <div class="card" style="font-size:13px">
 
 const ctaBlock = (section) => `    <div class="cta card">
       <div class="lang-ko">
-        <p style="margin:0 0 4px"><strong>${section === 'health' ? '습관을 시간표에 심기' : '이 하루를 내 시간표에 옮기기'}</strong></p>
-        <p style="margin:0">${section === 'health' ? '마음에 드는 습관을 24Houring의 원형 시간표에 블록으로 넣고 매일 눈으로 확인해 보세요.' : '빌려오고 싶은 습관을 24Houring 원형 시간표에 블록으로 그려 보세요.'} 설치·회원가입 없이 무료입니다.</p>
+        <p style="margin:0 0 4px"><strong>${section === 'health' ? '습관을 시간표에 심기' : '계획 연습을 내 일정에 적용하기'}</strong></p>
+        <p style="margin:0">${section === 'health' ? '마음에 드는 습관을 24Houring의 원형 시간표에 블록으로 넣고 매일 눈으로 확인해 보세요.' : '글의 계획 연습을 자신의 일정에 맞게 조정하고 24Houring 원형 시간표에 배치해 보세요.'} 설치·회원가입 없이 무료입니다.</p>
         <p style="margin:8px 0 0"><a class="btn" href="/">24Houring 열기 →</a></p>
       </div>
       <div class="lang-en">
-        <p style="margin:0 0 4px"><strong>${section === 'health' ? 'Plant the habit in your day' : 'Draw this day on your own circle'}</strong></p>
+        <p style="margin:0 0 4px"><strong>${section === 'health' ? 'Plant the habit in your day' : 'Apply the exercise to your own plan'}</strong></p>
         <p style="margin:0">Add it as a block on your 24-hour circle in 24Houring and see it every day — free, no sign-up or install.</p>
         <p style="margin:8px 0 0"><a class="btn" href="/">Open 24Houring →</a></p>
       </div>
     </div>`;
 
-const paras = (arr) => (arr || []).map((p) => `      <p>${escT(p)}</p>`).join('\n');
-const secBlocks = (arr) => (arr || []).map((s) => `      <h2>${escT(s.h)}</h2>\n${paras(s.body)}`).join('\n');
-const listBlock = (arr) => `      <ul>\n${(arr || []).map((t) => `        <li>${escT(t)}</li>`).join('\n')}\n      </ul>`;
-const faqBlocks = (arr) => (arr || []).map((f) => `      <h3>${escT(f.q)}</h3>\n      <p>${escT(f.a)}</p>`).join('\n');
+const cited = (value, lang) => escT(value).replace(/\[(\d+)\]/g, (_, n) => `<a href="#source-${lang}-${n}" aria-label="${lang === 'ko' ? '출처' : 'Source'} ${n}">[${n}]</a>`);
+const paras = (arr, lang) => (arr || []).map((p) => `      <p>${cited(p, lang)}</p>`).join('\n');
+const secBlocks = (arr, lang) => (arr || []).map((s) => `      <h2>${escT(s.h)}</h2>\n${paras(s.body, lang)}`).join('\n');
+const listBlock = (arr, lang) => `      <ul>\n${(arr || []).map((t) => `        <li>${cited(t, lang)}</li>`).join('\n')}\n      </ul>`;
+const faqBlocks = (arr, lang) => (arr || []).map((f) => `      <h3>${escT(f.q)}</h3>\n      <p>${cited(f.a, lang)}</p>`).join('\n');
+const langButtons = '<span class="langswitch"><button type="button" data-guide-lang="ko" onclick="setGuideLang(\'ko\')" aria-pressed="true">한국어</button><button type="button" data-guide-lang="en" onclick="setGuideLang(\'en\')" aria-pressed="false">EN</button></span>';
+function sourcesBlock(d, lang) {
+  if (!d.sources?.length) return '';
+  return `<section aria-label="${lang === 'ko' ? '출처와 적용 범위' : 'Sources and scope'}"><h2>${lang === 'ko' ? '출처와 적용 범위' : 'Sources and scope'}</h2><ol>${d.sources.map((s, i) => {
+    if (!/^https:\/\//.test(s.url)) throw new Error(`Invalid source URL: ${s.url}`);
+    return `<li id="source-${lang}-${i + 1}"><a href="${escA(s.url)}" rel="noopener">${escT(s[`title_${lang}`] || s.title)}</a><p>${escT(s[`note_${lang}`] || '')}</p></li>`;
+  }).join('\n')}</ol></section>`;
+}
 
 function pillarPage(section, d) {
   const cfg = SECTIONS[section];
@@ -106,6 +116,8 @@ function pillarPage(section, d) {
     author: { '@type': 'Organization', name: 'Circloser' },
     publisher: { '@type': 'Organization', name: '24Houring' },
     mainEntityOfPage: url,
+    ...(d.reviewed_at ? { dateModified: d.reviewed_at } : {}),
+    ...(d.sources?.length ? { citation: d.sources.map((s) => s.url) } : {}),
   };
   const faqLd = (d.faq_ko && d.faq_ko.length)
     ? {
@@ -119,8 +131,8 @@ function pillarPage(section, d) {
       }
     : null;
 
-  const faqKo = (d.faq_ko && d.faq_ko.length) ? `      <h2>자주 묻는 질문</h2>\n${faqBlocks(d.faq_ko)}` : '';
-  const faqEn = (d.faq_en && d.faq_en.length) ? `      <h2>FAQ</h2>\n${faqBlocks(d.faq_en)}` : '';
+  const faqKo = (d.faq_ko && d.faq_ko.length) ? `      <h2>자주 묻는 질문</h2>\n${faqBlocks(d.faq_ko, 'ko')}` : '';
+  const faqEn = (d.faq_en && d.faq_en.length) ? `      <h2>FAQ</h2>\n${faqBlocks(d.faq_en, 'en')}` : '';
 
   return `<!doctype html>
 <html lang="ko">
@@ -148,30 +160,33 @@ ${HEAD_SCRIPTS}
   <header class="site">
     <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
-      <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
+      ${langButtons}
       <a href="/${section}/"><span class="lang-ko">${cfg.ko}</span><span class="lang-en">${cfg.en}</span></a>
       <a href="/"><span class="lang-ko">홈</span><span class="lang-en">Home</span></a>
     </nav>
   </header>
   <main class="article">
     <p class="crumb"><a href="/${section}/"><span class="lang-ko">← ${cfg.ko} 전체</span><span class="lang-en">← All ${cfg.en}</span></a></p>
-    <div class="lang-ko">
+    <p class="editorial-meta"><span class="lang-ko">발행: 24Houring${d.reviewed_at ? ` · 내용 검토: <time datetime="${escA(d.reviewed_at)}">${escT(d.reviewed_at)}</time>` : ''}</span><span class="lang-en">Published by 24Houring${d.reviewed_at ? ` · Content reviewed: <time datetime="${escA(d.reviewed_at)}">${escT(d.reviewed_at)}</time>` : ''}</span> · <a href="/editorial-policy"><span class="lang-ko">작성 기준</span><span class="lang-en">Editorial policy</span></a></p>
+    <div class="lang-ko" lang="ko">
       <h1>${escT(d.title_ko)} <span class="en">/ ${escT(d.title_en)}</span></h1>
       <p class="en" style="margin:0 0 10px">${escT(d.tag_ko)}</p>
       <p class="lead">${escT(d.lead_ko)}</p>
-${secBlocks(d.sections_ko)}
+${secBlocks(d.sections_ko, 'ko')}
       <h2>24Houring에서 이렇게 실천</h2>
-${listBlock(d.apply_ko)}
+${listBlock(d.apply_ko, 'ko')}
 ${faqKo}
+${sourcesBlock(d, 'ko')}
     </div>
-    <div class="lang-en">
+    <div class="lang-en" lang="en">
       <h1>${escT(d.title_en)}</h1>
       <p class="en" style="margin:0 0 10px">${escT(d.tag_en)}</p>
       <p class="lead">${escT(d.lead_en)}</p>
-${secBlocks(d.sections_en)}
+${secBlocks(d.sections_en, 'en')}
       <h2>Do it in 24Houring</h2>
-${listBlock(d.apply_en)}
+${listBlock(d.apply_en, 'en')}
 ${faqEn}
+${sourcesBlock(d, 'en')}
     </div>
 ${cfg.disclaimer ? DISCLAIMER + '\n' : ''}${ctaBlock(section)}
   </main>
@@ -215,7 +230,7 @@ ${HEAD_SCRIPTS}
   <header class="site">
     <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
-      <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
+      ${langButtons}
       <a href="/guides/"><span class="lang-ko">가이드</span><span class="lang-en">Guides</span></a>
       <a href="/blog/"><span class="lang-ko">블로그</span><span class="lang-en">Blog</span></a>
       <a href="/gallery/"><span class="lang-ko">갤러리</span><span class="lang-en">Gallery</span></a>
@@ -245,9 +260,9 @@ ${FOOTER}
 
 // Retired slugs are answered by a REAL 301 from the Worker (see
 // worker/legacy-redirects.ts) instead of a meta-refresh stub page — 40 thin
-// near-duplicate HTML files used to ship with the site, which is exactly the
-// "scaled content" pattern that got AdSense to reject the domain. This
-// generator now emits the redirect map that the Worker imports.
+// near-duplicate HTML files used to ship with the site. Consolidating their
+// subjects improves navigation; it does not establish why AdSense rejected
+// the site. This generator emits the redirect map that the Worker imports.
 function redirectModule(pairs) {
   const rows = pairs
     .slice()
@@ -263,7 +278,7 @@ function redirectModule(pairs) {
  * The 40 thin /health and /stories pages were consolidated into 10 deep pillars.
  * Workers static assets cannot 301 on their own, so wrangler.jsonc routes
  * /health/* and /stories/* through the Worker first and it answers these paths
- * with a real 301; the old URLs pass their ranking on and no thin page ships.
+ * with a real 301; readers reach the consolidated topic without a stub page.
  *
  * Kept as a plain map (not a prefix rule) so a typo can never redirect a pillar
  * onto itself — see worker/__tests__/legacy-redirects.test.ts.

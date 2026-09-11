@@ -89,15 +89,16 @@ function parsePost(file) {
 // ─── Shared shell (matches guides/templates) ─────────────────────────────────
 
 const LANG_SCRIPT = `<script>
-(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');}}catch(e){}})();
-function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');}
+function applyGuideLang(l){l=l==='ko'?'ko':'en';document.documentElement.classList.toggle('show-en',l==='en');document.documentElement.lang=l;document.querySelectorAll('[data-guide-lang]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.guideLang===l));});}
+(function(){var l='ko';try{l=localStorage.getItem('24h-guides-lang');if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}}catch(e){}applyGuideLang(l);document.addEventListener('DOMContentLoaded',function(){applyGuideLang(document.documentElement.lang);});})();
+function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}applyGuideLang(l);}
 </${'script'}>`;
 
 const HEAD_NAV = `
   <header class="site">
     <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
-      <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
+      <span class="langswitch"><button type="button" data-guide-lang="ko" aria-pressed="true" onclick="setGuideLang('ko')">한국어</button><span class="sep">·</span><button type="button" data-guide-lang="en" aria-pressed="false" onclick="setGuideLang('en')">EN</button></span>
       <a href="/blog/"><span class="lang-ko">블로그</span><span class="lang-en">Blog</span></a>
       <a href="/"><span class="lang-ko">홈</span><span class="lang-en">Home</span></a>
     </nav>
@@ -114,6 +115,7 @@ const NAV_FOOT = `
       <a href="/health/"><span class="lang-ko">건강 Health</span><span class="lang-en">Health</span></a>
       <a href="/faq"><span class="lang-ko">FAQ</span><span class="lang-en">FAQ</span></a>
       <a href="/about"><span class="lang-ko">소개 About</span><span class="lang-en">About</span></a>
+      <a href="/editorial-policy"><span class="lang-ko">편집 원칙</span><span class="lang-en">Editorial policy</span></a>
       <a href="/privacy"><span class="lang-ko">개인정보처리방침 Privacy</span><span class="lang-en">Privacy</span></a>
       <a href="/terms"><span class="lang-ko">이용약관 Terms</span><span class="lang-en">Terms</span></a>
       <a href="/contact"><span class="lang-ko">문의 Contact</span><span class="lang-en">Contact</span></a>
@@ -139,6 +141,7 @@ function shell({ title, desc, canonical, jsonld, body }) {
 <link rel="alternate" type="application/rss+xml" title="24Houring Blog" href="/blog/rss.xml" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="stylesheet" href="/guides/guide.css" />
+<style>.langswitch button{font:inherit;color:inherit;background:transparent;border:0;padding:6px;cursor:pointer}.langswitch button[aria-pressed="true"]{font-weight:700;text-decoration:underline}.langswitch button:focus-visible{outline:2px solid currentColor;outline-offset:2px}</style>
 <meta name="google-adsense-account" content="ca-pub-6947130056543786">
 ${jsonld}
 ${LANG_SCRIPT}
@@ -185,7 +188,7 @@ ${JSON.stringify({
   '@context': 'https://schema.org', '@type': 'BlogPosting',
   headline: p.title_ko, description: p.desc_ko, inLanguage: ['ko', 'en'],
   image: heroUrl, datePublished: p.date, dateModified: p.updated || p.date,
-  author: { '@type': 'Person', name: 'Circloser', url: `${ORIGIN}/about` },
+  author: { '@type': 'Organization', name: '24Houring', url: `${ORIGIN}/about` },
   publisher: { '@type': 'Organization', name: '24Houring', url: `${ORIGIN}/` },
   mainEntityOfPage: canonical,
 }, null, 1)}
@@ -202,8 +205,8 @@ ${JSON.stringify({
 
   const modKo = p.updated ? ` · 수정 ${fmtDateKo(p.updated)}` : '';
   const modEn = p.updated ? ` · Updated ${p.updated}` : '';
-  const bylineKo = `글 <a href="/about">Circloser</a> · ${fmtDateKo(p.date)}${modKo}`;
-  const bylineEn = `By <a href="/about">Circloser</a> · ${p.date}${modEn}`;
+  const bylineKo = `작성 <a href="/about">24Houring</a> · ${fmtDateKo(p.date)}${modKo}`;
+  const bylineEn = `By <a href="/about">24Houring</a> · ${p.date}${modEn}`;
 
   // Related posts: the 3 most recent other posts (allPosts is date-desc).
   const related = allPosts.filter((q) => q.slug !== p.slug).slice(0, 3);
@@ -260,7 +263,7 @@ ${CTA}`;
 
   return shell({
     title: '블로그 — 시간 관리와 하루 계획 이야기 · 24Houring',
-    desc: '시간 관리, 하루 계획, 원형 시간표 활용에 대한 24Houring의 블로그. 시간 가계부, 방학 계획, 크로노타입까지.',
+    desc: '시간 기록, 일정 계산, 공부·돌봄·근무 계획을 위한 20편의 실습. 가상 예시와 실제 기록을 구분하고 자기 조건에 맞게 수정합니다.',
     canonical: `${ORIGIN}/blog/`,
     jsonld, body,
   });
@@ -306,5 +309,5 @@ writeFileSync(join(OUT, 'rss.xml'), rss(posts));
 console.log(`hub   index.html · rss.xml — ${posts.length} posts`);
 console.log('\nsitemap entries (add NEW ones to public/sitemap.xml):');
 for (const p of posts) {
-  console.log(`  <url><loc>${ORIGIN}/blog/${p.slug}</loc><lastmod>${p.date}</lastmod><changefreq>yearly</changefreq><priority>0.6</priority></url>`);
+  console.log(`  <url><loc>${ORIGIN}/blog/${p.slug}</loc><lastmod>${p.updated || p.date}</lastmod><changefreq>yearly</changefreq><priority>0.6</priority></url>`);
 }

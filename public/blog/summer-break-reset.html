@@ -3,35 +3,36 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>여름방학 2주 차, 무너진 계획표를 다시 세우는 법 · 24Houring 블로그</title>
-<meta name="description" content="방학 계획표는 원래 2주 차에 무너집니다. 자책 대신 리셋이 필요할 뿐이에요. 기상 시간 하나부터 다시 세우는 3단계 리셋법과 남은 방학을 지키는 원형 시간표 활용법." />
+<title>방학 계획 다시 세우기 — 남은 날짜에서 목표 분량 계산하기 · 24Houring 블로그</title>
+<meta name="description" content="방학 계획의 남은 분량과 실제 가능한 날을 대조하고, 정상일·일정 있는 날을 나눠 조정하는 예시입니다." />
 <link rel="canonical" href="https://24houring.com/blog/summer-break-reset" />
 <meta name="robots" content="index, follow" />
-<meta property="og:title" content="여름방학 2주 차, 무너진 계획표를 다시 세우는 법 · 24Houring 블로그" />
-<meta property="og:description" content="방학 계획표는 원래 2주 차에 무너집니다. 자책 대신 리셋이 필요할 뿐이에요. 기상 시간 하나부터 다시 세우는 3단계 리셋법과 남은 방학을 지키는 원형 시간표 활용법." />
+<meta property="og:title" content="방학 계획 다시 세우기 — 남은 날짜에서 목표 분량 계산하기 · 24Houring 블로그" />
+<meta property="og:description" content="방학 계획의 남은 분량과 실제 가능한 날을 대조하고, 정상일·일정 있는 날을 나눠 조정하는 예시입니다." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://24houring.com/blog/summer-break-reset" />
 <meta property="og:image" content="https://24houring.com/og-image.png" />
 <link rel="alternate" type="application/rss+xml" title="24Houring Blog" href="/blog/rss.xml" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="stylesheet" href="/guides/guide.css" />
+<style>.langswitch button{font:inherit;color:inherit;background:transparent;border:0;padding:6px;cursor:pointer}.langswitch button[aria-pressed="true"]{font-weight:700;text-decoration:underline}.langswitch button:focus-visible{outline:2px solid currentColor;outline-offset:2px}</style>
 <meta name="google-adsense-account" content="ca-pub-6947130056543786">
 <script type="application/ld+json">
 {
  "@context": "https://schema.org",
  "@type": "BlogPosting",
- "headline": "여름방학 2주 차, 무너진 계획표를 다시 세우는 법",
- "description": "방학 계획표는 원래 2주 차에 무너집니다. 자책 대신 리셋이 필요할 뿐이에요. 기상 시간 하나부터 다시 세우는 3단계 리셋법과 남은 방학을 지키는 원형 시간표 활용법.",
+ "headline": "방학 계획 다시 세우기 — 남은 날짜에서 목표 분량 계산하기",
+ "description": "방학 계획의 남은 분량과 실제 가능한 날을 대조하고, 정상일·일정 있는 날을 나눠 조정하는 예시입니다.",
  "inLanguage": [
   "ko",
   "en"
  ],
  "image": "https://24houring.com/og-image.png",
  "datePublished": "2026-07-17",
- "dateModified": "2026-07-17",
+ "dateModified": "2026-09-11",
  "author": {
-  "@type": "Person",
-  "name": "Circloser",
+  "@type": "Organization",
+  "name": "24Houring",
   "url": "https://24houring.com/about"
  },
  "publisher": {
@@ -56,15 +57,16 @@
   {
    "@type": "ListItem",
    "position": 2,
-   "name": "여름방학 2주 차, 무너진 계획표를 다시 세우는 법",
+   "name": "방학 계획 다시 세우기 — 남은 날짜에서 목표 분량 계산하기",
    "item": "https://24houring.com/blog/summer-break-reset"
   }
  ]
 }
 </script>
 <script>
-(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');}}catch(e){}})();
-function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');}
+function applyGuideLang(l){l=l==='ko'?'ko':'en';document.documentElement.classList.toggle('show-en',l==='en');document.documentElement.lang=l;document.querySelectorAll('[data-guide-lang]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.guideLang===l));});}
+(function(){var l='ko';try{l=localStorage.getItem('24h-guides-lang');if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}}catch(e){}applyGuideLang(l);document.addEventListener('DOMContentLoaded',function(){applyGuideLang(document.documentElement.lang);});})();
+function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}applyGuideLang(l);}
 </script>
 </head>
 <body>
@@ -72,7 +74,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
   <header class="site">
     <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
-      <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
+      <span class="langswitch"><button type="button" data-guide-lang="ko" aria-pressed="true" onclick="setGuideLang('ko')">한국어</button><span class="sep">·</span><button type="button" data-guide-lang="en" aria-pressed="false" onclick="setGuideLang('en')">EN</button></span>
       <a href="/blog/"><span class="lang-ko">블로그</span><span class="lang-en">Blog</span></a>
       <a href="/"><span class="lang-ko">홈</span><span class="lang-en">Home</span></a>
     </nav>
@@ -80,71 +82,39 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
   <main class="article">
     <p class="crumb"><a href="/blog/"><span class="lang-ko">← 블로그 목록</span><span class="lang-en">← All posts</span></a></p>
     <div class="lang-ko">
-    <h1>여름방학 2주 차, 무너진 계획표를 다시 세우는 법</h1>
-    <p class="en" style="margin:0 0 14px">글 <a href="/about">Circloser</a> · 2026년 7월 17일</p>
-<p>7월 중순, 방학 2주 차. 첫 주의 의욕으로 만든 계획표는 대개 지금쯤 무너져 있습니다. 기상은 두 시간 밀렸고, 문제집은 첫 단원에 멈춰 있고, 계획표는 쳐다보기도 싫어졌을지 모릅니다. 그런데 이건 실패가 아니라 <strong>거의 모든 방학의 정상 경로</strong>입니다. 필요한 건 자책이 아니라 리셋입니다.</p>
-<h2>계획표는 원래 2주 차에 무너진다</h2>
-<p>첫 주의 계획표는 '방학 첫날의 의욕'이 만든 것이라 대부분 과적재 상태입니다. 하루 6블록 공부, 매일 운동, 독서까지 — 학기 중에도 못 하던 밀도를 방학이라고 해낼 리 없습니다. 하루 이틀 어긋나기 시작하면 "이미 틀렸다"는 생각에 계획표 전체를 버리게 되죠.</p>
-<blockquote>계획이 무너지는 건 의지의 문제가 아니라 설계의 문제입니다. 무너진 계획표는 버리는 게 아니라 가볍게 다시 설계하는 것입니다.</blockquote>
-<h2>리셋 1단계 — 기상 시간 '하나만' 되돌린다</h2>
-<p>전부 한 번에 되돌리려 하면 다시 무너집니다. 첫 3일은 딱 하나, <strong>기상 시간</strong>만 고정하세요. 밀린 두 시간을 한 번에 당기지 말고 30분씩, 사흘에 걸쳐 되돌립니다. 기상이 돌아오면 식사와 취침이 따라오고, 하루의 뼈대가 저절로 다시 섭니다. 나머지 계획은 그다음입니다.</p>
-<h2>리셋 2단계 — 남은 방학을 '실제 크기'로 다시 잰다</h2>
-<p>달력을 열고 개학까지 남은 날을 세어 보세요. 그중 여행·가족 행사·학원 일정이 있는 날을 빼면, 온전히 쓸 수 있는 날이 나옵니다. 그 숫자에 맞춰 목표를 <strong>절반으로</strong> 줄이세요. 처음 계획의 절반을 제대로 해내는 것이, 전부를 계획하고 4분의 1을 하는 것보다 결과도 기분도 낫습니다.</p>
-<ul>
-  <li>문제집 3권 → <strong>1권을 확실히 끝내기</strong></li>
-  <li>매일 운동 1시간 → <strong>주 4회 30분</strong></li>
-  <li>매일 독서 → <strong>자기 전 20분, 되는 날만</strong></li>
-</ul>
-<h2>리셋 3단계 — 하루를 원으로 다시 그린다</h2>
-<p>리스트형 계획표가 무너졌다면, 이번엔 하루를 <strong>원형 시간표</strong>로 그려 보세요. 원으로 그리면 두 가지가 달라집니다.</p>
-<ul>
-  <li>잠·밥·자유시간까지 하루 전체가 보여서, 공부를 욱여넣을 수 있는 <strong>진짜 빈자리</strong>가 어디인지 드러납니다.</li>
-  <li>원의 40%쯤은 비워 두게 됩니다. 여백이 눈에 보이면 과적재를 스스로 알아채게 되거든요.</li>
-</ul>
-<p><a href="/">24Houring</a>에서 바로 그릴 수 있고, 처음부터 만들기 귀찮다면 <a href="/templates/elementary-summer">초등 여름방학 계획표</a>나 <a href="/templates/exam-student">수험생 방학 공부 계획표</a> 템플릿을 불러와 내 하루에 맞게 고치면 5분이면 끝납니다.</p>
-<h2>다시 무너지지 않게 하는 두 가지 장치</h2>
-<ul>
-  <li><strong>주 1회 점검</strong>: 일요일 저녁 10분, 이번 주에 지킨 것과 어긋난 것을 보고 다음 주 계획을 살짝 고칩니다. 계획표는 한 번 만들고 끝나는 게 아니라 매주 다듬는 것입니다.</li>
-  <li><strong>어긋난 날의 복귀 지점 정하기</strong>: "늦잠 잔 날은 점심부터 재시작", "하루를 통째로 날린 날은 내일 기상부터 재시작" — 복귀 규칙이 미리 있으면 하루의 실패가 방학 전체의 실패로 번지지 않습니다.</li>
-</ul>
-<p>무너지지 않는 계획표의 원칙(고정 축·블록·여백 60% 법칙)은 <a href="/guides/vacation-study-planner">방학 계획표 만드는 법</a> 가이드에 자세히 정리해 두었습니다. 남은 방학은 아직 충분히 깁니다 — 오늘 저녁, 기상 시간 하나부터 다시 시작해 보세요.</p>
+    <h1>방학 계획 다시 세우기 — 남은 날짜에서 목표 분량 계산하기</h1>
+    <p class="en" style="margin:0 0 14px">작성 <a href="/about">24Houring</a> · 2026년 7월 17일 · 수정 2026년 9월 11일</p>
+<p>방학 계획이 언제 무너지는지 정해진 법칙은 없습니다. 이미 세운 계획이 맞지 않는다면, 처음의 의욕을 재현하기보다 <strong>남은 날짜와 남은 작업을 다시 계산</strong>하세요. 이 글은 기상 시각을 급히 당기는 수면 교정법이 아닙니다.</p>
+<h2>남은 날에서 실제 가능한 날 고르기</h2>
+<p>개학일을 확인하고 여행·가족 행사·수업·돌봄처럼 이미 정해진 일정을 먼저 표시합니다. 일정이 있는 날도 일부 작업이 가능할 수 있지만 온전한 하루와 같은 분량을 넣지 않습니다. 쉬는 날 역시 계획에서 지우지 마세요.</p>
+<h2>계산 예시: 남은 12일, 연습 18쪽</h2>
+<p>설명용으로 12일 중 충분히 공부할 수 있는 날 6일, 짧게만 가능한 날 3일, 작업을 넣지 않을 날 3일을 가정합니다. 긴 날에 2쪽씩, 짧은 날에 1쪽씩이면 15쪽입니다. 남은 3쪽은 저절로 들어가지 않습니다. 꼭 필요한 범위를 다시 고르거나, 가능한 날의 작업량을 실제로 확인한 뒤 조정해야 합니다.</p>
+<p>쪽수는 난이도를 반영하지 않을 수 있습니다. 첫 작업에서 2쪽이 예상보다 오래 걸렸다면 시간을 늘리기 전에 범위와 우선순위를 다시 확인합니다. 교사와 정한 필수 과제는 임의로 생략하지 말고 도움을 요청하세요.</p>
+<h2>하루를 두 가지로 만들기</h2>
+<p>‘일정 없는 날’에는 식사와 휴식 사이에 작업 구간 하나를, ‘일정 있는 날’에는 이동과 준비를 포함한 뒤 가능한 작은 작업만 넣습니다. <a href="/templates/elementary-summer">방학 템플릿</a>은 출발점이며 그대로 따라야 하는 권장 시간표가 아닙니다. <a href="/">24Houring</a>에서 실제 날짜의 조건에 맞춰 시각과 활동을 바꿉니다.</p>
+<h2>다음 점검에서 볼 것</h2>
+<p>정해둔 점검일에 끝낸 범위, 예상보다 오래 걸린 작업, 새로 생긴 일정을 확인합니다. 늦어진 분량을 모두 다음 날에 얹지 말고 남은 날 전체에 다시 대조합니다. 하루를 놓쳤다면 다음 가능한 작업 하나부터 재개하세요. 개학일까지 쓸 수 있는 시간이 줄었다면 목표 범위를 줄이는 결정도 필요합니다.</p>
     </div>
     <div class="lang-en">
-    <h1>Two Weeks into Summer Break — How to Rebuild a Collapsed Plan</h1>
-    <p class="en" style="margin:0 0 14px">By <a href="/about">Circloser</a> · 2026-07-17</p>
-<p>Mid-July, week two of the break. The plan you drew with day-one enthusiasm has probably collapsed by now: wake-up has drifted two hours, the workbook is stuck on chapter one, and you'd rather not look at the planner at all. Here's the thing — this isn't failure, it's the <strong>normal trajectory of almost every school break</strong>. What you need is a reset, not guilt.</p>
-<h2>Break plans are designed to collapse in week two</h2>
-<p>A first-week plan is built by first-day motivation, so it's almost always overloaded: six study blocks a day, daily exercise, plus reading — a density you didn't manage even during the term. Slip for a day or two and the "it's already ruined" feeling makes you throw out the whole planner.</p>
-<blockquote>A collapsed plan is a design problem, not a willpower problem. You don't discard it — you redesign it lighter.</blockquote>
-<h2>Step 1 — Restore ONE thing: the wake-up time</h2>
-<p>Try to restore everything at once and it collapses again. For the first three days fix exactly one thing: <strong>when you get up</strong>. Don't yank the drifted two hours back in one go — pull back 30 minutes at a time over three days. Once waking stabilises, meals and bedtime follow, and the skeleton of the day rebuilds itself. Everything else comes after.</p>
-<h2>Step 2 — Re-measure the remaining break at its REAL size</h2>
-<p>Open the calendar and count the days left until school. Subtract trips, family events, academy days — what remains is what you actually have. Now cut your goals <strong>in half</strong> to fit that number. Finishing half of the original plan properly beats planning everything and doing a quarter, in results and in morale.</p>
-<ul>
-  <li>Three workbooks → <strong>finish one, completely</strong></li>
-  <li>One hour of daily exercise → <strong>30 minutes, four times a week</strong></li>
-  <li>Daily reading → <strong>20 minutes before bed, on days it works</strong></li>
-</ul>
-<h2>Step 3 — Redraw the day as a circle</h2>
-<p>If the list-style planner collapsed, draw the day as a <strong>circular timetable</strong> this time. Two things change.</p>
-<ul>
-  <li>The whole day — sleep, meals, free time — is visible at once, so the <strong>real empty slots</strong> for study reveal themselves.</li>
-  <li>You end up leaving about 40% of the circle open. When the margin is visible, you catch yourself overloading before it happens.</li>
-</ul>
-<p>You can draw one on <a href="/">24Houring</a> right away, or skip the setup by importing the <a href="/templates/elementary-summer">elementary summer-break template</a> or the <a href="/templates/exam-student">exam-prep study template</a> and adjusting it to your day — five minutes, done.</p>
-<h2>Two devices that keep it from collapsing again</h2>
-<ul>
-  <li><strong>A weekly review</strong>: ten minutes on Sunday evening — what held, what slipped, and one small adjustment for next week. A planner isn't made once; it's tuned weekly.</li>
-  <li><strong>Pre-agreed re-entry points</strong>: "overslept → restart at lunch", "lost the whole day → restart at tomorrow's wake-up". With a re-entry rule in place, one bad day can't spread into a bad break.</li>
-</ul>
-<p>The principles of a plan that survives (fixed anchors, blocks, the 60% margin rule) are laid out in <a href="/guides/vacation-study-planner">How to Make a Vacation Planner</a>. There's plenty of break left — start tonight, with the wake-up time alone.</p>
+    <h1>Rebuild a School-Break Plan from the Days Actually Left</h1>
+    <p class="en" style="margin:0 0 14px">By <a href="/about">24Houring</a> · 2026-07-17 · Updated 2026-09-11</p>
+<p>There is no rule that school-break plans collapse in a particular week. If the original plan no longer fits, <strong>recalculate remaining days and unfinished work</strong>. This is not a sleep-correction protocol or a reason to force an earlier wake-up.</p>
+<h2>Identify usable days</h2>
+<p>Confirm the school return date and mark travel, family events, classes, and care responsibilities. Busy days may contain some usable time, but they should not carry the workload of a fully open day. Keep rest visible too.</p>
+<h2>Worked example: 12 days, 18 exercise pages</h2>
+<p>Suppose six days allow a longer task, three allow only a short task, and three will contain no assigned work. Two pages on each longer day and one on each shorter day total 15 pages. The remaining three do not fit automatically. Reconsider the required scope or check actual capacity before increasing the allocation.</p>
+<p>Page counts do not capture difficulty. If the first two pages take longer than expected, review scope and priorities before extending the hours. Discuss required schoolwork with the teacher rather than silently dropping it.</p>
+<h2>Make two versions of the day</h2>
+<p>On an open day, place one work interval between meals and rest. On a busy day, include travel and preparation before selecting a smaller task. The <a href="/templates/elementary-summer">school-break template</a> is a starting point, not a prescribed routine. Edit activities and times in <a href="/">24Houring</a> to match the actual day.</p>
+<h2>At the next review</h2>
+<p>Check completed work, tasks that exceeded their estimates, and new commitments. Do not pile every delay onto tomorrow; compare it against all remaining days again. After a missed day, resume with the next feasible task. If available time has shrunk, reducing the target's scope may be necessary.</p>
     </div>
     <div class="card" style="margin-top:26px">
       <p style="margin:0 0 8px"><strong><span class="lang-ko">함께 읽으면 좋은 글</span><span class="lang-en">Related posts</span></strong></p>
       <ul style="margin:0;padding-left:20px">
-        <li style="margin:4px 0"><a href="/blog/sleep-anchor-day"><span class="lang-ko">수면을 중심에 놓고 하루를 역설계하는 법 — 잠을 잔반으로 남기지 않기</span><span class="lang-en">Designing the Day Backward from Sleep — Stop Leaving Sleep as Leftovers</span></a></li>
-        <li style="margin:4px 0"><a href="/blog/phone-time-audit"><span class="lang-ko">스마트폰이 삼킨 시간을 원으로 마주하기 — 숫자가 아니라 모양으로 보는 화면 시간</span><span class="lang-en">Facing the Time Your Phone Ate — Seeing Screen Time as a Shape, Not a Number</span></a></li>
-        <li style="margin:4px 0"><a href="/blog/habit-stacking-circle"><span class="lang-ko">습관 쌓기를 원형 시간표에 앉히는 법</span><span class="lang-en">How to Seat Habit Stacking on a Circular Timetable</span></a></li>
+        <li style="margin:4px 0"><a href="/blog/sleep-anchor-day"><span class="lang-ko">수면을 먼저 표시하는 계획 — 취침 준비와 약속을 함께 계산하기</span><span class="lang-en">Mark Sleep First — Budget Preparation and Commitments Together</span></a></li>
+        <li style="margin:4px 0"><a href="/blog/phone-time-audit"><span class="lang-ko">스크린 타임을 하루 기록과 비교할 때 중복을 피하는 법</span><span class="lang-en">Compare Screen Time with Your Day Without Double-Counting</span></a></li>
+        <li style="margin:4px 0"><a href="/blog/habit-stacking-circle"><span class="lang-ko">기존 행동 뒤에 작은 행동 붙이기 — 준비와 예외까지 정하기</span><span class="lang-en">Attach a Small Action to an Existing Event — Include Setup and Exceptions</span></a></li>
       </ul>
     </div>
 
@@ -166,13 +136,12 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
       <a href="/"><span class="lang-ko">홈 Home</span><span class="lang-en">Home</span></a>
       <a href="/blog/"><span class="lang-ko">블로그 Blog</span><span class="lang-en">Blog</span></a>
       <a href="/templates/"><span class="lang-ko">템플릿 Templates</span><span class="lang-en">Templates</span></a>
-      <a href="/gallery/"><span class="lang-ko">갤러리 Gallery</span><span class="lang-en">Gallery</span></a>
-      <a href="/life-planner"><span class="lang-ko">생활계획표 Life Planner</span><span class="lang-en">Life Planner</span></a>
       <a href="/guides/"><span class="lang-ko">가이드 Guides</span><span class="lang-en">Guides</span></a>
       <a href="/stories/"><span class="lang-ko">스토리 Stories</span><span class="lang-en">Stories</span></a>
       <a href="/health/"><span class="lang-ko">건강 Health</span><span class="lang-en">Health</span></a>
       <a href="/faq"><span class="lang-ko">FAQ</span><span class="lang-en">FAQ</span></a>
       <a href="/about"><span class="lang-ko">소개 About</span><span class="lang-en">About</span></a>
+      <a href="/editorial-policy"><span class="lang-ko">편집 원칙</span><span class="lang-en">Editorial policy</span></a>
       <a href="/privacy"><span class="lang-ko">개인정보처리방침 Privacy</span><span class="lang-en">Privacy</span></a>
       <a href="/terms"><span class="lang-ko">이용약관 Terms</span><span class="lang-en">Terms</span></a>
       <a href="/contact"><span class="lang-ko">문의 Contact</span><span class="lang-en">Contact</span></a>

@@ -3,35 +3,36 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>하루 24시간, 숨은 2시간을 찾는 법 — 시간 가계부 일주일 실험 · 24Houring 블로그</title>
-<meta name="description" content="바쁜데 남는 게 없는 하루의 범인은 대개 '기억나지 않는 시간'입니다. 일주일 시간 가계부 실험으로 숨은 2시간을 찾고, 원형 시간표로 그 시간을 되찾는 방법을 정리했습니다." />
+<title>숨은 두 시간이 정말 있을까 — 미기록 시간부터 구별하기 · 24Houring 블로그</title>
+<meta name="description" content="시간을 되찾는다는 보장 대신, 실제 여유와 이동·돌봄·미기록 구간을 구분하는 짧은 시간 점검입니다." />
 <link rel="canonical" href="https://24houring.com/blog/hidden-two-hours" />
 <meta name="robots" content="index, follow" />
-<meta property="og:title" content="하루 24시간, 숨은 2시간을 찾는 법 — 시간 가계부 일주일 실험 · 24Houring 블로그" />
-<meta property="og:description" content="바쁜데 남는 게 없는 하루의 범인은 대개 '기억나지 않는 시간'입니다. 일주일 시간 가계부 실험으로 숨은 2시간을 찾고, 원형 시간표로 그 시간을 되찾는 방법을 정리했습니다." />
+<meta property="og:title" content="숨은 두 시간이 정말 있을까 — 미기록 시간부터 구별하기 · 24Houring 블로그" />
+<meta property="og:description" content="시간을 되찾는다는 보장 대신, 실제 여유와 이동·돌봄·미기록 구간을 구분하는 짧은 시간 점검입니다." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://24houring.com/blog/hidden-two-hours" />
 <meta property="og:image" content="https://24houring.com/og-image.png" />
 <link rel="alternate" type="application/rss+xml" title="24Houring Blog" href="/blog/rss.xml" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="stylesheet" href="/guides/guide.css" />
+<style>.langswitch button{font:inherit;color:inherit;background:transparent;border:0;padding:6px;cursor:pointer}.langswitch button[aria-pressed="true"]{font-weight:700;text-decoration:underline}.langswitch button:focus-visible{outline:2px solid currentColor;outline-offset:2px}</style>
 <meta name="google-adsense-account" content="ca-pub-6947130056543786">
 <script type="application/ld+json">
 {
  "@context": "https://schema.org",
  "@type": "BlogPosting",
- "headline": "하루 24시간, 숨은 2시간을 찾는 법 — 시간 가계부 일주일 실험",
- "description": "바쁜데 남는 게 없는 하루의 범인은 대개 '기억나지 않는 시간'입니다. 일주일 시간 가계부 실험으로 숨은 2시간을 찾고, 원형 시간표로 그 시간을 되찾는 방법을 정리했습니다.",
+ "headline": "숨은 두 시간이 정말 있을까 — 미기록 시간부터 구별하기",
+ "description": "시간을 되찾는다는 보장 대신, 실제 여유와 이동·돌봄·미기록 구간을 구분하는 짧은 시간 점검입니다.",
  "inLanguage": [
   "ko",
   "en"
  ],
  "image": "https://24houring.com/og-image.png",
  "datePublished": "2026-07-17",
- "dateModified": "2026-07-17",
+ "dateModified": "2026-09-11",
  "author": {
-  "@type": "Person",
-  "name": "Circloser",
+  "@type": "Organization",
+  "name": "24Houring",
   "url": "https://24houring.com/about"
  },
  "publisher": {
@@ -56,15 +57,16 @@
   {
    "@type": "ListItem",
    "position": 2,
-   "name": "하루 24시간, 숨은 2시간을 찾는 법 — 시간 가계부 일주일 실험",
+   "name": "숨은 두 시간이 정말 있을까 — 미기록 시간부터 구별하기",
    "item": "https://24houring.com/blog/hidden-two-hours"
   }
  ]
 }
 </script>
 <script>
-(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');}}catch(e){}})();
-function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');}
+function applyGuideLang(l){l=l==='ko'?'ko':'en';document.documentElement.classList.toggle('show-en',l==='en');document.documentElement.lang=l;document.querySelectorAll('[data-guide-lang]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.guideLang===l));});}
+(function(){var l='ko';try{l=localStorage.getItem('24h-guides-lang');if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}}catch(e){}applyGuideLang(l);document.addEventListener('DOMContentLoaded',function(){applyGuideLang(document.documentElement.lang);});})();
+function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}applyGuideLang(l);}
 </script>
 </head>
 <body>
@@ -72,7 +74,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
   <header class="site">
     <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
-      <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
+      <span class="langswitch"><button type="button" data-guide-lang="ko" aria-pressed="true" onclick="setGuideLang('ko')">한국어</button><span class="sep">·</span><button type="button" data-guide-lang="en" aria-pressed="false" onclick="setGuideLang('en')">EN</button></span>
       <a href="/blog/"><span class="lang-ko">블로그</span><span class="lang-en">Blog</span></a>
       <a href="/"><span class="lang-ko">홈</span><span class="lang-en">Home</span></a>
     </nav>
@@ -80,83 +82,47 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
   <main class="article">
     <p class="crumb"><a href="/blog/"><span class="lang-ko">← 블로그 목록</span><span class="lang-en">← All posts</span></a></p>
     <div class="lang-ko">
-    <h1>하루 24시간, 숨은 2시간을 찾는 법 — 시간 가계부 일주일 실험</h1>
-    <p class="en" style="margin:0 0 14px">글 <a href="/about">Circloser</a> · 2026년 7월 17일</p>
-<p>"오늘 하루 종일 뭐 했지?" — 분명 바빴는데 저녁이 되면 남은 게 없는 날이 있습니다. 돈이 새는 걸 찾으려면 가계부를 쓰듯, 시간이 새는 걸 찾는 유일한 방법도 <strong>기록</strong>입니다. 이 글은 딱 일주일짜리 실험 제안입니다.</p>
-<h2>왜 우리는 하루를 잘못 기억할까</h2>
-<p>사람은 자기 시간 사용을 놀랄 만큼 부정확하게 기억합니다. 연구들에서 반복적으로 확인되는 패턴은 두 가지입니다.</p>
+    <h1>숨은 두 시간이 정말 있을까 — 미기록 시간부터 구별하기</h1>
+    <p class="en" style="margin:0 0 14px">작성 <a href="/about">24Houring</a> · 2026년 7월 17일 · 수정 2026년 9월 11일</p>
+<p>하루에 누구나 두 시간이 숨어 있다는 근거는 없습니다. 기록해 보면 바꿀 수 있는 구간을 찾을 수도 있지만, 이미 필요한 일과 휴식으로 채워져 있을 수도 있습니다. 이 글의 질문은 ‘어떻게 두 시간을 만들까’가 아니라 <strong>기억에 없는 시간이 무엇이었는가</strong>입니다.</p>
+<h2>먼저 한 구간만 조사하기</h2>
+<p>하루 전체가 부담스럽다면 퇴근부터 저녁 식사까지처럼 궁금한 구간 하나를 고릅니다. 활동이 바뀔 때 시작 시각과 이름을 적고, 끝에 누락을 확인합니다. 기억이 나지 않는 시간은 추측해서 채우지 말고 ‘미기록’으로 적습니다. 주간 기록 방법이 필요하면 <a href="/blog/record-one-week">일주일 기록 절차</a>를 이용하세요.</p>
+<h2>계산 예시: 빈 두 시간이 여유 두 시간은 아니다</h2>
+<p>다음은 가상의 18:00–20:00 기록입니다.</p>
 <ul>
-  <li><strong>일한 시간은 과대평가</strong>합니다. "오늘 8시간 일했다"고 느끼지만, 실제 집중 작업은 그 절반인 경우가 흔합니다.</li>
-  <li><strong>자투리 소비는 과소평가</strong>합니다. 잠깐 본 피드, 잠깐 확인한 메신저가 하루에 몇 번이었는지는 거의 기억하지 못합니다.</li>
+  <li>이동 40분, 식사 준비 30분, 가족 돌봄 25분</li>
+  <li>원하지 않았던 피드 보기 15분, 미기록 10분</li>
 </ul>
-<p>기억이 아니라 기록을 보면, 대부분의 사람에게서 <strong>하루 1.5~2.5시간의 '행방불명 시간'</strong> 이 나옵니다. 이 시간은 게으름이 아니라 측정 부재의 문제입니다. 측정되지 않는 것은 관리되지 않으니까요.</p>
-<h2>일주일 실험 방법</h2>
-<p>준비물은 없습니다. 규칙은 세 가지뿐입니다.</p>
-<ol>
-  <li><strong>깨어 있는 동안, 활동이 바뀔 때마다 기록합니다.</strong> "9:00 이메일, 9:40 회의, 11:00 피드 봄…" 수준이면 충분합니다. 분 단위 정밀함은 필요 없습니다.</li>
-  <li><strong>판단하지 말고 적기만 합니다.</strong> 실험 기간에 행동을 고치려 하면 데이터가 오염됩니다. 목적은 반성이 아니라 관찰입니다.</li>
-  <li><strong>저녁에 5분, 하루를 원형 시간표로 옮깁니다.</strong> 표나 목록보다 원이 좋은 이유는 아래에서 설명합니다.</li>
-</ol>
-<p>기록 도구는 메모장이든 앱이든 상관없지만, <a href="/">24Houring</a>의 <strong>기록 모드</strong>를 쓰면 하루가 그대로 원 위에 쌓여서 3단계가 자동으로 끝납니다.</p>
-<h2>왜 '원'으로 봐야 할까</h2>
-<p>목록으로 적은 하루는 항목의 나열일 뿐이지만, 하루를 <strong>시계처럼 한 바퀴의 원</strong>으로 그리면 두 가지가 즉시 보입니다.</p>
-<ul>
-  <li><strong>비율</strong>: 수면·일·이동·휴식이 하루에서 차지하는 넓이가 면적으로 보입니다. "생각보다 이동이 크네", "저녁 시간이 통째로 비어 있네"가 한눈에 들어옵니다.</li>
-  <li><strong>파편화</strong>: 집중 시간이 몇 개의 조각으로 쪼개져 있는지 보입니다. 같은 4시간이라도 한 덩어리와 여덟 조각은 완전히 다른 하루입니다.</li>
-</ul>
-<p>숨은 2시간은 대개 큰 블록이 아니라 <strong>조각 사이의 틈</strong>에 숨어 있습니다. 원형 시간표는 그 틈을 시각적으로 드러내는 도구입니다.</p>
-<h2>일주일 뒤, 데이터에서 찾을 것 세 가지</h2>
-<ul>
-  <li><strong>가장 큰 무의식 소비 하나.</strong> 대부분 화면(피드·영상·뉴스)입니다. 없애려 하지 말고, 우선 '언제' 일어나는지만 확인하세요. 트리거(식후, 퇴근 직후, 잠들기 전)가 보이면 절반은 해결입니다.</li>
-  <li><strong>가장 자주 깨지는 집중 블록.</strong> 무엇이 끼어들었나요? 회의, 메신저, 스스로의 딴짓? 끼어든 것의 이름을 알아야 지킬 방법이 나옵니다.</li>
-  <li><strong>에너지와 시간의 미스매치.</strong> 머리가 가장 맑은 시간에 이메일 같은 가벼운 일을 하고 있지는 않았나요? 시간의 양보다 배치가 문제인 경우가 많습니다.</li>
-</ul>
-<h2>되찾은 2시간을 어디에 쓸까</h2>
-<p>찾은 시간을 전부 생산성으로 채우라는 이야기가 아닙니다. 핵심은 <strong>의식적으로 배치</strong>하는 것입니다. 30분은 운동에, 30분은 제대로 된 휴식에, 1시간은 미뤄 온 중요한 일에 — 배치는 자유지만, '어쩌다 사라지는' 시간과 '내가 정해서 쓰는' 시간의 차이가 일주일 뒤 하루의 질을 바꿉니다.</p>
-<p>구체적인 기록·분석 방법은 <a href="/guides/time-audit">시간 가계부 쓰는 법</a> 가이드에, 찾은 시간을 하루에 배치하는 기본기는 <a href="/guides/daily-planning-basics">하루 계획의 기본</a>에 정리되어 있습니다. 준비가 되면 오늘 저녁, 첫 기록부터 시작해 보세요.</p>
+<p>합계는 120분입니다. 이 사례에서 검토할 후보는 피드 보기 15분이며, 돌봄과 미기록까지 자유시간으로 더하지 않습니다. 이동 중 피드를 봤다면 두 활동을 따로 더하면 중복됩니다. 대표 활동을 기준으로 계산하고 동시 활동은 메모합니다.</p>
+<h2>바꿀 후보를 고르는 기준</h2>
+<p>필요한 일, 선택한 휴식, 원하지 않은 사용, 알 수 없는 시간을 구분하세요. 오래 썼다는 이유만으로 나쁜 시간이라고 정하지 않습니다. 후보 하나를 골라 ‘이 구간을 줄이면 무엇을 하지 못하는가’와 ‘대신 무엇을 원하는가’를 적습니다. 아무것도 바꾸지 않고 휴식을 유지하는 결론도 가능합니다.</p>
+<h2>원형 시간표로 확인하기</h2>
+<p><a href="/">24Houring</a>에 조사한 활동을 실제 시각에 배치하고 표 보기에서 합계를 확인합니다. 계획에는 다음 날 시도할 변경 하나만 넣습니다. 예를 들어 피드 보기 15분 중 일부를 다음 날 준비로 바꾼다면, 실제로 가능했는지 다시 기록하세요. <strong>찾은 시간과 확보한 시간은 다릅니다.</strong> 시간이 늘어났다고 주장하기 전에 필요한 활동이 다른 시각으로 밀리지 않았는지도 확인해야 합니다.</p>
     </div>
     <div class="lang-en">
-    <h1>Finding Your Hidden Two Hours — A One-Week Time Audit Experiment</h1>
-    <p class="en" style="margin:0 0 14px">By <a href="/about">Circloser</a> · 2026-07-17</p>
-<p>"What did I even do today?" — some days feel busy all the way through and still end with nothing to show. Just as you find leaking money by keeping a ledger, the only way to find leaking time is to <strong>record it</strong>. This is a one-week experiment.</p>
-<h2>Why we misremember our days</h2>
-<p>People are remarkably inaccurate about their own time use. Two patterns show up again and again.</p>
+    <h1>Are There Really Two Hidden Hours? Check Unrecorded Time First</h1>
+    <p class="en" style="margin:0 0 14px">By <a href="/about">24Houring</a> · 2026-07-17 · Updated 2026-09-11</p>
+<p>There is no basis for promising that everyone has two hidden hours a day. A record may reveal a changeable interval, or show that necessary work and rest already fill it. The question here is <strong>what an unremembered interval contained</strong>, not how to manufacture two hours.</p>
+<h2>Audit one interval first</h2>
+<p>Choose a period you are curious about, such as leaving work through dinner. Note the time and activity at each change, then check for omissions. Mark unknown time as unrecorded rather than inventing an activity. Use the <a href="/blog/record-one-week">week-long recording procedure</a> if you need broader coverage.</p>
+<h2>Example: two blank hours are not two available hours</h2>
+<p>Consider this invented 18:00–20:00 record:</p>
 <ul>
-  <li><strong>We overestimate work.</strong> A day that feels like eight hours of work often contains half that in real focused effort.</li>
-  <li><strong>We underestimate the in-between.</strong> The quick feed check, the brief messenger glance — almost nobody can recall how many times a day those happened.</li>
+  <li>Travel: 40 minutes; meal preparation: 30; family care: 25.</li>
+  <li>Unwanted feed browsing: 15; unrecorded: 10.</li>
 </ul>
-<p>Look at records instead of memory and most people find <strong>1.5–2.5 hours of unaccounted time per day</strong>. That's not laziness; it's a measurement problem. What isn't measured doesn't get managed.</p>
-<h2>The one-week method</h2>
-<p>No equipment needed. Three rules.</p>
-<ol>
-  <li><strong>While awake, note each activity change.</strong> "9:00 email, 9:40 meeting, 11:00 scrolling…" is enough. Minute-level precision is not the point.</li>
-  <li><strong>Record without judging.</strong> If you try to fix your behaviour during the experiment, you contaminate the data. The goal is observation, not repentance.</li>
-  <li><strong>Spend five evening minutes moving the day onto a circular timetable.</strong> Why a circle — see below.</li>
-</ol>
-<p>Any notebook or app works, but <a href="/">24Houring</a>'s <strong>record mode</strong> stacks your day onto the circle as you go, which makes step 3 automatic.</p>
-<h2>Why a circle</h2>
-<p>A day written as a list is just items in a row. Draw it as <strong>one full circle like a clock</strong> and two things become visible immediately.</p>
-<ul>
-  <li><strong>Proportion</strong>: sleep, work, commuting and rest show up as areas. "Commuting is bigger than I thought" or "my whole evening is empty" registers at a glance.</li>
-  <li><strong>Fragmentation</strong>: you see how many pieces your focus time is broken into. Four hours in one block and four hours in eight fragments are completely different days.</li>
-</ul>
-<p>The hidden two hours rarely hide in one big block — they hide <strong>in the gaps between fragments</strong>. A circular timetable makes those gaps visible.</p>
-<h2>Three things to look for in your week of data</h2>
-<ul>
-  <li><strong>Your single biggest unconscious drain.</strong> Usually a screen. Don't try to eliminate it yet — first find <em>when</em> it happens. Spot the trigger (after meals, right after work, before bed) and you're halfway done.</li>
-  <li><strong>Your most-broken focus block.</strong> What interrupted it — meetings, messages, your own wandering? You can only defend a block once the intruder has a name.</li>
-  <li><strong>Energy–time mismatches.</strong> Were you doing light work (email) during your clearest hours? Often the problem isn't the amount of time but its placement.</li>
-</ul>
-<h2>What to do with the reclaimed hours</h2>
-<p>This isn't about filling every recovered minute with productivity. The point is <strong>conscious placement</strong>: thirty minutes to exercise, thirty to real rest, an hour to the important thing you've been deferring. The difference between time that "somehow disappears" and time you deliberately assign is what changes the quality of a day.</p>
-<p>For the full recording method, see <a href="/guides/time-audit">How to Do a Time Audit</a>; for placing what you found back into the day, see <a href="/guides/daily-planning-basics">Daily Planning Basics</a>. Start with tonight's first entry.</p>
+<p>The total is 120 minutes. The candidate to examine is the 15 minutes of browsing, not care plus every unknown minute. If browsing happened during travel, adding both would double-count the interval. Count one primary activity and note concurrent activities separately.</p>
+<h2>Choose a change deliberately</h2>
+<p>Distinguish necessary work, chosen rest, unwanted use, and unknown time. A long interval is not automatically bad. For one candidate, ask what would be lost if it were shortened and what you would prefer instead. Keeping the rest unchanged is a valid conclusion.</p>
+<h2>Check it on a timetable</h2>
+<p>Enter the observed intervals at their actual times in <a href="/">24Houring</a>, checking the times in table view. Put just one proposed change into the next day's plan. If you replace part of the browsing with preparation for tomorrow, record whether that was feasible. <strong>Identifying time is different from reclaiming it.</strong> Check that required activities have not simply been displaced elsewhere before calling the change a saving.</p>
     </div>
     <div class="card" style="margin-top:26px">
       <p style="margin:0 0 8px"><strong><span class="lang-ko">함께 읽으면 좋은 글</span><span class="lang-en">Related posts</span></strong></p>
       <ul style="margin:0;padding-left:20px">
-        <li style="margin:4px 0"><a href="/blog/sleep-anchor-day"><span class="lang-ko">수면을 중심에 놓고 하루를 역설계하는 법 — 잠을 잔반으로 남기지 않기</span><span class="lang-en">Designing the Day Backward from Sleep — Stop Leaving Sleep as Leftovers</span></a></li>
-        <li style="margin:4px 0"><a href="/blog/phone-time-audit"><span class="lang-ko">스마트폰이 삼킨 시간을 원으로 마주하기 — 숫자가 아니라 모양으로 보는 화면 시간</span><span class="lang-en">Facing the Time Your Phone Ate — Seeing Screen Time as a Shape, Not a Number</span></a></li>
-        <li style="margin:4px 0"><a href="/blog/habit-stacking-circle"><span class="lang-ko">습관 쌓기를 원형 시간표에 앉히는 법</span><span class="lang-en">How to Seat Habit Stacking on a Circular Timetable</span></a></li>
+        <li style="margin:4px 0"><a href="/blog/sleep-anchor-day"><span class="lang-ko">수면을 먼저 표시하는 계획 — 취침 준비와 약속을 함께 계산하기</span><span class="lang-en">Mark Sleep First — Budget Preparation and Commitments Together</span></a></li>
+        <li style="margin:4px 0"><a href="/blog/phone-time-audit"><span class="lang-ko">스크린 타임을 하루 기록과 비교할 때 중복을 피하는 법</span><span class="lang-en">Compare Screen Time with Your Day Without Double-Counting</span></a></li>
+        <li style="margin:4px 0"><a href="/blog/habit-stacking-circle"><span class="lang-ko">기존 행동 뒤에 작은 행동 붙이기 — 준비와 예외까지 정하기</span><span class="lang-en">Attach a Small Action to an Existing Event — Include Setup and Exceptions</span></a></li>
       </ul>
     </div>
 
@@ -178,13 +144,12 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
       <a href="/"><span class="lang-ko">홈 Home</span><span class="lang-en">Home</span></a>
       <a href="/blog/"><span class="lang-ko">블로그 Blog</span><span class="lang-en">Blog</span></a>
       <a href="/templates/"><span class="lang-ko">템플릿 Templates</span><span class="lang-en">Templates</span></a>
-      <a href="/gallery/"><span class="lang-ko">갤러리 Gallery</span><span class="lang-en">Gallery</span></a>
-      <a href="/life-planner"><span class="lang-ko">생활계획표 Life Planner</span><span class="lang-en">Life Planner</span></a>
       <a href="/guides/"><span class="lang-ko">가이드 Guides</span><span class="lang-en">Guides</span></a>
       <a href="/stories/"><span class="lang-ko">스토리 Stories</span><span class="lang-en">Stories</span></a>
       <a href="/health/"><span class="lang-ko">건강 Health</span><span class="lang-en">Health</span></a>
       <a href="/faq"><span class="lang-ko">FAQ</span><span class="lang-en">FAQ</span></a>
       <a href="/about"><span class="lang-ko">소개 About</span><span class="lang-en">About</span></a>
+      <a href="/editorial-policy"><span class="lang-ko">편집 원칙</span><span class="lang-en">Editorial policy</span></a>
       <a href="/privacy"><span class="lang-ko">개인정보처리방침 Privacy</span><span class="lang-en">Privacy</span></a>
       <a href="/terms"><span class="lang-ko">이용약관 Terms</span><span class="lang-en">Terms</span></a>
       <a href="/contact"><span class="lang-ko">문의 Contact</span><span class="lang-en">Contact</span></a>

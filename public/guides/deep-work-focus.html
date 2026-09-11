@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>집중 시간 확보하기 — 딥워크와 뽀모도로 실전 · 24Houring</title>
-<meta name="description" content="방해 없는 집중 시간을 만드는 딥워크·뽀모도로 기법과, 하루 일정에 집중 블록을 배치하는 실전 방법." />
+<title>집중 블록 설계: 보고서 초안과 긴급 연락을 함께 계획하기 · 24Houring</title>
+<meta name="description" content="집중 시간의 길이보다 먼저 정할 것은 이번에 끝낼 작업과 중단 조건입니다. 회의 사이에 보고서 초안을 쓰는 가상 사례로 준비·실행·수정 과정을 살펴봅니다." />
 <link rel="canonical" href="https://24houring.com/guides/deep-work-focus" />
 <meta name="robots" content="index, follow" />
-<meta property="og:title" content="집중 시간 확보하기 — 딥워크와 뽀모도로 실전" />
-<meta property="og:description" content="딥워크·뽀모도로로 집중 시간을 만드는 실전 가이드." />
+<meta property="og:title" content="집중 블록 설계: 보고서 초안과 긴급 연락을 함께 계획하기" />
+<meta property="og:description" content="집중 시간의 길이보다 먼저 정할 것은 이번에 끝낼 작업과 중단 조건입니다. 회의 사이에 보고서 초안을 쓰는 가상 사례로 준비·실행·수정 과정을 살펴봅니다." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://24houring.com/guides/deep-work-focus" />
 <meta property="og:image" content="https://24houring.com/og-image.png" />
@@ -16,200 +16,36 @@
 <link rel="stylesheet" href="/guides/guide.css" />
 <meta name="google-adsense-account" content="ca-pub-6947130056543786">
 <script>
-(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');}}catch(e){}})();
-function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');}
+(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');document.documentElement.lang='en';}}catch(e){}})();
+function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');document.documentElement.lang=l==='ko'?'ko':'en';}
 </script>
 </head>
 <body>
+<a class="skip-link" href="#main-content"><span class="lang-ko">본문으로 이동</span><span class="lang-en">Skip to content</span></a>
 <div class="wrap">
   <header class="site">
     <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
-      <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
+      <span class="langswitch"><button type="button" onclick="setGuideLang('ko')">한국어</button><span class="sep">·</span><button type="button" onclick="setGuideLang('en')">EN</button></span>
       <a href="/guides/"><span class="lang-ko">가이드</span><span class="lang-en">Guides</span></a>
       <a href="/blog/"><span class="lang-ko">블로그</span><span class="lang-en">Blog</span></a>
       <a href="/"><span class="lang-ko">홈</span><span class="lang-en">Home</span></a>
     </nav>
   </header>
-  <main class="article">
-    <p class="crumb"><a href="/guides/"><span class="lang-ko">← 가이드 목록</span><span class="lang-en">← All guides</span></a></p>
-    <div class="lang-ko">
-    <h1>집중 시간 확보하기 <span class="en">/ Deep Work &amp; Focus</span></h1>
-    <p class="lead">바쁜 것과 집중하는 것은 다릅니다. 하루에 방해 없는 90분 두 번만 지켜도, 중요한 일은 대부분 그 안에서 끝납니다.</p>
-
-    <h2>딥워크란 무엇인가 — 그리고 잔업이 비싼 이유</h2>
-    <p>딥워크는 방해가 차단된 상태에서 인지적으로 까다로운 일에 집중하는 시간을 뜻합니다. 코드 한 모듈을 설계하거나, 보고서의 핵심 논리를 세우거나, 어려운 문제를 처음부터 끝까지 풀어내는 일이 여기에 속합니다. 반대로 이메일 확인, 짧은 회신, 자료 정리처럼 주의가 얕아도 되는 일은 얕은 작업(shallow work)입니다. 문제는 대부분의 사람이 하루의 대부분을 얕은 작업으로 채우면서 "바빴다"고 느낀다는 점입니다. 바쁨은 성과가 아닙니다.</p>
-    <p>딥워크가 중요한 결정적 이유는 <strong>맥락 전환 비용</strong>에 있습니다. 우리가 작업 A에서 B로 옮겨갈 때, 주의력의 일부는 여전히 A에 남아 있습니다. 이를 <strong>주의 잔여물(attention residue)</strong>이라고 부릅니다. 회의 중간에 메신저를 한 번 확인하면, 다시 회의에 완전히 몰입하기까지 수 분이 걸립니다. 하루에 이런 전환이 수십 번 일어나면, 실제로 일한 시간의 총합은 길어도 그 어느 것도 깊게 파고들지 못한 채 끝납니다.</p>
-    <p>이 비용은 눈에 잘 보이지 않아서 더 위험합니다. 알림을 확인한 3초는 짧아 보이지만, 그 3초가 남긴 흔적은 다시 몰입에 오르는 데 필요한 몇 분으로 되돌아옵니다. 하루에 알림을 마흔 번 확인했다면, 잃어버린 것은 3초 곱하기 마흔이 아니라 <strong>재진입 시간 곱하기 마흔</strong>입니다. 게다가 얕은 작업만 반복하면 뇌는 깊이 파고드는 근육 자체를 잃어갑니다. 집중력은 타고나는 재능이 아니라, 매일 얼마나 쓰느냐에 따라 늘거나 줄어드는 훈련의 결과물입니다.</p>
-    <blockquote>같은 8시간이라도, 잘게 쪼개진 8시간과 방해 없는 두 개의 90분 블록이 만들어내는 결과물은 완전히 다릅니다. 집중은 시간의 길이가 아니라 밀도의 문제입니다.</blockquote>
-
-    <h2>집중 블록을 일정에 배치하는 법</h2>
-    <p>집중은 "시간이 나면 하는 것"이 아니라 "미리 자리를 잡아두는 것"입니다. 그러려면 세 가지 원칙을 지켜야 합니다.</p>
-    <ul>
-      <li><strong>60~120분을 하나의 덩어리로 확보하세요.</strong> 딥워크는 워밍업 시간이 필요합니다. 30분짜리 조각으로는 몰입 상태에 도달하기 전에 끝나버립니다. 최소 60분, 이상적으로는 90분을 하나의 블록으로 잡으세요.</li>
-      <li><strong>에너지가 가장 높은 시간대에 붙이세요.</strong> 대부분의 사람은 오전 중반에 집중력이 정점을 찍습니다. 그 황금 시간대를 이메일이나 잡무로 태우지 말고, 가장 어려운 일에 배정하세요. 자신이 오후형이라면 그에 맞추면 됩니다.</li>
-      <li><strong>달력을 방어하세요.</strong> 집중 블록을 회의처럼 캘린더에 실제 일정으로 넣어두면, 그 시간에 다른 회의가 잡히는 것을 막을 수 있습니다. 눈에 보이지 않는 계획은 가장 먼저 침범당합니다.</li>
-    </ul>
-    <p>원형 시간표 같은 도구에 집중 블록을 하나의 색으로 크게 그려두면, 하루 전체에서 그 자리가 얼마나 큰 비중을 차지하는지 한눈에 보입니다. 24Houring(<a href="/">/</a>)에서 오전 딥워크 블록을 시각적으로 확보해 두면, 회의가 그 위를 덮으려 할 때 즉시 알아챌 수 있습니다. 블록 단위로 하루를 설계하는 자세한 방법은 <a href="/guides/time-blocking">타임블로킹 가이드</a>를 참고하세요.</p>
-
-    <h2>뽀모도로, 제대로 하는 법</h2>
-    <p>뽀모도로는 25분 집중 + 5분 휴식을 한 세트로 반복하는 기법입니다. 단순해 보이지만, 제대로 하면 집중을 "관리 가능한 크기"로 잘라 부담을 줄여줍니다.</p>
-    <ol>
-      <li><strong>25분은 온전히 하나의 작업에만.</strong> 타이머를 켜는 순간부터 다른 창, 다른 알림, 다른 생각으로 새지 않습니다. 25분은 짧아서 "이 정도는 버틸 만하다"는 심리적 문턱을 낮춰줍니다.</li>
-      <li><strong>5분 휴식은 진짜 휴식으로.</strong> 이 5분에 SNS를 열면 뇌는 쉬지 못합니다. 자리에서 일어나 물을 마시거나, 창밖을 보거나, 가볍게 스트레칭하세요.</li>
-      <li><strong>4세트마다 15~30분 긴 휴식.</strong> 뽀모도로 4개(약 2시간)를 마치면 긴 휴식으로 인지 자원을 회복합니다. 이 리듬이 하루 종일 집중력을 유지하게 해줍니다.</li>
-      <li><strong>방해는 캡처 리스트로 흘려보내세요.</strong> 집중 중에 "아, 저것도 해야 하는데" 하는 생각이 떠오르면, 멈추지 말고 옆에 둔 종이나 메모에 한 줄로 적어두세요. 그리고 다시 작업으로 돌아옵니다. 그 항목은 휴식 시간이나 얕은 작업 블록에서 처리하면 됩니다. 이 <strong>캡처(capture)</strong> 습관 하나가 몰입 이탈을 극적으로 줄입니다.</li>
-    </ol>
-
-    <h2>환경과 스마트폰 다루기</h2>
-    <p>의지력으로 집중을 유지하려 하면 지칩니다. 대신 환경을 미리 정리해 방해가 애초에 도달하지 못하게 만드는 편이 훨씬 효율적입니다. 핵심은 <strong>방해를 참는 것이 아니라, 방해와 나 사이에 마찰을 늘리는 것</strong>입니다. 폰을 집으려면 자리에서 일어나 다른 방까지 가야 한다면, 무심코 집는 일이 크게 줄어듭니다.</p>
-    <ul>
-      <li>스마트폰은 시야 밖, 손이 닿지 않는 곳에 두세요. 책상 위에 엎어두는 것만으로는 부족합니다. 서랍이나 다른 방이 좋습니다. 화면이 꺼져 있어도 눈앞에 있는 폰은 그 자체로 주의를 붙잡습니다.</li>
-      <li>알림을 끄고, 필요하면 방해 금지 모드나 집중 모드를 켜세요. 진동 하나도 주의 잔여물을 남깁니다. 정말 급한 연락만 통과시키는 예외 목록을 미리 설정해두면 불안 없이 알림을 꺼둘 수 있습니다.</li>
-      <li>브라우저 탭은 작업에 필요한 것만 남기고 닫으세요. 열려 있는 탭은 그 자체로 "나중에 볼 것"이라는 인지 부하입니다.</li>
-      <li>같은 자리를 "집중하는 자리"로 정해두면, 그 자리에 앉는 것만으로 뇌가 집중 모드로 전환되기 쉬워집니다. 반대로 그 자리에서는 SNS나 유튜브를 보지 않는 규칙을 지키면 연결이 더 강해집니다.</li>
-      <li>소음이 신경 쓰인다면 가사가 없는 배경음이나 백색소음을 낮게 트세요. 가사 있는 노래는 언어를 처리하는 뇌 영역을 함께 쓰므로 글쓰기 같은 작업과 충돌합니다.</li>
-    </ul>
-
-    <h2>몰입에 빠르게 진입하는 워밍업 의식</h2>
-    <p>집중은 스위치처럼 켜지지 않습니다. 그래서 매번 같은 순서로 반복하는 짧은 <strong>진입 의식(ramp-up ritual)</strong>을 만들어두면, 뇌가 "이제 집중할 시간"임을 학습합니다. 예를 들면 이런 순서입니다.</p>
-    <ol>
-      <li>물 한 잔을 채워 책상에 둔다.</li>
-      <li>이 블록에서 끝낼 <strong>단 하나의 결과물</strong>을 종이에 적는다. (예: "3장 초안 완성")</li>
-      <li>스마트폰을 서랍에 넣는다.</li>
-      <li>타이머를 켜고 첫 25분을 시작한다.</li>
-    </ol>
-    <p>중요한 것은 매번 똑같이 반복하는 것입니다. 의식은 화려할 필요가 없고, 오히려 단순하고 일관될수록 강력합니다. 며칠만 반복해도 물잔을 채우는 순간 마음이 먼저 집중 모드로 기울어지는 것을 느끼게 됩니다. 이것이 바로 조건화의 힘이며, 매일 같은 신호를 주는 것만으로 몰입 진입에 드는 시간을 크게 줄일 수 있습니다.</p>
-
-    <h2>집중이 깨졌을 때</h2>
-    <p>집중은 반드시 깨집니다. 누가 말을 걸거나, 급한 연락이 오거나, 스스로 딴생각에 빠지기도 합니다. 이때 중요한 건 <strong>자책하지 않고 빠르게 복귀하는 것</strong>입니다. 한 번 흐트러졌다고 "오늘은 글렀다"며 나머지 시간을 통째로 버리지 마세요. 방해가 끝나면 진입 의식을 짧게 다시 실행하고, 다음 뽀모도로를 새로 시작하세요. 완벽한 하루가 아니라 <em>복귀 속도</em>가 실력입니다.</p>
-    <p>스스로 딴생각에 빠졌다면, 그 생각을 캡처 리스트에 적고 다시 돌아오세요. 외부 방해라면, 가능하면 "이 블록 끝나고 보겠다"고 짧게 미루는 습관을 들이세요. 대부분의 요청은 60분을 기다려도 아무 일도 일어나지 않습니다.</p>
-
-    <h2>하루에 딥워크는 몇 블록이 현실적인가</h2>
-    <p>초보자가 흔히 하는 실수는 "하루 종일 딥워크"를 목표로 삼는 것입니다. 딥워크는 인지적으로 매우 비싸서, 훈련되지 않은 사람은 하루 <strong>1~2블록(90~180분)</strong>이 한계입니다. 숙련되어도 하루 <strong>3~4시간</strong>의 진짜 집중이면 상위권입니다. 나머지 시간은 회의, 이메일, 정리 같은 얕은 작업으로 자연스럽게 채워집니다. 그러니 딥워크 블록을 무리하게 늘리기보다, 하루 한두 개를 <strong>반드시</strong> 지키는 데 집중하세요. 지켜지는 90분이 지켜지지 않는 4시간보다 낫습니다.</p>
-    <p>처음에는 하루 한 블록, 그것도 45분부터 시작해도 좋습니다. 매일 지켜지면 몸이 리듬을 기억하고, 그때 60분으로, 다시 90분으로 늘리면 됩니다. 무리한 목표는 며칠 만에 무너지지만, 작더라도 매일 지켜지는 습관은 몇 주 뒤 확연히 다른 결과물로 돌아옵니다. 집중력도 근육처럼 점진적으로 키우는 것이 핵심입니다.</p>
-
-    <h2>기록하고 되돌아보기</h2>
-    <p>집중은 관리되는 만큼 늘어납니다. 하루가 끝나면 오늘 딥워크를 몇 블록, 몇 분이나 실제로 지켰는지 간단히 기록해 보세요. 계획한 블록과 실제 지킨 블록을 나란히 두면, 어느 요일 어느 시간대가 자꾸 무너지는지 패턴이 보입니다. 예컨대 화요일 오후 블록이 매주 회의에 잡아먹힌다면, 그 블록은 오전으로 옮기는 편이 낫습니다.</p>
-    <p>이때 원형 시간표는 훌륭한 회고 도구가 됩니다. 계획한 하루와 실제 보낸 하루를 같은 원 위에서 비교하면, 말로 설명하기 어려운 시간 누수가 한눈에 드러납니다. 숫자로 "3시간 집중했다"고 적는 것보다, 원 위에서 집중 블록이 차지한 면적을 눈으로 보는 편이 훨씬 강한 피드백을 줍니다. 무엇을 줄이고 무엇을 지킬지는 그 그림을 보고 나면 저절로 정해집니다.</p>
-
-    <h2>딥워크 블록 안에 뽀모도로 넣기 — 구체적 예시</h2>
-    <p>딥워크와 뽀모도로는 대립하지 않습니다. 큰 딥워크 블록을 뽀모도로로 잘게 나누면, 긴 몰입을 유지하면서도 중간에 짧은 회복을 넣을 수 있습니다. 실제 오전 일정 예시를 보겠습니다.</p>
-    <ul>
-      <li><strong>09:30–09:35</strong> 진입 의식(물, 목표 한 줄, 폰 서랍, 타이머)</li>
-      <li><strong>09:35–10:00</strong> 뽀모도로 1 — 보고서 핵심 논리 잡기</li>
-      <li><strong>10:00–10:05</strong> 5분 휴식 (일어서서 스트레칭)</li>
-      <li><strong>10:05–10:30</strong> 뽀모도로 2 — 본문 초안 작성</li>
-      <li><strong>10:30–10:35</strong> 5분 휴식</li>
-      <li><strong>10:35–11:00</strong> 뽀모도로 3 — 초안 마무리 및 검토</li>
-    </ul>
-    <p>이렇게 오전 09:30–11:00 딥워크 블록 하나 안에 뽀모도로 세 세트가 들어갑니다. 오후에 한 블록을 더 확보한다면, 14:00–15:30에 같은 구조를 반복하면 됩니다. 하루 두 블록이면 방해 없는 집중 3시간이 확보되고, 그 안에서 그날의 가장 중요한 일이 거의 끝납니다. 이 구조를 원형 시간표 위에서 미리 그려두는 방법은 <a href="/guides/24-hour-circle-method">원형 시간표 활용법</a>에서 더 자세히 다룹니다.</p>
-
-    <h2>핵심 요약</h2>
-    <ul>
-      <li>집중은 시간의 길이가 아니라 밀도의 문제다. 맥락 전환은 주의 잔여물을 남겨 실제 성과를 갉아먹는다.</li>
-      <li>60~120분짜리 집중 블록을 에너지 정점 시간대에 배치하고, 회의처럼 캘린더에 넣어 방어하라.</li>
-      <li>뽀모도로는 25/5 리듬과 4세트 후 긴 휴식으로 운영하고, 떠오르는 잡생각은 캡처 리스트로 흘려보낸다.</li>
-      <li>스마트폰은 시야 밖에, 알림은 꺼둔다. 환경 설계가 의지력보다 강하다.</li>
-      <li>집중은 깨지기 마련이다. 자책 대신 복귀 속도를 실력으로 삼아라.</li>
-      <li>하루 딥워크는 1~2블록이면 충분하다. 큰 블록 안에 뽀모도로를 넣어 몰입과 회복을 동시에 챙겨라.</li>
-    </ul>
-    </div>
-    <div class="lang-en">
-    <h1>Making Time to Focus <span class="en">/ Deep Work &amp; Focus</span></h1>
-    <p class="lead">Being busy and being focused are two different things. If you protect just two uninterrupted 90-minute stretches a day, most of your important work will get finished inside them.</p>
-
-    <h2>What deep work is — and why constant switching is expensive</h2>
-    <p>Deep work means the time you spend concentrating on cognitively demanding tasks in a state where distractions are shut out. Designing a module of code, laying out the core logic of a report, or solving a hard problem from beginning to end all belong here. By contrast, tasks that only require shallow attention — checking email, dashing off a quick reply, tidying up files — are shallow work. The problem is that most people fill the bulk of their day with shallow work and feel like they were "busy." Busyness is not results.</p>
-    <p>The decisive reason deep work matters lies in the <strong>cost of context switching</strong>. When we move from task A to task B, part of our attention is still stuck on A. This is called <strong>attention residue</strong>. Check a messenger once in the middle of a meeting, and it takes several minutes to become fully immersed in the meeting again. When dozens of these switches happen in a single day, the total hours you actually worked may be long, yet you finish without having dug deeply into any of it.</p>
-    <p>This cost is more dangerous because it is hard to see. The three seconds spent glancing at a notification look brief, but the trace those three seconds leave comes back as the several minutes needed to climb back into flow. If you checked notifications forty times in a day, what you lost is not three seconds times forty but <strong>re-entry time times forty</strong>. On top of that, when you only ever repeat shallow work, your brain loses the very muscle for digging deep. Concentration is not an innate talent — it is the product of training that grows or shrinks depending on how much you use it each day.</p>
-    <blockquote>Even the same eight hours are completely different: eight hours chopped into tiny pieces produces nothing like two uninterrupted 90-minute blocks. Focus is a matter of density, not of the length of time.</blockquote>
-
-    <h2>How to place focus blocks in your schedule</h2>
-    <p>Focus is not "something you do when you have time" but "something you claim a spot for in advance." To do that, you have to keep three principles.</p>
-    <ul>
-      <li><strong>Secure 60–120 minutes as a single chunk.</strong> Deep work needs warm-up time. A 30-minute sliver ends before you ever reach a state of flow. Set aside at least 60 minutes — ideally 90 — as one block.</li>
-      <li><strong>Attach it to the time of day when your energy is highest.</strong> For most people, concentration peaks in the mid-morning. Don't burn that golden window on email or busywork; assign it to your hardest task. If you're an afternoon person, adjust accordingly.</li>
-      <li><strong>Defend your calendar.</strong> If you put focus blocks into your calendar as real events, just like meetings, you can prevent other meetings from being booked over that time. A plan that no one can see is the first thing to get encroached upon.</li>
-    </ul>
-    <p>If you draw a focus block large and in a single color on a tool like a 24-hour circle, you can see at a glance how large a share of the whole day that spot occupies. If you visually secure your morning deep-work block on 24Houring (<a href="/">/</a>), you'll notice immediately when a meeting tries to cover it. For a detailed method of designing your day in blocks, see the <a href="/guides/time-blocking">time-blocking guide</a>.</p>
-
-    <h2>How to do Pomodoro properly</h2>
-    <p>Pomodoro is a technique that repeats a set of 25 minutes of focus plus 5 minutes of rest. It looks simple, but done properly it cuts focus into "manageable sizes" and lightens the burden.</p>
-    <ol>
-      <li><strong>Give the 25 minutes wholly to a single task.</strong> From the moment you start the timer, you don't leak off into other windows, other notifications, or other thoughts. Because 25 minutes is short, it lowers the psychological threshold to "I can hold out for this much."</li>
-      <li><strong>Make the 5-minute break a real break.</strong> If you open social media during those 5 minutes, your brain doesn't get to rest. Get up from your seat and drink some water, look out the window, or stretch lightly.</li>
-      <li><strong>Take a 15–30 minute long break every 4 sets.</strong> After finishing four Pomodoros (about 2 hours), recover your cognitive resources with a long break. This rhythm lets you maintain concentration all day long.</li>
-      <li><strong>Let distractions flow into a capture list.</strong> When the thought "ah, I need to do that too" surfaces while you're focused, don't stop — jot it down in a single line on a sheet of paper or a note kept beside you. Then return to your task. You can handle that item during a break or in a shallow-work block. This one <strong>capture</strong> habit dramatically reduces how often you fall out of flow.</li>
-    </ol>
-
-    <h2>Managing your environment and your smartphone</h2>
-    <p>Trying to sustain focus through willpower wears you out. Instead, it is far more efficient to arrange your environment in advance so distractions never reach you in the first place. The key is <strong>not to endure distractions but to increase the friction between the distraction and you</strong>. If picking up your phone requires standing up and going to another room, mindlessly grabbing it drops sharply.</p>
-    <ul>
-      <li>Keep your smartphone out of sight and out of reach. Simply turning it face-down on your desk is not enough. A drawer or another room is better. Even with the screen off, a phone in front of your eyes grabs your attention all by itself.</li>
-      <li>Turn off notifications, and if needed switch on Do Not Disturb or a focus mode. Even a single vibration leaves attention residue. If you set up an exception list ahead of time that lets only truly urgent contacts through, you can keep notifications off without anxiety.</li>
-      <li>Close every browser tab except the ones your task needs. An open tab is itself the cognitive load of "something to look at later."</li>
-      <li>If you designate one seat as your "focusing seat," simply sitting there makes it easier for your brain to switch into focus mode. Conversely, if you keep the rule of not watching social media or YouTube from that seat, the association grows stronger.</li>
-      <li>If noise bothers you, play lyric-free background sound or white noise at a low volume. Songs with lyrics use the brain region that processes language, so they clash with tasks like writing.</li>
-    </ul>
-
-    <h2>A warm-up ritual to enter flow quickly</h2>
-    <p>Focus does not switch on like a light. That's why, if you build a short <strong>ramp-up ritual</strong> that you repeat in the same order every time, your brain learns "it's time to focus now." Here is an example sequence.</p>
-    <ol>
-      <li>Fill a glass of water and set it on your desk.</li>
-      <li>Write on paper the <strong>single deliverable</strong> you will finish in this block. (e.g., "Finish the draft of Chapter 3")</li>
-      <li>Put your smartphone in a drawer.</li>
-      <li>Start the timer and begin the first 25 minutes.</li>
-    </ol>
-    <p>What matters is repeating it identically every time. A ritual doesn't need to be fancy; if anything, the simpler and more consistent it is, the more powerful it becomes. After just a few days of repetition, you'll feel your mind tilting into focus mode first, the very moment you fill the glass of water. This is precisely the power of conditioning, and just by giving the same signal each day you can greatly reduce the time it takes to enter flow.</p>
-
-    <h2>When your focus breaks</h2>
-    <p>Focus will inevitably break. Someone talks to you, an urgent message comes in, or you drift into a stray thought on your own. What matters here is <strong>returning quickly without blaming yourself</strong>. Don't throw away the rest of your time in one lump, telling yourself "today's a write-off," just because you got disrupted once. When the distraction ends, run through your ramp-up ritual briefly again and start the next Pomodoro fresh. What's a skill is not a perfect day but your <em>recovery speed</em>.</p>
-    <p>If you drifted into a stray thought on your own, write that thought in your capture list and come back. If it's an external distraction, build the habit of postponing briefly when possible — "I'll look at it after this block." For most requests, nothing happens even if you make them wait 60 minutes.</p>
-
-    <h2>How many deep-work blocks a day are realistic</h2>
-    <p>A common beginner mistake is setting "deep work all day" as the goal. Deep work is cognitively very expensive, and for an untrained person <strong>1–2 blocks (90–180 minutes)</strong> a day is the limit. Even for the skilled, <strong>3–4 hours</strong> of real focus a day puts you in the top tier. The rest of the time naturally fills up with shallow work like meetings, email, and tidying. So rather than forcing more deep-work blocks, concentrate on <strong>reliably</strong> keeping one or two a day. Ninety minutes that get kept beat four hours that don't.</p>
-    <p>At first it's fine to start with one block a day — and even just 45 minutes at that. Once it gets kept daily, your body remembers the rhythm, and then you can extend it to 60 minutes, and then to 90. An overreaching goal collapses within a few days, but a habit that gets kept every day, however small, comes back weeks later as a distinctly different result. The key is to grow concentration gradually, just like a muscle.</p>
-
-    <h2>Record and look back</h2>
-    <p>Focus grows as much as it is managed. When the day ends, simply record how many blocks and how many minutes of deep work you actually kept today. Put your planned blocks and the blocks you actually kept side by side, and a pattern emerges of which day and which time slot keeps collapsing. For example, if your Tuesday afternoon block gets eaten by a meeting every week, it's better to move that block to the morning.</p>
-    <p>Here a 24-hour circle becomes an excellent tool for review. When you compare the day you planned and the day you actually spent on the same circle, time leaks that are hard to put into words are revealed at a glance. Rather than writing "I focused for 3 hours" as a number, seeing with your eyes the area a focus block occupied on the circle gives far stronger feedback. What to cut and what to protect settles itself once you've looked at that picture.</p>
-
-    <h2>Putting Pomodoro inside a deep-work block — a concrete example</h2>
-    <p>Deep work and Pomodoro are not at odds. If you subdivide a large deep-work block into Pomodoros, you can maintain long immersion while still inserting short recoveries in between. Let's look at an actual morning-schedule example.</p>
-    <ul>
-      <li><strong>09:30–09:35</strong> Ramp-up ritual (water, one-line goal, phone in drawer, timer)</li>
-      <li><strong>09:35–10:00</strong> Pomodoro 1 — pin down the report's core logic</li>
-      <li><strong>10:00–10:05</strong> 5-minute break (stand up and stretch)</li>
-      <li><strong>10:05–10:30</strong> Pomodoro 2 — write the body draft</li>
-      <li><strong>10:30–10:35</strong> 5-minute break</li>
-      <li><strong>10:35–11:00</strong> Pomodoro 3 — finish and review the draft</li>
-    </ul>
-    <p>This way, three sets of Pomodoro fit inside a single deep-work block from 09:30 to 11:00 in the morning. If you secure one more block in the afternoon, just repeat the same structure at 14:00–15:30. With two blocks a day you secure three hours of uninterrupted focus, and inside them the most important work of the day is nearly finished. For how to sketch this structure in advance on a 24-hour circle, the <a href="/guides/24-hour-circle-method">how to use the 24-hour circle</a> guide covers it in more detail.</p>
-
-    <h2>Key takeaways</h2>
-    <ul>
-      <li>Focus is a matter of density, not the length of time. Context switching leaves attention residue that gnaws away at real results.</li>
-      <li>Place a 60–120 minute focus block at your energy-peak time of day, and defend it by putting it in your calendar like a meeting.</li>
-      <li>Run Pomodoro on a 25/5 rhythm with a long break after 4 sets, and let stray thoughts flow into a capture list.</li>
-      <li>Keep your smartphone out of sight and your notifications off. Environment design is stronger than willpower.</li>
-      <li>Focus is bound to break. Instead of blaming yourself, make your recovery speed your skill.</li>
-      <li>One or two deep-work blocks a day is enough. Put Pomodoros inside a large block to take care of immersion and recovery at once.</li>
-    </ul>
-    </div>
-    <div class="cta card">
-      <div class="lang-ko">
-        <p style="margin:0 0 4px"><strong>지금 바로 해보기</strong></p>
-        <p style="margin:0">24Houring에서 하루를 원형 시간표로 그려보세요. 설치·회원가입 없이 무료로 시작할 수 있습니다.</p>
-        <p style="margin:8px 0 0"><a class="btn" href="/">24Houring 열기 →</a></p>
-      </div>
-      <div class="lang-en">
-        <p style="margin:0 0 4px"><strong>Try it now</strong></p>
-        <p style="margin:0">Sketch your day as a 24-hour circle on 24Houring — free, with no sign-up or install.</p>
-        <p style="margin:8px 0 0"><a class="btn" href="/">Open 24Houring →</a></p>
-      </div>
-    </div>
-  </main>
+  <main class="article" id="main-content">
+<p class="crumb"><a href="/guides/">← <span class="lang-ko">가이드 목록</span><span class="lang-en">All guides</span></a></p>
+<p class="editorial-meta"><span class="lang-ko">발행: 24Houring · 내용 갱신: <time datetime="2026-09-08">2026년 9월 8일</time> · <a href="/contact">오류 제보</a> · <a href="/editorial-policy">콘텐츠 작성 원칙</a></span><span class="lang-en">Published by 24Houring · Updated <time datetime="2026-09-08">8 September 2026</time> · <a href="/contact">Report an error</a> · <a href="/editorial-policy">Editorial policy</a></span></p>
+<div class="lang-ko" lang="ko"><h1>집중 블록 설계: 보고서 초안과 긴급 연락을 함께 계획하기</h1><p class="lead">집중 시간의 길이보다 먼저 정할 것은 이번에 끝낼 작업과 중단 조건입니다. 회의 사이에 보고서 초안을 쓰는 가상 사례로 준비·실행·수정 과정을 살펴봅니다.</p><h2>작업의 끝을 먼저 적기</h2><p>보고서 쓰기라는 이름만으로는 자료 조사부터 교정까지 모두 한 블록에 들어갈 수 있습니다. 이번에는 비교할 항목 세 개와 결론 초안을 적기처럼 확인 가능한 범위를 고릅니다. 원자료가 없다면 집필이 아니라 자료 요청이 먼저입니다. 이 글의 사례는 실제 이용자의 성과 기록이 아닙니다.</p>
+<h2>예시: 회의 전 확보한 40분</h2><p>10시 회의가 있고 9시 10분부터 준비할 수 있다고 가정합니다. 9시 10~15분에 파일을 열고 필요한 자료를 확인합니다. 9시 15~45분은 초안, 9시 45~50분은 남은 질문과 저장 상태 확인에 씁니다. 남은 시간은 회의 준비에 둡니다. 이 숫자는 설명을 위한 배분이며 집중에 필요한 최소 시간이나 최적 시간이 아닙니다.</p>
+<h2>연락을 받을 기준 정하기</h2><p>업무 연락을 임의로 모두 끄지 마세요. 긴급 대응 책임이 있다면 동료와 허용되는 응답 지연과 연락 경로를 먼저 정합니다. 작업에 필요 없는 창만 닫고, 관련 자료와 메모는 열어 둡니다. 연락이 오면 돌아갈 문단을 한 줄 남긴 뒤 처리할 수 있습니다. 집중 시간이 끊겼다는 사실만으로 그 세션이 실패한 것은 아닙니다.</p>
+<h2>타이머와 휴식은 조정 가능한 도구</h2><p>타이머가 필요하면 이번 작업과 다음 약속에 맞는 길이를 정하세요. 종이 울렸을 때 무조건 새 세션을 시작하기보다 완료한 범위, 피로감, 다음 약속을 확인합니다. 휴식이 필요하면 자리나 자세를 바꾸거나 편한 방식으로 쉬세요. 특정 타이머 비율이 하루 종일 집중을 유지해 준다고 보장하지 않습니다.</p>
+<h2>예상보다 늦어졌을 때</h2><p>초안이 절반만 끝났다면 다음 회의 시간을 침범하지 말고 남은 부분을 적습니다. 내일은 범위를 줄일지, 자료를 먼저 준비할지, 더 긴 블록이 실제로 가능한지 선택하세요. 플래너의 표 보기에서 블록 이름과 시각을 조정하고, 메모에 원인을 남기면 다음 계획과 비교할 수 있습니다.</p><h2>플래너에 적용하기</h2><p>플래너를 열어 날짜를 고르고 표 보기에서 다음 행동의 이름과 시작·종료를 적으세요. 실행 뒤 짧은 메모를 남기고 다음 날을 조정합니다. 본문의 사례는 편집자가 만든 계획 연습이며 연구 결과나 이용 후기와 구분됩니다.</p><p><a href="/guides/time-blocking">전체 시간표 예시 보기</a> · <a href="/ko/">플래너 열기</a></p></div>
+<div class="lang-en" lang="en"><h1>Design a focus block around a report and urgent messages</h1><p class="lead">Before choosing a session length, decide what to finish and when an interruption is necessary. Follow an illustrative report-writing session between meetings.</p><h2>Define a visible finish</h2><p>A block called “write report” might include research, drafting, and proofreading. Choose a visible finish: three comparison points and a draft conclusion, for example. If source material is missing, requesting it comes before writing. This example is not an actual user’s outcome.</p>
+<h2>Example: forty minutes before a meeting</h2><p>Suppose a meeting starts at 10:00 and you are available from 09:10. Use 09:10–09:15 to open files and check material, 09:15–09:45 for the draft, and 09:45–09:50 to note open questions and check saving. Leave the remainder for meeting preparation. These times illustrate allocation; they are not minimum or optimal focus durations.</p>
+<h2>Agree how interruptions work</h2><p>Do not disable all work contact without agreement. If you have urgent-response duties, agree on response expectations and a contact route first. Close irrelevant windows while keeping needed material available. When interrupted, note the paragraph to resume. An interrupted session is not automatically a failed one.</p>
+<h2>Treat timers and breaks as adjustable tools</h2><p>If a timer helps, set it around the task and next appointment. When it ends, check completed scope, tiredness, and commitments before starting again. Take a break in a way that suits you. No timer ratio is presented as a guarantee of sustained all-day concentration.</p>
+<h2>When the task overruns</h2><p>If only half the draft is done, record what remains instead of taking time from the next meeting. Decide whether to narrow scope, prepare material earlier, or allocate a longer block if available. Adjust the block’s label and times in the planner’s table view and leave a note for the next comparison.</p><h2>Use the example in your planner</h2><p>Open the planner, choose a date, and use table view to name the next action and set its start and end. Leave a short note about what happened, then adjust the next day. The examples are editorial planning exercises, not research findings or testimonials.</p><p><a href="/guides/time-blocking">See a complete timetable example</a> · <a href="/">Open the planner</a></p></div>
+</main>
   <footer class="site">
     <nav>
       <a href="/"><span class="lang-ko">홈 Home</span><span class="lang-en">Home</span></a>

@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>유아·아기 생활계획표 템플릿 (하루 일과) · 24Houring</title>
-<meta name="description" content="낮잠·식사·놀이·잠자리 루틴을 일정하게 잡아주는 유아 하루 일과표. 원형 시간표로 부모가 아이의 하루 리듬을 한눈에 보고, 어린이집·가정 보육에 맞게 바로 수정할 수 있습니다." />
+<title>유아 돌봄 일정 편집 예시 템플릿 · 24Houring</title>
+<meta name="description" content="돌봄 담당자가 식사·놀이·인계 시간을 표시해 보는 가상 유아 일정입니다. 아기나 모든 연령에 적용되는 수면·수유 기준이 아닙니다." />
 <link rel="canonical" href="https://24houring.com/templates/toddler-routine" />
 <link rel="alternate" hreflang="ko" href="https://24houring.com/templates/toddler-routine" />
 <link rel="alternate" hreflang="en" href="https://24houring.com/templates/toddler-routine" />
@@ -12,8 +12,8 @@
 <link rel="alternate" hreflang="ja" href="https://24houring.com/ja/templates/toddler-routine" />
 <link rel="alternate" hreflang="x-default" href="https://24houring.com/templates/toddler-routine" />
 <meta name="robots" content="index, follow" />
-<meta property="og:title" content="유아·아기 생활계획표 템플릿 (하루 일과) · 24Houring" />
-<meta property="og:description" content="낮잠·식사·놀이·잠자리 루틴을 일정하게 잡아주는 유아 하루 일과표. 원형 시간표로 부모가 아이의 하루 리듬을 한눈에 보고, 어린이집·가정 보육에 맞게 바로 수정할 수 있습니다." />
+<meta property="og:title" content="유아 돌봄 일정 편집 예시 템플릿 · 24Houring" />
+<meta property="og:description" content="돌봄 담당자가 식사·놀이·인계 시간을 표시해 보는 가상 유아 일정입니다. 아기나 모든 연령에 적용되는 수면·수유 기준이 아닙니다." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://24houring.com/templates/toddler-routine" />
 <meta property="og:image" content="https://24houring.com/templates/img/toddler-routine.png" />
@@ -24,15 +24,15 @@
 {
  "@context": "https://schema.org",
  "@type": "Article",
- "headline": "유아·아기 생활계획표 템플릿 (하루 일과)",
- "description": "낮잠·식사·놀이·잠자리 루틴을 일정하게 잡아주는 유아 하루 일과표. 원형 시간표로 부모가 아이의 하루 리듬을 한눈에 보고, 어린이집·가정 보육에 맞게 바로 수정할 수 있습니다.",
+ "headline": "유아 돌봄 일정 편집 예시 템플릿",
+ "description": "돌봄 담당자가 식사·놀이·인계 시간을 표시해 보는 가상 유아 일정입니다. 아기나 모든 연령에 적용되는 수면·수유 기준이 아닙니다.",
  "inLanguage": [
   "ko",
   "en"
  ],
  "image": "https://24houring.com/templates/img/toddler-routine.png",
  "datePublished": "2026-07-12",
- "dateModified": "2026-07-12",
+ "dateModified": "2026-09-11",
  "author": {
   "@type": "Organization",
   "name": "24Houring",
@@ -60,15 +60,16 @@
   {
    "@type": "ListItem",
    "position": 2,
-   "name": "유아·아기 생활계획표 템플릿 (하루 일과)",
+   "name": "유아 돌봄 일정 편집 예시 템플릿",
    "item": "https://24houring.com/templates/toddler-routine"
   }
  ]
 }
 </script>
 <script>
-(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');}}catch(e){}})();
-function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');}
+(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');document.documentElement.lang='en';}}catch(e){}})();
+function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');document.documentElement.lang=l;document.querySelectorAll('[data-template-lang]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.templateLang===l));});}
+document.addEventListener('DOMContentLoaded',function(){setGuideLang(document.documentElement.lang==='en'?'en':'ko');});
 </script>
 </head>
 <body>
@@ -76,7 +77,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
   <header class="site">
     <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
-      <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
+      <span class="langswitch"><button type="button" data-template-lang="ko" aria-pressed="true" onclick="setGuideLang('ko')">한국어</button><span class="sep">·</span><button type="button" data-template-lang="en" aria-pressed="false" onclick="setGuideLang('en')">EN</button></span>
       <a href="/templates/"><span class="lang-ko">템플릿</span><span class="lang-en">Templates</span></a>
       <a href="/"><span class="lang-ko">홈</span><span class="lang-en">Home</span></a>
     </nav>
@@ -84,17 +85,18 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
   <main class="article">
     <p class="crumb"><a href="/templates/"><span class="lang-ko">← 템플릿 목록</span><span class="lang-en">← All templates</span></a></p>
     <div class="lang-ko">
-    <h1>유아·아기 생활계획표 템플릿 (하루 일과)</h1>
-    <p class="lead">낮잠·식사·놀이·잠자리 루틴을 일정하게 잡아주는 유아 하루 일과표. 원형 시간표로 부모가 아이의 하루 리듬을 한눈에 보고, 어린이집·가정 보육에 맞게 바로 수정할 수 있습니다.</p>
+    <h1>유아 돌봄 일정 편집 예시 템플릿</h1>
+    <p class="lead">돌봄 담당자가 식사·놀이·인계 시간을 표시해 보는 가상 유아 일정입니다. 아기나 모든 연령에 적용되는 수면·수유 기준이 아닙니다.</p><p>2026년 9월 11일 검토 · 편집용 가상 일정입니다.</p>
     </div>
     <div class="lang-en">
     <h1>Toddler Daily Routine Template</h1>
-    <p class="lead">A steady toddler day — meals, naps, play and a bedtime routine kept consistent. The circle lets parents see the child’s daily rhythm at a glance and adjust it to daycare or home care.</p>
+    <p class="lead">An illustrative toddler care schedule for recording meals, play and handovers. It is not a sleep or feeding standard for babies or all ages.</p><p>Reviewed September 11, 2026. The chart and imported activity labels are in Korean; rename them after import.</p>
     </div>
 
     <p style="text-align:center;margin:18px 0">
-      <img src="/templates/img/toddler-routine.png" alt="유아·아기 생활계획표 템플릿 (하루 일과) — 24시간 원형 시간표" width="520" style="max-width:100%;height:auto;border-radius:16px" loading="lazy" />
+      <img src="/templates/img/toddler-routine.png" alt="유아 돌봄 일정 편집 예시 템플릿 — 24시간 원형 시간표" width="520" style="max-width:100%;height:auto;border-radius:16px" loading="lazy" />
     </p>
+
 
     <p style="text-align:center;margin:0 0 6px">
       <a class="btn" href="/#p=eyJ2IjoxLCJuIjoi7Jyg7JWEIOyDne2ZnOqzhO2aje2RnCIsInMiOltbNDIwLCLquLDsg4HCt-yVhOy5qCIsIiNmYmJmMjQiLCLwn4yFIl0sWzQ4MCwi7JWE7Lmo67ClIiwiI2ZjYTVhNSIsIvCfjZoiXSxbNTQwLCLsmKTsoIQg64aA7J20IiwiIzg2ZWZhYyIsIvCfp7giXSxbNjMwLCLrsJTquaXrhoDsnbQiLCIjNmVlN2I3Iiwi4puFIl0sWzcyMCwi7KCQ7IusIiwiI2ZjYTVhNSIsIvCfjb3vuI8iXSxbNzgwLCLrgq7snqAiLCIjYzdkMmZlIiwi8J-YtCJdLFs5MDAsIuqwhOyLncK364aA7J20IiwiI2ZkYmE3NCIsIvCfjaoiXSxbMTAyMCwi7J6Q7Jyg64aA7J20IiwiI2Y5YThkNCIsIvCfjqgiXSxbMTA4MCwi7KCA64WB67ClIiwiI2ZjYTVhNSIsIvCfjbIiXSxbMTE0MCwi66qp7JqVwrfsnqDsnpDrpqwg7KSA67mEIiwiI2E3ZjNkMCIsIvCfm4EiXSxbMTIwMCwi7LGFwrfsnqDsnpDrpqwiLCIjYTViNGZjIiwi8J-TliJdLFsxMjMwLCLsiJjrqbQiLCIjYzdkMmZlIiwi8J-MmSJdXX0"><span class="lang-ko">이 계획표로 바로 시작하기 →</span><span class="lang-en">Start with this template →</span></a>
@@ -123,11 +125,11 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
     </ul>
     <h2>활용 팁</h2>
     <ul>
-      <li>식사·낮잠·잠자리 시각을 매일 같게 유지하는 것이 아이 수면의 핵심입니다.</li>
-      <li>잠자리 30분 전은 화면 없이 조용한 루틴(목욕·책)으로 고정하세요.</li>
-      <li>바깥놀이는 오전 햇빛 시간에 두면 밤잠에 도움이 됩니다.</li>
+      <li>아이의 실제 생활과 돌봄기관 일정을 먼저 확인하세요.</li>
+      <li>낮잠의 횟수와 길이는 이 예시를 그대로 따르지 말고 바꾸세요.</li>
+      <li>인계 담당자와 시간을 적고 공유 이미지에서 이름 등 개인정보를 빼세요.</li>
     </ul>
-    <p><a href="/guides/daily-life-planner">관련 가이드</a> · <a href="/guides/24-hour-circle-method">원형 시간표 활용법</a></p>
+    <p><a href="/guides/daily-life-planner">관련 자료</a> · <a href="/guides/24-hour-circle-method">원형 시간표 활용법</a></p>
     </div>
     <div class="lang-en">
     <h2>The schedule</h2>
@@ -147,9 +149,9 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
     </ul>
     <h2>Tips</h2>
     <ul>
-      <li>Keeping meal, nap and bedtime at the same clock time daily is the key to sleep.</li>
-      <li>Make the 30 minutes before bed a quiet, screen-free routine (bath, books).</li>
-      <li>Put outdoor play in the morning sun to help night sleep.</li>
+      <li>Start with the child’s actual routine and care-setting timetable.</li>
+      <li>Change the number and length of naps instead of copying this example.</li>
+      <li>Record handover duties and remove names or other personal details from shared images.</li>
     </ul>
     </div>
 
@@ -170,10 +172,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
     <nav>
       <a href="/"><span class="lang-ko">홈 Home</span><span class="lang-en">Home</span></a>
       <a href="/templates/"><span class="lang-ko">템플릿 Templates</span><span class="lang-en">Templates</span></a>
-      <a href="/gallery/"><span class="lang-ko">갤러리 Gallery</span><span class="lang-en">Gallery</span></a>
-      <a href="/life-planner"><span class="lang-ko">생활계획표 Life Planner</span><span class="lang-en">Life Planner</span></a>
       <a href="/guides/"><span class="lang-ko">가이드 Guides</span><span class="lang-en">Guides</span></a>
-      <a href="/blog/"><span class="lang-ko">블로그 Blog</span><span class="lang-en">Blog</span></a>
       <a href="/stories/"><span class="lang-ko">스토리 Stories</span><span class="lang-en">Stories</span></a>
       <a href="/health/"><span class="lang-ko">건강 Health</span><span class="lang-en">Health</span></a>
       <a href="/faq"><span class="lang-ko">FAQ</span><span class="lang-en">FAQ</span></a>

@@ -331,14 +331,14 @@ function hubPage() {
     <p class="lead">같은 하루라도 색과 배경, 글꼴을 바꾸면 전혀 다른 시간표가 됩니다. 아래는 24Houring으로 실제로 그린 ${VARIATIONS.length}가지 예시입니다 — ${SCHEDULES.length}가지 하루 × ${STYLES.length}가지 디자인, 그리고 ${LANGS.length}개 언어.</p>
     <p>마음에 드는 조합을 찾았다면, <a href="/">24Houring</a>에서 같은 색상 테마·배경·폰트를 직접 골라 자신의 하루에 적용할 수 있습니다. 완성한 시간표는 PNG로 내보내 저장하거나 공유할 수 있습니다.</p>
 
-    <h2>어떻게 만들어졌나</h2>
+    <h2>어떻게 만들어졌나</h2><p>일정은 디자인을 보여 주기 위한 가상 예시이며 실제 이용자의 기록이나 권장 수면·근무 시간표가 아닙니다.</p>
     <p>모든 이미지는 합성이나 목업이 아니라 <strong>실제 앱 화면을 그대로 렌더한 결과</strong>입니다. 각 이미지는 하나의 하루 일정(학생·직장인·수험생·프리랜서·미라클 모닝·야간 교대)에 하나의 디자인 조합 — 색상 팔레트, 배경 패턴(도트·그리드·사선·물결·체커·종이·메모) 또는 선형·방사형 그라데이션, 글꼴, 라이트/다크 — 을 입혀 만들었습니다.</p>
     <p>여기 보이는 모든 스타일은 앱에서 클릭 몇 번으로 재현할 수 있습니다. 색상 팔레트는 타임 팔레트 메뉴에서, 배경과 글꼴은 디자인 매지션이나 환경설정에서 고를 수 있습니다.</p>
 
     <h2>디자인을 고를 때</h2>
-    <p><strong>파스텔·차분 계열</strong>은 항목이 많은 하루에 잘 맞습니다. 색이 강하지 않아 10개 이상의 블록이 있어도 눈이 피로하지 않습니다.</p>
+    <p><strong>파스텔·차분 계열</strong>은 항목이 많은 하루에 잘 맞습니다. 블록이 많다면 비슷한 색끼리 구분되는지, 작은 글자가 배경 위에서 읽히는지 확인하세요.</p>
     <p><strong>바다·숲 계열</strong>은 색상 범위가 좁아 시간표가 하나의 덩어리처럼 보입니다. 공부나 업무처럼 한 가지 활동이 하루의 큰 부분을 차지할 때 정돈되어 보입니다.</p>
-    <p><strong>모노(무채색)</strong>는 인쇄하거나 문서에 넣을 때 유리하고, 다크 모드와 조합하면 야간 근무자에게 눈이 편합니다.</p>
+    <p><strong>모노(무채색)</strong>는 인쇄하거나 문서에 넣을 때 유리하고, 다크 모드에서는 글자와 배경의 대비를 따로 확인하세요.</p>
     <p><strong>손글씨체(개구)</strong>는 아이와 함께 쓰는 생활계획표에, <strong>명조체</strong>는 기록·일기 성격이 강한 시간표에 어울립니다.</p>
     <h2>한국어 시간표 (${koVars.length})</h2>
     </div>
@@ -347,14 +347,14 @@ function hubPage() {
     <p class="lead">The same day looks like a different plan once the colours, background and typeface change. Below are ${VARIATIONS.length} examples drawn with 24Houring — ${SCHEDULES.length} kinds of day × ${STYLES.length} designs, in ${LANGS.length} languages.</p>
     <p>Found a combination you like? Pick the same palette, background and font in <a href="/">24Houring</a> and apply it to your own day, then export the result as a PNG to keep or share.</p>
 
-    <h2>How these were made</h2>
+    <h2>How these were made</h2><p>Schedules are fictional design examples, not actual user records or recommended sleep or work schedules.</p>
     <p>None of these are mockups. Every image is a <strong>direct render of the actual app</strong>: one day's schedule (student, office worker, exam candidate, freelancer, miracle morning, night shift) dressed in one design combination — colour palette, a background pattern (dots, grid, diagonal, waves, checker, paper, memo) or a linear/radial gradient, a typeface, and light or dark mode.</p>
     <p>Every style here is reproducible in a few clicks: palettes live under the Time Palette menu, while backgrounds and fonts are chosen in the design magician or in settings.</p>
 
     <h2>Choosing a design</h2>
-    <p><strong>Pastel and calm</strong> palettes suit days with many entries — the colours stay quiet enough that ten or more blocks don't tire the eye.</p>
+    <p><strong>Pastel and calm</strong> palettes suit days with many entries — check that similar colours remain distinguishable and small labels are readable against the background.</p>
     <p><strong>Ocean and forest</strong> use a narrow hue range, so the ring reads as one mass. That looks tidy when a single activity — studying, or work — owns a large part of the day.</p>
-    <p><strong>Mono</strong> prints well and drops cleanly into documents; paired with dark mode it's easier on the eyes for night workers.</p>
+    <p><strong>Mono</strong> prints well and drops cleanly into documents; in dark mode, check text contrast against the background separately.</p>
     <p>The <strong>handwriting face</strong> suits a plan made with a child, and the <strong>serif</strong> fits timetables that double as a diary.</p>
     <h2>Korean timetables (${koVars.length})</h2>
     </div>

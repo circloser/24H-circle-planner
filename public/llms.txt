@@ -88,15 +88,17 @@ where `<code>` is base64url(JSON) of:
 - Life Planner hub — what a 생활계획표 is, how to build one, by situation
   (students / office workers / parents / weekends):
   https://24houring.com/life-planner
-- Guides — 22 in-depth how-tos on time management:
+- Guides — 22 practical planning walkthroughs:
   https://24houring.com/guides/
   (time blocking, deep work, pomodoro, time audit, weekly review, morning
   routines, exam study plans, shift work, burnout prevention, habit building,
   parenting, digital distraction, and more)
 - Blog — 20 essays on daily planning: https://24houring.com/blog/
-- Health pillars — sleep, movement, nutrition, mind, rhythm:
+- Health planning — sleep, movement, nutrition, mind, rhythm; separates
+  cited public-health information from illustrative scheduling exercises:
   https://24houring.com/health/
-- Stories — daily routines of famous thinkers, writers, leaders:
+- Stories — limited primary-source accounts, corrections to unsupported
+  routine anecdotes, and separate planning exercises; not complete celebrity days:
   https://24houring.com/stories/
 - Templates gallery: https://24houring.com/templates/
 - Design gallery — 100+ real rendered timetable images across palettes,

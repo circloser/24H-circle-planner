@@ -1,237 +1,47 @@
 <!doctype html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>24시간 원형 시간표 활용법 — 하루를 한 바퀴로 보기 · 24Houring</title>
-<meta name="description" content="하루 24시간을 원형 시계처럼 그리면 무엇이 달라질까. 원형 시간표의 장점, 그리는 법, 하루 설계 예시와 활용 팁." />
-<link rel="canonical" href="https://24houring.com/guides/24-hour-circle-method" />
-<meta name="robots" content="index, follow" />
-<meta property="og:title" content="24시간 원형 시간표 활용법 — 하루를 한 바퀴로 보기" />
-<meta property="og:description" content="하루 24시간을 원형으로 시각화하는 방법과 장점, 활용 팁." />
-<meta property="og:type" content="article" />
-<meta property="og:url" content="https://24houring.com/guides/24-hour-circle-method" />
-<meta property="og:image" content="https://24houring.com/og-image.png" />
-<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-<link rel="stylesheet" href="/guides/guide.css" />
+<html lang="ko"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>24시간 원형 시간표 읽기: 각도·자정·보기 전환 · 24Houring</title>
+<meta name="description" content="원의 모양으로 시간을 어림하고, 숫자로 확인하는 방법입니다. 원의 색이나 크기로 건강 상태와 생산성을 판단하지 않습니다.">
+<link rel="canonical" href="https://24houring.com/guides/24-hour-circle-method">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="24시간 원형 시간표 읽기: 각도·자정·보기 전환">
+<meta property="og:description" content="원의 모양으로 시간을 어림하고, 숫자로 확인하는 방법입니다. 원의 색이나 크기로 건강 상태와 생산성을 판단하지 않습니다.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://24houring.com/guides/24-hour-circle-method">
+<meta property="og:image" content="https://24houring.com/og-image.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/guides/guide.css">
 <meta name="google-adsense-account" content="ca-pub-6947130056543786">
-<script>
-(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');}}catch(e){}})();
-function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');}
-</script>
-</head>
+
+<script>function setGuideLang(l,save){l=l==='ko'?'ko':'en';document.documentElement.lang=l;document.documentElement.classList.toggle('show-en',l==='en');document.querySelectorAll('[data-guide-lang]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.guideLang===l));});if(save!==false){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}}}(function(){var l=(navigator.language||'ko').slice(0,2);try{var o=localStorage.getItem('24h-guides-lang');var r=localStorage.getItem('24h-circle-planner.prefs');var p=r?JSON.parse(r):null;l=o||(p&&p.prefs&&p.prefs.language)||l;}catch(e){}setGuideLang(l,false);document.addEventListener('DOMContentLoaded',function(){setGuideLang(document.documentElement.lang,false);});})();</script></head>
 <body>
 <div class="wrap">
   <header class="site">
     <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
-      <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
+      <span class="langswitch"><button type="button" data-guide-lang="ko" aria-pressed="true" onclick="setGuideLang('ko')">한국어</button><button type="button" data-guide-lang="en" aria-pressed="false" onclick="setGuideLang('en')">EN</button></span>
       <a href="/guides/"><span class="lang-ko">가이드</span><span class="lang-en">Guides</span></a>
       <a href="/blog/"><span class="lang-ko">블로그</span><span class="lang-en">Blog</span></a>
       <a href="/"><span class="lang-ko">홈</span><span class="lang-en">Home</span></a>
     </nav>
   </header>
-  <main class="article">
-    <p class="crumb"><a href="/guides/"><span class="lang-ko">← 가이드 목록</span><span class="lang-en">← All guides</span></a></p>
-    <div class="lang-ko">
-    <h1>24시간 원형 시간표 활용법 <span class="en">/ The 24-Hour Circle</span></h1>
-    <p class="lead">막대(타임라인)로 늘어놓은 하루는 24시간이 얼마나 '한정된 한 바퀴'인지 잘 느껴지지 않습니다. 원형 시간표는 하루를 시계처럼 한눈에 보여 줍니다.</p>
-
-    <h2>왜 하루를 '원'으로 봐야 할까</h2>
-    <p>대부분의 캘린더 앱은 하루를 위에서 아래로 흐르는 세로 막대로 그립니다. 오전 6시가 맨 위, 자정이 맨 아래에 오는 식입니다. 이 방식은 특정 시각의 일정을 확인하기엔 편하지만, 결정적인 약점이 하나 있습니다. 화면 아래로 스크롤하는 순간 하루의 '전체'가 시야에서 사라진다는 점입니다. 아침을 보고 있으면 저녁이 보이지 않고, 저녁을 보고 있으면 아침이 기억에서 흐려집니다.</p>
-    <p>원형 시간표는 정반대입니다. 24시간을 하나의 둥근 판 위에 얹으면, 잠·일·쉼·이동·식사가 모두 한 화면 안에서 서로의 크기를 드러냅니다. 시계처럼 익숙한 형태라 별도 학습도 필요 없습니다. 원 위에서 우리는 세 가지를 즉시 읽어냅니다.</p>
-    <ul>
-      <li><strong>균형</strong> — 수면·업무·휴식이 각각 원의 몇 조각을 차지하는지. 잠이 너무 얇은지, 업무가 원의 절반을 넘게 삼켰는지가 색 면적으로 보입니다.</li>
-      <li><strong>빈틈</strong> — 아무것도 배정되지 않은 회색 조각. '언젠가 해야지' 하던 일을 넣을 여백이 실제로 남아 있는지 확인할 수 있습니다.</li>
-      <li><strong>과부하</strong> — 특정 구간에 일정이 겹치거나 빽빽하게 붙어 있으면, 원의 한쪽이 유독 촘촘해 눈에 바로 띕니다.</li>
-    </ul>
-    <blockquote>막대는 '몇 시에 무엇을'을 묻고, 원은 '하루 전체가 어떤 모양인가'를 묻습니다. 계획을 세울 때 우리에게 더 필요한 질문은 후자일 때가 많습니다.</blockquote>
-    <p>여기엔 심리적인 효과도 있습니다. 막대형 캘린더는 아래로 무한히 이어질 것 같은 착시를 줍니다. 스크롤하면 계속 칸이 나오니 마치 시간이 더 있는 것처럼 느껴지죠. 하지만 원은 닫혀 있습니다. 한 바퀴가 전부이고, 한 조각을 늘리면 반드시 다른 조각이 줄어듭니다. 이 '닫힌 원' 감각이야말로 무리한 계획을 세우지 않게 막아 주는 가장 큰 장점입니다. 하루가 유한하다는 사실을 머리가 아니라 눈으로 받아들이게 되니까요.</p>
-
-    <h2>24시간 시계 판 읽는 법</h2>
-    <p>보통의 아날로그 시계는 문자판을 하루에 두 바퀴 돕니다. 반면 24시간 원형 시간표는 한 바퀴가 곧 하루 전체입니다. 12칸이 아니라 24칸으로 나뉘고, 바늘이 한 번 돌면 자정에서 다음 자정까지가 끝납니다.</p>
-    <h3>어디가 위쪽일까</h3>
-    <p>많은 원형 시간표는 자정(0시 또는 24시)을 맨 위, 정오(12시)를 맨 아래에 둡니다. 그러면 시계 방향으로 돌 때 오전이 오른쪽 반, 오후가 왼쪽 반에 자리 잡습니다. 반대로 정오를 위에 두는 배치도 있습니다. 어느 쪽이든 규칙은 하나입니다. <strong>기준점을 정하고, 그 기준을 계속 유지하는 것</strong>입니다. 매번 위쪽이 바뀌면 하루의 '모양'을 기억할 수 없습니다.</p>
-    <h3>낮과 밤을 반으로 나눠 보기</h3>
-    <p>원을 위아래(혹은 좌우) 절반으로 상상하면 낮과 밤의 무게를 가늠하기 쉽습니다. 밤 절반이 온통 수면으로 채워져 있다면 건강한 신호이고, 밤 절반에 업무나 화면 사용이 침범해 있다면 회복 시간이 잠식되고 있다는 뜻입니다. 원이라는 형태 덕분에 '밤을 얼마나 지키고 있는가'가 면적으로 즉시 보입니다.</p>
-    <h3>한 칸이 곧 한 시간</h3>
-    <p>24칸으로 나뉜 원에서는 한 칸이 정확히 한 시간, 즉 원 전체의 24분의 1입니다. 각도로 치면 15도죠. 이 감각을 익혀 두면 조각의 크기만 봐도 대략 몇 시간짜리인지 눈대중할 수 있습니다. 예컨대 원의 4분의 1을 차지하는 조각은 6시간, 3분의 1은 8시간입니다. 수면 조각이 원의 3분의 1에 미치지 못한다면 하루 7시간 수면조차 확보하지 못하고 있다는 신호입니다. 숫자를 일일이 세지 않아도 형태가 먼저 경고를 보내는 셈입니다.</p>
-
-    <h2>내 하루를 원으로 그리는 3단계</h2>
-    <p>빈 원 앞에서 아침 7시부터 순서대로 채우려 하면 대개 실패합니다. 하루는 앞에서부터 쌓는 것이 아니라, 움직일 수 없는 것부터 자리를 잡고 나머지를 끼워 넣는 구조이기 때문입니다. 다음 순서를 권합니다.</p>
-    <ol>
-      <li><strong>수면부터 배치합니다.</strong> 잠은 하루에서 가장 큰 단일 블록이자 가장 타협하기 쉬운 블록입니다. 그래서 맨 먼저 원에 그려 자리를 '선점'해야 합니다. 몇 시에 자고 몇 시에 일어날지 하나의 큰 조각으로 칠하세요.</li>
-      <li><strong>고정 앵커를 넣습니다.</strong> 출근·수업·회의·통근·정해진 식사처럼 내 의지로 옮길 수 없는 일정입니다. 이것들은 이미 시각이 정해져 있으니 그대로 원에 박아 넣습니다.</li>
-      <li><strong>유연한 블록으로 빈칸을 채웁니다.</strong> 수면과 앵커를 그리고 나면 남은 회색 조각이 드러납니다. 이 여백에 운동·공부·집안일·휴식·여가를 배치합니다. 여기서 비로소 '하루에 정말 쓸 수 있는 시간'의 실제 크기를 마주하게 됩니다.</li>
-    </ol>
-    <p>24Houring 홈(<a href="/">/</a>)에서는 이 원을 마우스나 손가락으로 드래그해 그리고, 조각의 경계를 끌어 길이를 바로 조정할 수 있어 종이에 그릴 때보다 시행착오가 빠릅니다.</p>
-
-    <h2>예시: 어느 직장인의 하루 원</h2>
-    <p>말로만 설명하면 추상적이니, 실제 하루를 원의 조각으로 풀어 보겠습니다.</p>
-    <ul>
-      <li><strong>수면 23:00–07:00</strong> — 8시간. 원의 아래쪽 밤 절반을 큼직하게 차지합니다.</li>
-      <li><strong>아침 준비·통근 07:00–09:00</strong> — 씻고 아침을 먹고 이동하는 2시간 앵커.</li>
-      <li><strong>업무 09:00–12:00</strong> — 오전 집중 블록.</li>
-      <li><strong>점심·산책 12:00–13:00</strong> — 식사와 짧은 회복.</li>
-      <li><strong>업무 13:00–18:00</strong> — 오후 5시간. 여기까지 그리면 낮 절반이 거의 업무로 채워졌음이 원에서 바로 보입니다.</li>
-      <li><strong>통근·저녁 18:00–20:00</strong> — 이동과 식사.</li>
-      <li><strong>자기 시간 20:00–22:30</strong> — 운동·공부·여가가 들어가는 유일한 자유 구간.</li>
-      <li><strong>정리·취침 준비 22:30–23:00</strong> — 하루를 닫는 30분.</li>
-    </ul>
-    <p>이렇게 원 하나에 얹고 보면, 하루에서 온전히 내 뜻대로 쓸 수 있는 시간은 저녁의 좁은 조각 하나뿐이라는 사실이 선명해집니다. '왜 늘 시간이 없지?'라는 막연한 감각이, 원 위에서는 눈에 보이는 조각 크기로 설명됩니다.</p>
-    <p>이 예시에서 특히 눈여겨볼 조각은 통근입니다. 아침 저녁 합쳐 이동에만 하루 조각의 상당 부분이 쓰이는데, 막대형 목록에서는 이 시간이 '빈칸'처럼 보여 무심코 넘어가기 쉽습니다. 반대로 원에서는 이동 조각이 엄연히 면적을 차지하니, '통근 시간에 무엇을 할 것인가'라는 질문이 자연스럽게 따라옵니다. 오디오북을 들을지, 눈을 붙일지, 아무것도 하지 않고 쉴지 — 사라져 있던 시간이 원 위에서 되살아나 선택의 대상이 됩니다.</p>
-
-    <h2>완성한 원을 해석하는 법</h2>
-    <p>그리는 것보다 중요한 것은 다 그린 원을 '읽는' 일입니다. 자신에게 이렇게 물어보세요.</p>
-    <ul>
-      <li><strong>잠은 충분한가?</strong> 수면 조각이 원의 3분의 1에 가까운가, 아니면 위태롭게 얇은가.</li>
-      <li><strong>여백이 있는가?</strong> 회색 조각이 하나도 없다면, 하루에 예기치 못한 일이 끼어들 틈이 전혀 없다는 뜻입니다. 약간의 마진은 게으름이 아니라 완충 장치입니다.</li>
-      <li><strong>저녁이 전부 화면인가?</strong> 자기 시간 조각이 모두 스마트폰·스트리밍으로만 채워져 있다면, 회복이 아니라 또 다른 소비일 수 있습니다.</li>
-      <li><strong>업무가 원의 절반을 넘는가?</strong> 통근까지 합쳐 노동 관련 조각이 12시간을 넘는다면, 그 하루는 지속 가능한 모양이 아닙니다.</li>
-    </ul>
-
-    <h2>원형 vs 막대형 시간표</h2>
-    <p>두 방식은 경쟁이 아니라 역할이 다릅니다. 막대형(리스트·타임라인)은 '지금 몇 시에 무엇을 해야 하는가'라는 실행에 강합니다. 알림, 다음 일정 확인, 촘촘한 회의 관리에는 세로 타임라인이 여전히 편합니다.</p>
-    <p>반면 원형은 '설계'와 '점검'에 강합니다. 하루의 균형을 잡을 때, 일주일을 돌아보며 패턴을 찾을 때, 새 습관을 넣을 여백을 찾을 때는 원이 압도적으로 직관적입니다. 실제로 많은 사람들이 하루를 <strong>원으로 설계한 뒤 막대형 캘린더로 실행</strong>하는 조합을 씁니다. 원에서 큰 그림을 정하고, 막대에서 세부를 굴리는 셈입니다.</p>
-    <p>차이를 한 문장으로 정리하면 이렇습니다. 막대는 시간을 '지점'으로 다루고, 원은 시간을 '비율'로 다룹니다. 지점이 필요한 순간(3시 회의, 6시 약속)엔 막대가 낫고, 비율이 궁금한 순간(내 하루에서 일과 쉼의 비중)엔 원이 낫습니다. 어느 하나가 옳은 게 아니라, 지금 던지는 질문이 무엇이냐에 따라 도구를 바꿔 쥐면 됩니다.</p>
-
-    <p>한 가지 더. 원은 '주간 비교'에 특히 강합니다. 매일의 하루를 같은 배치의 원으로 남겨 두면, 일주일 치를 나란히 놓았을 때 수면 조각이 들쭉날쭉한지, 업무가 특정 요일에만 원을 잠식하는지가 한눈에 드러납니다. 숫자표를 들여다보며 계산할 필요 없이, 조각의 크기와 위치가 요일마다 어떻게 흔들리는지 형태로 비교되는 것입니다. 이렇게 쌓인 원들은 스스로의 생활 리듬을 진단하는 가장 솔직한 기록이 됩니다.</p>
-
-    <h2>이런 사람에게 특히 유용합니다</h2>
-    <ul>
-      <li><strong>학생</strong> — 수업·자습·수면의 균형을 한눈에 보고, 비는 자투리 시간을 발견해 활용할 수 있습니다.</li>
-      <li><strong>교대 근무자</strong> — 밤낮이 뒤집힌 날의 수면 조각을 원 위에서 옮겨 보며 회복 시간을 지키기 좋습니다.</li>
-      <li><strong>재택근무자</strong> — 일과 생활의 경계가 흐려지기 쉬운데, 원으로 그리면 업무 조각이 저녁까지 번지는지 즉시 보입니다.</li>
-      <li><strong>부모</strong> — 육아·집안일·개인 시간이 어떻게 뒤섞이는지 파악하고, 나를 위한 조각이 남아 있는지 확인할 수 있습니다.</li>
-    </ul>
-
-    <h2>실전 팁</h2>
-    <ul>
-      <li>완벽한 하루가 아니라 <strong>보통의 하루</strong>를 그리세요. 이상적인 계획이 아닌 실제 패턴을 그려야 문제가 보입니다.</li>
-      <li>색을 용도별로 통일하세요. 수면·업무·휴식에 각각 고정 색을 주면 여러 날의 원을 비교하기 쉽습니다.</li>
-      <li>이동·준비 시간을 빼먹지 마세요. 숨은 조각이 하루를 잡아먹는 주범인 경우가 많습니다.</li>
-      <li>일주일에 하나씩 원을 남겨 두면, 나중에 나만의 <a href="/guides/time-blocking">타임블로킹 가이드</a>식 루틴으로 다듬을 재료가 쌓입니다.</li>
-      <li>먼저 채우기보다 <strong>먼저 지키기</strong>. 수면과 회복 조각을 방어선처럼 두고 나머지를 배치하세요.</li>
-      <li>계획한 원과 실제 보낸 하루의 원을 따로 그려 겹쳐 보세요. 계획과 현실의 어긋난 조각이 곧 다음에 고쳐야 할 지점입니다.</li>
-    </ul>
-    <p>원형 시간표는 결국 '더 많이 하기'가 아니라 '무엇을 덜어낼지 고르기' 위한 도구입니다. 한 조각을 키우려면 다른 조각을 줄여야 한다는 원의 규칙은, 우선순위를 말이 아닌 면적으로 강제합니다. 그래서 원을 한 번 제대로 그려 보는 것만으로도, 막연히 바빴던 하루가 선택 가능한 하루로 바뀝니다.</p>
-
-    <h2>핵심 요약</h2>
-    <ul>
-      <li>원형 시간표는 24시간을 한 화면에 담아 하루의 균형·빈틈·과부하를 면적으로 보여 준다.</li>
-      <li>기준점(자정 또는 정오를 위쪽)을 정하고 계속 유지해야 하루의 '모양'을 기억할 수 있다.</li>
-      <li>그리는 순서는 수면 → 고정 앵커 → 유연한 블록. 큰 것부터 자리를 선점한다.</li>
-      <li>완성한 원은 잠·여백·저녁·업무량 네 가지 질문으로 점검한다.</li>
-      <li>설계와 점검엔 원, 실행엔 막대 — 두 방식을 함께 쓰면 가장 강력하다.</li>
-      <li>학생·교대 근무자·재택근무자·부모 등 시간이 뒤섞이기 쉬운 사람일수록 효과가 크다.</li>
-    </ul>
-    </div>
-    <div class="lang-en">
-      <h1>How to Use a 24-Hour Circle Schedule <span class="en">/ The 24-Hour Circle</span></h1>
-      <p class="lead">When you lay a day out as a bar (a timeline), it's hard to feel just how much 24 hours is a single "limited loop." A circular schedule shows the whole day at a glance, like a clock.</p>
-
-      <h2>Why look at your day as a "circle"</h2>
-      <p>Most calendar apps draw the day as a vertical bar that flows from top to bottom. Six in the morning sits at the top, midnight at the bottom. This layout is convenient for checking what's scheduled at a specific time, but it has one decisive weakness: the moment you scroll down, the "whole" of the day disappears from view. When you're looking at the morning, you can't see the evening; when you're looking at the evening, the morning fades from memory.</p>
-      <p>A circular schedule is the exact opposite. Once you lay all 24 hours onto a single round face, sleep, work, rest, commuting, and meals all reveal their relative sizes within one screen. Because it's a familiar shape, like a clock, no extra learning is required. On the circle, we read three things instantly.</p>
-      <ul>
-        <li><strong>Balance</strong> — how many slices of the circle sleep, work, and rest each take up. Whether sleep is too thin, or whether work has swallowed more than half the circle, becomes visible as colored area.</li>
-        <li><strong>Gaps</strong> — the gray slices with nothing assigned to them. You can check whether there's actually any room left for the things you keep telling yourself you'll do "someday."</li>
-        <li><strong>Overload</strong> — when appointments overlap or are packed tightly into a certain stretch, one side of the circle looks unusually dense and catches your eye immediately.</li>
-      </ul>
-      <blockquote>The bar asks "what at what time," while the circle asks "what shape does the whole day take." When we're planning, the latter is often the question we need more.</blockquote>
-      <p>There's a psychological effect here too. A bar-style calendar creates the illusion that it could stretch on downward forever. Since more cells keep appearing as you scroll, it feels as if there's more time than there is. But a circle is closed. One loop is all there is, and if you enlarge one slice, another slice must necessarily shrink. This sense of a "closed circle" is precisely the greatest advantage that keeps you from making overambitious plans — because you come to accept the fact that the day is finite not with your head, but with your eyes.</p>
-
-      <h2>How to read the 24-hour clock face</h2>
-      <p>An ordinary analog clock goes around its face twice in a day. A 24-hour circular schedule, by contrast, treats one loop as the entire day. It's divided into 24 cells rather than 12, and once the hand goes around a single time, it has gone from one midnight to the next.</p>
-      <h3>Which way is up</h3>
-      <p>Many circular schedules place midnight (0:00 or 24:00) at the top and noon (12:00) at the bottom. That way, going clockwise, the morning sits in the right half and the afternoon in the left half. There are also layouts that put noon at the top instead. Either way, the rule is the same: <strong>decide on a reference point and keep maintaining that reference.</strong> If the top changes every time, you won't be able to remember the "shape" of your day.</p>
-      <h3>Splitting day and night in half</h3>
-      <p>If you imagine the circle split into top and bottom (or left and right) halves, it's easy to gauge the weight of day versus night. If the night half is entirely filled with sleep, that's a healthy sign; if work or screen time has intruded into the night half, it means your recovery time is being eaten away. Thanks to the circular shape, "how well you're protecting the night" becomes visible instantly as area.</p>
-      <h3>One cell is one hour</h3>
-      <p>On a circle divided into 24 cells, one cell is exactly one hour — that is, one twenty-fourth of the whole circle. In terms of angle, that's 15 degrees. Once you've internalized this sense, you can eyeball roughly how many hours a slice is just from its size. For example, a slice that takes up a quarter of the circle is six hours, and a third is eight hours. If your sleep slice doesn't reach a third of the circle, that's a sign you're not even securing seven hours of sleep a day. In effect, the shape sends the warning first, before you count out a single number.</p>
-
-      <h2>Three steps to draw your day as a circle</h2>
-      <p>If you stand in front of an empty circle and try to fill it in order starting from 7 a.m., you'll usually fail. That's because a day isn't built up from the front; it's a structure where the things that can't be moved take their places first and the rest is fitted in around them. I recommend the following order.</p>
-      <ol>
-        <li><strong>Place sleep first.</strong> Sleep is the single largest block in the day and also the easiest block to compromise on. That's why you have to draw it on the circle first and "claim" its spot. Color in a single large slice for when you go to bed and when you get up.</li>
-        <li><strong>Add the fixed anchors.</strong> These are the schedules you can't move by your own will — going to work, classes, meetings, commuting, set mealtimes. Their times are already fixed, so you nail them onto the circle as they are.</li>
-        <li><strong>Fill the empty cells with flexible blocks.</strong> Once you've drawn sleep and the anchors, the remaining gray slices reveal themselves. Into this leftover space you place exercise, study, chores, rest, and leisure. This is where you finally come face to face with the actual size of "the time you can really use in a day."</li>
-      </ol>
-      <p>On the 24Houring home page (<a href="/">/</a>), you can draw this circle by dragging with your mouse or finger, and adjust a slice's length instantly by dragging its boundaries — so trial and error is faster than drawing on paper.</p>
-
-      <h2>Example: one office worker's day circle</h2>
-      <p>Explanation in words alone stays abstract, so let's break a real day down into slices of the circle.</p>
-      <ul>
-        <li><strong>Sleep 23:00–07:00</strong> — 8 hours. It takes up a big chunk of the night half at the bottom of the circle.</li>
-        <li><strong>Morning prep and commute 07:00–09:00</strong> — a 2-hour anchor for washing up, eating breakfast, and traveling.</li>
-        <li><strong>Work 09:00–12:00</strong> — the morning focus block.</li>
-        <li><strong>Lunch and a walk 12:00–13:00</strong> — a meal and a short recovery.</li>
-        <li><strong>Work 13:00–18:00</strong> — 5 hours in the afternoon. Draw this far and you can see right away on the circle that the day half is almost entirely filled with work.</li>
-        <li><strong>Commute and dinner 18:00–20:00</strong> — traveling and a meal.</li>
-        <li><strong>Personal time 20:00–22:30</strong> — the only free stretch where exercise, study, and leisure go.</li>
-        <li><strong>Tidying up and getting ready for bed 22:30–23:00</strong> — the 30 minutes that close out the day.</li>
-      </ul>
-      <p>When you lay it all onto a single circle like this, it becomes clear that the only time in the day you can use entirely as you wish is one narrow slice in the evening. The vague feeling of "why am I always out of time?" is explained, on the circle, by the visible size of a slice.</p>
-      <p>The slice worth paying special attention to in this example is the commute. Morning and evening combined, travel alone uses up a considerable portion of the day's slices, yet in a bar-style list this time looks like a "blank" and is easy to skip over without thinking. On the circle, by contrast, the travel slice unmistakably takes up area, so the question "what will I do during the commute?" follows naturally. Listen to an audiobook, catch some sleep, or do nothing and rest — time that had gone missing comes back to life on the circle and becomes something you can choose to spend.</p>
-
-      <h2>How to interpret a finished circle</h2>
-      <p>More important than drawing it is "reading" the circle once it's done. Ask yourself these questions.</p>
-      <ul>
-        <li><strong>Is sleep enough?</strong> Is the sleep slice close to a third of the circle, or is it precariously thin?</li>
-        <li><strong>Is there any slack?</strong> If there isn't a single gray slice, it means there's no room at all in the day for the unexpected to slip in. A little margin isn't laziness — it's a buffer.</li>
-        <li><strong>Is the evening all screens?</strong> If the personal-time slice is entirely filled with only smartphones and streaming, it may be another form of consumption rather than recovery.</li>
-        <li><strong>Does work exceed half the circle?</strong> If the work-related slices, including the commute, exceed 12 hours, that day isn't a sustainable shape.</li>
-      </ul>
-
-      <h2>Circular vs. bar schedules</h2>
-      <p>The two approaches aren't in competition; they play different roles. The bar style (lists and timelines) is strong at execution — "what do I need to do right now, at what time." For notifications, checking the next item, and managing tightly packed meetings, a vertical timeline is still convenient.</p>
-      <p>The circle, on the other hand, is strong at "design" and "review." When you're balancing out a day, when you're looking back over a week to find patterns, and when you're searching for room to add a new habit, the circle is overwhelmingly intuitive. In fact, many people use the combination of <strong>designing the day with the circle and then executing it with a bar-style calendar.</strong> They set the big picture on the circle and work out the details on the bar.</p>
-      <p>Summed up in one sentence, the difference is this: the bar treats time as "points," while the circle treats time as "proportions." When you need a point (a 3 o'clock meeting, a 6 o'clock appointment), the bar is better; when you're curious about proportion (the balance of work and rest in your day), the circle is better. Neither one is right — you just switch which tool you hold depending on the question you're asking right now.</p>
-
-      <p>One more thing. The circle is especially strong at "weekly comparison." If you leave each day as a circle with the same layout, then when you line up a week's worth side by side, whether your sleep slices are erratic, or whether work encroaches on the circle only on certain weekdays, becomes clear at a glance. Without having to stare at a table of numbers and calculate, you compare, as shape, how the size and position of the slices wobble from day to day. Circles accumulated this way become the most honest record for diagnosing your own rhythm of life.</p>
-
-      <h2>Especially useful for people like these</h2>
-      <ul>
-        <li><strong>Students</strong> — see the balance of classes, self-study, and sleep at a glance, and discover empty pockets of time to put to use.</li>
-        <li><strong>Shift workers</strong> — it's good for protecting recovery time by moving the sleep slice around on the circle on days when night and day are flipped.</li>
-        <li><strong>Remote workers</strong> — the line between work and life blurs easily, but drawing a circle lets you see instantly whether the work slice is bleeding into the evening.</li>
-        <li><strong>Parents</strong> — grasp how childcare, chores, and personal time get mixed together, and check whether a slice for yourself is left.</li>
-      </ul>
-
-      <h2>Practical tips</h2>
-      <ul>
-        <li>Draw a <strong>typical day</strong>, not a perfect one. You have to draw your actual pattern, not an ideal plan, for the problems to show.</li>
-        <li>Standardize colors by purpose. Giving sleep, work, and rest each a fixed color makes it easy to compare circles across many days.</li>
-        <li>Don't leave out travel and prep time. Hidden slices are often the main culprits eating up the day.</li>
-        <li>If you leave one circle behind each week, you accumulate material to later refine into your own routine, in the style of the <a href="/guides/time-blocking">time-blocking guide</a>.</li>
-        <li>Rather than filling first, <strong>protect first.</strong> Set the sleep and recovery slices like a defensive line and place the rest around them.</li>
-        <li>Draw the circle you planned and the circle of the day you actually spent separately, and overlay them. The slices where plan and reality diverge are exactly the points to fix next.</li>
-      </ul>
-      <p>A circular schedule is, in the end, a tool not for "doing more" but for "choosing what to take away." The circle's rule — that to enlarge one slice you must shrink another — forces priorities not as words but as area. That's why simply drawing the circle properly once turns a day that was vaguely busy into a day you can choose.</p>
-
-      <h2>Key takeaways</h2>
-      <ul>
-        <li>A circular schedule fits 24 hours onto one screen and shows the day's balance, gaps, and overload as area.</li>
-        <li>You have to decide on a reference point (midnight or noon at the top) and keep it, so you can remember the "shape" of the day.</li>
-        <li>The drawing order is sleep → fixed anchors → flexible blocks. Claim spots starting with the big things.</li>
-        <li>Check the finished circle with four questions: sleep, slack, evening, and workload.</li>
-        <li>Circle for design and review, bar for execution — using both together is the most powerful.</li>
-        <li>The more prone someone is to having their time mixed up — students, shift workers, remote workers, parents — the greater the effect.</li>
-      </ul>
-    </div>
-    <div class="cta card">
-      <div class="lang-ko">
-        <p style="margin:0 0 4px"><strong>지금 바로 해보기</strong></p>
-        <p style="margin:0">24Houring에서 하루를 원형 시간표로 그려보세요. 설치·회원가입 없이 무료로 시작할 수 있습니다.</p>
-        <p style="margin:8px 0 0"><a class="btn" href="/">24Houring 열기 →</a></p>
-      </div>
-      <div class="lang-en">
-        <p style="margin:0 0 4px"><strong>Try it now</strong></p>
-        <p style="margin:0">Sketch your day as a 24-hour circle on 24Houring — free, with no sign-up or install.</p>
-        <p style="margin:8px 0 0"><a class="btn" href="/">Open 24Houring →</a></p>
-      </div>
-    </div>
-  </main>
+  <main class="article" id="main-content"><p class="crumb"><a href="/guides/"><span class="lang-ko">← 가이드 목록</span><span class="lang-en">← All guides</span></a></p><p class="editorial-meta"><span class="lang-ko">발행: 24Houring · 내용 검토: </span><span class="lang-en">Published by 24Houring · Content reviewed: </span><time datetime="2026-09-08">2026-09-08</time> · <a href="/editorial-policy"><span class="lang-ko">작성 기준</span><span class="lang-en">Editorial policy</span></a></p><div class="lang-ko" lang="ko"><h1>24시간 원형 시간표 읽기: 각도·자정·보기 전환</h1><p class="lead">원의 모양으로 시간을 어림하고, 숫자로 확인하는 방법입니다. 원의 색이나 크기로 건강 상태와 생산성을 판단하지 않습니다.</p><section><h2>기본 24시간 보기를 먼저 읽기</h2><p>기본 24시간 보기에서 자정 00시는 위, 06시는 오른쪽, 12시는 아래, 18시는 왼쪽입니다. 시계 방향으로 한 바퀴가 하루입니다. 평소의 12시간 시계와 숫자 위치가 다르므로 처음에는 눈금과 시작·끝 시각을 함께 확인하세요.</p>
+<p>한 시간은 360÷24=15도입니다. 두 시간은 30도, 여섯 시간은 90도, 여덟 시간은 120도입니다. 예를 들어 09:00–12:00 구간은 세 시간이므로 45도입니다. 이 계산은 전체 24시간 원에만 적용하며 낮·밤의 12시간 확대 보기에 그대로 적용하면 안 됩니다.</p></section>
+<section><h2>자정을 지나는 일정 계산하기</h2><p>가상 예시로 23:00–07:00을 배치하면 자정까지 한 시간과 다음 날 일곱 시간을 합쳐 여덟 시간입니다. 기본 원에서는 위쪽 자정 경계를 지나 이어집니다. 이것은 시각 계산 예시이며 권장 수면 시간이 아닙니다.</p>
+<p>표에 00:00–07:00과 23:00–24:00을 따로 적어도 합계는 같습니다. 모양만 보고 길이를 추정하다 헷갈리면 시간표 보기의 시작·끝 시각을 읽으세요. 특히 자정을 넘는 교대 일정은 시작 날짜도 메모해 두면 다른 날의 약속과 구분하기 쉽습니다.</p></section>
+<section><h2>한 구간을 늘리면 어디가 바뀌는가</h2><p>가상 계획의 점심이 12:00–13:00이고 다음 작업이 13:00에 시작한다고 합시다. 경계를 13:30으로 옮기면 점심 구간이 길어지는 만큼 이웃 작업 구간이 달라집니다. 수정 후에는 선택한 조각뿐 아니라 옆 조각의 이름과 시각도 확인하세요.</p>
+<p>이 플래너는 하루를 이어지는 구간으로 나눕니다. 여러 일정의 겹침을 별도 달력처럼 자동 판정하는 도구로 생각하면 안 됩니다. 한 시간에 두 약속을 동시에 넣으려는 상황이라면 무엇을 우선할지 정하거나 다른 달력에 겹침을 표시해야 합니다.</p></section>
+<section><h2>보기마다 맡길 일 구분하기</h2><p>전체 보기는 하루의 비중을 확인할 때, 낮·밤 보기는 해당 시간대를 크게 볼 때, 시간표 보기는 이름과 시각을 입력할 때 사용하세요. 이 계획 보기들은 같은 계획을 다룹니다. 실시간 기록은 실제 활동을 따로 남기는 모드이므로 보기 변경만으로 계획이 실제 기록이 되지는 않습니다.</p>
+<p>색상은 직접 정한 분류입니다. 회색이 반드시 빈 시간이고 빨강이 반드시 과로라는 의미는 없습니다. 여유가 필요하면 구간에 ‘미정·여유’처럼 이름을 붙이세요. 한눈에 파악하기 어렵다면 원을 계속 꾸미기보다 표에서 숫자를 확인하는 편이 나을 수 있습니다.</p></section><h2>이어서 살펴보기</h2><ul><li><a href="/guides/time-blocking">구간을 실제로 배치하는 예시</a></li><li><a href="/guides/time-audit">계획과 실제 시간을 따로 비교하기</a></li></ul><p><a class="btn" href="/">내 시간표 편집하기</a></p></div><div class="lang-en" lang="en"><h1>Read a 24-hour circle: angles, midnight and views</h1><p class="lead">Use the circle to estimate proportions, then check the times. A slice’s colour or size does not diagnose health or measure productivity.</p><section><h2>Start with the full-day view</h2><p>In the default full-day view, midnight is at the top, 06:00 on the right, noon at the bottom and 18:00 on the left. One clockwise turn covers the day. These positions differ from a familiar 12-hour clock, so read the labels before estimating a duration.</p>
+<p>An hour occupies 360÷24=15 degrees. Two hours occupy 30 degrees, six hours 90 degrees and eight hours 120 degrees. A 09:00–12:00 block is three hours, or 45 degrees. This calculation is for the full-day circle, not the expanded day or night views.</p></section>
+<section><h2>Calculate across midnight</h2><p>An illustrative 23:00–07:00 block contains one hour before midnight and seven after it: eight hours in total. On the default circle it crosses the upper midnight boundary. This is a time-arithmetic example, not a recommended sleep duration.</p>
+<p>Writing 00:00–07:00 and 23:00–24:00 separately gives the same total. If the shape is confusing, check the start and end fields in the table view. For overnight shifts, note the starting date too so you do not confuse appointments on different dates.</p></section>
+<section><h2>Check the neighbouring block after a change</h2><p>Suppose lunch is planned for 12:00–13:00 and the next task starts at 13:00. Moving the shared boundary to 13:30 extends lunch and changes the adjacent task. Check both blocks after dragging, not just the selected one.</p>
+<p>The planner divides a day into contiguous intervals. It is not a separate calendar that automatically diagnoses overlapping appointments. If two commitments compete for the same hour, choose a priority or use a calendar that explicitly displays the conflict.</p></section>
+<section><h2>Choose a view for the question</h2><p>Use the full day for proportions, day or night for a larger view of that period, and the table for entering names and times. These planning views share a plan. Activity recording is separate: changing the view does not turn planned time into observed activity.</p>
+<p>Colours are categories you choose. Grey does not necessarily mean free time, and red does not mean overwork. Label an unassigned interval “unallocated / buffer” if that is what you intend. If the circle is difficult to interpret, check the numbers in the table rather than assuming that more decoration will clarify them.</p></section><h2>Related walkthroughs</h2><ul><li><a href="/guides/time-blocking">A worked block-planning example</a></li><li><a href="/guides/time-audit">Compare planned and actual time</a></li></ul><p><a class="btn" href="/">Edit my day</a></p></div></main>
   <footer class="site">
     <nav>
       <a href="/"><span class="lang-ko">홈 Home</span><span class="lang-en">Home</span></a>
@@ -251,5 +61,6 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
     <p class="copy">© 2026 Circloser · 24houring.com</p>
   </footer>
 </div>
-</body>
-</html>
+
+
+</body></html>

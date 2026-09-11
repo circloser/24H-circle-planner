@@ -3,35 +3,36 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>왜 네모가 아니라 원일까 — 하루를 원으로 그릴 때 보이는 것들 · 24Houring 블로그</title>
-<meta name="description" content="네모 플래너는 채운 것만 보여줍니다. 하루를 원으로 그리면 비어 있는 시간, 하루의 닫힌 총량, 수면의 실제 크기가 보입니다. 원형 플래너가 잘하는 것과 못하는 것을 솔직하게 정리했습니다." />
+<title>원형 시간표와 목록·캘린더 — 어떤 질문에 어떤 도구를 쓸까 · 24Houring 블로그</title>
+<meta name="description" content="하루의 비율, 정확한 약속, 세부 할 일을 같은 예시로 비교하고 원형 시간표의 한계를 설명합니다." />
 <link rel="canonical" href="https://24houring.com/blog/circle-vs-square-planner" />
 <meta name="robots" content="index, follow" />
-<meta property="og:title" content="왜 네모가 아니라 원일까 — 하루를 원으로 그릴 때 보이는 것들 · 24Houring 블로그" />
-<meta property="og:description" content="네모 플래너는 채운 것만 보여줍니다. 하루를 원으로 그리면 비어 있는 시간, 하루의 닫힌 총량, 수면의 실제 크기가 보입니다. 원형 플래너가 잘하는 것과 못하는 것을 솔직하게 정리했습니다." />
+<meta property="og:title" content="원형 시간표와 목록·캘린더 — 어떤 질문에 어떤 도구를 쓸까 · 24Houring 블로그" />
+<meta property="og:description" content="하루의 비율, 정확한 약속, 세부 할 일을 같은 예시로 비교하고 원형 시간표의 한계를 설명합니다." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://24houring.com/blog/circle-vs-square-planner" />
 <meta property="og:image" content="https://24houring.com/og-image.png" />
 <link rel="alternate" type="application/rss+xml" title="24Houring Blog" href="/blog/rss.xml" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="stylesheet" href="/guides/guide.css" />
+<style>.langswitch button{font:inherit;color:inherit;background:transparent;border:0;padding:6px;cursor:pointer}.langswitch button[aria-pressed="true"]{font-weight:700;text-decoration:underline}.langswitch button:focus-visible{outline:2px solid currentColor;outline-offset:2px}</style>
 <meta name="google-adsense-account" content="ca-pub-6947130056543786">
 <script type="application/ld+json">
 {
  "@context": "https://schema.org",
  "@type": "BlogPosting",
- "headline": "왜 네모가 아니라 원일까 — 하루를 원으로 그릴 때 보이는 것들",
- "description": "네모 플래너는 채운 것만 보여줍니다. 하루를 원으로 그리면 비어 있는 시간, 하루의 닫힌 총량, 수면의 실제 크기가 보입니다. 원형 플래너가 잘하는 것과 못하는 것을 솔직하게 정리했습니다.",
+ "headline": "원형 시간표와 목록·캘린더 — 어떤 질문에 어떤 도구를 쓸까",
+ "description": "하루의 비율, 정확한 약속, 세부 할 일을 같은 예시로 비교하고 원형 시간표의 한계를 설명합니다.",
  "inLanguage": [
   "ko",
   "en"
  ],
  "image": "https://24houring.com/og-image.png",
  "datePublished": "2026-07-17",
- "dateModified": "2026-07-17",
+ "dateModified": "2026-09-11",
  "author": {
-  "@type": "Person",
-  "name": "Circloser",
+  "@type": "Organization",
+  "name": "24Houring",
   "url": "https://24houring.com/about"
  },
  "publisher": {
@@ -56,15 +57,16 @@
   {
    "@type": "ListItem",
    "position": 2,
-   "name": "왜 네모가 아니라 원일까 — 하루를 원으로 그릴 때 보이는 것들",
+   "name": "원형 시간표와 목록·캘린더 — 어떤 질문에 어떤 도구를 쓸까",
    "item": "https://24houring.com/blog/circle-vs-square-planner"
   }
  ]
 }
 </script>
 <script>
-(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');}}catch(e){}})();
-function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');}
+function applyGuideLang(l){l=l==='ko'?'ko':'en';document.documentElement.classList.toggle('show-en',l==='en');document.documentElement.lang=l;document.querySelectorAll('[data-guide-lang]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.guideLang===l));});}
+(function(){var l='ko';try{l=localStorage.getItem('24h-guides-lang');if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}}catch(e){}applyGuideLang(l);document.addEventListener('DOMContentLoaded',function(){applyGuideLang(document.documentElement.lang);});})();
+function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}applyGuideLang(l);}
 </script>
 </head>
 <body>
@@ -72,7 +74,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
   <header class="site">
     <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
-      <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
+      <span class="langswitch"><button type="button" data-guide-lang="ko" aria-pressed="true" onclick="setGuideLang('ko')">한국어</button><span class="sep">·</span><button type="button" data-guide-lang="en" aria-pressed="false" onclick="setGuideLang('en')">EN</button></span>
       <a href="/blog/"><span class="lang-ko">블로그</span><span class="lang-en">Blog</span></a>
       <a href="/"><span class="lang-ko">홈</span><span class="lang-en">Home</span></a>
     </nav>
@@ -80,59 +82,51 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
   <main class="article">
     <p class="crumb"><a href="/blog/"><span class="lang-ko">← 블로그 목록</span><span class="lang-en">← All posts</span></a></p>
     <div class="lang-ko">
-    <h1>왜 네모가 아니라 원일까 — 하루를 원으로 그릴 때 보이는 것들</h1>
-    <p class="en" style="margin:0 0 14px">글 <a href="/about">Circloser</a> · 2026년 7월 17일</p>
-<p>우리가 쓰는 플래너는 대부분 네모입니다. 위에서 아래로 흐르는 타임테이블, 체크박스가 늘어선 할 일 목록, 세로로 긴 캘린더 칸. 종이 노트에서 출발한 형식이 그대로 디지털로 옮겨온 결과입니다.</p>
-<p>그런데 정작 우리가 시간을 읽는 법을 처음 배운 도구는 네모가 아니었습니다. 아날로그 시계였죠. 바늘이 한 바퀴 돌면 반나절, 두 바퀴면 하루. 우리 머릿속에서 시간은 원래 원운동입니다.</p>
-<p>플래너만 왜 네모여야 할까요.</p>
-<h2>1. 원은 '비어 있는 시간'을 보여준다</h2>
-<p>네모 플래너의 가장 큰 맹점은 <strong>채운 것만 보인다</strong>는 점입니다. 할 일 목록에 다섯 개를 적으면 다섯 줄이 보입니다. 그 다섯 개 사이에 흘러간 세 시간은 목록 어디에도 나타나지 않습니다. 기록되지 않은 시간은 존재하지 않았던 시간처럼 취급됩니다.</p>
-<p>원형 플래너에서는 반대입니다. 하루를 원으로 그리면 채운 만큼 색이 차고, <strong>채우지 않은 만큼 흰 부채꼴이 남습니다.</strong> 그 빈 공간이 도형으로 눈에 들어오는 순간, "오늘 오후 2시부터 5시까지 나는 뭘 했지?"라는 질문이 저절로 떠오릅니다. 시간 관리의 시작은 계획이 아니라 이 질문입니다.</p>
-<h2>2. 하루가 닫힌 총량이라는 사실이 눈에 보인다</h2>
-<p>할 일 목록은 무한히 길어질 수 있습니다. 열 개를 적든 스무 개를 적든 스크롤만 내려가지, 목록 자체가 "이건 하루에 불가능합니다"라고 말해주지는 않습니다. 우리가 매일 계획에 실패하는 이유의 절반이 여기 있습니다. <strong>목록은 시간의 한계를 표현하지 못합니다.</strong></p>
-<p>원은 다릅니다. 원은 닫혀 있습니다. 360도가 24시간이고, 그 이상은 없습니다. 한 칸을 더 넣으려면 다른 칸을 줄여야 한다는 사실이 도형 자체에 새겨져 있습니다. 원형 플래너에 일정을 넣다 보면 어느 순간 손이 멈춥니다. 자리가 없기 때문입니다. 이건 앱이 주는 경고가 아니라 <strong>기하학이 주는 경고</strong>라서, 거부하기가 어렵습니다.</p>
-<h2>3. 수면이 제자리를 찾는다</h2>
-<p>수면은 대부분의 플래너에서 배제됩니다. 할 일이 아니니까요. 그래서 우리는 하루를 '깨어 있는 16시간'으로 착각한 채 계획을 세웁니다.</p>
-<p>하루를 원으로 그리면 수면은 자연스럽게 원의 3분의 1을 차지합니다. 피할 수가 없습니다. 그 큰 부채꼴을 매일 보다 보면 인식이 바뀝니다. 수면은 하루에서 빠진 시간이 아니라, 하루에서 가장 큰 블록입니다. 잠을 줄여 시간을 만든다는 발상이 원 위에서는 얼마나 큰 훼손인지 한눈에 보입니다.</p>
-<h2>4. 균형이 '모양'이 된다</h2>
-<p>일주일치 원을 나란히 놓고 보면 재미있는 일이 생깁니다. 어떤 날은 색이 한쪽으로 몰려 있고, 어떤 날은 고르게 퍼져 있습니다. 숫자로 "이번 주 업무 42시간"이라고 적힌 것보다, <strong>한쪽으로 쏠린 원 일곱 개가 훨씬 강하게 설득합니다.</strong> 통계를 읽지 않아도 몸이 먼저 압니다. 시각화의 힘은 여기에 있습니다.</p>
-<h2>원형이 만능은 아니다</h2>
-<p>솔직하게 짚자면, 원형 플래너가 모든 걸 대체하지는 못합니다. 세부 할 일을 쪼개서 관리하거나, 몇 주 뒤 마감을 추적하거나, 프로젝트 단위로 묶는 일은 여전히 목록과 캘린더가 훨씬 낫습니다. 원은 하루보다 긴 시간을 담기 어렵고, 5분짜리 일정을 넣기에는 부채꼴이 너무 얇습니다.</p>
-<p>원형 플래너의 자리는 <strong>'하루의 구조를 보는 도구'</strong>입니다. 무엇을 할지가 아니라, 내 하루가 어떤 모양인지를 보는 도구. 그 질문에 답하는 데는 네모보다 원이 압도적으로 낫습니다.</p>
-<h2>직접 그려보기</h2>
-<p><a href="https://24houring.com">24houring.com</a>에서 가입 없이 바로 자기 하루를 원으로 그려볼 수 있습니다. 데이터는 브라우저에만 저장되고 서버로 가지 않습니다. 5분이면 충분합니다. 처음이라면 <a href="/guides/24-hour-circle-method">원형 시간표 활용법</a> 가이드나 <a href="/templates/">미리 만들어 둔 템플릿</a>에서 시작해도 좋습니다.</p>
-<p>오늘 하루를 원으로 그려보세요. 아마 예상과 다른 모양이 나올 겁니다.</p>
+    <h1>원형 시간표와 목록·캘린더 — 어떤 질문에 어떤 도구를 쓸까</h1>
+    <p class="en" style="margin:0 0 14px">작성 <a href="/about">24Houring</a> · 2026년 7월 17일 · 수정 2026년 9월 11일</p>
+<p>원형 시간표가 모든 계획 도구보다 좋은 것은 아닙니다. <strong>하루의 시간 배분</strong>을 보려면 원이 도움이 될 수 있고, 정확한 약속과 세부 작업을 관리하려면 캘린더와 목록이 더 편할 수 있습니다. 세 도구가 답하는 질문을 구분하면 같은 내용을 여러 번 관리하는 부담을 줄일 수 있습니다.</p>
+<h2>하나의 오후를 세 방식으로 보기</h2>
+<p>예시로 13:00–14:00 보고서 작성, 14:00–14:30 회의, 14:30–15:00 이동을 계획했다고 합시다.</p>
+<ul>
+  <li>원형 시간표: 보고서·회의·이동이 하루에서 차지하는 크기와 서로 맞닿은 위치를 봅니다.</li>
+  <li>캘린더: 회의 장소, 초대 대상, 날짜와 시작 시각을 확인합니다. 세로 시간표도 빈 시간을 보여줄 수 있습니다.</li>
+  <li>할 일 목록: 보고서 안의 ‘자료 확인·표 수정·결론 작성’을 체크합니다. 각 항목에 시간을 추정해 더할 수도 있습니다.</li>
+</ul>
+<p>같은 회의를 세 군데에서 각각 수정하기보다 약속의 기준은 캘린더, 오늘의 큰 배분은 원, 작업의 완료 상태는 목록처럼 기준을 정하세요.</p>
+<h2>원에서 읽을 수 있는 것과 없는 것</h2>
+<p>24시간 원에서 한 시간은 15도이고, 예시로 8시간을 배치하면 원의 3분의 1입니다. 이는 도형의 비율이지 모든 사람에게 권장하는 수면량이나 업무량이 아닙니다. 넓은 색 조각이 곧 효율적인 작업을 뜻하지도 않습니다. 실제 집중도와 완료 결과는 별도 기록이 필요합니다.</p>
+<p>빈 구간 역시 낭비의 증거가 아닙니다. 휴식, 돌봄의 대기, 아직 기록하지 못한 활동일 수 있습니다. 의미를 알고 있다면 ‘휴식’이나 ‘대기’로 이름을 붙이고, 모르겠다면 미기록으로 남깁니다.</p>
+<h2>24Houring에서 보기 전환하기</h2>
+<p>큰 활동을 입력한 뒤 보기 메뉴에서 <strong>전체·표·기록</strong>을 필요에 맞게 선택합니다. 원에서 작은 글자가 겹치면 표 보기로 시각과 이름을 확인하세요. 실제 기록을 계획과 구분하면 ‘예정한 시간’과 ‘사용한 시간’을 혼동하지 않을 수 있습니다. 기본 조작은 <a href="/guides/24-hour-circle-method">원형 시간표 활용 가이드</a>를 참고하세요.</p>
+<h2>다른 도구를 함께 써야 하는 경우</h2>
+<p>몇 주 뒤의 마감, 팀 초대, 여러 작업의 동시 진행은 이 원 하나에 모두 넣지 않아도 됩니다. 해당 정보는 기존 캘린더나 작업 관리 도구에 두고 오늘 사용할 큰 구간만 옮겨보세요. 24Houring의 기본 계획은 브라우저에 저장되지만 선택적 동기화·공유는 서버를 이용합니다. 자세한 구분은 <a href="/privacy">개인정보 안내</a>에 있습니다.</p>
     </div>
     <div class="lang-en">
-    <h1>Why a Circle, Not a Square — What You See When You Draw Your Day as a Circle</h1>
-    <p class="en" style="margin:0 0 14px">By <a href="/about">Circloser</a> · 2026-07-17</p>
-<p>Most planners we use are rectangles: a timetable flowing top to bottom, a to-do list lined with checkboxes, tall calendar cells. A format born on paper notebooks, carried into digital unchanged.</p>
-<p>Yet the first tool we ever learned to read time on wasn't a rectangle — it was the analog clock. One sweep of the hands is half a day; two sweeps, a whole one. In our heads, time has always moved in circles.</p>
-<p>So why must the planner alone be square?</p>
-<h2>1. A circle shows the EMPTY time</h2>
-<p>The biggest blind spot of a square planner is that <strong>it only shows what you filled in</strong>. Write five to-dos and you see five lines. The three hours that drained away between them appear nowhere. Time that goes unrecorded gets treated like time that never existed.</p>
-<p>A circular planner works the other way. Draw the day as a circle and colour fills only what you spent — <strong>what you didn't fill remains as a white wedge.</strong> The moment that emptiness becomes a visible shape, the question asks itself: "what exactly did I do between 2 and 5 p.m.?" Time management starts with that question, not with a plan.</p>
-<h2>2. You can SEE that a day is a closed quantity</h2>
-<p>A to-do list can grow forever. Write ten items or twenty — the scroll just gets longer, and the list itself never says "this doesn't fit in one day." Half of why our daily plans fail lives right here: <strong>a list cannot express the limit of time.</strong></p>
-<p>A circle is different. A circle is closed: 360 degrees is 24 hours, and there is no more. The fact that adding one block means shrinking another is engraved in the geometry itself. Fill a circular planner and at some point your hand simply stops — there's no room. That's not a warning from an app; it's <strong>a warning from geometry</strong>, and geometry is hard to argue with.</p>
-<h2>3. Sleep takes its rightful place</h2>
-<p>Sleep is exiled from most planners — it isn't a task, after all. So we plan our days under the illusion that a day is "sixteen waking hours."</p>
-<p>Draw the day as a circle and sleep naturally claims a third of it. There's no avoiding it. Watch that great wedge every day and your perception shifts: sleep isn't time missing from the day — it's the single biggest block in it. On the circle, you can see at a glance how much damage "making time by cutting sleep" actually does.</p>
-<h2>4. Balance becomes a SHAPE</h2>
-<p>Line up a week of circles side by side and something interesting happens. Some days the colour is piled to one side; other days it spreads evenly. <strong>Seven lopsided circles argue far more persuasively than a number like "42 hours of work this week."</strong> Your body understands before you read a single statistic. That is the power of visualisation.</p>
-<h2>A circle isn't a cure-all</h2>
-<p>To be honest about it: a circular planner doesn't replace everything. Breaking work into subtasks, tracking deadlines weeks away, grouping by project — lists and calendars are still much better at all of that. A circle struggles to hold anything longer than a day, and a five-minute appointment makes a wedge too thin to see.</p>
-<p>The circular planner's place is as <strong>a tool for seeing the structure of a day</strong> — not what to do, but what shape your day has. For that question, the circle beats the square, decisively.</p>
-<h2>Try it yourself</h2>
-<p>At <a href="https://24houring.com">24houring.com</a> you can draw your own day as a circle, no sign-up needed. Your data stays in your browser and never touches a server. Five minutes is enough — and if it's your first time, start from <a href="/guides/24-hour-circle-method">the 24-hour circle method</a> or a <a href="/templates/">ready-made template</a>.</p>
-<p>Draw today as a circle. The shape will probably surprise you.</p>
+    <h1>Circle, List, or Calendar — Choose by the Question</h1>
+    <p class="en" style="margin:0 0 14px">By <a href="/about">24Houring</a> · 2026-07-17 · Updated 2026-09-11</p>
+<p>A circular timetable is not better at every planning task. It can help show <strong>how a day is allocated</strong>; a calendar or list may be more convenient for exact appointments and detailed work. Assign each tool a question so that you do not maintain every detail in three places.</p>
+<h2>One afternoon, three representations</h2>
+<p>Suppose you plan report writing at 13:00–14:00, a meeting at 14:00–14:30, and travel at 14:30–15:00.</p>
+<ul>
+  <li>A circle shows the relative sizes and positions of these intervals within the day.</li>
+  <li>A calendar holds the meeting's date, location, participants, and start time. A vertical timetable can show gaps too.</li>
+  <li>A task list tracks report subtasks: check sources, revise the table, write the conclusion. It can also include duration estimates.</li>
+</ul>
+<p>Choose a reference for each kind of information: appointments in the calendar, today's broad allocation on the circle, completion on the task list.</p>
+<h2>What the circle does and does not tell you</h2>
+<p>On a 24-hour circle, one hour spans 15 degrees; an illustrative eight-hour block occupies one third. That is geometry, not a universal sleep or work recommendation. A large work block does not demonstrate efficient work. Actual focus and completed results need separate records.</p>
+<p>A gap is not evidence of waste either. It may represent rest, availability for care, or an activity you did not record. Label known rest or waiting explicitly; leave uncertain periods marked as unrecorded.</p>
+<h2>Switch views in 24Houring</h2>
+<p>After entering broad activities, use the view menu to choose the full circle, table, or record view. Check small or crowded labels in table view. Keep actual records distinct from the plan so that intended time is not mistaken for time spent. See the <a href="/guides/24-hour-circle-method">circle-method guide</a> for the basic controls.</p>
+<h2>When another tool belongs alongside it</h2>
+<p>Deadlines weeks away, team invitations, and concurrent projects do not all need to fit on one circle. Keep those details in the appropriate existing tool and bring only today's broad intervals into the planner. Basic planning is stored in your browser; optional sync and sharing use servers. The <a href="/privacy">privacy notice</a> explains the distinction.</p>
     </div>
     <div class="card" style="margin-top:26px">
       <p style="margin:0 0 8px"><strong><span class="lang-ko">함께 읽으면 좋은 글</span><span class="lang-en">Related posts</span></strong></p>
       <ul style="margin:0;padding-left:20px">
-        <li style="margin:4px 0"><a href="/blog/sleep-anchor-day"><span class="lang-ko">수면을 중심에 놓고 하루를 역설계하는 법 — 잠을 잔반으로 남기지 않기</span><span class="lang-en">Designing the Day Backward from Sleep — Stop Leaving Sleep as Leftovers</span></a></li>
-        <li style="margin:4px 0"><a href="/blog/phone-time-audit"><span class="lang-ko">스마트폰이 삼킨 시간을 원으로 마주하기 — 숫자가 아니라 모양으로 보는 화면 시간</span><span class="lang-en">Facing the Time Your Phone Ate — Seeing Screen Time as a Shape, Not a Number</span></a></li>
-        <li style="margin:4px 0"><a href="/blog/habit-stacking-circle"><span class="lang-ko">습관 쌓기를 원형 시간표에 앉히는 법</span><span class="lang-en">How to Seat Habit Stacking on a Circular Timetable</span></a></li>
+        <li style="margin:4px 0"><a href="/blog/sleep-anchor-day"><span class="lang-ko">수면을 먼저 표시하는 계획 — 취침 준비와 약속을 함께 계산하기</span><span class="lang-en">Mark Sleep First — Budget Preparation and Commitments Together</span></a></li>
+        <li style="margin:4px 0"><a href="/blog/phone-time-audit"><span class="lang-ko">스크린 타임을 하루 기록과 비교할 때 중복을 피하는 법</span><span class="lang-en">Compare Screen Time with Your Day Without Double-Counting</span></a></li>
+        <li style="margin:4px 0"><a href="/blog/habit-stacking-circle"><span class="lang-ko">기존 행동 뒤에 작은 행동 붙이기 — 준비와 예외까지 정하기</span><span class="lang-en">Attach a Small Action to an Existing Event — Include Setup and Exceptions</span></a></li>
       </ul>
     </div>
 
@@ -154,13 +148,12 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
       <a href="/"><span class="lang-ko">홈 Home</span><span class="lang-en">Home</span></a>
       <a href="/blog/"><span class="lang-ko">블로그 Blog</span><span class="lang-en">Blog</span></a>
       <a href="/templates/"><span class="lang-ko">템플릿 Templates</span><span class="lang-en">Templates</span></a>
-      <a href="/gallery/"><span class="lang-ko">갤러리 Gallery</span><span class="lang-en">Gallery</span></a>
-      <a href="/life-planner"><span class="lang-ko">생활계획표 Life Planner</span><span class="lang-en">Life Planner</span></a>
       <a href="/guides/"><span class="lang-ko">가이드 Guides</span><span class="lang-en">Guides</span></a>
       <a href="/stories/"><span class="lang-ko">스토리 Stories</span><span class="lang-en">Stories</span></a>
       <a href="/health/"><span class="lang-ko">건강 Health</span><span class="lang-en">Health</span></a>
       <a href="/faq"><span class="lang-ko">FAQ</span><span class="lang-en">FAQ</span></a>
       <a href="/about"><span class="lang-ko">소개 About</span><span class="lang-en">About</span></a>
+      <a href="/editorial-policy"><span class="lang-ko">편집 원칙</span><span class="lang-en">Editorial policy</span></a>
       <a href="/privacy"><span class="lang-ko">개인정보처리방침 Privacy</span><span class="lang-en">Privacy</span></a>
       <a href="/terms"><span class="lang-ko">이용약관 Terms</span><span class="lang-en">Terms</span></a>
       <a href="/contact"><span class="lang-ko">문의 Contact</span><span class="lang-en">Contact</span></a>

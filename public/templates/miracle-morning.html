@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>미라클모닝 생활 계획표 템플릿 (5시 기상) · 24Houring</title>
-<meta name="description" content="5시 기상 → 명상·독서·운동으로 하루를 여는 미라클모닝 생활 계획표. 핵심은 이른 기상이 아니라 22시 취침 — 원형 시간표로 수면 시간부터 확보하세요." />
+<meta name="description" content="오전 5시에 시작하는 가상 일정입니다. 이른 기상이 더 좋은 계획이라는 뜻은 아니며 수면과 의무 일정에 맞춰 전체 시간을 옮길 수 있습니다." />
 <link rel="canonical" href="https://24houring.com/templates/miracle-morning" />
 <link rel="alternate" hreflang="ko" href="https://24houring.com/templates/miracle-morning" />
 <link rel="alternate" hreflang="en" href="https://24houring.com/templates/miracle-morning" />
@@ -13,7 +13,7 @@
 <link rel="alternate" hreflang="x-default" href="https://24houring.com/templates/miracle-morning" />
 <meta name="robots" content="index, follow" />
 <meta property="og:title" content="미라클모닝 생활 계획표 템플릿 (5시 기상) · 24Houring" />
-<meta property="og:description" content="5시 기상 → 명상·독서·운동으로 하루를 여는 미라클모닝 생활 계획표. 핵심은 이른 기상이 아니라 22시 취침 — 원형 시간표로 수면 시간부터 확보하세요." />
+<meta property="og:description" content="오전 5시에 시작하는 가상 일정입니다. 이른 기상이 더 좋은 계획이라는 뜻은 아니며 수면과 의무 일정에 맞춰 전체 시간을 옮길 수 있습니다." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://24houring.com/templates/miracle-morning" />
 <meta property="og:image" content="https://24houring.com/templates/img/miracle-morning.png" />
@@ -25,14 +25,14 @@
  "@context": "https://schema.org",
  "@type": "Article",
  "headline": "미라클모닝 생활 계획표 템플릿 (5시 기상)",
- "description": "5시 기상 → 명상·독서·운동으로 하루를 여는 미라클모닝 생활 계획표. 핵심은 이른 기상이 아니라 22시 취침 — 원형 시간표로 수면 시간부터 확보하세요.",
+ "description": "오전 5시에 시작하는 가상 일정입니다. 이른 기상이 더 좋은 계획이라는 뜻은 아니며 수면과 의무 일정에 맞춰 전체 시간을 옮길 수 있습니다.",
  "inLanguage": [
   "ko",
   "en"
  ],
  "image": "https://24houring.com/templates/img/miracle-morning.png",
  "datePublished": "2026-07-12",
- "dateModified": "2026-07-12",
+ "dateModified": "2026-09-11",
  "author": {
   "@type": "Organization",
   "name": "24Houring",
@@ -67,8 +67,9 @@
 }
 </script>
 <script>
-(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');}}catch(e){}})();
-function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');}
+(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');document.documentElement.lang='en';}}catch(e){}})();
+function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');document.documentElement.lang=l;document.querySelectorAll('[data-template-lang]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.templateLang===l));});}
+document.addEventListener('DOMContentLoaded',function(){setGuideLang(document.documentElement.lang==='en'?'en':'ko');});
 </script>
 </head>
 <body>
@@ -76,7 +77,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
   <header class="site">
     <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
-      <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
+      <span class="langswitch"><button type="button" data-template-lang="ko" aria-pressed="true" onclick="setGuideLang('ko')">한국어</button><span class="sep">·</span><button type="button" data-template-lang="en" aria-pressed="false" onclick="setGuideLang('en')">EN</button></span>
       <a href="/templates/"><span class="lang-ko">템플릿</span><span class="lang-en">Templates</span></a>
       <a href="/"><span class="lang-ko">홈</span><span class="lang-en">Home</span></a>
     </nav>
@@ -85,16 +86,17 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
     <p class="crumb"><a href="/templates/"><span class="lang-ko">← 템플릿 목록</span><span class="lang-en">← All templates</span></a></p>
     <div class="lang-ko">
     <h1>미라클모닝 생활 계획표 템플릿 (5시 기상)</h1>
-    <p class="lead">5시 기상 → 명상·독서·운동으로 하루를 여는 미라클모닝 생활 계획표. 핵심은 이른 기상이 아니라 22시 취침 — 원형 시간표로 수면 시간부터 확보하세요.</p>
+    <p class="lead">오전 5시에 시작하는 가상 일정입니다. 이른 기상이 더 좋은 계획이라는 뜻은 아니며 수면과 의무 일정에 맞춰 전체 시간을 옮길 수 있습니다.</p><p>2026년 9월 11일 검토 · 편집용 가상 일정입니다.</p>
     </div>
     <div class="lang-en">
     <h1>Miracle Morning Routine Template (5 AM Wake-up)</h1>
-    <p class="lead">Open the day at 5 AM with meditation, reading, and exercise. The real key is the 10 PM bedtime — secure sleep first on the circle.</p>
+    <p class="lead">An illustrative day starting at 5 AM. An earlier start is not a better plan by itself; shift the whole schedule to fit sleep and commitments.</p><p>Reviewed September 11, 2026. The chart and imported activity labels are in Korean; rename them after import.</p>
     </div>
 
     <p style="text-align:center;margin:18px 0">
       <img src="/templates/img/miracle-morning.png" alt="미라클모닝 생활 계획표 템플릿 (5시 기상) — 24시간 원형 시간표" width="520" style="max-width:100%;height:auto;border-radius:16px" loading="lazy" />
     </p>
+
 
     <p style="text-align:center;margin:0 0 6px">
       <a class="btn" href="/#p=eyJ2IjoxLCJuIjoi66-465287YG066qo64udIOqzhO2aje2RnCIsInMiOltbMzAwLCLquLDsg4HCt-usvCDtlZwg7J6UIiwiI2ZiYmYyNCIsIuKPsCJdLFszMTUsIuuqheyDgcK37Iqk7Yq466CI7LmtIiwiI2RkZDZmZSIsIvCfp5giXSxbMzQ1LCLrj4XshJzCt-q4gOyTsOq4sCIsIiM5M2M1ZmQiLCLwn5OWIl0sWzQwNSwi7Jq064-ZIiwiIzZlZTdiNyIsIvCfj4MiXSxbNDUwLCLsg6Tsm4zCt-yVhOy5qCIsIiNmY2E1YTUiLCLwn42zIl0sWzUxMCwi7Jik7KCEIOyXheustCIsIiNhNWI0ZmMiLCLwn5K8Il0sWzcyMCwi7KCQ7IusIiwiI2ZjYTVhNSIsIvCfjb3vuI8iXSxbNzgwLCLsmKTtm4Qg7JeF66y0IiwiIzkzYzVmZCIsIvCfl4LvuI8iXSxbMTA4MCwi7KCA64WBwrftnLTsi50iLCIjZjlhOGQ0Iiwi8J-NsiJdLFsxMjAwLCLsnpDquLDqs4TrsJzCt-y3qOuvuCIsIiNmZGJhNzQiLCLwn46vIl0sWzEyOTAsIuygleumrMK364K07J28IOykgOu5hCIsIiNhN2YzZDAiLCLwn4yZIl0sWzEzMjAsIuyImOuptCIsIiNjN2QyZmUiLCLwn5i0Il1dfQ"><span class="lang-ko">이 계획표로 바로 시작하기 →</span><span class="lang-en">Start with this template →</span></a>
@@ -123,11 +125,11 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
     </ul>
     <h2>활용 팁</h2>
     <ul>
-      <li>미라클모닝의 성패는 기상이 아니라 취침 시간입니다. 22시 취침을 먼저 지키세요.</li>
-      <li>새벽 시간은 "나를 위한 일"(독서·운동·글쓰기)에만 쓰세요. 업무를 당겨오면 그냥 야근입니다.</li>
-      <li>주말에도 기상 시간을 1시간 이상 늦추지 않아야 리듬이 유지됩니다.</li>
+      <li>이 예시의 수면 구간은 22시부터 5시까지 7시간입니다. 개인에게 적합한 목표를 제시하는 값은 아닙니다.</li>
+      <li>아침 활동은 한 가지부터 남기고 나머지는 선택 항목으로 두세요.</li>
+      <li>취침을 앞당길 수 없다면 기상만 앞당기지 말고 예시 시간을 바꾸세요.</li>
     </ul>
-    <p><a href="/guides/morning-evening-routine">관련 가이드</a> · <a href="/guides/daily-life-planner">관련 가이드</a> · <a href="/guides/24-hour-circle-method">원형 시간표 활용법</a></p>
+    <p><a href="/guides/morning-evening-routine">관련 자료</a> · <a href="/guides/daily-life-planner">관련 자료</a> · <a href="/guides/24-hour-circle-method">원형 시간표 활용법</a></p>
     </div>
     <div class="lang-en">
     <h2>The schedule</h2>
@@ -147,9 +149,9 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
     </ul>
     <h2>Tips</h2>
     <ul>
-      <li>The miracle morning is won at bedtime, not wake-up. Protect 10 PM first.</li>
-      <li>Spend dawn hours only on yourself (reading, exercise, writing) — pulling work forward is just overtime.</li>
-      <li>Keep weekend wake-ups within an hour of weekdays to hold the rhythm.</li>
+      <li>The example reserves seven hours from 10 PM to 5 AM; this is not an individual sleep target.</li>
+      <li>Keep one morning activity and make the rest optional.</li>
+      <li>If bedtime cannot move earlier, change the example instead of only moving wake-up.</li>
     </ul>
     </div>
 
@@ -170,10 +172,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
     <nav>
       <a href="/"><span class="lang-ko">홈 Home</span><span class="lang-en">Home</span></a>
       <a href="/templates/"><span class="lang-ko">템플릿 Templates</span><span class="lang-en">Templates</span></a>
-      <a href="/gallery/"><span class="lang-ko">갤러리 Gallery</span><span class="lang-en">Gallery</span></a>
-      <a href="/life-planner"><span class="lang-ko">생활계획표 Life Planner</span><span class="lang-en">Life Planner</span></a>
       <a href="/guides/"><span class="lang-ko">가이드 Guides</span><span class="lang-en">Guides</span></a>
-      <a href="/blog/"><span class="lang-ko">블로그 Blog</span><span class="lang-en">Blog</span></a>
       <a href="/stories/"><span class="lang-ko">스토리 Stories</span><span class="lang-en">Stories</span></a>
       <a href="/health/"><span class="lang-ko">건강 Health</span><span class="lang-en">Health</span></a>
       <a href="/faq"><span class="lang-ko">FAQ</span><span class="lang-en">FAQ</span></a>

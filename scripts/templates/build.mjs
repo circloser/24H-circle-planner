@@ -11,7 +11,7 @@
  * Regenerate after editing:  node scripts/templates/build.mjs
  * (needs a fresh `npm run build` first — the screenshots load ./dist)
  */
-import { writeFileSync, mkdirSync } from 'fs';
+import { writeFileSync, mkdirSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { join } from 'path';
 import { launchPage, serveDist, wait } from '../e2e/_helpers.mjs';
@@ -33,289 +33,967 @@ const hm = (s) => { const [h, m] = s.split(':').map(Number); return h * 60 + m; 
 
 const TEMPLATES = [
   {
-    slug: 'elementary-summer',
-    name: '초등 여름방학 계획표',
-    ko: {
-      title: '초등학생 여름방학 생활계획표 템플릿',
-      desc: '기상·공부·놀이·운동·취침의 균형을 잡은 초등학생 여름방학 하루 계획표. 원형 시간표로 한눈에 보고, 클릭 한 번으로 내 계획표로 가져와 수정할 수 있습니다.',
-      tips: ['기상·취침 시간은 방학 내내 같게 유지하는 것이 계획표 절반의 성공입니다.', '오전 공부 블록(50분 공부+10분 휴식)을 아이 컨디션에 맞게 1~3개로 조절하세요.', '바깥놀이·운동은 더위를 피해 아침이나 해 질 무렵으로 옮겨도 좋습니다.'],
+    "slug": "elementary-summer",
+    "name": "초등 여름방학 계획표",
+    "ko": {
+      "title": "초등학생 여름방학 생활계획표 템플릿",
+      "desc": "방학 중 공부·놀이·돌봄 시간을 배치해 보는 예시입니다. 실제 학교 일정과 가족 사정에 맞춰 바꾸세요.",
+      "tips": [
+        "이동·식사 준비 시간도 블록에 포함하세요.",
+        "공부 구간 안에 필요한 휴식을 직접 추가하세요.",
+        "아이와 함께 남길 활동과 줄일 활동을 정하세요."
+      ]
     },
-    en: {
-      title: 'Elementary Summer-Break Daily Planner Template',
-      desc: 'A balanced summer-break day for elementary kids — wake, study, play, exercise, sleep. See it as a circle and import it into your own planner with one click.',
-      tips: ['Keeping the same wake/sleep times all break is half the battle.', 'Adjust the morning study blocks (50 min study + 10 min rest) to 1–3 per day.', 'Move outdoor play to early morning or dusk to beat the heat.'],
+    "en": {
+      "title": "Elementary Summer-Break Daily Planner Template",
+      "desc": "This example places study, play and care in a school-break day. Adapt it to school commitments and your household.",
+      "tips": [
+        "Include travel and meal preparation in the blocks.",
+        "Add the breaks needed inside each study period.",
+        "Choose activities to keep or shorten together with the child."
+      ]
     },
-    related: ['vacation-study-planner'],
-    slices: [
-      ['07:30', '기상·세수', '#fbbf24', '🌅'],
-      ['08:00', '아침밥', '#fca5a5', '🍚'],
-      ['08:30', '오전 공부', '#93c5fd', '📚'],
-      ['10:00', '자유놀이', '#86efac', '🧸'],
-      ['12:00', '점심', '#fca5a5', '🍽️'],
-      ['13:00', '독서·숙제', '#a5b4fc', '✏️'],
-      ['14:30', '휴식·낮잠', '#ddd6fe', '😴'],
-      ['15:30', '바깥놀이·운동', '#6ee7b7', '⚽'],
-      ['17:30', '자유시간', '#fdba74', '🎨'],
-      ['18:30', '저녁밥', '#fca5a5', '🍲'],
-      ['19:30', '가족시간', '#f9a8d4', '👨‍👩‍👧'],
-      ['21:00', '씻고 정리', '#a7f3d0', '🛁'],
-      ['21:30', '수면', '#c7d2fe', '🌙'],
+    "related": [
+      "vacation-study-planner"
     ],
+    "slices": [
+      [
+        "07:30",
+        "기상·세수",
+        "#fbbf24",
+        "🌅"
+      ],
+      [
+        "08:00",
+        "아침밥",
+        "#fca5a5",
+        "🍚"
+      ],
+      [
+        "08:30",
+        "오전 공부",
+        "#93c5fd",
+        "📚"
+      ],
+      [
+        "10:00",
+        "자유놀이",
+        "#86efac",
+        "🧸"
+      ],
+      [
+        "12:00",
+        "점심",
+        "#fca5a5",
+        "🍽️"
+      ],
+      [
+        "13:00",
+        "독서·숙제",
+        "#a5b4fc",
+        "✏️"
+      ],
+      [
+        "14:30",
+        "휴식·낮잠",
+        "#ddd6fe",
+        "😴"
+      ],
+      [
+        "15:30",
+        "바깥놀이·운동",
+        "#6ee7b7",
+        "⚽"
+      ],
+      [
+        "17:30",
+        "자유시간",
+        "#fdba74",
+        "🎨"
+      ],
+      [
+        "18:30",
+        "저녁밥",
+        "#fca5a5",
+        "🍲"
+      ],
+      [
+        "19:30",
+        "가족시간",
+        "#f9a8d4",
+        "👨‍👩‍👧"
+      ],
+      [
+        "21:00",
+        "씻고 정리",
+        "#a7f3d0",
+        "🛁"
+      ],
+      [
+        "21:30",
+        "수면",
+        "#c7d2fe",
+        "🌙"
+      ]
+    ]
   },
   {
-    slug: 'exam-student',
-    name: '수험생 방학 공부 계획표',
-    ko: {
-      title: '수험생·중고생 방학 공부 계획표 템플릿',
-      desc: '공부 블록 사이에 휴식과 운동을 끼워 하루 8시간 학습을 지속 가능하게 설계한 수험생 방학 계획표. 원형 시간표로 공부·휴식 균형이 한눈에 보입니다.',
-      tips: ['공부는 "몇 시간"이 아니라 50분 블록 몇 개로 세세요 — 이 표는 하루 8블록입니다.', '가장 어려운 과목을 오전 첫 블록(뇌가 가장 맑을 때)에 두세요.', '운동 30분이 오후 집중력을 살립니다. 아깝다고 빼지 마세요.'],
+    "slug": "exam-student",
+    "name": "수험생 방학 공부 계획표",
+    "ko": {
+      "title": "수험생·중고생 방학 공부 계획표 템플릿",
+      "desc": "공부와 생활 일정을 비교하기 위한 수험생 예시입니다. 표시된 공부 구간은 휴식이 세분화되지 않은 예약 시간이며 권장 학습량이 아닙니다.",
+      "tips": [
+        "과목명 대신 이번 구간에서 풀 문제나 읽을 범위를 적으세요.",
+        "긴 공부 구간을 나누고 휴식과 식사를 먼저 확인하세요.",
+        "실제로 끝낸 분량을 기록한 뒤 다음 날 배정을 줄이거나 늘리세요."
+      ]
     },
-    en: {
-      title: 'Exam-Prep Study Planner Template (School Break)',
-      desc: 'A sustainable 8-hour study day for exam students — focus blocks with rest and exercise between them, visible at a glance on the circle.',
-      tips: ['Count study in 50-minute blocks, not hours — this day has 8 blocks.', 'Put the hardest subject in the first morning block, when your head is clearest.', '30 minutes of exercise revives afternoon focus — don’t cut it.'],
+    "en": {
+      "title": "Exam-Prep Study Planner Template (School Break)",
+      "desc": "An exam-preparation example for comparing study with daily commitments. Study periods are reserved time without detailed breaks, not a recommended workload.",
+      "tips": [
+        "Name the questions or pages for each period.",
+        "Split long periods and check breaks and meals first.",
+        "Record completed work before adjusting the next day."
+      ]
     },
-    related: ['vacation-study-planner', 'daily-planning-basics'],
-    slices: [
-      ['07:00', '기상·아침', '#fbbf24', '🌅'],
-      ['08:00', '공부 1·2교시', '#93c5fd', '📘'],
-      ['10:00', '휴식', '#ddd6fe', '☕'],
-      ['10:20', '공부 3교시', '#93c5fd', '📗'],
-      ['12:30', '점심·산책', '#fca5a5', '🍽️'],
-      ['14:00', '공부 4·5교시', '#a5b4fc', '📙'],
-      ['16:30', '운동', '#6ee7b7', '🏃'],
-      ['18:00', '저녁', '#fca5a5', '🍲'],
-      ['19:00', '인강·문제풀이', '#93c5fd', '💻'],
-      ['21:00', '오답·복습', '#fdba74', '📝'],
-      ['22:30', '정리·회고', '#a7f3d0', '🌙'],
-      ['23:00', '수면', '#c7d2fe', '😴'],
+    "related": [
+      "vacation-study-planner",
+      "daily-planning-basics"
     ],
+    "slices": [
+      [
+        "07:00",
+        "기상·아침",
+        "#fbbf24",
+        "🌅"
+      ],
+      [
+        "08:00",
+        "공부 1·2교시",
+        "#93c5fd",
+        "📘"
+      ],
+      [
+        "10:00",
+        "휴식",
+        "#ddd6fe",
+        "☕"
+      ],
+      [
+        "10:20",
+        "공부 3교시",
+        "#93c5fd",
+        "📗"
+      ],
+      [
+        "12:30",
+        "점심·산책",
+        "#fca5a5",
+        "🍽️"
+      ],
+      [
+        "14:00",
+        "공부 4·5교시",
+        "#a5b4fc",
+        "📙"
+      ],
+      [
+        "16:30",
+        "운동",
+        "#6ee7b7",
+        "🏃"
+      ],
+      [
+        "18:00",
+        "저녁",
+        "#fca5a5",
+        "🍲"
+      ],
+      [
+        "19:00",
+        "인강·문제풀이",
+        "#93c5fd",
+        "💻"
+      ],
+      [
+        "21:00",
+        "오답·복습",
+        "#fdba74",
+        "📝"
+      ],
+      [
+        "22:30",
+        "정리·회고",
+        "#a7f3d0",
+        "🌙"
+      ],
+      [
+        "23:00",
+        "수면",
+        "#c7d2fe",
+        "😴"
+      ]
+    ]
   },
   {
-    slug: 'office-worker',
-    name: '직장인 하루 일과표',
-    ko: {
-      title: '직장인 하루 일과표 템플릿 (저녁 운동형)',
-      desc: '출퇴근·업무·저녁 운동·가족 시간까지, 무너지지 않는 직장인 하루 일과표. 고정 일정을 먼저 그리고 남는 시간을 확인하는 원형 시간표 방식입니다.',
-      tips: ['오전 업무 첫 90분을 "방해 금지 집중 블록"으로 지키면 하루 성과의 대부분이 나옵니다.', '퇴근 후 운동은 "장소 이동"과 묶으면(퇴근길 헬스장) 빠지기 어렵습니다.', '내일 준비 15분이 다음 날 아침의 결정 피로를 없애 줍니다.'],
+    "slug": "office-worker",
+    "name": "직장인 하루 일과표",
+    "ko": {
+      "title": "직장인 하루 일과표 템플릿 (저녁 운동형)",
+      "desc": "출퇴근·업무·저녁 활동을 함께 표시한 가상 직장인 일정입니다. 실제 근무 조건과 이동 시간부터 바꾸세요.",
+      "tips": [
+        "회의와 응답 의무가 있는 시간은 집중 작업과 구분하세요.",
+        "운동을 남긴다면 이동·준비·씻는 시간도 계산하세요.",
+        "퇴근이 늦어지면 저녁 항목 중 옮길 일을 하나 정하세요."
+      ]
     },
-    en: {
-      title: 'Office Worker Daily Routine Template (Evening Workout)',
-      desc: 'A daily routine that survives real life — commute, work, an evening workout, and family time, drawn as a circle so the fixed anchors come first.',
-      tips: ['Protect the first 90 minutes of the morning as a no-interruption focus block.', 'Chain the workout to the commute (gym on the way home) so it’s hard to skip.', '15 minutes of prep for tomorrow removes next-morning decision fatigue.'],
+    "en": {
+      "title": "Office Worker Daily Routine Template (Evening Workout)",
+      "desc": "An illustrative employee schedule showing commuting, work and evening activities. Change working hours and travel first.",
+      "tips": [
+        "Distinguish meetings and response duties from focused tasks.",
+        "Allow travel, preparation and washing time for exercise.",
+        "Choose one evening item to move if work finishes late."
+      ]
     },
-    related: ['daily-life-planner', 'time-blocking'],
-    slices: [
-      ['06:30', '기상·아침 루틴', '#fbbf24', '🌅'],
-      ['07:30', '준비·출근', '#d1d5db', '🚌'],
-      ['09:00', '오전 집중 업무', '#93c5fd', '💼'],
-      ['12:00', '점심·산책', '#fca5a5', '🍽️'],
-      ['13:00', '오후 업무·회의', '#a5b4fc', '🗂️'],
-      ['18:00', '퇴근', '#d1d5db', '🚇'],
-      ['19:00', '운동', '#6ee7b7', '💪'],
-      ['20:00', '저녁', '#fca5a5', '🍲'],
-      ['21:00', '가족·휴식', '#f9a8d4', '🏠'],
-      ['22:30', '정리·내일 준비', '#a7f3d0', '📝'],
-      ['23:00', '수면', '#c7d2fe', '🌙'],
+    "related": [
+      "daily-life-planner",
+      "time-blocking"
     ],
+    "slices": [
+      [
+        "06:30",
+        "기상·아침 루틴",
+        "#fbbf24",
+        "🌅"
+      ],
+      [
+        "07:30",
+        "준비·출근",
+        "#d1d5db",
+        "🚌"
+      ],
+      [
+        "09:00",
+        "오전 집중 업무",
+        "#93c5fd",
+        "💼"
+      ],
+      [
+        "12:00",
+        "점심·산책",
+        "#fca5a5",
+        "🍽️"
+      ],
+      [
+        "13:00",
+        "오후 업무·회의",
+        "#a5b4fc",
+        "🗂️"
+      ],
+      [
+        "18:00",
+        "퇴근",
+        "#d1d5db",
+        "🚇"
+      ],
+      [
+        "19:00",
+        "운동",
+        "#6ee7b7",
+        "💪"
+      ],
+      [
+        "20:00",
+        "저녁",
+        "#fca5a5",
+        "🍲"
+      ],
+      [
+        "21:00",
+        "가족·휴식",
+        "#f9a8d4",
+        "🏠"
+      ],
+      [
+        "22:30",
+        "정리·내일 준비",
+        "#a7f3d0",
+        "📝"
+      ],
+      [
+        "23:00",
+        "수면",
+        "#c7d2fe",
+        "🌙"
+      ]
+    ]
   },
   {
-    slug: 'miracle-morning',
-    name: '미라클모닝 계획표',
-    ko: {
-      title: '미라클모닝 생활 계획표 템플릿 (5시 기상)',
-      desc: '5시 기상 → 명상·독서·운동으로 하루를 여는 미라클모닝 생활 계획표. 핵심은 이른 기상이 아니라 22시 취침 — 원형 시간표로 수면 시간부터 확보하세요.',
-      tips: ['미라클모닝의 성패는 기상이 아니라 취침 시간입니다. 22시 취침을 먼저 지키세요.', '새벽 시간은 "나를 위한 일"(독서·운동·글쓰기)에만 쓰세요. 업무를 당겨오면 그냥 야근입니다.', '주말에도 기상 시간을 1시간 이상 늦추지 않아야 리듬이 유지됩니다.'],
+    "slug": "miracle-morning",
+    "name": "미라클모닝 계획표",
+    "ko": {
+      "title": "미라클모닝 생활 계획표 템플릿 (5시 기상)",
+      "desc": "오전 5시에 시작하는 가상 일정입니다. 이른 기상이 더 좋은 계획이라는 뜻은 아니며 수면과 의무 일정에 맞춰 전체 시간을 옮길 수 있습니다.",
+      "tips": [
+        "이 예시의 수면 구간은 22시부터 5시까지 7시간입니다. 개인에게 적합한 목표를 제시하는 값은 아닙니다.",
+        "아침 활동은 한 가지부터 남기고 나머지는 선택 항목으로 두세요.",
+        "취침을 앞당길 수 없다면 기상만 앞당기지 말고 예시 시간을 바꾸세요."
+      ]
     },
-    en: {
-      title: 'Miracle Morning Routine Template (5 AM Wake-up)',
-      desc: 'Open the day at 5 AM with meditation, reading, and exercise. The real key is the 10 PM bedtime — secure sleep first on the circle.',
-      tips: ['The miracle morning is won at bedtime, not wake-up. Protect 10 PM first.', 'Spend dawn hours only on yourself (reading, exercise, writing) — pulling work forward is just overtime.', 'Keep weekend wake-ups within an hour of weekdays to hold the rhythm.'],
+    "en": {
+      "title": "Miracle Morning Routine Template (5 AM Wake-up)",
+      "desc": "An illustrative day starting at 5 AM. An earlier start is not a better plan by itself; shift the whole schedule to fit sleep and commitments.",
+      "tips": [
+        "The example reserves seven hours from 10 PM to 5 AM; this is not an individual sleep target.",
+        "Keep one morning activity and make the rest optional.",
+        "If bedtime cannot move earlier, change the example instead of only moving wake-up."
+      ]
     },
-    related: ['morning-evening-routine', 'daily-life-planner'],
-    slices: [
-      ['05:00', '기상·물 한 잔', '#fbbf24', '⏰'],
-      ['05:15', '명상·스트레칭', '#ddd6fe', '🧘'],
-      ['05:45', '독서·글쓰기', '#93c5fd', '📖'],
-      ['06:45', '운동', '#6ee7b7', '🏃'],
-      ['07:30', '샤워·아침', '#fca5a5', '🍳'],
-      ['08:30', '오전 업무', '#a5b4fc', '💼'],
-      ['12:00', '점심', '#fca5a5', '🍽️'],
-      ['13:00', '오후 업무', '#93c5fd', '🗂️'],
-      ['18:00', '저녁·휴식', '#f9a8d4', '🍲'],
-      ['20:00', '자기계발·취미', '#fdba74', '🎯'],
-      ['21:30', '정리·내일 준비', '#a7f3d0', '🌙'],
-      ['22:00', '수면', '#c7d2fe', '😴'],
+    "related": [
+      "morning-evening-routine",
+      "daily-life-planner"
     ],
+    "slices": [
+      [
+        "05:00",
+        "기상·물 한 잔",
+        "#fbbf24",
+        "⏰"
+      ],
+      [
+        "05:15",
+        "명상·스트레칭",
+        "#ddd6fe",
+        "🧘"
+      ],
+      [
+        "05:45",
+        "독서·글쓰기",
+        "#93c5fd",
+        "📖"
+      ],
+      [
+        "06:45",
+        "운동",
+        "#6ee7b7",
+        "🏃"
+      ],
+      [
+        "07:30",
+        "샤워·아침",
+        "#fca5a5",
+        "🍳"
+      ],
+      [
+        "08:30",
+        "오전 업무",
+        "#a5b4fc",
+        "💼"
+      ],
+      [
+        "12:00",
+        "점심",
+        "#fca5a5",
+        "🍽️"
+      ],
+      [
+        "13:00",
+        "오후 업무",
+        "#93c5fd",
+        "🗂️"
+      ],
+      [
+        "18:00",
+        "저녁·휴식",
+        "#f9a8d4",
+        "🍲"
+      ],
+      [
+        "20:00",
+        "자기계발·취미",
+        "#fdba74",
+        "🎯"
+      ],
+      [
+        "21:30",
+        "정리·내일 준비",
+        "#a7f3d0",
+        "🌙"
+      ],
+      [
+        "22:00",
+        "수면",
+        "#c7d2fe",
+        "😴"
+      ]
+    ]
   },
   {
-    slug: 'freelancer-remote',
-    name: '프리랜서 재택 시간표',
-    ko: {
-      title: '프리랜서·재택근무 하루 시간표 템플릿',
-      desc: '일과 휴식의 경계가 무너지기 쉬운 재택근무를 위한 하루 시간표. "일 끝나는 시각"을 정식 일정으로 넣은 것이 핵심입니다.',
-      tips: ['재택의 최대 적은 무한 근무입니다. 18시 "마감·정리"를 지키세요.', '오전 집중 블록엔 알림을 끄고 연락은 11시 반 이후로 몰아서 처리하세요.', '점심 산책 20분이 오후 능률을 좌우합니다 — 책상에서 먹지 마세요.'],
+    "slug": "freelancer-remote",
+    "name": "프리랜서 재택 시간표",
+    "ko": {
+      "title": "프리랜서·재택근무 하루 시간표 템플릿",
+      "desc": "작업·연락·마감을 구분한 재택근무 예시입니다. 고객이나 팀과 합의한 연락 가능 시간을 우선 반영하세요.",
+      "tips": [
+        "긴 집중 구간 안에도 쉬는 시간을 따로 넣으세요.",
+        "연락을 모아 처리하려면 긴급 연락 경로를 먼저 합의하세요.",
+        "마감 때 남은 일과 다음 시작 위치를 짧게 기록하세요."
+      ]
     },
-    en: {
-      title: 'Freelancer / Remote-Work Daily Timetable Template',
-      desc: 'A remote-work day where work and rest keep their boundary — the "work ends here" slot is a formal part of the schedule.',
-      tips: ['The biggest enemy of remote work is endless work. Keep the 6 PM wrap-up.', 'Silence notifications during the morning focus block; batch messages after 11:30.', 'A 20-minute lunch walk decides the afternoon — don’t eat at your desk.'],
+    "en": {
+      "title": "Freelancer / Remote-Work Daily Timetable Template",
+      "desc": "A remote-work example separating tasks, communication and wrap-up. Start with availability agreed with clients or your team.",
+      "tips": [
+        "Add breaks inside long focus periods.",
+        "Agree an urgent contact route before batching messages.",
+        "At wrap-up, note unfinished work and where to restart."
+      ]
     },
-    related: ['daily-life-planner', 'deep-work-focus'],
-    slices: [
-      ['07:30', '기상·아침 루틴', '#fbbf24', '🌅'],
-      ['08:30', '집중 작업 1', '#93c5fd', '🎧'],
-      ['11:30', '이메일·연락', '#d1d5db', '📮'],
-      ['12:30', '점심·산책', '#fca5a5', '🥗'],
-      ['14:00', '집중 작업 2', '#a5b4fc', '💻'],
-      ['16:30', '운동', '#6ee7b7', '🏋️'],
-      ['18:00', '마감·정리', '#fdba74', '✅'],
-      ['19:00', '저녁', '#fca5a5', '🍲'],
-      ['20:00', '개인 시간', '#f9a8d4', '🎬'],
-      ['22:00', '저녁 루틴', '#a7f3d0', '🌙'],
-      ['23:00', '수면', '#c7d2fe', '😴'],
+    "related": [
+      "daily-life-planner",
+      "deep-work-focus"
     ],
+    "slices": [
+      [
+        "07:30",
+        "기상·아침 루틴",
+        "#fbbf24",
+        "🌅"
+      ],
+      [
+        "08:30",
+        "집중 작업 1",
+        "#93c5fd",
+        "🎧"
+      ],
+      [
+        "11:30",
+        "이메일·연락",
+        "#d1d5db",
+        "📮"
+      ],
+      [
+        "12:30",
+        "점심·산책",
+        "#fca5a5",
+        "🥗"
+      ],
+      [
+        "14:00",
+        "집중 작업 2",
+        "#a5b4fc",
+        "💻"
+      ],
+      [
+        "16:30",
+        "운동",
+        "#6ee7b7",
+        "🏋️"
+      ],
+      [
+        "18:00",
+        "마감·정리",
+        "#fdba74",
+        "✅"
+      ],
+      [
+        "19:00",
+        "저녁",
+        "#fca5a5",
+        "🍲"
+      ],
+      [
+        "20:00",
+        "개인 시간",
+        "#f9a8d4",
+        "🎬"
+      ],
+      [
+        "22:00",
+        "저녁 루틴",
+        "#a7f3d0",
+        "🌙"
+      ],
+      [
+        "23:00",
+        "수면",
+        "#c7d2fe",
+        "😴"
+      ]
+    ]
   },
   {
-    slug: 'weekend-reset',
-    name: '주말 재충전 계획표',
-    ko: {
-      title: '주말 하루 계획표 템플릿 (재충전형)',
-      desc: '늦잠은 자되 하루를 통째로 흘려보내지 않는 주말 계획표. 집안일·취미·산책·다음 주 준비까지, 쉬면서도 남는 게 있는 하루입니다.',
-      tips: ['주말 기상이 평일보다 2시간 이상 늦으면 월요일이 힘들어집니다. 1시간 이내로.', '집안일은 오전에 90분으로 묶어 끝내면 오후가 통째로 자유로워집니다.', '일요일 저녁 30분 "다음 주 준비"가 월요일 아침을 바꿉니다.'],
+    "slug": "weekend-reset",
+    "name": "주말 재충전 계획표",
+    "ko": {
+      "title": "주말 하루 계획표 템플릿 (재충전형)",
+      "desc": "집안일·외출·휴식을 배치한 가상 주말입니다. 쉬는 시간을 성과로 평가할 필요 없이 원하는 활동에 맞게 수정하세요.",
+      "tips": [
+        "집안일이 끝나지 않을 때 넘길 항목을 정하세요.",
+        "외출 구간에 왕복 이동을 포함하세요.",
+        "다음 주 준비가 필요 없다면 해당 구간을 비워 두세요."
+      ]
     },
-    en: {
-      title: 'Weekend Day Planner Template (Recharge)',
-      desc: 'Sleep in without losing the whole day — chores, hobbies, a walk, and next-week prep, so the weekend rests you and still leaves something behind.',
-      tips: ['Keep weekend wake-up within an hour of weekdays, or Monday will hurt.', 'Batch chores into one 90-minute morning block and the afternoon is fully yours.', '30 minutes of next-week prep on Sunday evening transforms Monday morning.'],
+    "en": {
+      "title": "Weekend Day Planner Template (Recharge)",
+      "desc": "An illustrative weekend with chores, outings and rest. Adapt it to preferred activities without treating rest as an achievement to measure.",
+      "tips": [
+        "Choose which chores can wait if time runs out.",
+        "Include return travel in the outing period.",
+        "Leave next-week preparation empty if you do not need it."
+      ]
     },
-    related: ['daily-life-planner', 'morning-evening-routine'],
-    slices: [
-      ['08:30', '늦잠·기상', '#fbbf24', '☀️'],
-      ['09:00', '브런치', '#fca5a5', '🥞'],
-      ['10:30', '집안일·정리', '#a7f3d0', '🧺'],
-      ['12:00', '취미', '#fdba74', '🎨'],
-      ['14:00', '외출·산책', '#6ee7b7', '🚶'],
-      ['17:00', '자유시간', '#f9a8d4', '🎮'],
-      ['18:30', '저녁', '#fca5a5', '🍲'],
-      ['20:00', '영화·휴식', '#a5b4fc', '🎬'],
-      ['22:30', '다음 주 준비', '#93c5fd', '📝'],
-      ['23:00', '수면', '#c7d2fe', '🌙'],
+    "related": [
+      "daily-life-planner",
+      "morning-evening-routine"
     ],
+    "slices": [
+      [
+        "08:30",
+        "늦잠·기상",
+        "#fbbf24",
+        "☀️"
+      ],
+      [
+        "09:00",
+        "브런치",
+        "#fca5a5",
+        "🥞"
+      ],
+      [
+        "10:30",
+        "집안일·정리",
+        "#a7f3d0",
+        "🧺"
+      ],
+      [
+        "12:00",
+        "취미",
+        "#fdba74",
+        "🎨"
+      ],
+      [
+        "14:00",
+        "외출·산책",
+        "#6ee7b7",
+        "🚶"
+      ],
+      [
+        "17:00",
+        "자유시간",
+        "#f9a8d4",
+        "🎮"
+      ],
+      [
+        "18:30",
+        "저녁",
+        "#fca5a5",
+        "🍲"
+      ],
+      [
+        "20:00",
+        "영화·휴식",
+        "#a5b4fc",
+        "🎬"
+      ],
+      [
+        "22:30",
+        "다음 주 준비",
+        "#93c5fd",
+        "📝"
+      ],
+      [
+        "23:00",
+        "수면",
+        "#c7d2fe",
+        "🌙"
+      ]
+    ]
   },
   {
-    slug: 'college-student',
-    name: '대학생 하루 시간표',
-    ko: {
-      title: '대학생 하루 시간표 템플릿 (강의·공강·알바)',
-      desc: '강의와 공강, 과제와 알바가 뒤섞이는 대학생의 하루를 원형으로 정리한 시간표. 흩어진 공강 시간을 자습·복습 블록으로 바꿔 하루를 촘촘하게 씁니다.',
-      tips: ['공강은 "빈 시간"이 아니라 미리 배정된 자습 블록으로 두면 사라지지 않습니다.', '가장 집중이 필요한 과제는 오전 공강에 배치하세요.', '알바·팀플처럼 유동적인 일정은 색을 하나로 통일하면 원에서 한눈에 보입니다.'],
+    "slug": "college-student",
+    "name": "대학생 하루 시간표",
+    "ko": {
+      "title": "대학생 하루 시간표 템플릿 (강의·공강·알바)",
+      "desc": "강의·이동·과제·아르바이트를 함께 그린 대학생 예시입니다. 공강 전체를 공부로 채울 필요는 없습니다.",
+      "tips": [
+        "실제 시간표와 근무표를 먼저 입력하세요.",
+        "공강에서 이동·식사 시간을 뺀 뒤 할 일을 정하세요.",
+        "팀 과제는 다른 구성원과 확정한 시간만 고정하세요."
+      ]
     },
-    en: {
-      title: 'College Student Daily Timetable Template',
-      desc: 'A circular timetable for the messy mix of lectures, gaps, assignments and a part-time job. Turn scattered gap hours into study blocks so the day stays dense.',
-      tips: ['Treat gaps as pre-assigned study blocks, not empty time — then they don’t vanish.', 'Put the assignment that needs the most focus in a morning gap.', 'Give flexible things (job, group work) one shared color so they read at a glance.'],
+    "en": {
+      "title": "College Student Daily Timetable Template",
+      "desc": "A student example combining lectures, travel, assignments and a part-time job. Gaps do not all need to become study time.",
+      "tips": [
+        "Enter confirmed classes and job shifts first.",
+        "Subtract travel and meals before assigning work to a gap.",
+        "Fix group-work times only after agreeing with others."
+      ]
     },
-    related: ['exam-student', 'daily-planning-basics'],
-    slices: [
-      ['07:30', '기상·준비', '#fbbf24', '🌅'],
-      ['08:30', '등교·이동', '#a7f3d0', '🚌'],
-      ['09:00', '오전 강의', '#93c5fd', '🎓'],
-      ['11:00', '공강 자습', '#a5b4fc', '📖'],
-      ['12:30', '점심', '#fca5a5', '🍽️'],
-      ['13:30', '오후 강의', '#7dd3fc', '🎓'],
-      ['16:00', '과제·팀플', '#fdba74', '💻'],
-      ['18:00', '저녁', '#fca5a5', '🍲'],
-      ['19:00', '알바', '#f9a8d4', '💼'],
-      ['22:00', '복습·자유', '#6ee7b7', '🎧'],
-      ['23:30', '수면', '#c7d2fe', '🌙'],
+    "related": [
+      "exam-student",
+      "daily-planning-basics"
     ],
+    "slices": [
+      [
+        "07:30",
+        "기상·준비",
+        "#fbbf24",
+        "🌅"
+      ],
+      [
+        "08:30",
+        "등교·이동",
+        "#a7f3d0",
+        "🚌"
+      ],
+      [
+        "09:00",
+        "오전 강의",
+        "#93c5fd",
+        "🎓"
+      ],
+      [
+        "11:00",
+        "공강 자습",
+        "#a5b4fc",
+        "📖"
+      ],
+      [
+        "12:30",
+        "점심",
+        "#fca5a5",
+        "🍽️"
+      ],
+      [
+        "13:30",
+        "오후 강의",
+        "#7dd3fc",
+        "🎓"
+      ],
+      [
+        "16:00",
+        "과제·팀플",
+        "#fdba74",
+        "💻"
+      ],
+      [
+        "18:00",
+        "저녁",
+        "#fca5a5",
+        "🍲"
+      ],
+      [
+        "19:00",
+        "알바",
+        "#f9a8d4",
+        "💼"
+      ],
+      [
+        "22:00",
+        "복습·자유",
+        "#6ee7b7",
+        "🎧"
+      ],
+      [
+        "23:30",
+        "수면",
+        "#c7d2fe",
+        "🌙"
+      ]
+    ]
   },
   {
-    slug: 'shift-worker',
-    name: '교대근무 생활계획표',
-    ko: {
-      title: '교대근무자 생활계획표 템플릿 (야간 근무)',
-      desc: '낮과 밤이 뒤바뀌는 교대근무자를 위한 야간 근무일 계획표. 원형 시간표는 자정을 넘겨 이어지는 수면·근무 시간을 끊김 없이 보여줘, 근무·수면·회복의 균형을 잡기 좋습니다.',
-      tips: ['야간 근무 후 수면은 암막·귀마개로 "밤처럼" 만들어야 질이 삽니다.', '근무 전 가벼운 식사와 카페인 타이밍을 블록으로 고정하세요.', '쉬는 날 수면 시간을 급격히 되돌리지 말고 2~3시간씩 서서히 옮기세요.'],
+    "slug": "shift-worker",
+    "name": "교대근무 생활계획표",
+    "ko": {
+      "title": "교대근무자 생활계획표 템플릿 (야간 근무)",
+      "desc": "자정을 넘는 야간 근무를 표시하는 편집 예시입니다. 수면 조정이나 건강 관리를 위한 처방이 아닙니다.",
+      "tips": [
+        "근무가 자정 전후 두 구간으로 보이는지 확인하세요.",
+        "퇴근 이동과 돌봄 등 실제 의무를 먼저 반영하세요.",
+        "수면 구간은 개인 상황에 맞춰 조정하고 지속적인 어려움은 의료진과 상의하세요."
+      ]
     },
-    en: {
-      title: 'Shift Worker Daily Planner Template (Night Shift)',
-      desc: 'A night-shift day for workers whose day and night flip. The circle shows sleep and work that cross midnight without a break, making it easy to balance work, sleep and recovery.',
-      tips: ['Make post-shift sleep “feel like night” with blackout and earplugs for quality.', 'Fix a light pre-shift meal and your caffeine timing as blocks.', 'On days off, shift sleep back gradually (2–3 h), not all at once.'],
+    "en": {
+      "title": "Shift Worker Daily Planner Template (Night Shift)",
+      "desc": "An editing example for a night shift crossing midnight. It does not prescribe sleep changes or health management.",
+      "tips": [
+        "Check that work appears on both sides of midnight.",
+        "Enter real obligations such as the journey home and care duties.",
+        "Adapt sleep to your circumstances and discuss persistent difficulties with a clinician."
+      ]
     },
-    related: ['daily-life-planner', 'morning-evening-routine'],
-    slices: [
-      ['00:00', '야간 근무', '#818cf8', '🏭'],
-      ['06:00', '퇴근·이동', '#a7f3d0', '🚗'],
-      ['07:00', '아침·씻기', '#fca5a5', '🛁'],
-      ['08:00', '수면', '#c7d2fe', '😴'],
-      ['15:00', '기상·식사', '#fbbf24', '🍚'],
-      ['16:00', '자유·운동', '#6ee7b7', '🏃'],
-      ['18:00', '집안일·용무', '#fdba74', '🧺'],
-      ['20:00', '저녁·휴식', '#f9a8d4', '🍲'],
-      ['22:00', '근무 준비·이동', '#93c5fd', '☕'],
-      ['23:00', '야간 근무', '#818cf8', '🏭'],
+    "related": [
+      "daily-life-planner",
+      "morning-evening-routine"
     ],
+    "slices": [
+      [
+        "00:00",
+        "야간 근무",
+        "#818cf8",
+        "🏭"
+      ],
+      [
+        "06:00",
+        "퇴근·이동",
+        "#a7f3d0",
+        "🚗"
+      ],
+      [
+        "07:00",
+        "아침·씻기",
+        "#fca5a5",
+        "🛁"
+      ],
+      [
+        "08:00",
+        "수면",
+        "#c7d2fe",
+        "😴"
+      ],
+      [
+        "15:00",
+        "기상·식사",
+        "#fbbf24",
+        "🍚"
+      ],
+      [
+        "16:00",
+        "자유·운동",
+        "#6ee7b7",
+        "🏃"
+      ],
+      [
+        "18:00",
+        "집안일·용무",
+        "#fdba74",
+        "🧺"
+      ],
+      [
+        "20:00",
+        "저녁·휴식",
+        "#f9a8d4",
+        "🍲"
+      ],
+      [
+        "22:00",
+        "근무 준비·이동",
+        "#93c5fd",
+        "☕"
+      ],
+      [
+        "23:00",
+        "야간 근무",
+        "#818cf8",
+        "🏭"
+      ]
+    ]
   },
   {
-    slug: 'toddler-routine',
-    name: '유아 생활계획표',
-    ko: {
-      title: '유아·아기 생활계획표 템플릿 (하루 일과)',
-      desc: '낮잠·식사·놀이·잠자리 루틴을 일정하게 잡아주는 유아 하루 일과표. 원형 시간표로 부모가 아이의 하루 리듬을 한눈에 보고, 어린이집·가정 보육에 맞게 바로 수정할 수 있습니다.',
-      tips: ['식사·낮잠·잠자리 시각을 매일 같게 유지하는 것이 아이 수면의 핵심입니다.', '잠자리 30분 전은 화면 없이 조용한 루틴(목욕·책)으로 고정하세요.', '바깥놀이는 오전 햇빛 시간에 두면 밤잠에 도움이 됩니다.'],
+    "slug": "toddler-routine",
+    "name": "유아 생활계획표",
+    "ko": {
+      "title": "유아 돌봄 일정 편집 예시 템플릿",
+      "desc": "돌봄 담당자가 식사·놀이·인계 시간을 표시해 보는 가상 유아 일정입니다. 아기나 모든 연령에 적용되는 수면·수유 기준이 아닙니다.",
+      "tips": [
+        "아이의 실제 생활과 돌봄기관 일정을 먼저 확인하세요.",
+        "낮잠의 횟수와 길이는 이 예시를 그대로 따르지 말고 바꾸세요.",
+        "인계 담당자와 시간을 적고 공유 이미지에서 이름 등 개인정보를 빼세요."
+      ]
     },
-    en: {
-      title: 'Toddler Daily Routine Template',
-      desc: 'A steady toddler day — meals, naps, play and a bedtime routine kept consistent. The circle lets parents see the child’s daily rhythm at a glance and adjust it to daycare or home care.',
-      tips: ['Keeping meal, nap and bedtime at the same clock time daily is the key to sleep.', 'Make the 30 minutes before bed a quiet, screen-free routine (bath, books).', 'Put outdoor play in the morning sun to help night sleep.'],
+    "en": {
+      "title": "Toddler Daily Routine Template",
+      "desc": "An illustrative toddler care schedule for recording meals, play and handovers. It is not a sleep or feeding standard for babies or all ages.",
+      "tips": [
+        "Start with the child’s actual routine and care-setting timetable.",
+        "Change the number and length of naps instead of copying this example.",
+        "Record handover duties and remove names or other personal details from shared images."
+      ]
     },
-    related: ['daily-life-planner'],
-    slices: [
-      ['07:00', '기상·아침', '#fbbf24', '🌅'],
-      ['08:00', '아침밥', '#fca5a5', '🍚'],
-      ['09:00', '오전 놀이', '#86efac', '🧸'],
-      ['10:30', '바깥놀이', '#6ee7b7', '⛅'],
-      ['12:00', '점심', '#fca5a5', '🍽️'],
-      ['13:00', '낮잠', '#c7d2fe', '😴'],
-      ['15:00', '간식·놀이', '#fdba74', '🍪'],
-      ['17:00', '자유놀이', '#f9a8d4', '🎨'],
-      ['18:00', '저녁밥', '#fca5a5', '🍲'],
-      ['19:00', '목욕·잠자리 준비', '#a7f3d0', '🛁'],
-      ['20:00', '책·잠자리', '#a5b4fc', '📖'],
-      ['20:30', '수면', '#c7d2fe', '🌙'],
+    "related": [
+      "daily-life-planner"
     ],
+    "slices": [
+      [
+        "07:00",
+        "기상·아침",
+        "#fbbf24",
+        "🌅"
+      ],
+      [
+        "08:00",
+        "아침밥",
+        "#fca5a5",
+        "🍚"
+      ],
+      [
+        "09:00",
+        "오전 놀이",
+        "#86efac",
+        "🧸"
+      ],
+      [
+        "10:30",
+        "바깥놀이",
+        "#6ee7b7",
+        "⛅"
+      ],
+      [
+        "12:00",
+        "점심",
+        "#fca5a5",
+        "🍽️"
+      ],
+      [
+        "13:00",
+        "낮잠",
+        "#c7d2fe",
+        "😴"
+      ],
+      [
+        "15:00",
+        "간식·놀이",
+        "#fdba74",
+        "🍪"
+      ],
+      [
+        "17:00",
+        "자유놀이",
+        "#f9a8d4",
+        "🎨"
+      ],
+      [
+        "18:00",
+        "저녁밥",
+        "#fca5a5",
+        "🍲"
+      ],
+      [
+        "19:00",
+        "목욕·잠자리 준비",
+        "#a7f3d0",
+        "🛁"
+      ],
+      [
+        "20:00",
+        "책·잠자리",
+        "#a5b4fc",
+        "📖"
+      ],
+      [
+        "20:30",
+        "수면",
+        "#c7d2fe",
+        "🌙"
+      ]
+    ]
   },
   {
-    slug: 'winter-vacation',
-    name: '겨울방학 계획표',
-    ko: {
-      title: '초·중생 겨울방학 생활계획표 템플릿',
-      desc: '해가 짧은 겨울방학에 맞춰 공부·운동·자유시간의 균형을 잡은 하루 계획표. 늦잠으로 무너지기 쉬운 방학을 원형 시간표로 붙잡아, 다음 학기 준비까지 이어갑니다.',
-      tips: ['겨울방학은 해가 짧아 실내 시간이 길어집니다 — 오전 공부, 오후 활동으로 빛을 챙기세요.', '기상 시간만 지켜도 방학 계획표의 절반은 성공입니다.', '다음 학기 예습 블록을 매일 30분씩 넣어 개학 충격을 줄이세요.'],
+    "slug": "winter-vacation",
+    "name": "겨울방학 계획표",
+    "ko": {
+      "title": "초·중생 겨울방학 생활계획표 템플릿",
+      "desc": "공부·놀이·가족 일정을 배치한 겨울방학 예시입니다. 지역의 계절과 방학 일정에 맞게 바꿔 쓸 수 있습니다.",
+      "tips": [
+        "방학 과제의 마감일부터 확인하세요.",
+        "예습이 필요 없다면 해당 시간을 놀이·독서 등으로 바꾸세요.",
+        "학원이나 외출이 있는 날은 이동 시간을 더한 별도 계획을 만드세요."
+      ]
     },
-    en: {
-      title: 'Winter-Break Daily Planner Template (Students)',
-      desc: 'A balanced winter-break day of study, exercise and free time, tuned for short daylight. The circle holds a break that easily collapses into late mornings, and carries into next-term prep.',
-      tips: ['Winter days are short — study in the morning, be active in the afternoon to catch daylight.', 'Just holding a fixed wake-up time is half the battle.', 'Add a 30-minute next-term preview block daily to soften the return to school.'],
+    "en": {
+      "title": "Winter-Break Daily Planner Template (Students)",
+      "desc": "A winter-break example with study, play and family commitments. Adapt it to your local season and school calendar.",
+      "tips": [
+        "Check school-break assignment deadlines first.",
+        "Replace next-term study with play or reading if it is unnecessary.",
+        "Make a separate plan including travel for days with classes or outings."
+      ]
     },
-    related: ['elementary-summer', 'exam-student'],
-    slices: [
-      ['08:00', '기상·아침', '#fbbf24', '🌅'],
-      ['09:00', '오전 공부', '#93c5fd', '📚'],
-      ['11:00', '휴식·자유', '#ddd6fe', '☕'],
-      ['12:00', '점심', '#fca5a5', '🍽️'],
-      ['13:00', '독서·숙제', '#a5b4fc', '✏️'],
-      ['15:00', '실내 운동·놀이', '#6ee7b7', '🤸'],
-      ['16:30', '자유시간', '#fdba74', '🎮'],
-      ['18:00', '저녁', '#fca5a5', '🍲'],
-      ['19:00', '다음 학기 예습', '#7dd3fc', '📗'],
-      ['20:00', '가족·자유', '#f9a8d4', '👨‍👩‍👧'],
-      ['21:30', '씻고 정리', '#a7f3d0', '🛁'],
-      ['22:00', '수면', '#c7d2fe', '🌙'],
+    "related": [
+      "elementary-summer",
+      "exam-student"
     ],
-  },
+    "slices": [
+      [
+        "08:00",
+        "기상·아침",
+        "#fbbf24",
+        "🌅"
+      ],
+      [
+        "09:00",
+        "오전 공부",
+        "#93c5fd",
+        "📚"
+      ],
+      [
+        "11:00",
+        "휴식·자유",
+        "#ddd6fe",
+        "☕"
+      ],
+      [
+        "12:00",
+        "점심",
+        "#fca5a5",
+        "🍽️"
+      ],
+      [
+        "13:00",
+        "독서·숙제",
+        "#a5b4fc",
+        "✏️"
+      ],
+      [
+        "15:00",
+        "실내 운동·놀이",
+        "#6ee7b7",
+        "🤸"
+      ],
+      [
+        "16:30",
+        "자유시간",
+        "#fdba74",
+        "🎮"
+      ],
+      [
+        "18:00",
+        "저녁",
+        "#fca5a5",
+        "🍲"
+      ],
+      [
+        "19:00",
+        "다음 학기 예습",
+        "#7dd3fc",
+        "📗"
+      ],
+      [
+        "20:00",
+        "가족·자유",
+        "#f9a8d4",
+        "👨‍👩‍👧"
+      ],
+      [
+        "21:30",
+        "씻고 정리",
+        "#a7f3d0",
+        "🛁"
+      ],
+      [
+        "22:00",
+        "수면",
+        "#c7d2fe",
+        "🌙"
+      ]
+    ]
+  }
 ];
 
 // ─── Encoding (mirrors src/lib/share-link.ts) ────────────────────────────────
@@ -345,15 +1023,16 @@ const NAV_FOOT = `
   </footer>`;
 
 const LANG_SCRIPT = `<script>
-(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');}}catch(e){}})();
-function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');}
+(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');document.documentElement.lang='en';}}catch(e){}})();
+function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');document.documentElement.lang=l;document.querySelectorAll('[data-template-lang]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.templateLang===l));});}
+document.addEventListener('DOMContentLoaded',function(){setGuideLang(document.documentElement.lang==='en'?'en':'ko');});
 </${'script'}>`;
 
 const HEAD_NAV = `
   <header class="site">
     <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
-      <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
+      <span class="langswitch"><button type="button" data-template-lang="ko" aria-pressed="true" onclick="setGuideLang('ko')">한국어</button><span class="sep">·</span><button type="button" data-template-lang="en" aria-pressed="false" onclick="setGuideLang('en')">EN</button></span>
       <a href="/templates/"><span class="lang-ko">템플릿</span><span class="lang-en">Templates</span></a>
       <a href="/"><span class="lang-ko">홈</span><span class="lang-en">Home</span></a>
     </nav>
@@ -411,7 +1090,7 @@ function templatePage(t) {
 ${JSON.stringify({
   '@context': 'https://schema.org', '@type': 'Article',
   headline: t.ko.title, description: t.ko.desc, inLanguage: ['ko', 'en'],
-  image: img, datePublished: '2026-07-12', dateModified: '2026-07-12',
+  image: img, datePublished: '2026-07-12', dateModified: '2026-09-11',
   author: { '@type': 'Organization', name: '24Houring', url: 'https://24houring.com/' },
   publisher: { '@type': 'Organization', name: '24Houring', url: 'https://24houring.com/' },
   mainEntityOfPage: canonical,
@@ -429,16 +1108,16 @@ ${JSON.stringify({
 
   const tipsKo = t.ko.tips.map((x) => `      <li>${x}</li>`).join('\n');
   const tipsEn = t.en.tips.map((x) => `      <li>${x}</li>`).join('\n');
-  const relatedKo = t.related.map((r) => `<a href="/guides/${r}">관련 가이드</a>`).join(' · ');
+  const relatedKo = t.related.map((r) => `<a href="/${TEMPLATES.some(x => x.slug === r) ? 'templates' : 'guides'}/${r}">관련 자료</a>`).join(' · ');
 
   const body = `    <p class="crumb"><a href="/templates/"><span class="lang-ko">← 템플릿 목록</span><span class="lang-en">← All templates</span></a></p>
     <div class="lang-ko">
     <h1>${t.ko.title}</h1>
-    <p class="lead">${t.ko.desc}</p>
+    <p class="lead">${t.ko.desc}</p><p>2026년 9월 11일 검토 · 편집용 가상 일정입니다.</p>
     </div>
     <div class="lang-en">
     <h1>${t.en.title}</h1>
-    <p class="lead">${t.en.desc}</p>
+    <p class="lead">${t.en.desc}</p><p>Reviewed September 11, 2026. The chart and imported activity labels are in Korean; rename them after import.</p>
     </div>
 
     <p style="text-align:center;margin:18px 0">
@@ -611,12 +1290,12 @@ function localeTemplatePage(t, loc) {
   const img = `${ORIGIN}/templates/img/${t.slug}.png`;
   const p = importCode(t), d = viewCode(t);
   const jsonld = `<script type="application/ld+json">
-${JSON.stringify({ '@context': 'https://schema.org', '@type': 'Article', headline: tt.title, description: tt.desc, inLanguage: loc, image: img, datePublished: '2026-08-25', dateModified: '2026-08-25', author: { '@type': 'Organization', name: '24Houring', url: `${ORIGIN}/` }, publisher: { '@type': 'Organization', name: '24Houring', url: `${ORIGIN}/` }, mainEntityOfPage: canonical }, null, 1)}
+${JSON.stringify({ '@context': 'https://schema.org', '@type': 'Article', headline: tt.title, description: tt.desc, inLanguage: loc, image: img, datePublished: '2026-08-25', dateModified: '2026-09-11', author: { '@type': 'Organization', name: '24Houring', url: `${ORIGIN}/` }, publisher: { '@type': 'Organization', name: '24Houring', url: `${ORIGIN}/` }, mainEntityOfPage: canonical }, null, 1)}
 </${'script'}>`;
   const tips = tt.tips.map((x) => `      <li>${x}</li>`).join('\n');
   const body = `    <p class="crumb"><a href="/${loc}/templates/">${c.allTemplates}</a></p>
     <h1>${tt.title}</h1>
-    <p class="lead">${tt.desc}</p>
+    <p class="lead">${tt.desc}</p><p>${c.exampleNote}</p>
     <p style="text-align:center;margin:18px 0">
       <img src="/templates/img/${t.slug}.png" alt="${tt.title}" width="520" style="max-width:100%;height:auto;border-radius:16px" loading="lazy" />
     </p>
@@ -686,9 +1365,11 @@ async function screenshots() {
 // ─── Run ─────────────────────────────────────────────────────────────────────
 
 mkdirSync(IMG, { recursive: true });
-await screenshots();
+if (process.argv.includes('--skip-screenshots')) {
+  for (const t of TEMPLATES) if (!existsSync(join(IMG, t.slug + '.png'))) throw new Error('Missing template image: ' + t.slug);
+} else await screenshots();
 for (const t of TEMPLATES) {
-  writeFileSync(join(OUT, `${t.slug}.html`), templatePage(t));
+  writeFileSync(join(OUT, `${t.slug}.html`), templatePage(t).replace(/^[ \t]+$/gm, ''));
   console.log(`page  ${t.slug}.html`);
 }
 writeFileSync(join(OUT, 'index.html'), hubPage());

@@ -1,235 +1,47 @@
 <!doctype html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>하루 계획의 기본 — 우선순위, 시간 배분, 되돌아보기 · 24Houring</title>
-<meta name="description" content="초보자를 위한 하루 계획 기본기: 우선순위 정하기, 현실적인 시간 배분, 저녁 회고까지 한 사이클을 쉽게 익히는 가이드." />
-<link rel="canonical" href="https://24houring.com/guides/daily-planning-basics" />
-<meta name="robots" content="index, follow" />
-<meta property="og:title" content="하루 계획의 기본 — 우선순위, 시간 배분, 되돌아보기" />
-<meta property="og:description" content="하루 계획의 기본기를 익히는 초보자용 가이드." />
-<meta property="og:type" content="article" />
-<meta property="og:url" content="https://24houring.com/guides/daily-planning-basics" />
-<meta property="og:image" content="https://24houring.com/og-image.png" />
-<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-<link rel="stylesheet" href="/guides/guide.css" />
+<html lang="ko"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>하루 계획 시작하기: 목록이 남은 시간보다 길 때 · 24Houring</title>
+<meta name="description" content="오늘 끝낼 범위와 이미 정해진 약속을 함께 적어 봅니다. 할 일의 개수나 하루의 일정 비율에 보편적인 정답을 두지 않습니다.">
+<link rel="canonical" href="https://24houring.com/guides/daily-planning-basics">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="하루 계획 시작하기: 목록이 남은 시간보다 길 때">
+<meta property="og:description" content="오늘 끝낼 범위와 이미 정해진 약속을 함께 적어 봅니다. 할 일의 개수나 하루의 일정 비율에 보편적인 정답을 두지 않습니다.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://24houring.com/guides/daily-planning-basics">
+<meta property="og:image" content="https://24houring.com/og-image.png">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="/guides/guide.css">
 <meta name="google-adsense-account" content="ca-pub-6947130056543786">
-<script>
-(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');}}catch(e){}})();
-function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');}
-</script>
-</head>
+
+<script>function setGuideLang(l,save){l=l==='ko'?'ko':'en';document.documentElement.lang=l;document.documentElement.classList.toggle('show-en',l==='en');document.querySelectorAll('[data-guide-lang]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.guideLang===l));});if(save!==false){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}}}(function(){var l=(navigator.language||'ko').slice(0,2);try{var o=localStorage.getItem('24h-guides-lang');var r=localStorage.getItem('24h-circle-planner.prefs');var p=r?JSON.parse(r):null;l=o||(p&&p.prefs&&p.prefs.language)||l;}catch(e){}setGuideLang(l,false);document.addEventListener('DOMContentLoaded',function(){setGuideLang(document.documentElement.lang,false);});})();</script></head>
 <body>
 <div class="wrap">
   <header class="site">
     <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
-      <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
+      <span class="langswitch"><button type="button" data-guide-lang="ko" aria-pressed="true" onclick="setGuideLang('ko')">한국어</button><button type="button" data-guide-lang="en" aria-pressed="false" onclick="setGuideLang('en')">EN</button></span>
       <a href="/guides/"><span class="lang-ko">가이드</span><span class="lang-en">Guides</span></a>
       <a href="/blog/"><span class="lang-ko">블로그</span><span class="lang-en">Blog</span></a>
       <a href="/"><span class="lang-ko">홈</span><span class="lang-en">Home</span></a>
     </nav>
   </header>
-  <main class="article">
-    <p class="crumb"><a href="/guides/"><span class="lang-ko">← 가이드 목록</span><span class="lang-en">← All guides</span></a></p>
-    <div class="lang-ko">
-    <h1>하루 계획의 기본 <span class="en">/ Daily Planning Basics</span></h1>
-    <p class="lead">거창한 시스템이 아니라, 5분이면 되는 단순한 사이클이면 충분합니다. 우선순위를 정하고, 현실적으로 시간을 나누고, 저녁에 한 번 돌아보는 것.</p>
-
-    <h2>왜 대부분의 하루 계획은 무너질까</h2>
-    <p>계획을 세우는 사람은 많지만, 그 계획대로 하루를 마치는 사람은 드뭅니다. 문제는 의지력이 아니라 계획을 만드는 방식에 있습니다. 무너지는 계획에는 거의 항상 세 가지 공통점이 있습니다.</p>
-    <ul>
-      <li><strong>할 일이 너무 많다.</strong> 하루에 12개, 15개씩 적어 놓고 그중 절반도 못 끝냅니다. 목록이 길수록 무엇이 진짜 중요한지 흐려지고, 남은 항목을 보며 자책만 남습니다.</li>
-      <li><strong>시간을 계산하지 않는다.</strong> "보고서 작성", "이메일 정리"처럼 적기만 하고 각각 몇 분이 걸리는지는 따지지 않습니다. 하루는 24시간, 그중 깨어 있는 시간은 16시간 남짓인데, 목록의 실제 소요 시간을 더하면 20시간이 넘는 경우가 흔합니다. 애초에 불가능한 계획인 셈입니다.</li>
-      <li><strong>돌아보지 않는다.</strong> 오늘 계획이 왜 어긋났는지 한 번도 점검하지 않으면, 내일도 똑같은 방식으로 똑같이 실패합니다. 회고가 없는 계획은 개선되지 않습니다.</li>
-    </ul>
-    <p>바꿔 말하면, 이 세 가지만 반대로 하면 됩니다. 할 일을 줄이고, 시간을 계산하고, 저녁에 한 번 돌아보는 것. 이것이 앞으로 소개할 단순한 사이클의 전부입니다.</p>
-
-    <h2>5분이면 끝나는 하루 계획 사이클</h2>
-    <p>복잡한 앱이나 두꺼운 플래너가 필요하지 않습니다. 아침에 3분, 저녁에 2분이면 충분한 다섯 단계입니다.</p>
-
-    <h3>1. 오늘의 우선순위 1~3개를 고른다</h3>
-    <p>모든 할 일이 똑같이 중요하지는 않습니다. 오늘 하루가 성공인지 실패인지를 가르는 핵심 과제, 즉 <strong>MIT(Most Important Task)</strong>를 1~3개만 고르세요. 이 몇 가지만 끝내도 오늘은 충분히 잘한 하루입니다. 나머지는 여유가 있을 때 처리하는 보너스로 두면 됩니다.</p>
-    <p>무엇이 중요한지 헷갈릴 때는 <strong>아이젠하워 매트릭스</strong>가 도움이 됩니다. 할 일을 '긴급함'과 '중요함' 두 축으로 네 칸에 나눠 보는 방법입니다.</p>
-    <ul>
-      <li>중요하고 긴급함 → 지금 바로 한다 (오늘의 MIT 후보)</li>
-      <li>중요하지만 급하지 않음 → 일정을 잡아 둔다 (미루기 쉽지만 진짜 성장은 여기서 나옵니다)</li>
-      <li>급하지만 중요하지 않음 → 위임하거나 빠르게 쳐낸다</li>
-      <li>급하지도 중요하지도 않음 → 과감히 버린다</li>
-    </ul>
-    <p>대부분의 사람은 '급하지만 중요하지 않은' 일에 하루를 다 쓰고, 정작 '중요하지만 급하지 않은' 일은 계속 미룹니다. MIT를 고른다는 건 이 함정에서 빠져나오는 첫걸음입니다.</p>
-
-    <h3>2. 각 일의 소요 시간을 솔직하게 어림한다</h3>
-    <p>고른 일마다 "이건 몇 분 걸릴까?"를 반드시 적으세요. 여기서 핵심은 '솔직하게'입니다. 우리는 대부분 자신의 속도를 과대평가합니다. 30분이면 될 거라 생각한 일이 실제로는 한 시간이 걸리죠. 이를 <em>계획 오류(planning fallacy)</em>라고 합니다.</p>
-    <p>대책은 간단합니다. 처음 떠오른 예상 시간에 1.5배를 곱하세요. 30분짜리라고 느껴지면 45분으로 잡는 겁니다. 며칠간 실제 걸린 시간을 기록해 보면 자기만의 배수를 찾을 수 있습니다. 시간을 어림하는 습관 하나만으로도 계획의 현실성이 크게 올라갑니다.</p>
-    <p>여기에 한 가지를 더 얹으면 좋습니다. 시간뿐 아니라 <strong>에너지</strong>도 함께 어림하는 것입니다. 같은 30분이라도 머리를 많이 쓰는 일과 단순 반복 작업은 소모하는 집중력이 전혀 다릅니다. 무거운 일 두세 개를 오후에 몰아넣으면, 시간표상으로는 맞아떨어져도 실제로는 끝까지 해내지 못합니다. 힘이 많이 드는 일은 에너지가 높은 시간대에, 가벼운 일은 지친 시간대에 배치하세요. 시간과 에너지를 함께 보면 계획의 정확도가 한 단계 더 올라갑니다.</p>
-
-    <h3>3. 실제 하루에 배치하고, 사이에 여유를 둔다</h3>
-    <p>이제 할 일을 진짜 시간표 위에 얹습니다. 회의, 이동, 식사처럼 이미 정해진 고정 일정을 먼저 그려 넣고, 그 빈틈에 우선순위 과제를 배치하세요. 이때 일과 일 사이에 <strong>10~15분씩 완충(버퍼)</strong>을 반드시 남깁니다. 회의가 길어지거나 예상 못 한 연락이 오는 것이 하루의 정상적인 모습이기 때문입니다.</p>
-    <p>이 단계에서 원형 시간표가 특히 유용합니다. 24Houring(<a href="/">24houring.com</a>) 같은 원형 플래너에 하루를 그려 보면, 남은 빈 공간이 눈으로 바로 보여서 무리하게 욱여넣는 상황을 스스로 알아챌 수 있습니다. 원 안에 자리가 없는데 계속 채우려 하고 있다면, 그건 오늘 다 못 하는 계획이라는 신호입니다.</p>
-
-    <h3>4. 방해받지 않는 집중 블록 하나를 지킨다</h3>
-    <p>하루 전체를 완벽하게 통제할 수는 없어도, 하루 중 <strong>한 덩어리의 집중 시간</strong>만큼은 지킬 수 있습니다. 가장 머리가 맑은 시간대(많은 사람에게 오전)에 60~90분을 떼어, 그 시간엔 알림을 끄고 MIT 하나에만 매달리세요. 이 한 블록이 오늘 성과의 대부분을 만들어 냅니다. 시간을 덩어리로 묶어 쓰는 방법은 <a href="/guides/time-blocking">타임블로킹 가이드</a>에서 더 자세히 다룹니다.</p>
-
-    <h3>5. 저녁 5분, 돌아보고 넘긴다</h3>
-    <p>하루를 마치며 딱 5분만 오늘 계획을 되짚어 보세요. 무엇을 끝냈고, 무엇이 남았고, 왜 어긋났는지. 남은 일은 죄책감 없이 내일로 넘기거나(carry-over), 더 이상 필요 없다면 지웁니다. 이 짧은 회고가 다음 날 계획의 정확도를 조금씩 끌어올립니다. 아침·저녁을 짧은 루틴으로 묶고 싶다면 <a href="/guides/morning-evening-routine">아침·저녁 루틴</a> 가이드를 참고하세요.</p>
-    <p>회고에서 던질 질문은 세 개면 충분합니다. "오늘 MIT를 끝냈는가?", "예상보다 오래 걸린 일은 무엇이었나?", "내일은 무엇을 다르게 배치할까?" 이 질문들은 자책이 아니라 데이터를 얻기 위한 것입니다. 며칠만 쌓여도 자신이 어떤 일에서 시간을 자주 과소평가하는지, 언제 집중이 무너지는지 뚜렷한 패턴이 보입니다. 계획은 회고를 거칠수록 정교해지고, 정교해질수록 지키기 쉬워집니다.</p>
-
-    <h2>현실적인 시간 배분: 60%의 법칙</h2>
-    <p>하루 계획이 무너지는 가장 큰 이유는 시간을 100% 꽉 채우기 때문입니다. 16시간을 15시간 55분어치 일로 빈틈없이 메우면, 단 한 번의 지연이 그날 계획 전체를 도미노처럼 무너뜨립니다.</p>
-    <blockquote>계획된 시간의 60%만 실제 과제로 채우고, 40%는 완충과 예측 못 한 일을 위해 비워 두세요.</blockquote>
-    <p>깨어 있는 시간이 16시간이라면 실제 할 일에 배정할 시간은 9~10시간 정도로 잡는 것이 현실적입니다. 남은 40%는 낭비가 아닙니다. 회의 지연, 갑작스러운 연락, 화장실과 커피, 그리고 무엇보다 집중 후의 회복을 위한 정상적인 공간입니다. 이 여백이 있어야 하루가 예상대로 흘러가지 않아도 계획이 통째로 무너지지 않습니다. 여유를 남기는 것은 게으름이 아니라 계획을 끝까지 지키기 위한 설계입니다.</p>
-
-    <h2>주간 계획과 일간 계획의 역할</h2>
-    <p>일간 계획만으로는 부족할 때가 있습니다. 두 계획은 시야의 높이가 다르기 때문입니다.</p>
-    <ul>
-      <li><strong>주간 계획</strong>은 큰 그림입니다. 주말이나 월요일 아침에 15분을 들여, 이번 주에 반드시 진전시켜야 할 목표 2~3개와 큰 마감을 정합니다. 요일별로 어떤 큰 일을 어디에 둘지 대략 배분해 두면, 매일 아침 무엇을 할지 헤매지 않습니다.</li>
-      <li><strong>일간 계획</strong>은 실행입니다. 주간 목표에서 오늘 할 몫을 떼어 와, 앞서 본 다섯 단계로 구체화합니다.</li>
-    </ul>
-    <p>주간 계획이 나침반이라면 일간 계획은 오늘 걸을 걸음입니다. 나침반 없이 매일 걷기만 하면 방향을 잃고, 걷지 않고 나침반만 보면 아무 데도 도착하지 못합니다. 둘을 함께 쓸 때 계획이 목표로 이어집니다.</p>
-    <p>주간 계획을 세울 때 흔히 빠지는 함정은 한 주에 너무 많은 목표를 담는 것입니다. 큰 목표는 2~3개면 충분합니다. 대신 각 목표를 "이번 주에 무엇을 어디까지"라는 눈에 보이는 단위로 쪼개 두세요. 예를 들어 '보고서 완성'이라는 목표라면, '월요일에 자료 정리, 수요일에 초안, 금요일에 검토'처럼 요일에 나눠 붙입니다. 이렇게 해 두면 매일 아침의 일간 계획이 훨씬 쉬워집니다. 오늘 무엇을 할지 새로 고민하는 게 아니라, 주간 계획에서 오늘 몫을 꺼내 오기만 하면 되기 때문입니다.</p>
-
-    <h2>초보자가 자주 하는 실수와 해결책</h2>
-    <ul>
-      <li><strong>목록이 너무 길다</strong> → MIT 3개로 제한하고, 나머지는 '언젠가' 목록에 따로 보관하세요.</li>
-      <li><strong>시간을 안 적는다</strong> → 모든 항목에 예상 소요 시간을 붙이고, 합계가 하루를 넘으면 항목을 덜어냅니다.</li>
-      <li><strong>완벽한 도구를 찾느라 시작을 못 한다</strong> → 도구보다 사이클이 먼저입니다. 종이 한 장으로도 오늘 시작할 수 있습니다.</li>
-      <li><strong>하루 종일 계획을 손본다</strong> → 계획은 아침에 한 번, 저녁에 한 번만 다룹니다. 중간에 계속 고치면 계획이 아니라 딴짓이 됩니다.</li>
-      <li><strong>어긋나면 계획 자체를 포기한다</strong> → 계획은 지도지 계약이 아닙니다. 어긋난 지점에서 다시 배치하면 그만입니다.</li>
-    </ul>
-
-    <h2>Before / After: 엉킨 할 일을 계획된 하루로</h2>
-    <p>같은 하루가 어떻게 달라지는지 구체적으로 보겠습니다.</p>
-    <p><strong>Before — 그냥 나열한 목록</strong></p>
-    <ul>
-      <li>보고서 쓰기 · 이메일 · 헬스장 · 장보기 · 은행 · 기획안 검토 · 친구 연락 · 책 읽기 · 방 정리 · 세금 서류</li>
-    </ul>
-    <p>10개가 우선순위도, 시간도 없이 뒤섞여 있습니다. 어디서부터 시작할지 알 수 없고, 다 못 하면 실패한 하루처럼 느껴집니다.</p>
-    <p><strong>After — 우선순위와 시간을 붙인 하루</strong></p>
-    <ol>
-      <li>오늘의 MIT: <strong>보고서 쓰기</strong>(90분, 오전 집중 블록) · <strong>기획안 검토</strong>(45분) · <strong>세금 서류</strong>(30분, 마감 임박)</li>
-      <li>고정 일정 먼저 배치: 점심(60분), 헬스장(오후 7시, 60분)</li>
-      <li>완충 포함 배치: 오전 9~10시 30분 보고서 → 15분 버퍼 → 이메일·연락 묶어서 30분 → 오후에 기획안 45분 → 세금 서류 30분</li>
-      <li>나머지(장보기·은행·방 정리·책·친구 연락)는 '여유 시간에' 목록으로 내려, 오늘 못 해도 실패가 아니게 만든다</li>
-    </ol>
-    <p>할 일의 개수는 똑같지만, 이제 하루는 실행 가능한 순서와 현실적인 시간을 가졌습니다. 원형 플래너에 이렇게 얹어 보면 오후가 이미 꽉 찼다는 사실이 한눈에 보이고, 무리한 항목은 자연스럽게 내일로 넘기게 됩니다.</p>
-
-    <h2>핵심 요약</h2>
-    <ul>
-      <li>계획이 무너지는 이유는 대개 셋입니다. 할 일이 너무 많고, 시간을 계산하지 않고, 돌아보지 않는 것.</li>
-      <li>하루 사이클은 다섯 단계입니다. 우선순위 1~3개 고르기 → 시간 어림하기 → 여유 두고 배치하기 → 집중 블록 하나 지키기 → 저녁 5분 회고.</li>
-      <li>중요도는 아이젠하워 매트릭스로 가르고, 오늘의 승부처인 MIT에 집중하세요.</li>
-      <li>하루를 100% 채우지 말고 60%의 법칙을 지키세요. 나머지 40%는 계획을 끝까지 지키기 위한 완충입니다.</li>
-      <li>주간 계획으로 방향을, 일간 계획으로 실행을 잡으면 계획이 목표로 이어집니다.</li>
-      <li>완벽한 도구를 기다리지 말고 오늘 종이 한 장으로 시작하세요. 원형 시간표로 그려 보면 과부하가 눈에 바로 보입니다.</li>
-    </ul>
-    </div>
-    <div class="lang-en">
-    <h1>Daily Planning Basics</h1>
-    <p class="lead">You don't need an elaborate system — a simple cycle that takes five minutes is enough. Set your priorities, divide your time realistically, and look back once in the evening.</p>
-
-    <h2>Why most daily plans fall apart</h2>
-    <p>Plenty of people make plans, but few actually finish the day the way they planned it. The problem isn't willpower — it's the way the plan is built. Plans that collapse almost always share three traits.</p>
-    <ul>
-      <li><strong>Too many tasks.</strong> You write down 12 or 15 things for a single day and don't finish even half of them. The longer the list, the more it blurs what actually matters, and all that's left is blaming yourself as you stare at the leftovers.</li>
-      <li><strong>You don't count the time.</strong> You just jot down "write report" or "clear out email" without ever asking how many minutes each one takes. A day is 24 hours, of which only about 16 are waking hours — yet add up the real duration of your list and it often comes to more than 20. It was an impossible plan from the start.</li>
-      <li><strong>You don't look back.</strong> If you never once examine why today's plan went off track, tomorrow you'll fail the same way for the same reasons. A plan without reflection never improves.</li>
-    </ul>
-    <p>Put another way, all you have to do is reverse these three. Do fewer tasks, count the time, and look back once in the evening. That is the whole of the simple cycle we're about to walk through.</p>
-
-    <h2>The daily planning cycle that takes five minutes</h2>
-    <p>You don't need a complicated app or a thick planner. It's five steps that take three minutes in the morning and two in the evening.</p>
-
-    <h3>1. Pick 1–3 priorities for today</h3>
-    <p>Not every task is equally important. Choose just 1–3 core tasks that decide whether today is a success or a failure — your <strong>MITs (Most Important Tasks)</strong>. Even if you finish only these few, you've done well enough today. Leave the rest as a bonus to handle when you have room.</p>
-    <p>When you're unsure what's important, the <strong>Eisenhower Matrix</strong> helps. It's a way of sorting your tasks into four boxes along two axes: "urgent" and "important."</p>
-    <ul>
-      <li>Important and urgent → do it right now (a candidate for today's MIT)</li>
-      <li>Important but not urgent → schedule it (easy to put off, yet real growth comes from here)</li>
-      <li>Urgent but not important → delegate it or knock it out quickly</li>
-      <li>Neither urgent nor important → drop it without hesitation</li>
-    </ul>
-    <p>Most people spend the whole day on things that are "urgent but not important," while the "important but not urgent" work keeps getting pushed back. Choosing your MITs is the first step out of that trap.</p>
-
-    <h3>2. Honestly estimate how long each task will take</h3>
-    <p>For every task you pick, be sure to write down "how many minutes will this take?" The key word here is "honestly." Most of us overestimate our own speed. A task we think will take 30 minutes actually takes an hour. This is called the <em>planning fallacy</em>.</p>
-    <p>The fix is simple: multiply your first estimate by 1.5. If it feels like a 30-minute task, block out 45 minutes. Record how long things actually take for a few days and you'll find your own multiplier. Just the habit of estimating time alone raises the realism of your plan dramatically.</p>
-    <p>It helps to add one more thing on top. Estimate not only time but <strong>energy</strong> as well. Even at the same 30 minutes, mentally demanding work and simple repetitive work drain completely different amounts of focus. If you cram two or three heavy tasks into the afternoon, it may add up on the timetable but you won't actually get through them. Place demanding work in your high-energy hours and light work in your worn-out hours. Looking at time and energy together raises the accuracy of your plan another notch.</p>
-
-    <h3>3. Place tasks on the actual day and leave slack between them</h3>
-    <p>Now lay your tasks onto a real timetable. First draw in the fixed commitments that are already set — meetings, travel, meals — then slot your priority tasks into the gaps. As you do, always leave <strong>a 10–15 minute buffer</strong> between tasks. A meeting running long or an unexpected message coming in is simply the normal shape of a day.</p>
-    <p>A circular timetable is especially useful at this step. When you draw your day on a circular planner like 24Houring (<a href="/">24houring.com</a>), the empty space that's left is visible to the eye at once, so you catch yourself when you're forcing too much in. If there's no room left in the circle and you're still trying to fill it, that's a sign this is a plan you won't finish today.</p>
-
-    <h3>4. Protect one undistracted block of focus</h3>
-    <p>You can't perfectly control the whole day, but you can protect <strong>one solid block of focus time</strong>. Carve out 60–90 minutes during your clearest hours (the morning, for many people), turn off notifications during that time, and cling to a single MIT. This one block produces most of today's results. For more on grouping time into blocks, see the <a href="/guides/time-blocking">time-blocking guide</a>.</p>
-
-    <h3>5. Five minutes in the evening — reflect and carry over</h3>
-    <p>As the day ends, spend just five minutes reviewing today's plan. What did you finish, what's left, and why did it go off track. Carry over what remains to tomorrow without guilt, or erase it if it's no longer needed. This short reflection gradually raises the accuracy of the next day's plan. If you'd like to bundle your morning and evening into short routines, see the <a href="/guides/morning-evening-routine">morning and evening routine</a> guide.</p>
-    <p>Three questions are enough for your reflection. "Did I finish today's MIT?", "Which task took longer than expected?", "What will I place differently tomorrow?" These questions aren't for beating yourself up — they're for gathering data. After only a few days you'll see clear patterns: which kinds of tasks you routinely underestimate, and when your focus tends to break down. A plan grows more refined the more reflection it goes through, and the more refined it is, the easier it is to keep.</p>
-
-    <h2>Realistic time allocation: the 60% rule</h2>
-    <p>The biggest reason a daily plan collapses is packing time to 100%. If you fill 16 hours seamlessly with 15 hours and 55 minutes of work, a single delay topples that day's entire plan like dominoes.</p>
-    <blockquote>Fill only 60% of your planned time with actual tasks, and leave 40% open for buffers and the unexpected.</blockquote>
-    <p>If your waking time is 16 hours, it's realistic to allot about 9–10 hours to actual tasks. The remaining 40% is not waste. It's normal space for meetings running long, sudden messages, bathroom breaks and coffee, and — above all — recovery after focus. Only with this margin does your plan survive intact even when the day doesn't unfold as expected. Leaving slack isn't laziness; it's a design choice that lets you keep the plan through to the end.</p>
-
-    <h2>The roles of weekly and daily planning</h2>
-    <p>There are times when daily planning alone isn't enough, because the two plans sit at different heights of view.</p>
-    <ul>
-      <li><strong>Weekly planning</strong> is the big picture. On the weekend or Monday morning, spend 15 minutes to set the 2–3 goals you must move forward this week and the major deadlines. Roughly assign which big tasks go on which days, and you won't flounder each morning wondering what to do.</li>
-      <li><strong>Daily planning</strong> is execution. Take today's share out of the weekly goals and make it concrete with the five steps above.</li>
-    </ul>
-    <p>If weekly planning is the compass, daily planning is the steps you take today. Walk every day without a compass and you lose your direction; stare at the compass without walking and you arrive nowhere. Only when you use both together does a plan lead to your goals.</p>
-    <p>A common trap in weekly planning is packing too many goals into one week. Two or three big goals are enough. Instead, break each goal into visible units of "what, and how far, this week." For a goal like "finish the report," split it across the days: "organize the material Monday, draft Wednesday, review Friday." Set up this way, each morning's daily plan becomes far easier. You're not agonizing anew over what to do today — you just pull today's share out of the weekly plan.</p>
-
-    <h2>Common beginner mistakes and their fixes</h2>
-    <ul>
-      <li><strong>The list is too long</strong> → Limit yourself to 3 MITs, and keep the rest separately in a "someday" list.</li>
-      <li><strong>You don't write down the time</strong> → Attach an estimated duration to every item, and when the total exceeds the day, take items off.</li>
-      <li><strong>You can't start because you're hunting for the perfect tool</strong> → The cycle comes before the tool. You can start today with a single sheet of paper.</li>
-      <li><strong>You tinker with the plan all day long</strong> → Handle the plan once in the morning and once in the evening. Keep fiddling with it in between and it stops being a plan and becomes a distraction.</li>
-      <li><strong>You abandon the whole plan the moment it goes off track</strong> → A plan is a map, not a contract. Just re-place things from the point where it went off track.</li>
-    </ul>
-
-    <h2>Before / After: from a tangled to-do list to a planned day</h2>
-    <p>Let's look concretely at how the same day changes.</p>
-    <p><strong>Before — just a listed dump</strong></p>
-    <ul>
-      <li>Write report · Email · Gym · Groceries · Bank · Review proposal · Text a friend · Read a book · Tidy the room · Tax paperwork</li>
-    </ul>
-    <p>Ten items are jumbled together with no priority and no time. You can't tell where to start, and if you don't finish them all it feels like a failed day.</p>
-    <p><strong>After — a day with priorities and time attached</strong></p>
-    <ol>
-      <li>Today's MITs: <strong>write report</strong> (90 min, morning focus block) · <strong>review proposal</strong> (45 min) · <strong>tax paperwork</strong> (30 min, deadline looming)</li>
-      <li>Place fixed commitments first: lunch (60 min), gym (7 p.m., 60 min)</li>
-      <li>Place with buffers: report 9:00–10:30 → 15-minute buffer → email and messages bundled into 30 min → proposal 45 min in the afternoon → tax paperwork 30 min</li>
-      <li>Move the rest (groceries, bank, tidying, reading, texting a friend) down to a "when there's spare time" list, so that not doing them today isn't a failure</li>
-    </ol>
-    <p>The number of tasks is the same, but now the day has a workable order and realistic time. Lay it out on a circular planner like this and it's clear at a glance that the afternoon is already full, so the excessive items naturally get carried over to tomorrow.</p>
-
-    <h2>Key takeaways</h2>
-    <ul>
-      <li>Plans usually collapse for three reasons: too many tasks, not counting the time, and not looking back.</li>
-      <li>The daily cycle is five steps: pick 1–3 priorities → estimate the time → place with slack → protect one focus block → a 5-minute evening review.</li>
-      <li>Sort importance with the Eisenhower Matrix, and focus on your MITs, today's decisive battles.</li>
-      <li>Don't fill the day to 100% — keep the 60% rule. The remaining 40% is the buffer that lets you keep the plan through to the end.</li>
-      <li>Set direction with weekly planning and execution with daily planning, and your plans lead to your goals.</li>
-      <li>Don't wait for the perfect tool — start today with a single sheet of paper. Draw it as a circular timetable and overload becomes visible at once.</li>
-    </ul>
-    </div>
-    <div class="cta card">
-      <div class="lang-ko">
-        <p style="margin:0 0 4px"><strong>지금 바로 해보기</strong></p>
-        <p style="margin:0">24Houring에서 하루를 원형 시간표로 그려보세요. 설치·회원가입 없이 무료로 시작할 수 있습니다.</p>
-        <p style="margin:8px 0 0"><a class="btn" href="/">24Houring 열기 →</a></p>
-      </div>
-      <div class="lang-en">
-        <p style="margin:0 0 4px"><strong>Try it now</strong></p>
-        <p style="margin:0">Sketch your day as a 24-hour circle on 24Houring — free, with no sign-up or install.</p>
-        <p style="margin:8px 0 0"><a class="btn" href="/">Open 24Houring →</a></p>
-      </div>
-    </div>
-  </main>
+  <main class="article" id="main-content"><p class="crumb"><a href="/guides/"><span class="lang-ko">← 가이드 목록</span><span class="lang-en">← All guides</span></a></p><p class="editorial-meta"><span class="lang-ko">발행: 24Houring · 내용 검토: </span><span class="lang-en">Published by 24Houring · Content reviewed: </span><time datetime="2026-09-08">2026-09-08</time> · <a href="/editorial-policy"><span class="lang-ko">작성 기준</span><span class="lang-en">Editorial policy</span></a></p><div class="lang-ko" lang="ko"><h1>하루 계획 시작하기: 목록이 남은 시간보다 길 때</h1><p class="lead">오늘 끝낼 범위와 이미 정해진 약속을 함께 적어 봅니다. 할 일의 개수나 하루의 일정 비율에 보편적인 정답을 두지 않습니다.</p><section><h2>먼저 ‘오늘’에 속하는 일 고르기</h2><p>할 일을 모두 적은 뒤 마감이 오늘인지, 다른 사람이 기다리는지, 지금 하지 않으면 어떤 문제가 생기는지를 표시합니다. 중요한 목표라도 오늘 처리할 필요가 없다면 별도 목록으로 옮길 수 있습니다. 단순히 세 가지로 줄이는 것보다 왜 오늘 해야 하는지 설명하는 것이 먼저입니다.</p>
+<p>‘보고서 작성’처럼 끝이 불분명한 제목은 ‘표 두 개의 숫자를 확인하고 검토 요청 보내기’처럼 끝나는 상태로 바꿔 보세요. 범위가 모호하면 시간도 추정하기 어렵습니다. 처음 하는 일은 확정 소요 시간이 아니라 확인이 필요한 예상치로 적습니다.</p></section>
+<section><h2>가능한 구간과 필요한 시간을 비교하기</h2><p>가상 예시로 10:00–12:00에 쓸 수 있는 두 시간이 있고, 자료 확인 50분·답장 20분·서류 제출 30분이 필요하다면 합계는 100분입니다. 남은 20분은 지연이나 다음 일정 준비에 남길 수 있습니다. 이 비율은 예시의 계산 결과이며 모든 날에 적용할 법칙이 아닙니다.</p>
+<p>자료 확인이 80분 걸릴 것 같다면 합계는 130분으로 구간보다 길어집니다. 답장을 다른 시간으로 옮기거나 자료 확인 범위를 줄이는 선택이 필요합니다. 이동·식사·돌봄 등 이미 쓰이는 시간을 빈칸으로 계산하지 마세요.</p></section>
+<section><h2>앱에 넣고 바뀐 제약에 맞춰 수정하기</h2><p>24Houring의 시간표 보기에서 고정 약속을 먼저 확인하고 유연한 작업을 배치하세요. 경계를 바꾸면 이웃 구간도 달라질 수 있으므로 수정된 시각을 다시 읽습니다. 제목에는 해당 구간에서 할 행동을 적고, 상세 체크 목록은 메모로 분리할 수 있습니다.</p>
+<p>긴급한 요청이 들어오면 새 요청을 덧붙이기 전에 무엇을 옮길지 정하세요. 계획을 중간에 바꾸는 일 자체가 실패는 아닙니다. 다만 같은 항목을 계속 옮긴다면 마감·작업량·도움이 필요한 부분을 함께 재검토해야 합니다.</p></section>
+<section><h2>마칠 때 다음 추정을 위한 메모 남기기</h2><p>끝낸 항목 수만 세지 말고 예상보다 오래 걸린 이유를 적어 보세요. ‘자료 확인이 50분 예상보다 25분 길었음: 누락 자료 요청’처럼 사실과 원인을 구분하면 다음 계획에서 같은 전제를 그대로 반복하지 않을 수 있습니다.</p>
+<p>계획은 실제 활동을 자동 측정하지 않습니다. 실제 시간을 비교하려면 기록 모드나 직접 적은 메모를 별도로 사용하세요. 놓친 항목은 다음 날에 무조건 복사하기보다 여전히 필요한지 다시 선택하고, 중요한 기록은 JSON 또는 전체 백업으로 보관하세요.</p></section><h2>이어서 살펴보기</h2><ul><li><a href="/guides/time-blocking">업무일을 구간으로 나누는 예시</a></li><li><a href="/guides/weekly-review">여러 날의 변경 이유를 돌아보기</a></li></ul><p><a class="btn" href="/">내 시간표 편집하기</a></p></div><div class="lang-en" lang="en"><h1>Start a daily plan when the list exceeds the time</h1><p class="lead">Write down a finishable scope alongside commitments you already have. There is no universal task count or fixed percentage of the day that everyone should schedule.</p><section><h2>Decide what belongs to today</h2><p>List the work, then mark whether its deadline is today, someone is waiting for it, or postponement has a concrete consequence. Even an important goal may belong on a later list. Explaining why a task belongs today is more useful than enforcing an arbitrary limit of three tasks.</p>
+<p>Replace an open-ended label such as “write report” with a finish condition: “check two tables and send a review request.” Unclear scope makes time hard to estimate. Treat the duration of unfamiliar work as an estimate to investigate, not a commitment you already know you can meet.</p></section>
+<section><h2>Compare available time with the work</h2><p>Suppose an illustrative 10:00–12:00 opening gives you 120 minutes. Checking data for 50 minutes, replying for 20 and submitting a form for 30 totals 100 minutes. The remaining 20 minutes can accommodate a delay or preparation for the next commitment. That proportion comes from this example; it is not a rule for everyone.</p>
+<p>If data checking needs 80 minutes instead, the total becomes 130. Move the replies or reduce the checking scope before calling the plan feasible. Travel, meals and care duties already consume time; do not count those intervals as available merely because they are missing from a task list.</p></section>
+<section><h2>Enter the plan and respond to changed constraints</h2><p>In 24Houring’s table view, check fixed commitments first and place movable work around them. Moving a boundary can affect the neighbouring block, so read the adjusted times. Use the block name for the action and a memo for a longer checklist.</p>
+<p>When an urgent request arrives, decide what moves before adding it. Revising a plan during the day is not inherently a failure. If the same task keeps moving, reconsider its deadline, scope and the support you need rather than repeatedly assigning the same unrealistic slot.</p></section>
+<section><h2>Leave evidence for the next estimate</h2><p>Do more than count completed tasks. Record why an estimate changed: “data checking took 25 minutes longer than the estimated 50 because I had to request missing files.” Separate what happened from your interpretation so the next plan can start from better information.</p>
+<p>A plan does not automatically measure activity. Use recording mode or a separate manual note to compare actual time. Reconsider whether unfinished work is still necessary before copying it to tomorrow. Preserve important records with a schedule JSON export or a full backup, as appropriate.</p></section><h2>Related walkthroughs</h2><ul><li><a href="/guides/time-blocking">Build a day from work blocks</a></li><li><a href="/guides/weekly-review">Review changes across several days</a></li></ul><p><a class="btn" href="/">Edit my day</a></p></div></main>
   <footer class="site">
     <nav>
       <a href="/"><span class="lang-ko">홈 Home</span><span class="lang-en">Home</span></a>
@@ -249,5 +61,6 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
     <p class="copy">© 2026 Circloser · 24houring.com</p>
   </footer>
 </div>
-</body>
-</html>
+
+
+</body></html>

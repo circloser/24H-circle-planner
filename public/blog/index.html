@@ -4,17 +4,18 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>블로그 — 시간 관리와 하루 계획 이야기 · 24Houring</title>
-<meta name="description" content="시간 관리, 하루 계획, 원형 시간표 활용에 대한 24Houring의 블로그. 시간 가계부, 방학 계획, 크로노타입까지." />
+<meta name="description" content="시간 기록, 일정 계산, 공부·돌봄·근무 계획을 위한 20편의 실습. 가상 예시와 실제 기록을 구분하고 자기 조건에 맞게 수정합니다." />
 <link rel="canonical" href="https://24houring.com/blog/" />
 <meta name="robots" content="index, follow" />
 <meta property="og:title" content="블로그 — 시간 관리와 하루 계획 이야기 · 24Houring" />
-<meta property="og:description" content="시간 관리, 하루 계획, 원형 시간표 활용에 대한 24Houring의 블로그. 시간 가계부, 방학 계획, 크로노타입까지." />
+<meta property="og:description" content="시간 기록, 일정 계산, 공부·돌봄·근무 계획을 위한 20편의 실습. 가상 예시와 실제 기록을 구분하고 자기 조건에 맞게 수정합니다." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://24houring.com/blog/" />
 <meta property="og:image" content="https://24houring.com/og-image.png" />
 <link rel="alternate" type="application/rss+xml" title="24Houring Blog" href="/blog/rss.xml" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="stylesheet" href="/guides/guide.css" />
+<style>.langswitch button{font:inherit;color:inherit;background:transparent;border:0;padding:6px;cursor:pointer}.langswitch button[aria-pressed="true"]{font-weight:700;text-decoration:underline}.langswitch button:focus-visible{outline:2px solid currentColor;outline-offset:2px}</style>
 <meta name="google-adsense-account" content="ca-pub-6947130056543786">
 <script type="application/ld+json">
 {
@@ -30,8 +31,9 @@
 }
 </script>
 <script>
-(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');}}catch(e){}})();
-function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');}
+function applyGuideLang(l){l=l==='ko'?'ko':'en';document.documentElement.classList.toggle('show-en',l==='en');document.documentElement.lang=l;document.querySelectorAll('[data-guide-lang]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.guideLang===l));});}
+(function(){var l='ko';try{l=localStorage.getItem('24h-guides-lang');if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}}catch(e){}applyGuideLang(l);document.addEventListener('DOMContentLoaded',function(){applyGuideLang(document.documentElement.lang);});})();
+function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}applyGuideLang(l);}
 </script>
 </head>
 <body>
@@ -39,7 +41,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
   <header class="site">
     <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
-      <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
+      <span class="langswitch"><button type="button" data-guide-lang="ko" aria-pressed="true" onclick="setGuideLang('ko')">한국어</button><span class="sep">·</span><button type="button" data-guide-lang="en" aria-pressed="false" onclick="setGuideLang('en')">EN</button></span>
       <a href="/blog/"><span class="lang-ko">블로그</span><span class="lang-en">Blog</span></a>
       <a href="/"><span class="lang-ko">홈</span><span class="lang-en">Home</span></a>
     </nav>
@@ -49,104 +51,104 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
     <p class="lead"><span class="lang-ko">시간 관리와 하루 계획에 대한 이야기를 씁니다. 읽고 나면 바로 원형 시간표에 적용해 볼 수 있어요.</span><span class="lang-en">Notes on time management and daily planning — things you can apply to your circular timetable right away.</span></p>
     <div class="grid" style="grid-template-columns:1fr">
       <a class="gcard" href="/blog/sleep-anchor-day">
-        <h3><span class="lang-ko">수면을 중심에 놓고 하루를 역설계하는 법 — 잠을 잔반으로 남기지 않기</span><span class="lang-en">Designing the Day Backward from Sleep — Stop Leaving Sleep as Leftovers</span></h3>
+        <h3><span class="lang-ko">수면을 먼저 표시하는 계획 — 취침 준비와 약속을 함께 계산하기</span><span class="lang-en">Mark Sleep First — Budget Preparation and Commitments Together</span></h3>
         <p class="en" style="margin:0 0 6px">2026년 7월 26일</p>
-        <p><span class="lang-ko">대부분은 기상 시각부터 하루를 앞으로 계획하고, 잠은 '남는 시간'으로 둡니다. 그래서 수면은 언제나 지는 완충재가 됩니다. 잠의 조각을 먼저 고정하고 나머지 16시간을 그 둘레에 설계하는 3단계 역설계법.</span><span class="lang-en">Most people plan forward from wake-up and leave sleep as 'whatever remains.' So sleep becomes the shock absorber that always loses. A 3-step method: lock the sleep wedge first, then design the remaining 16 hours around it.</span></p>
+        <p><span class="lang-ko">수면 시간을 일률적으로 정하지 않고, 필요한 수면 기회와 취침 준비를 다른 일정과 대조하는 계획 예시입니다.</span><span class="lang-en">A scheduling example for comparing sleep opportunity and preparation with commitments, without prescribing one duration for everyone.</span></p>
       </a>
       <a class="gcard" href="/blog/phone-time-audit">
-        <h3><span class="lang-ko">스마트폰이 삼킨 시간을 원으로 마주하기 — 숫자가 아니라 모양으로 보는 화면 시간</span><span class="lang-en">Facing the Time Your Phone Ate — Seeing Screen Time as a Shape, Not a Number</span></h3>
+        <h3><span class="lang-ko">스크린 타임을 하루 기록과 비교할 때 중복을 피하는 법</span><span class="lang-en">Compare Screen Time with Your Day Without Double-Counting</span></h3>
         <p class="en" style="margin:0 0 6px">2026년 7월 26일</p>
-        <p><span class="lang-ko">주간 스크린타임 보고서의 '4시간 12분'은 왜 우리를 바꾸지 못할까요. 숫자를 원형 시간표 위의 색깔 조각으로 옮기면 손실이 눈에 보입니다. 3일 실험으로 폰이 삼킨 조각을 마주하고, 의지가 아니라 배치로 되찾는 법.</span><span class="lang-en">Why does '4h 12m' in your weekly screen-time report never change anything? Move the number onto a circular timetable as a colored wedge and the loss becomes visible. A 3-day experiment to face the slice your phone ate — and reclaim it by placement, not willpower.</span></p>
+        <p><span class="lang-ko">휴대폰 사용 합계를 그대로 자유시간에서 빼지 않고, 동시 사용과 필요한 사용을 구분하는 점검법입니다.</span><span class="lang-en">Do not subtract a phone total from free time blindly: distinguish concurrent, necessary, and unwanted use.</span></p>
       </a>
       <a class="gcard" href="/blog/habit-stacking-circle">
-        <h3><span class="lang-ko">습관 쌓기를 원형 시간표에 앉히는 법</span><span class="lang-en">How to Seat Habit Stacking on a Circular Timetable</span></h3>
+        <h3><span class="lang-ko">기존 행동 뒤에 작은 행동 붙이기 — 준비와 예외까지 정하기</span><span class="lang-en">Attach a Small Action to an Existing Event — Include Setup and Exceptions</span></h3>
         <p class="en" style="margin:0 0 6px">2026년 7월 26일</p>
-        <p><span class="lang-ko">새 습관은 의지가 약해서가 아니라 앉을 자리가 없어서 실패합니다. 이미 매일 하는 일(앵커) 뒤에 아주 작은 습관 하나를 붙이는 습관 쌓기, 2분으로 시작하는 이유, 흔들리는 앵커의 함정, 그리고 원형 시간표가 튼튼한 앵커를 어떻게 보여 주는지.</span><span class="lang-en">New habits fail not from weak willpower but from having no seat. Habit stacking — attaching one tiny habit behind something you already do daily (an anchor) — why you start with two minutes, the shaky-anchor trap, and how a circular timetable shows which anchors are strong enough to build on.</span></p>
+        <p><span class="lang-ko">반복되는 사건, 준비물, 가능한 분량과 건너뛸 조건을 함께 적는 선택형 계획 실습입니다.</span><span class="lang-en">An optional planning exercise connecting a recurring event with materials, feasible scope, and a skip condition.</span></p>
       </a>
       <a class="gcard" href="/blog/goals-vs-systems">
-        <h3><span class="lang-ko">목표가 아니라 하루의 구조를 바꿔라 — 소원과 결심의 차이</span><span class="lang-en">Change the Structure of Your Day, Not Your Goals</span></h3>
+        <h3><span class="lang-ko">목표를 시간표로 바꾸기 — 투입 시간과 결과를 따로 점검하기</span><span class="lang-en">Turn a Goal into a Schedule — Review Time and Results Separately</span></h3>
         <p class="en" style="margin:0 0 6px">2026년 7월 26일</p>
-        <p><span class="lang-ko">'책 30권'은 의지가 약해서 실패하는 게 아니라, 하루 어디에도 자리를 얻지 못해서 실패합니다. 결과 목표에서 매일 같은 자리를 지키는 '구조적 최소치'로, 목표를 원 위의 색칠된 조각으로 바꾸는 법.</span><span class="lang-en">\"Read 30 books\" fails not from weak willpower but because it never gets a place in your day. Shifting from outcome goals to a structural minimum, and turning a goal into a coloured wedge on the circle.</span></p>
+        <p><span class="lang-ko">목표를 작은 행동으로 바꾸되, 시간만 채우는 계획이 되지 않도록 실행과 결과를 함께 확인합니다.</span><span class="lang-en">Translate a goal into a small action while checking outcomes as well as time spent.</span></p>
       </a>
       <a class="gcard" href="/blog/freelancer-boundaries">
-        <h3><span class="lang-ko">프리랜서의 하루, 원으로 일과 삶의 경계 긋기</span><span class="lang-en">A Freelancer's Day — Drawing the Work–Life Line on a Circle</span></h3>
+        <h3><span class="lang-ko">프리랜서의 종료 시각 — 응답 시간과 예외를 함께 정하기</span><span class="lang-en">Freelance Closing Time — Define Response Windows and Exceptions</span></h3>
         <p class="en" style="margin:0 0 6px">2026년 7월 26일</p>
-        <p><span class="lang-ko">프리랜서의 진짜 문제는 시간 부족이 아니라 경계의 부재입니다. 출퇴근이 공짜로 그어 주던 선을 잃은 하루, 시작 의식과 끝 의식으로 고정된 일 조각을 감싸 원 위에 '퇴근'을 되살리는 법.</span><span class="lang-en">A freelancer's real problem isn't too little time — it's no boundary. Losing the line the commute drew for free, and rebuilding it with start and end rituals around a bounded work-wedge on the circle.</span></p>
+        <p><span class="lang-ko">퇴근 의식만으로 끝나지 않는 프리랜서 일정: 고객 응답 창, 마감 작업, 긴급 예외와 다음 날 인계를 설계합니다.</span><span class="lang-en">Go beyond a shutdown ritual: plan client responses, delivery work, urgent exceptions, and a clear handoff to tomorrow.</span></p>
       </a>
       <a class="gcard" href="/blog/college-gap-time">
-        <h3><span class="lang-ko">대학생의 진짜 시간표는 수업 사이에 있다 — 공강과 저녁 설계법</span><span class="lang-en">A College Student's Real Timetable Is Between the Classes — Designing Gaps and Evenings</span></h3>
+        <h3><span class="lang-ko">대학 공강 90분 — 이동과 준비를 빼고 할 일 고르기</span><span class="lang-en">A 90-Minute Class Gap — Subtract Travel Before Choosing Work</span></h3>
         <p class="en" style="margin:0 0 6px">2026년 7월 26일</p>
-        <p><span class="lang-ko">강의는 일주일에 15시간, 나머지 100시간은 시간표에 적히지 않습니다. 학점과 수면과 번아웃은 바로 그 공강과 저녁에서 결정됩니다. 숨은 100시간 계산법, 90분 공강을 수업 한 칸처럼 설계하는 법, 마지막 수업 뒤 저녁 설계, 그리고 24시간 원으로 진짜 일주일을 보는 법.</span><span class="lang-en">Lectures are 15 hours a week; the other 100 aren't on any timetable. GPA, sleep, and burnout are decided in the gaps and evenings. The hidden-100-hours math, designing a 90-minute gap like a class, evening design after the last lecture, and seeing your real week as a 24-hour circle.</span></p>
+        <p><span class="lang-ko">공강 시간을 통째로 공부 시간으로 보지 않고, 장소 이동과 준비·식사를 계산해 가능한 과제를 고릅니다.</span><span class="lang-en">Account for travel, setup, and meals before assigning a task to a gap between classes.</span></p>
       </a>
       <a class="gcard" href="/blog/weekend-disappears">
-        <h3><span class="lang-ko">주말은 왜 사라지는가 — 토요일 오전을 지키는 법</span><span class="lang-en">Why Weekends Disappear — And How to Protect Saturday Morning</span></h3>
+        <h3><span class="lang-ko">주말 일정의 빠진 시간 찾기 — 이동·집안일·선택한 휴식</span><span class="lang-en">Read a Weekend Plan — Travel, Chores, and Chosen Rest</span></h3>
         <p class="en" style="margin:0 0 6px">2026년 7월 20일</p>
-        <p><span class="lang-ko">금요일 저녁부터 월요일 아침까지는 61시간, 잠과 밥을 빼도 자유 시간이 22시간이나 됩니다. 그런데 왜 주말은 없었던 것처럼 느껴질까요. 주말이 짧은 게 아니라 형태가 없다는 진단과, 토요일 오전 9~12시 한 블록으로 주말 전체의 체감 길이를 바꾸는 선약 원칙을 정리했습니다.</span><span class="lang-en">Friday 7pm to Monday 8am is 61 hours — and even after sleep and meals, about 22 hours are genuinely free. So why does the weekend feel like it never happened? A diagnosis (weekends aren't short, they're shapeless) and one protected Saturday-morning block that changes the felt length of the whole weekend.</span></p>
+        <p><span class="lang-ko">주말 자유시간을 일률적으로 계산하지 않고, 한 활동의 전체 소요시간과 비워둘 구간을 정합니다.</span><span class="lang-en">Budget the whole duration of one activity and deliberately open intervals without assigning everyone the same free weekend.</span></p>
       </a>
       <a class="gcard" href="/blog/tomorrow-in-ten-minutes">
-        <h3><span class="lang-ko">잠들기 전 10분, 내일을 미리 그려 두는 습관</span><span class="lang-en">Ten Minutes Before Bed — The Habit of Drawing Tomorrow in Advance</span></h3>
+        <h3><span class="lang-ko">내일 계획을 짧게 점검하기 — 고정 약속·첫 작업·충돌 확인</span><span class="lang-en">A Short Review of Tomorrow — Commitments, First Task, and Conflicts</span></h3>
         <p class="en" style="margin:0 0 6px">2026년 7월 20일</p>
-        <p><span class="lang-ko">아침의 나는 하루 중 가장 나쁜 기획자입니다. 의지력이 남아 있는 밤 10분에 내일을 설계하는 3·4·3 프로토콜, '첫 1시간'을 문장으로 적어야 하는 이유, 그리고 밤 계획이 빠지기 쉬운 과적재의 함정까지 정리했습니다.</span><span class="lang-en">Morning-you is the worst planner you know. A 3-4-3 ten-minute nightly protocol for designing tomorrow the night before — why the first hour deserves a full sentence, and the overloading trap night planning falls into.</span></p>
+        <p><span class="lang-ko">아침보다 밤이 우월하다는 주장 없이, 짧은 계획 시간을 세 단계로 나누는 실습입니다.</span><span class="lang-en">A three-part planning exercise without claiming that evenings are better than mornings.</span></p>
       </a>
       <a class="gcard" href="/blog/three-hours-after-work">
-        <h3><span class="lang-ko">퇴근 후 3시간, 자기계발 골든타임 설계법</span><span class="lang-en">The Three Hours After Work — Designing Your Evening Golden Time</span></h3>
+        <h3><span class="lang-ko">퇴근 후 세 시간의 계산 — 이동·식사·돌봄을 먼저 빼기</span><span class="lang-en">Budget an Evening — Subtract Travel, Meals, and Care First</span></h3>
         <p class="en" style="margin:0 0 6px">2026년 7월 20일</p>
-        <p><span class="lang-ko">직장인의 저녁이 증발하는 진짜 이유는 시간 부족이 아니라 '전환의 부재'입니다. 귀가 후 첫 30분을 지키는 전환 의식, 그날 에너지에 맞춰 고르는 세 가지 저녁 설계도(재충전형·성장형·정리형), 그리고 휴식을 먼저 배치해야 하는 이유.</span><span class="lang-en">Office workers' evenings don't vanish for lack of time — they vanish for lack of a transition. A transition ritual for the first 30 minutes home, three evening blueprints to match your energy, and why scheduling rest first saves the night.</span></p>
+        <p><span class="lang-ko">모두에게 세 시간이 남는다고 가정하지 않고, 실제 저녁에서 선택 가능한 구간을 계산하는 예시입니다.</span><span class="lang-en">Calculate what can actually be chosen in an evening without assuming everyone has three free hours.</span></p>
       </a>
       <a class="gcard" href="/blog/smallest-restart-unit">
-        <h3><span class="lang-ko">루틴이 무너졌을 때 — 다시 시작의 최소 단위</span><span class="lang-en">When a Routine Collapses — The Smallest Unit of a Restart</span></h3>
+        <h3><span class="lang-ko">중단한 계획 다시 시작하기 — 다음 행동과 중단 조건 정하기</span><span class="lang-en">Restart an Interrupted Plan — Define the Next Action and a Stop Condition</span></h3>
         <p class="en" style="margin:0 0 6px">2026년 7월 20일</p>
-        <p><span class="lang-ko">'내일부터 전부 다시'는 또 무너집니다. 올바른 재시작 단위는 앵커 하나 — 고정된 시각 하나를 3일 지키는 것입니다. 열흘 복구 시간표와, 원 위의 작은 조각 하나가 재시작을 가볍게 만드는 이유.</span><span class="lang-en">Restarting everything at once fails again. The right restart unit is one anchor — a single fixed time held for three days. A ten-day rebuild timeline, and why one small wedge on a circle makes restarting cheap.</span></p>
+        <p><span class="lang-ko">복구 일수를 약속하지 않고, 달라진 조건을 확인해 다음 가능한 작업 한 단위를 고르는 실습입니다.</span><span class="lang-en">Check changed circumstances and choose one feasible next task, without promising a fixed recovery timeline.</span></p>
       </a>
       <a class="gcard" href="/blog/shift-worker-circle">
-        <h3><span class="lang-ko">교대근무자의 하루 설계 — 시계가 거꾸로 도는 사람들을 위해</span><span class="lang-en">Day Design for Shift Workers — When Your Clock Runs Backwards</span></h3>
+        <h3><span class="lang-ko">교대근무표를 하루 원에 옮기기 — 날짜 경계와 인계 확인</span><span class="lang-en">Put a Shift Roster on a Circle — Check Dates and Handoffs</span></h3>
         <p class="en" style="margin:0 0 6px">2026년 7월 20일</p>
-        <p><span class="lang-ko">미라클 모닝과 9-to-5 플래너는 교대근무자에게 오히려 해롭습니다. 원에는 아침이 없어서, 야간 근무의 하루는 회전한 원일 뿐입니다. 앵커 수면, 근무 기준 식사, 겹침 창구, 그리고 고정점 이동까지.</span><span class="lang-en">Miracle mornings and 9-to-5 planners actively hurt shift workers. A circle has no morning bias — a night-shift day is just the circle rotated. Anchor sleep, shift-relative meals, overlap windows, and anchors that move with your shift.</span></p>
+        <p><span class="lang-ko">자정을 넘는 근무의 날짜를 구별하고, 통근·인계·개인 일정을 빠뜨리지 않는 입력 예시입니다.</span><span class="lang-en">A worked example for overnight date boundaries, commuting, handoffs, and personal commitments.</span></p>
       </a>
       <a class="gcard" href="/blog/record-one-week">
-        <h3><span class="lang-ko">계획 없이 기록만 1주일 — 시간 가계부 실험</span><span class="lang-en">One Week of Recording, Zero Planning — The Time Ledger Experiment</span></h3>
+        <h3><span class="lang-ko">일주일 시간 기록 — 빠진 날과 추정치를 다루는 방법</span><span class="lang-en">A Week of Time Records — Handling Missing Days and Estimates</span></h3>
         <p class="en" style="margin:0 0 6px">2026년 7월 20일</p>
-        <p><span class="lang-ko">계획에 번번이 실패한다면 일주일만 계획을 멈추고 기록만 해 보세요. 30분 블록, 하루 3번 체크인, 정직한 이름표 — 시간 가계부 실험의 7일 프로토콜과 8일째에 가장 큰 누수 하나를 찾아 그것만 바꾸는 법을 정리했습니다.</span><span class="lang-en">If your plans keep collapsing, stop planning for one week and only record. The seven-day time-ledger protocol — 30-minute blocks, three daily check-ins, honest labels — and how to find your single biggest leak on day eight.</span></p>
+        <p><span class="lang-ko">기록 빈도, 활동 분류, 누락 표시와 주간 비교 기준을 정해 부담 없이 실제 하루를 남기는 방법입니다.</span><span class="lang-en">Choose check-ins, categories, missing-data labels, and comparison rules for a manageable record of your actual days.</span></p>
       </a>
       <a class="gcard" href="/blog/kids-plan-together">
-        <h3><span class="lang-ko">아이와 함께 만드는 생활 계획표 — 부모가 그려 주면 실패하는 이유</span><span class="lang-en">Making the Break Plan With Your Child — Why Parent-Drawn Plans Fail</span></h3>
+        <h3><span class="lang-ko">아이와 계획표 만들기 — 선택 범위와 돌봄 조건을 함께 확인하기</span><span class="lang-en">Plan with Your Child — Agree on Choices and Care Arrangements</span></h3>
         <p class="en" style="margin:0 0 6px">2026년 7월 20일</p>
-        <p><span class="lang-ko">부모가 만들어 준 방학 계획표는 사흘을 못 갑니다. 기상·식사·취침 세 가지만 부모가 정하고 나머지 70%는 아이가 직접 채우는 3:7 법칙, 20분 계획 회의 5단계 스크립트, 무너졌을 때 같이 고치는 법까지 정리했습니다.</span><span class="lang-en">A vacation plan made for a child rarely survives three days. The 3:7 rule — parents fix only wake-up, meals and bedtime while the child fills the other 70% — plus a 20-minute planning-session script and what to do when it breaks.</span></p>
+        <p><span class="lang-ko">부모가 정하는 조건과 아이가 고를 수 있는 활동을 구분하고, 함께 수정하는 대화 예시입니다.</span><span class="lang-en">A sample conversation separating necessary arrangements from choices, with a way to revise the plan together.</span></p>
       </a>
       <a class="gcard" href="/blog/exam-d30-three-periods">
-        <h3><span class="lang-ko">시험 D-30, 하루를 3교시로 나누는 법</span><span class="lang-en">Exam D-30 — Divide the Day into Three Periods, Not Ten Open Hours</span></h3>
+        <h3><span class="lang-ko">시험 30일 전 — 세 구간 공부 계획을 내 일정에 맞추기</span><span class="lang-en">Thirty Days Before an Exam — Adapt a Three-Block Study Plan</span></h3>
         <p class="en" style="margin:0 0 6px">2026년 7월 20일</p>
-        <p><span class="lang-ko">10시간 앉아 있어도 순공은 4시간 안팎입니다. 남은 30일, 하루를 끝이 정해진 3교시로 나누면 같은 시간의 밀도가 달라집니다. 3교시 시간표, 마감 효과, 교시 성공률, D-30→D-7→D-1 운영법까지.</span><span class="lang-en">Ten seated hours yield about four real ones. With 30 days left, three fixed periods with hard endings beat open-ended grinding — the timetable, the deadline effect, period win-rates, and the D-30 to D-1 shift.</span></p>
+        <p><span class="lang-ko">세 구간은 선택 가능한 틀입니다. 남은 시험 범위, 수업일과 휴일, 휴식과 점검 결과에 맞춰 공부 계획을 조정합니다.</span><span class="lang-en">Three blocks are an optional framework: adapt them to the syllabus, class days, breaks, and what review reveals.</span></p>
       </a>
       <a class="gcard" href="/blog/summer-break-reset">
-        <h3><span class="lang-ko">여름방학 2주 차, 무너진 계획표를 다시 세우는 법</span><span class="lang-en">Two Weeks into Summer Break — How to Rebuild a Collapsed Plan</span></h3>
+        <h3><span class="lang-ko">방학 계획 다시 세우기 — 남은 날짜에서 목표 분량 계산하기</span><span class="lang-en">Rebuild a School-Break Plan from the Days Actually Left</span></h3>
         <p class="en" style="margin:0 0 6px">2026년 7월 17일</p>
-        <p><span class="lang-ko">방학 계획표는 원래 2주 차에 무너집니다. 자책 대신 리셋이 필요할 뿐이에요. 기상 시간 하나부터 다시 세우는 3단계 리셋법과 남은 방학을 지키는 원형 시간표 활용법.</span><span class="lang-en">Break-time plans collapse around week two — that calls for a reset, not guilt. A three-step rebuild starting from a single wake-up time, with a circular timetable to hold the rest of the break.</span></p>
+        <p><span class="lang-ko">방학 계획의 남은 분량과 실제 가능한 날을 대조하고, 정상일·일정 있는 날을 나눠 조정하는 예시입니다.</span><span class="lang-en">Compare unfinished work with available days and build different versions for open days and days with commitments.</span></p>
       </a>
       <a class="gcard" href="/blog/kant-daily-routine-circle">
-        <h3><span class="lang-ko">칸트의 하루를 원형 플래너로 그려봤다 — 이웃들이 시계를 맞췄다는 그 일과</span><span class="lang-en">I Drew Kant's Day on a Circular Planner — The Routine Neighbours Set Their Clocks By</span></h3>
+        <h3><span class="lang-ko">칸트의 일과를 그대로 따라도 될까 — 유명인 시간표를 읽는 기준</span><span class="lang-en">Should You Copy Kant’s Routine? Reading Celebrity Schedules Carefully</span></h3>
         <p class="en" style="margin:0 0 6px">2026년 7월 17일</p>
-        <p><span class="lang-ko">쾨니히스베르크 사람들이 시계를 맞췄다는 칸트의 일과를 원형 플래너에 그대로 넣어봤습니다. 집필은 4시간이 안 되고, 점심이 하루에서 두 번째로 큰 블록이었습니다 — '모양이 있는 하루'가 주는 것.</span><span class="lang-en">I put Kant's famously clockwork routine onto a circular planner. Writing took under four hours a day; lunch was the second-biggest block — what a day WITH a shape can teach us.</span></p>
+        <p><span class="lang-ko">칸트의 정확한 일과를 재현한다는 주장을 철회하고, 출처와 생략된 조건을 확인해 자기 계획으로 옮기는 방법을 설명합니다.</span><span class="lang-en">A correction to our claimed reconstruction of Kant’s day, with checks for sources and missing context before adapting any celebrity routine.</span></p>
       </a>
       <a class="gcard" href="/blog/hidden-two-hours">
-        <h3><span class="lang-ko">하루 24시간, 숨은 2시간을 찾는 법 — 시간 가계부 일주일 실험</span><span class="lang-en">Finding Your Hidden Two Hours — A One-Week Time Audit Experiment</span></h3>
+        <h3><span class="lang-ko">숨은 두 시간이 정말 있을까 — 미기록 시간부터 구별하기</span><span class="lang-en">Are There Really Two Hidden Hours? Check Unrecorded Time First</span></h3>
         <p class="en" style="margin:0 0 6px">2026년 7월 17일</p>
-        <p><span class="lang-ko">바쁜데 남는 게 없는 하루의 범인은 대개 '기억나지 않는 시간'입니다. 일주일 시간 가계부 실험으로 숨은 2시간을 찾고, 원형 시간표로 그 시간을 되찾는 방법을 정리했습니다.</span><span class="lang-en">The culprit behind busy-but-empty days is usually time you can't remember. A one-week time audit finds the hidden two hours; a circular timetable helps you take them back.</span></p>
+        <p><span class="lang-ko">시간을 되찾는다는 보장 대신, 실제 여유와 이동·돌봄·미기록 구간을 구분하는 짧은 시간 점검입니다.</span><span class="lang-en">A short audit distinguishing available time from travel, care, and missing records, without promising hours reclaimed.</span></p>
       </a>
       <a class="gcard" href="/blog/circle-vs-square-planner">
-        <h3><span class="lang-ko">왜 네모가 아니라 원일까 — 하루를 원으로 그릴 때 보이는 것들</span><span class="lang-en">Why a Circle, Not a Square — What You See When You Draw Your Day as a Circle</span></h3>
+        <h3><span class="lang-ko">원형 시간표와 목록·캘린더 — 어떤 질문에 어떤 도구를 쓸까</span><span class="lang-en">Circle, List, or Calendar — Choose by the Question</span></h3>
         <p class="en" style="margin:0 0 6px">2026년 7월 17일</p>
-        <p><span class="lang-ko">네모 플래너는 채운 것만 보여줍니다. 하루를 원으로 그리면 비어 있는 시간, 하루의 닫힌 총량, 수면의 실제 크기가 보입니다. 원형 플래너가 잘하는 것과 못하는 것을 솔직하게 정리했습니다.</span><span class="lang-en">A square planner only shows what you filled in. Draw the day as a circle and you see the empty hours, the day's hard limit, and the true size of sleep — an honest look at what a circular planner does and doesn't do well.</span></p>
+        <p><span class="lang-ko">하루의 비율, 정확한 약속, 세부 할 일을 같은 예시로 비교하고 원형 시간표의 한계를 설명합니다.</span><span class="lang-en">Compare daily proportions, exact appointments, and subtasks using one example, including the limits of a circular timetable.</span></p>
       </a>
       <a class="gcard" href="/blog/circle-3things-cards">
-        <h3><span class="lang-ko">카드뉴스 — 네모 플래너가 절대 못 보여주는 것 3가지</span><span class="lang-en">In Four Cards — Three Things a Square Planner Can Never Show You</span></h3>
+        <h3><span class="lang-ko">시간표를 읽는 세 가지 점검 — 빈칸·겹침·작은 조각</span><span class="lang-en">Three Timetable Checks — Gaps, Overlap, and Tiny Blocks</span></h3>
         <p class="en" style="margin:0 0 6px">2026년 7월 17일</p>
-        <p><span class="lang-ko">비어 있는 시간, 하루의 한계, 수면의 크기. 네모 플래너가 놓치는 세 가지를 원형 시간표 넉 장으로 정리했습니다. 저장해 두고 하루를 설계할 때 꺼내 보세요.</span><span class="lang-en">Empty hours, the day's hard limit, and the true size of sleep — three things a square planner misses, told in four circular-timetable cards.</span></p>
+        <p><span class="lang-ko">예쁜 시간표를 완성하기보다 실제로 실행 가능한지 확인하는 세 가지 점검과 수정 예시입니다.</span><span class="lang-en">Three checks and correction examples for making a timetable usable, rather than merely attractive.</span></p>
       </a>
       <a class="gcard" href="/blog/chronotype-day-design">
-        <h3><span class="lang-ko">아침형 vs 저녁형 — 크로노타입에 맞춰 하루 시간표를 설계하는 법</span><span class="lang-en">Morning Lark or Night Owl — Designing Your Day Around Your Chronotype</span></h3>
+        <h3><span class="lang-ko">아침과 저녁 중 언제 공부할까 — 내 기록으로 시간대 비교하기</span><span class="lang-en">Morning or Evening Study — Compare Your Own Records</span></h3>
         <p class="en" style="margin:0 0 6px">2026년 7월 17일</p>
-        <p><span class="lang-ko">미라클모닝이 누군가에게만 기적인 이유는 크로노타입 때문입니다. 내 유형을 확인하는 간단한 방법과, 아침형·저녁형·중간형별 하루 시간표 설계 원칙을 정리했습니다.</span><span class="lang-en">The miracle morning only works miracles for some people — chronotype is why. A simple way to find your type, and day-design principles for larks, owls, and everyone in between.</span></p>
+        <p><span class="lang-ko">아침형·저녁형을 단정하지 않고, 비슷한 과제를 서로 다른 시간대에 배치해 비교하는 계획 실험입니다.</span><span class="lang-en">A planning experiment comparing similar tasks at different times, without diagnosing yourself as a morning or evening type.</span></p>
       </a>
     </div>
 
@@ -168,13 +170,12 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
       <a href="/"><span class="lang-ko">홈 Home</span><span class="lang-en">Home</span></a>
       <a href="/blog/"><span class="lang-ko">블로그 Blog</span><span class="lang-en">Blog</span></a>
       <a href="/templates/"><span class="lang-ko">템플릿 Templates</span><span class="lang-en">Templates</span></a>
-      <a href="/gallery/"><span class="lang-ko">갤러리 Gallery</span><span class="lang-en">Gallery</span></a>
-      <a href="/life-planner"><span class="lang-ko">생활계획표 Life Planner</span><span class="lang-en">Life Planner</span></a>
       <a href="/guides/"><span class="lang-ko">가이드 Guides</span><span class="lang-en">Guides</span></a>
       <a href="/stories/"><span class="lang-ko">스토리 Stories</span><span class="lang-en">Stories</span></a>
       <a href="/health/"><span class="lang-ko">건강 Health</span><span class="lang-en">Health</span></a>
       <a href="/faq"><span class="lang-ko">FAQ</span><span class="lang-en">FAQ</span></a>
       <a href="/about"><span class="lang-ko">소개 About</span><span class="lang-en">About</span></a>
+      <a href="/editorial-policy"><span class="lang-ko">편집 원칙</span><span class="lang-en">Editorial policy</span></a>
       <a href="/privacy"><span class="lang-ko">개인정보처리방침 Privacy</span><span class="lang-en">Privacy</span></a>
       <a href="/terms"><span class="lang-ko">이용약관 Terms</span><span class="lang-en">Terms</span></a>
       <a href="/contact"><span class="lang-ko">문의 Contact</span><span class="lang-en">Contact</span></a>

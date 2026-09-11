@@ -7,7 +7,7 @@
  * The 40 thin /health and /stories pages were consolidated into 10 deep pillars.
  * Workers static assets cannot 301 on their own, so wrangler.jsonc routes
  * /health/* and /stories/* through the Worker first and it answers these paths
- * with a real 301; the old URLs pass their ranking on and no thin page ships.
+ * with a real 301; readers reach the consolidated topic without a stub page.
  *
  * Kept as a plain map (not a prefix rule) so a typo can never redirect a pillar
  * onto itself — see worker/__tests__/legacy-redirects.test.ts.

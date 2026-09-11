@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>스토리 — 위대한 인물들의 하루 습관 · 24Houring</title>
-<meta name="description" content="기업가·사상가·작가·리더·현대 인물들이 하루를 어떻게 설계했는지, 그리고 당신의 원형 시간표에 무엇을 빌려올 수 있는지. How remarkable people structured their days — and what you can borrow." />
+<title>기록으로 읽는 인물과 시간 — 출처와 계획 연습 · 24Houring</title>
+<meta name="description" content="연설·자서전·인터뷰·기록에서 확인한 내용과 오늘의 계획 연습을 구분합니다. Primary-source accounts and separate planning exercises." />
 <link rel="canonical" href="https://24houring.com/stories/" />
 <meta name="robots" content="index, follow" />
-<meta property="og:title" content="스토리 — 위대한 인물들의 하루 습관 · 24Houring" />
-<meta property="og:description" content="기업가·사상가·작가·리더·현대 인물들이 하루를 어떻게 설계했는지, 그리고 당신의 원형 시간표에 무엇을 빌려올 수 있는지. How remarkable people structured their days — and what you can borrow." />
+<meta property="og:title" content="기록으로 읽는 인물과 시간 — 출처와 계획 연습 · 24Houring" />
+<meta property="og:description" content="연설·자서전·인터뷰·기록에서 확인한 내용과 오늘의 계획 연습을 구분합니다. Primary-source accounts and separate planning exercises." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://24houring.com/stories/" />
 <meta property="og:image" content="https://24houring.com/og-image.png" />
@@ -16,8 +16,8 @@
 <link rel="stylesheet" href="/guides/guide.css" />
 <meta name="google-adsense-account" content="ca-pub-6947130056543786">
 <script>
-(function(){try{var o=localStorage.getItem('24h-guides-lang');var l=o;if(!l){var r=localStorage.getItem('24h-circle-planner.prefs');if(r){var p=JSON.parse(r);l=p&&p.prefs&&p.prefs.language;}}if(!l){l=(navigator.language||'ko').slice(0,2);}if(l&&l.toLowerCase()!=='ko'){document.documentElement.classList.add('show-en');}}catch(e){}})();
-function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}document.documentElement.classList.toggle('show-en',l!=='ko');}
+function setGuideLang(l,save){l=l==='ko'?'ko':'en';document.documentElement.lang=l;document.documentElement.classList.toggle('show-en',l==='en');document.querySelectorAll('[data-guide-lang]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.guideLang===l));});if(save!==false){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}}}
+(function(){var l=(navigator.language||'ko').slice(0,2);try{var o=localStorage.getItem('24h-guides-lang');var r=localStorage.getItem('24h-circle-planner.prefs');var p=r?JSON.parse(r):null;l=o||(p&&p.prefs&&p.prefs.language)||l;}catch(e){}setGuideLang(l,false);document.addEventListener('DOMContentLoaded',function(){setGuideLang(document.documentElement.lang,false);});})();
 </script>
 </head>
 <body>
@@ -25,7 +25,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
   <header class="site">
     <a class="logo" href="/">24Hou<b>ring</b></a>
     <nav class="site-nav">
-      <span class="langswitch"><a onclick="setGuideLang('ko')">한국어</a><span class="sep">·</span><a onclick="setGuideLang('en')">EN</a></span>
+      <span class="langswitch"><button type="button" data-guide-lang="ko" onclick="setGuideLang('ko')" aria-pressed="true">한국어</button><button type="button" data-guide-lang="en" onclick="setGuideLang('en')" aria-pressed="false">EN</button></span>
       <a href="/guides/"><span class="lang-ko">가이드</span><span class="lang-en">Guides</span></a>
       <a href="/blog/"><span class="lang-ko">블로그</span><span class="lang-en">Blog</span></a>
       <a href="/gallery/"><span class="lang-ko">갤러리</span><span class="lang-en">Gallery</span></a>
@@ -35,42 +35,42 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
   <main>
     <div class="lang-ko">
       <h1>스토리 <span class="en">/ Stories</span></h1>
-      <p class="lead">위대한 성취 뒤에는 화려한 비법이 아니라, 반복 가능한 하루의 구조가 있었습니다. 기업가·사상가·작가·리더·현대 인물들의 하루 습관을 살펴보고, 당신의 24Houring 원형 시간표에 빌려올 수 있는 것을 정리했습니다.</p>
+      <p class="lead">유명인의 하루를 그대로 따라 하기 전에, 원문이 실제로 무엇을 말하는지 살펴봅니다. 확인 가능한 기록, 확인하지 못해 제외한 일화, 오늘 적용해 볼 계획 연습을 구분했습니다. 한 사람의 습관이 성공의 원인이었다고 단정하지 않습니다.</p>
     </div>
     <div class="lang-en">
       <h1>Stories</h1>
-      <p class="lead">Behind great work is rarely a secret trick — it is a repeatable shape to the day. Here is how entrepreneurs, thinkers, writers, leaders, and modern high performers structured theirs, and what you can borrow for your own 24Houring circle.</p>
+      <p class="lead">Before copying a famous person’s day, look at what the original record actually says. These pages separate documented accounts, anecdotes removed for lack of verification, and planning exercises for your own circumstances. A reported habit is not proof of what caused someone’s success.</p>
     </div>
     <div class="grid">
       <a class="gcard" href="/stories/entrepreneurs">
-        <h3><span class="lang-ko">기업가들의 하루: 버핏, 게이츠, 머스크, 잡스, 베조스가 시간을 쓰는 법</span><span class="lang-en">How Top Entrepreneurs Structure Their Day: Buffett, Gates, Musk, Jobs, and Bezos</span></h3>
-        <p><span class="lang-ko">워런 버핏은 일정을 비우고, 빌 게이츠는 일 년에 두 번 사라지고, 일론 머스크는 하루를 5분 단위로 쪼개고, 스티브 잡스는 같은 옷만 입었고, 제프 베조스는 아침 회의를 거절했습니다. 방법은 다섯</span><span class="lang-en">Warren Buffett empties his calendar. Bill Gates disappears twice a year. Elon Musk slices his day into five-minute boxes. Steve Jo</span></p>
+        <h3><span class="lang-ko">기업가의 조언을 내 일정에 적용하기: 잡스의 질문에서 시작하기</span><span class="lang-en">Applying a business leader’s reflection to your own calendar</span></h3>
+        <p><span class="lang-ko">스티브 잡스가 공개 연설에서 설명한 자기 점검과, 이를 오늘의 일정에 적용하는 연습을 구분해 읽어 보세요. 기업가의 성과를 특정 생활 습관 하나로 설명하지 않습니다.</span><span class="lang-en">Read a documented account of Steve Jobs’s self-reflection alongside a separate exercise for your own calendar. A business outcome </span></p>
       </a>
       <a class="gcard" href="/stories/thinkers">
-        <h3><span class="lang-ko">프랭클린·다윈·아인슈타인의 하루: 사상가들의 시간표에서 배우는 것</span><span class="lang-en">How Franklin, Darwin, and Einstein Spent Their Day</span></h3>
-        <p><span class="lang-ko">인쇄공 출신 정치가, 병약한 박물학자, 특허청 심사관 출신 물리학자. 세 사람의 하루를 나란히 놓아 보면, 서로 다른 삶에서도 닮은 구조가 보입니다.</span><span class="lang-en">A printer turned statesman, a naturalist with a fragile body, a patent clerk turned physicist. Lay their days side by side, and th</span></p>
+        <h3><span class="lang-ko">프랭클린의 시간표 읽기: 계획과 실제를 구분하는 연습</span><span class="lang-en">Reading Franklin’s timetable: separating plans from reality</span></h3>
+        <p><span class="lang-ko">유명한 시간표는 실제 행동을 빠짐없이 기록한 일지와 다릅니다. 프랭클린의 자서전에 함께 실린 계획과 어려움을 읽고, 내 계획도 수정할 수 있는 초안으로 다뤄 보세요.</span><span class="lang-en">A famous timetable is not a complete record of actual behavior. Franklin’s autobiography describes both a proposed day and difficu</span></p>
       </a>
       <a class="gcard" href="/stories/writers">
-        <h3><span class="lang-ko">작가들은 어떻게 하루를 지켰나: 헤밍웨이부터 베토벤까지</span><span class="lang-en">How Writers and Artists Guarded a Day: From Hemingway to Beethoven</span></h3>
-        <p><span class="lang-ko">헤밍웨이는 동트기 전에 썼고, 무라카미는 새벽 네 시에 일어나 쓴 뒤 오후에 달렸으며, 안젤루는 매일 같은 시각 텅 빈 호텔 방으로 출근하듯 향했습니다. 베토벤은 원두 예순 알을 세어 아침 커피를 </span><span class="lang-en">Hemingway wrote before the sun came up. Murakami rises at four, writes for hours, then runs or swims in the afternoon. Angelou dro</span></p>
+        <h3><span class="lang-ko">헤밍웨이의 인터뷰로 살펴보는 글쓰기: 다음 시작점을 남기는 연습</span><span class="lang-en">Writing with a next step: reading Hemingway’s interview</span></h3>
+        <p><span class="lang-ko">창작자의 기상 시각을 복제하기보다 작업을 다시 시작할 조건을 살펴보세요. 헤밍웨이의 직접 답변과 오늘의 글쓰기 연습을 구분해 소개합니다.</span><span class="lang-en">Instead of copying a writer’s waking time, examine how to return to unfinished work. This article separates Hemingway’s own interv</span></p>
       </a>
       <a class="gcard" href="/stories/leaders">
-        <h3><span class="lang-ko">리더들의 하루: 처칠의 낮잠, 이순신의 일기, 정약용의 필사</span><span class="lang-en">The Daily Discipline of Leaders: Churchill's Nap, Yi Sun-sin's Diary, Dasan's Daily Pages</span></h3>
-        <p><span class="lang-ko">윈스턴 처칠은 침대 위에서 오전을 시작했고, 이순신은 전장 한복판에서 거의 매일 일기를 썼으며, 정약용은 유배지에서 18년 동안 저술을 이어갔다. 시대도 처지도 전혀 달랐던 세 사람이 공통으로 붙잡</span><span class="lang-en">Winston Churchill began his mornings from bed, Yi Sun-sin wrote in his war diary almost daily in the middle of battle, and Jeong Y</span></p>
+        <h3><span class="lang-ko">이순신의 기록에서 출발하는 하루 점검: 사실·느낌·다음 행동</span><span class="lang-en">Daily review through a historical diary: facts, feelings, next actions</span></h3>
+        <p><span class="lang-ko">역사적 일기의 존재와 오늘 쓰는 회고 양식은 구분해야 합니다. 난중일기에 대한 기관 기록을 확인하고, 사건과 해석을 나누어 적는 현대적인 연습을 소개합니다.</span><span class="lang-en">A historical diary and a modern review template are different things. Start with an institutional description of Nanjung Ilgi, the</span></p>
       </a>
       <a class="gcard" href="/stories/modern">
-        <h3><span class="lang-ko">미셸 오바마, 코비 브라이언트, 오프라 윈프리, 아리아나 허핑턴 — 하루에서 가장 먼저 지키는 것</span><span class="lang-en">Michelle Obama, Kobe Bryant, Oprah Winfrey, Arianna Huffington: What Each One Protects First</span></h3>
-        <p><span class="lang-ko">전혀 다른 네 개의 커리어, 전혀 다른 하루의 시간대. 그런데도 이 네 사람에게는 공통점이 하나 있습니다. 하루 중 한 블록을 먼저 확보해 두고, 나머지 일정이 그 블록을 피해 돌아가게 만든다는 점</span><span class="lang-en">Four very different careers, four very different hours of the day. Yet these four share one underlying move: securing one block of</span></p>
+        <h3><span class="lang-ko">유명인의 회복 조언을 읽는 법: 과로 대신 일정의 경계 세우기</span><span class="lang-en">Reading advice about recovery: setting boundaries around work</span></h3>
+        <p><span class="lang-ko">개인의 공개 경험담은 의학적 처방이나 성과 보장이 아닙니다. 아리아나 허핑턴의 강연에서 확인할 수 있는 메시지와, 내 하루의 종료 조건을 정하는 연습을 구분합니다.</span><span class="lang-en">A public personal account is not a medical prescription or a performance guarantee. Separate the message in Arianna Huffington’s t</span></p>
       </a>
     </div>
     <div class="cta card">
       <div class="lang-ko">
-        <p style="margin:0 0 4px"><strong>이 하루를 내 시간표에 옮기기</strong></p>
-        <p style="margin:0">빌려오고 싶은 습관을 24Houring 원형 시간표에 블록으로 그려 보세요. 설치·회원가입 없이 무료입니다.</p>
+        <p style="margin:0 0 4px"><strong>계획 연습을 내 일정에 적용하기</strong></p>
+        <p style="margin:0">글의 계획 연습을 자신의 일정에 맞게 조정하고 24Houring 원형 시간표에 배치해 보세요. 설치·회원가입 없이 무료입니다.</p>
         <p style="margin:8px 0 0"><a class="btn" href="/">24Houring 열기 →</a></p>
       </div>
       <div class="lang-en">
-        <p style="margin:0 0 4px"><strong>Draw this day on your own circle</strong></p>
+        <p style="margin:0 0 4px"><strong>Apply the exercise to your own plan</strong></p>
         <p style="margin:0">Add it as a block on your 24-hour circle in 24Houring and see it every day — free, no sign-up or install.</p>
         <p style="margin:8px 0 0"><a class="btn" href="/">Open 24Houring →</a></p>
       </div>
@@ -88,6 +88,7 @@ function setGuideLang(l){try{localStorage.setItem('24h-guides-lang',l);}catch(e)
       <a href="/health/"><span class="lang-ko">건강 Health</span><span class="lang-en">Health</span></a>
       <a href="/faq"><span class="lang-ko">자주 묻는 질문 FAQ</span><span class="lang-en">FAQ</span></a>
       <a href="/about"><span class="lang-ko">소개 About</span><span class="lang-en">About</span></a>
+      <a href="/editorial-policy"><span class="lang-ko">콘텐츠 작성 기준</span><span class="lang-en">Editorial policy</span></a>
       <a href="/privacy"><span class="lang-ko">개인정보처리방침 Privacy</span><span class="lang-en">Privacy</span></a>
       <a href="/contact"><span class="lang-ko">문의 Contact</span><span class="lang-en">Contact</span></a>
     </nav>
