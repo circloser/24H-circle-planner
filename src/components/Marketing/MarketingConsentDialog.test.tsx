@@ -1,9 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { AUTO_ASK_DELAY_MS, MarketingConsent } from './MarketingConsentDialog';
-import { MARKETING_CONSENT_VERSION, wasRecentlyDismissed } from '@/lib/marketing';
+import { MarketingConsent } from './MarketingConsentDialog';
+import { MARKETING_CONSENT_VERSION, consumeMarketingResume } from '@/lib/marketing';
 
-const auth = { user: { id: 'u1', email: 'a@example.com', provider: 'google' } as { id: string; email: string; provider: string } | null, loading: false };
+const login = vi.fn();
+const auth = {
+  user: { id: 'u1', email: 'a@example.com', provider: 'google' } as { id: string; email: string; provider: string } | null,
+  loading: false,
+  login,
+};
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => auth }));
 vi.mock('@/hooks/usePreferences', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 
@@ -21,15 +26,13 @@ function mockFetch(getState: object) {
   return fetchMock;
 }
 
-async function waitOutTheDelay() {
-  await act(async () => { vi.advanceTimersByTime(AUTO_ASK_DELAY_MS); });
-  await act(async () => { await Promise.resolve(); await Promise.resolve(); });
-}
+const isPut = ([, init]: unknown[]) => (init as RequestInit | undefined)?.method === 'PUT';
 
 beforeEach(() => {
-  localStorage.clear();
-  vi.useFakeTimers();
+  sessionStorage.clear();
+  login.mockReset();
   auth.user = { id: 'u1', email: 'a@example.com', provider: 'google' };
+  auth.loading = false;
 });
 afterEach(() => {
   cleanup();
@@ -37,67 +40,58 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('MarketingConsent', () => {
-  it('asks a signed-in user who has never answered, after they settle in', async () => {
-    mockFetch(undecided);
-    render(<MarketingConsent manageOpen={false} onManageClose={() => {}} suppressAutoAsk={false} />);
-    expect(screen.queryByText('marketing.title')).toBeNull();
-    await waitOutTheDelay();
-    expect(screen.getByText('marketing.title')).toBeTruthy();
-    // The legally required disclosures are on screen with the question.
-    expect(screen.getByText('marketing.items')).toBeTruthy();
-    expect(screen.getByText('marketing.purpose')).toBeTruthy();
-    expect(screen.getByText('marketing.retention')).toBeTruthy();
-    expect(screen.getByText('marketing.refuse')).toBeTruthy();
-  });
-
-  it('never asks someone who already answered, a signed-out visitor, or over another flow', async () => {
-    mockFetch({ ...undecided, decided: true });
-    const { unmount } = render(<MarketingConsent manageOpen={false} onManageClose={() => {}} suppressAutoAsk={false} />);
-    await waitOutTheDelay();
-    expect(screen.queryByText('marketing.title')).toBeNull();
-    unmount();
-
+describe('MarketingConsent (mailing list)', () => {
+  it('never opens on its own, however long a signed-in user stays', async () => {
+    vi.useFakeTimers();
     const fetchMock = mockFetch(undecided);
-    auth.user = null;
-    const second = render(<MarketingConsent manageOpen={false} onManageClose={() => {}} suppressAutoAsk={false} />);
-    await waitOutTheDelay();
-    expect(screen.queryByText('marketing.title')).toBeNull();
-    second.unmount();
-
-    auth.user = { id: 'u1', email: 'a@example.com', provider: 'google' };
-    render(<MarketingConsent manageOpen={false} onManageClose={() => {}} suppressAutoAsk />);
-    await waitOutTheDelay();
+    render(<MarketingConsent open={false} onOpenChange={() => {}} />);
+    await act(async () => { vi.advanceTimersByTime(10 * 60 * 1000); });
     expect(screen.queryByText('marketing.title')).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('opened from settings, shows the disclosures and the current choice', async () => {
+    mockFetch({ decided: true, optIn: true, version: MARKETING_CONSENT_VERSION, decidedAt: Date.UTC(2026, 8, 11) });
+    render(<MarketingConsent open onOpenChange={() => {}} />);
+    expect(screen.getByText('marketing.items')).toBeTruthy();
+    expect(screen.getByText('marketing.purpose')).toBeTruthy();
+    expect(screen.getByText('marketing.retention')).toBeTruthy();
+    expect(screen.getByText('marketing.refuse')).toBeTruthy();
+    expect(await screen.findByText('marketing.currentIn')).toBeTruthy();
+  });
+
   it('records nothing until a button is pressed, then sends exactly that answer', async () => {
     const fetchMock = mockFetch(undecided);
-    render(<MarketingConsent manageOpen={false} onManageClose={() => {}} suppressAutoAsk={false} />);
-    await waitOutTheDelay();
-    expect(fetchMock.mock.calls.every(([, init]) => (init as RequestInit | undefined)?.method !== 'PUT')).toBe(true);
+    const onOpenChange = vi.fn();
+    render(<MarketingConsent open onOpenChange={onOpenChange} />);
+    await act(async () => { await Promise.resolve(); });
+    expect(fetchMock.mock.calls.some(isPut)).toBe(false);
 
     await act(async () => { fireEvent.click(screen.getByText('marketing.accept')); });
-    const put = fetchMock.mock.calls.find(([, init]) => (init as RequestInit | undefined)?.method === 'PUT');
+    const put = fetchMock.mock.calls.find(isPut);
     expect(JSON.parse(String((put![1] as RequestInit).body))).toEqual({ optIn: true, version: MARKETING_CONSENT_VERSION });
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
   it('gives both answers the same styling, so neither is nudged', async () => {
     mockFetch(undecided);
-    render(<MarketingConsent manageOpen={false} onManageClose={() => {}} suppressAutoAsk={false} />);
-    await waitOutTheDelay();
+    render(<MarketingConsent open onOpenChange={() => {}} />);
     const yes = screen.getByText('marketing.accept').closest('button')!;
     const no = screen.getByText('marketing.decline').closest('button')!;
     expect(yes.className).toBe(no.className);
   });
 
-  it('treats closing without answering as "later", not as an answer', async () => {
+  it('signed out: offers sign-in instead of answers, and remembers to reopen afterwards', async () => {
+    auth.user = null;
     const fetchMock = mockFetch(undecided);
-    render(<MarketingConsent manageOpen={false} onManageClose={() => {}} suppressAutoAsk={false} />);
-    await waitOutTheDelay();
-    await act(async () => { fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' }); });
-    expect(wasRecentlyDismissed()).toBe(true);
-    expect(fetchMock.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === 'PUT')).toBe(false);
+    render(<MarketingConsent open onOpenChange={() => {}} />);
+    expect(screen.getByText('marketing.signInBody')).toBeTruthy();
+    expect(screen.queryByText('marketing.accept')).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByText('auth.login'));
+    expect(login).toHaveBeenCalledTimes(1);
+    expect(consumeMarketingResume()).toBe(true);
+    expect(consumeMarketingResume()).toBe(false); // one round trip only
   });
 });

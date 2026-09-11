@@ -1,15 +1,20 @@
 /**
- * News-email consent (app half). See worker/marketing.ts for why this exists:
+ * Mailing-list consent (app half). See worker/marketing.ts for why this exists:
  * the email stored at Google sign-in may only be used for the session and the
  * subscription check, so a mailing list needs its own explicit opt-in.
+ *
+ * Nobody is asked unprompted. Joining starts from the ⚙ menu.
  */
 
 /** Must equal the worker's MARKETING_CONSENT_VERSION (a test pins them together). */
-export const MARKETING_CONSENT_VERSION = '2026-09-11';
+export const MARKETING_CONSENT_VERSION = '2026-09-11.2';
 
-/** Closing the question without answering holds it back for two weeks on this device. */
-const DISMISS_KEY = '24h-circle-planner.marketing-ask-dismissed';
-const DISMISS_MS = 14 * 24 * 60 * 60 * 1000;
+/**
+ * Set when a signed-out visitor presses "sign in" inside the mailing-list
+ * dialog, so the dialog they were in reopens once they are back from Google.
+ * Session-scoped: it belongs to that one round trip, not to the device.
+ */
+const RESUME_KEY = '24h-circle-planner.mailing-list-resume';
 
 export interface MarketingState {
   decided: boolean;
@@ -54,20 +59,22 @@ export async function saveMarketing(optIn: boolean): Promise<MarketingState | 's
   }
 }
 
-export function wasRecentlyDismissed(now = Date.now()): boolean {
+export function rememberMarketingResume(): void {
   try {
-    const at = Number(localStorage.getItem(DISMISS_KEY));
-    return Number.isFinite(at) && at > 0 && now - at < DISMISS_MS;
+    sessionStorage.setItem(RESUME_KEY, '1');
   } catch {
-    return false;
+    /* storage unavailable — the user just reopens the menu item after signing in */
   }
 }
 
-export function rememberDismissal(now = Date.now()): void {
+/** True once, right after the sign-in round trip that the dialog started. */
+export function consumeMarketingResume(): boolean {
   try {
-    localStorage.setItem(DISMISS_KEY, String(now));
+    if (sessionStorage.getItem(RESUME_KEY) !== '1') return false;
+    sessionStorage.removeItem(RESUME_KEY);
+    return true;
   } catch {
-    /* storage unavailable — the question may come back sooner, which is harmless */
+    return false;
   }
 }
 

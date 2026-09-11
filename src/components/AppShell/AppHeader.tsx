@@ -47,8 +47,12 @@ export interface AppHeaderProps {
   onOpenMagician: () => void;
   /** Invite-a-friend dialog (personal ?ref= link → Pro reward). */
   onOpenReferral: () => void;
-  /** News-email opt-in (signed-in users). */
+  /** Join or leave the mailing list (anyone; signed-out visitors are offered sign-in). */
   onOpenMarketing: () => void;
+  /** Admin-only panels (shown only when /api/me says admin). */
+  onOpenStats: () => void;
+  onOpenCoupons: () => void;
+  onOpenMailingList: () => void;
   /** Open the always-on-top PiP mini widget (undefined = unsupported browser). */
   onOpenPip?: () => void;
   /** Android home-widget hookup dialog (undefined = not the Play Store app). */
@@ -87,12 +91,15 @@ export function AppHeader({
   onOpenMagician,
   onOpenReferral,
   onOpenMarketing,
+  onOpenStats,
+  onOpenCoupons,
+  onOpenMailingList,
   onOpenPip,
   onOpenWidgetConnect,
 }: AppHeaderProps) {
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
-  const { user, plan, billingEnabled, login, logout, loading: authLoading } = useAuth();
+  const { user, plan, billingEnabled, admin, login, logout, loading: authLoading } = useAuth();
   const sync = useSyncStatus();
 
   const handleLogout = () => {
@@ -347,10 +354,6 @@ export function AppHeader({
                           {t('billing.upgrade')}
                         </DropdownMenuItem>
                       ) : null}
-                      <DropdownMenuItem onClick={onOpenMarketing} className="gap-2">
-                        <Mail className="h-4 w-4" />
-                        {t('marketing.menu')}
-                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={handleLogout} className="gap-2">
                         <LogOut className="h-4 w-4" />
                         {t('auth.logout')}
@@ -365,6 +368,27 @@ export function AppHeader({
                   <DropdownMenuSeparator />
                 </>
               )}
+              {/* Admin tools — previously reachable only by typing #stats / #coupons. */}
+              {!authLoading && admin && (
+                <>
+                  <DropdownMenuLabel className="text-xs font-normal text-muted-foreground" data-admin-menu>
+                    {t('admin.menu')}
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem onClick={onOpenStats} className="gap-2">
+                    <BarChart3 className="h-4 w-4" />
+                    {t('admin.stats')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={onOpenMailingList} className="gap-2">
+                    <Mail className="h-4 w-4" />
+                    {t('admin.mailingList')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={onOpenCoupons} className="gap-2">
+                    <Tags className="h-4 w-4" />
+                    {t('admin.coupons')}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
               <DropdownMenuItem onClick={() => onOpenSettings('language')} className="gap-2">
                 <Languages className="h-4 w-4" />
                 {t('settings.language')}
@@ -372,6 +396,10 @@ export function AppHeader({
               <DropdownMenuItem onClick={() => onOpenSettings('alarms')} className="gap-2">
                 <BellRing className="h-4 w-4" />
                 {t('settings.alarms')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onOpenMarketing} className="gap-2">
+                <Mail className="h-4 w-4" />
+                {t('marketing.menu')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onOpenReferral} className="gap-2">
                 <UserPlus className="h-4 w-4" />

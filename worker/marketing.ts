@@ -1,18 +1,20 @@
 /**
- * News-email consent — the ONLY lawful source of a mailing list.
+ * Mailing-list consent — the ONLY lawful source of a mailing list.
  *
  * Google sign-in stores an email for two stated purposes: keeping the session
  * and checking the subscription. Sending news to it needs a separate, explicit
  * opt-in — 개인정보보호법 §18 bars use beyond the notified purpose, and
  * 정보통신망법 §50 requires prior consent before any advertising email. So the
  * list is built here, one deliberate "yes" at a time, and never backfilled from
- * the users table.
+ * the users table. Nobody is ever asked unprompted: joining starts from the ⚙
+ * menu.
  *
  *   GET  /api/marketing                     → { decided, optIn, version, decidedAt }  (signed in)
  *   PUT  /api/marketing  { optIn, version } → same                                    (signed in)
  *   GET  /api/marketing/unsubscribe?t=…     → confirmation page, no login
  *   POST /api/marketing/unsubscribe?t=…     → withdraws (also RFC 8058 one-click)
  *   GET  /api/admin/marketing               → { optedIn, declined, undecided, version } (admin)
+ *   GET  /api/admin/marketing?format=list   → { subscribers: [{ email, agreedAt }], total } (admin)
  *   GET  /api/admin/marketing?format=csv    → opted-in emails + unsubscribe URLs      (admin)
  *
  * Unsubscribe is a confirm-then-POST so link scanners in mail gateways, which
@@ -20,16 +22,21 @@
  *
  * Every row records WHICH notice was answered and WHEN — that is what proves
  * consent later. The unsubscribe token survives re-consent, so the link in an
- * old email always keeps working.
+ * old email always keeps working. Tokens never leave the server except inside
+ * the CSV, where each one belongs in that person's email.
  */
 import type { Env } from './index';
 
 /** Bump whenever the consent notice text changes; stale answers are refused. */
-export const MARKETING_CONSENT_VERSION = '2026-09-11';
+export const MARKETING_CONSENT_VERSION = '2026-09-11.2';
 
 const ORIGIN = 'https://24houring.com';
 const TOKEN_RE = /^[A-Za-z0-9]{24}$/;
 const TOKEN_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+/** Byte-order mark, built from its code point so no editor or tool can mangle it. */
+const BOM = String.fromCharCode(0xfeff);
+/** Upper bound on the admin list view; the CSV export is not capped. */
+export const LIST_LIMIT = 10000;
 
 export interface ConsentUser {
   id: string;
@@ -47,6 +54,9 @@ export const SQL = {
     'SELECT COALESCE(SUM(CASE WHEN opted_in = 1 THEN 1 ELSE 0 END), 0) AS yes, ' +
     'COALESCE(SUM(CASE WHEN opted_in = 0 THEN 1 ELSE 0 END), 0) AS no FROM marketing_consent',
   users: 'SELECT COUNT(*) AS n FROM users',
+  listOptIns:
+    'SELECT u.email AS email, c.decided_at AS decided_at FROM marketing_consent c ' +
+    `JOIN users u ON u.id = c.user_id WHERE c.opted_in = 1 AND u.email IS NOT NULL ORDER BY c.decided_at DESC LIMIT ${LIST_LIMIT}`,
   exportOptIns:
     'SELECT u.email AS email, c.decided_at AS decided_at, c.unsub_token AS unsub_token FROM marketing_consent c ' +
     'JOIN users u ON u.id = c.user_id WHERE c.opted_in = 1 AND u.email IS NOT NULL ORDER BY c.decided_at',
@@ -107,7 +117,7 @@ export function buildOptInCsv(rows: readonly ExportRow[]): string {
     lines.push([csvCell(r.email), csvCell(new Date(r.decided_at).toISOString()), csvCell(unsubscribeUrl(r.unsub_token))].join(','));
   }
   // BOM so spreadsheet apps read UTF-8 correctly.
-  return `\uFEFF${lines.join('\r\n')}\r\n`;
+  return BOM + lines.join('\r\n') + '\r\n';
 }
 
 function toState(row: StateRow | null) {
@@ -120,22 +130,22 @@ type PageKind = 'confirm' | 'done' | 'invalid' | 'error';
 
 const PAGE_COPY: Record<PageKind, [string, string, string, string]> = {
   confirm: [
-    '소식 이메일 수신 거부',
+    '메일링 리스트 수신 거부',
     '아래 버튼을 누르면 24Houring 소식 이메일을 더 이상 받지 않습니다.',
-    'Unsubscribe from news emails',
+    'Unsubscribe from the mailing list',
     'Press the button below to stop receiving 24Houring news emails.',
   ],
   done: [
     '수신 거부가 완료되었습니다',
-    '앞으로 24Houring 소식 이메일을 보내지 않습니다. 다시 받고 싶으면 앱의 ⚙ 메뉴에서 동의할 수 있습니다.',
+    '앞으로 24Houring 소식 이메일을 보내지 않습니다. 다시 받고 싶으면 앱의 ⚙ 메뉴에서 메일링 리스트에 가입할 수 있습니다.',
     "You're unsubscribed",
-    'We will no longer send you 24Houring news emails. You can opt back in from the ⚙ menu in the app.',
+    'We will no longer send you 24Houring news emails. You can join the mailing list again from the ⚙ menu in the app.',
   ],
   invalid: [
     '링크를 확인할 수 없습니다',
-    '수신 거부 링크가 올바르지 않습니다. 앱의 ⚙ 메뉴에서 직접 수신을 끌 수 있습니다.',
+    '수신 거부 링크가 올바르지 않습니다. 앱의 ⚙ 메뉴에 있는 메일링 리스트에서 직접 해지할 수 있습니다.',
     "We couldn't verify this link",
-    'This unsubscribe link is not valid. You can turn news emails off from the ⚙ menu in the app.',
+    'This unsubscribe link is not valid. You can leave the mailing list from the ⚙ menu in the app.',
   ],
   error: [
     '잠시 후 다시 시도해 주세요',
@@ -173,9 +183,9 @@ function page(kind: PageKind, token = ''): string {
 }
 
 /**
- * Handle a marketing-consent route, or return null when `path`/`method` is not
- * one of ours so the main router can carry on. The caller resolves the session
- * user and admin flag, which keeps this module free of cookie handling.
+ * Handle a mailing-list route, or return null when `path`/`method` is not one
+ * of ours so the main router can carry on. The caller resolves the session user
+ * and the admin flag, which keeps this module free of cookie handling.
  */
 export async function handleMarketingRoute(
   request: Request,
@@ -234,13 +244,26 @@ export async function handleMarketingRoute(
     if (!isAdmin) return json({ error: 'forbidden' }, 403);
     if (!env.DB) return json({ error: 'unavailable' }, 503);
 
-    if (new URL(request.url).searchParams.get('format') === 'csv') {
+    const format = new URL(request.url).searchParams.get('format');
+
+    if (format === 'list') {
+      // Viewing only: email + when they agreed. Unsubscribe tokens stay out of
+      // the browser here; they travel only in the CSV meant for sending.
+      const rows = (await env.DB.prepare(SQL.listOptIns).all<{ email: string; decided_at: number }>()).results ?? [];
+      return json({
+        subscribers: rows.map((r) => ({ email: r.email, agreedAt: r.decided_at })),
+        total: rows.length,
+        limit: LIST_LIMIT,
+      });
+    }
+
+    if (format === 'csv') {
       const rows = (await env.DB.prepare(SQL.exportOptIns).all<ExportRow>()).results ?? [];
       const day = new Date().toISOString().slice(0, 10);
       return new Response(buildOptInCsv(rows), {
         headers: {
           'content-type': 'text/csv; charset=utf-8',
-          'content-disposition': `attachment; filename="24houring-news-optin-${day}.csv"`,
+          'content-disposition': `attachment; filename="24houring-mailing-list-${day}.csv"`,
           'cache-control': 'no-store',
         },
       });

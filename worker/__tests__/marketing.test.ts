@@ -12,10 +12,16 @@ import {
 } from '../marketing';
 import { MARKETING_CONSENT_VERSION as CLIENT_VERSION } from '../../src/lib/marketing';
 
+const BOM = String.fromCharCode(0xfeff);
+
 // ── A D1 fake that understands exactly the statements marketing.ts runs ─────
 function fakeDb() {
   const rows = new Map<string, { opted_in: number; version: string; decided_at: number; unsub_token: string }>();
   const users = new Map<string, string | null>();
+  const optedIn = () =>
+    [...rows.entries()]
+      .filter(([id, r]) => r.opted_in === 1 && users.get(id))
+      .map(([id, r]) => ({ email: users.get(id)!, decided_at: r.decided_at, unsub_token: r.unsub_token }));
   const db = {
     prepare(sql: string) {
       let args: unknown[] = [];
@@ -62,11 +68,14 @@ function fakeDb() {
         },
         async all() {
           if (sql === SQL.exportOptIns) {
-            const results = [...rows.entries()]
-              .filter(([id, r]) => r.opted_in === 1 && users.get(id))
-              .map(([id, r]) => ({ email: users.get(id)!, decided_at: r.decided_at, unsub_token: r.unsub_token }))
-              .sort((a, b) => a.decided_at - b.decided_at);
-            return { results };
+            return { results: optedIn().sort((a, b) => a.decided_at - b.decided_at) };
+          }
+          if (sql === SQL.listOptIns) {
+            return {
+              results: optedIn()
+                .sort((a, b) => b.decided_at - a.decided_at)
+                .map(({ email, decided_at }) => ({ email, decided_at })),
+            };
           }
           throw new Error(`unexpected all(): ${sql}`);
         },
@@ -104,7 +113,7 @@ describe('csv export', () => {
 
   it('carries a working unsubscribe link for every recipient', () => {
     const csv = buildOptInCsv([{ email: 'a@example.com', decided_at: Date.UTC(2026, 8, 11), unsub_token: 'T'.repeat(24) }]);
-    expect(csv.startsWith('\uFEFFemail,agreed_at,unsubscribe_url\r\n')).toBe(true);
+    expect(csv.startsWith(BOM + 'email,agreed_at,unsubscribe_url\r\n')).toBe(true);
     expect(csv).toContain(`a@example.com,2026-09-11T00:00:00.000Z,${unsubscribeUrl('T'.repeat(24))}`);
   });
 
@@ -134,16 +143,17 @@ describe('routing and validation', () => {
   });
 
   it('refuses a choice made against an older notice', async () => {
-    const res = await handleMarketingRoute(put({ optIn: true, version: '2020-01-01' }), untouchable, '/api/marketing', 'PUT', alice, false);
+    const res = await handleMarketingRoute(put({ optIn: true, version: '2026-09-11' }), untouchable, '/api/marketing', 'PUT', alice, false);
     expect(res!.status).toBe(409);
     expect(await res!.json()).toMatchObject({ error: 'stale_notice', version: MARKETING_CONSENT_VERSION });
   });
 
-  it('keeps the list and the counts to admins', async () => {
+  it('keeps the counts, the list and the export to admins', async () => {
     const path = '/api/admin/marketing';
-    expect((await handleMarketingRoute(req(path), untouchable, path, 'GET', null, false))!.status).toBe(401);
-    expect((await handleMarketingRoute(req(path), untouchable, path, 'GET', alice, false))!.status).toBe(403);
-    expect((await handleMarketingRoute(req(`${path}?format=csv`), untouchable, path, 'GET', alice, false))!.status).toBe(403);
+    for (const q of ['', '?format=list', '?format=csv']) {
+      expect((await handleMarketingRoute(req(path + q), untouchable, path, 'GET', null, false))!.status).toBe(401);
+      expect((await handleMarketingRoute(req(path + q), untouchable, path, 'GET', alice, false))!.status).toBe(403);
+    }
   });
 
   it('never renders an unvalidated token into the page', async () => {
@@ -193,7 +203,7 @@ describe('consent lifecycle', () => {
     expect(unknown!.status).toBe(404);
   });
 
-  it('exports only people who said yes, and counts the rest honestly', async () => {
+  it('lists and exports only people who said yes, and counts the rest honestly', async () => {
     const { env, users } = fakeDb();
     users.set('u-alice', 'alice@example.com');
     users.set('u-bob', 'bob@example.com');
@@ -204,6 +214,13 @@ describe('consent lifecycle', () => {
     const path = '/api/admin/marketing';
     const counts = await handleMarketingRoute(req(path), env, path, 'GET', alice, true);
     expect(await counts!.json()).toEqual({ optedIn: 1, declined: 1, undecided: 1, version: MARKETING_CONSENT_VERSION });
+
+    const list = await handleMarketingRoute(req(`${path}?format=list`), env, path, 'GET', alice, true);
+    const body = await list!.json();
+    expect(body.total).toBe(1);
+    expect(body.subscribers).toEqual([{ email: 'alice@example.com', agreedAt: expect.any(Number) }]);
+    // Viewing never exposes the unsubscribe secrets.
+    expect(JSON.stringify(body)).not.toMatch(/unsub|token/i);
 
     const csv = await handleMarketingRoute(req(`${path}?format=csv`), env, path, 'GET', alice, true);
     expect(csv!.headers.get('content-type')).toContain('text/csv');

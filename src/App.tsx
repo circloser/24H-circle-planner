@@ -62,6 +62,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { E2eeDialog } from '@/components/Sync/E2eeDialog';
 import { SyncPrivacyDialog } from '@/components/Sync/SyncPrivacyDialog';
 import { MarketingConsent } from '@/components/Marketing/MarketingConsentDialog';
+import { MailingListDialog } from '@/components/Admin/MailingListDialog';
+import { consumeMarketingResume } from '@/lib/marketing';
 import { hasSyncConsent } from '@/lib/sync/consent';
 import { UpgradeDialog } from '@/components/Billing/UpgradeDialog';
 import { StatsDialog } from '@/components/Admin/StatsDialog';
@@ -178,6 +180,7 @@ function App() {
   const [getAppOpen, setGetAppOpen] = useState(false);
   const [referralOpen, setReferralOpen] = useState(false);
   const [marketingOpen, setMarketingOpen] = useState(false);
+  const [mailingListOpen, setMailingListOpen] = useState(false);
   // The very end of the first-run flow: a get-the-app QR, shown once.
   const finishFirstRun = () => {
     try { if (!localStorage.getItem(GETAPP_KEY)) setGetAppOpen(true); } catch { /* */ }
@@ -296,6 +299,12 @@ function App() {
   const isMobile = useIsMobile();
   const chartView = useChartView();
   const { refresh: refreshAuth, user } = useAuth();
+  // Back from a Google sign-in that the mailing-list dialog started: reopen it,
+  // so the person lands where they were. Never opens it otherwise.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (user && consumeMarketingResume()) setMarketingOpen(true);
+  }, [user]);
 
   // ── Referral: capture ?ref= on arrival; after the invited friend signs in,
   //    claim it once (rewards the referrer with 1 month Pro server-side). ──
@@ -567,6 +576,9 @@ function App() {
         onOpenPip={pip.supported ? () => void pip.open() : undefined}
         onOpenWidgetConnect={isPlayStoreApp() ? () => setWidgetConnectOpen(true) : undefined}
         onOpenMarketing={() => setMarketingOpen(true)}
+        onOpenStats={() => setStatsOpen(true)}
+        onOpenCoupons={() => setUpgradeOpen(true)}
+        onOpenMailingList={() => setMailingListOpen(true)}
       />
 
       {/* Invite a friend → 1 month Pro for the inviter once the friend signs in. */}
@@ -842,12 +854,9 @@ function App() {
         isPro={syncStatus !== 'disabled'}
         onSetPassphrase={() => setE2eeOpen(true)}
       />
-      {/* News-email opt-in: asked once in the app, changeable from ⚙. */}
-      <MarketingConsent
-        manageOpen={marketingOpen}
-        onManageClose={() => setMarketingOpen(false)}
-        suppressAutoAsk={firstSession || welcomeOpen || magicianOpen || tutorialOpen || askTutorialOpen || privacyNotice !== null}
-      />
+      {/* Mailing list: joined only from ⚙. It never asks on its own. */}
+      <MarketingConsent open={marketingOpen} onOpenChange={setMarketingOpen} />
+      <MailingListDialog open={mailingListOpen} onOpenChange={setMailingListOpen} />
       <UpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} />
       <StatsDialog open={statsOpen} onOpenChange={setStatsOpen} />
       <TimePaletteDialog open={paletteOpen} onOpenChange={setPaletteOpen} />

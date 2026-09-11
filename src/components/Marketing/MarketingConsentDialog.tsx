@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -15,84 +15,49 @@ import { useTranslation } from '@/hooks/usePreferences';
 import {
   fetchMarketing,
   localDate,
-  rememberDismissal,
+  rememberMarketingResume,
   saveMarketing,
-  wasRecentlyDismissed,
   type MarketingState,
 } from '@/lib/marketing';
 
-/** A signed-in user settles in before being asked anything. */
-export const AUTO_ASK_DELAY_MS = 4000;
-
 /**
- * The news-email opt-in. The only way an address gets onto the mailing list.
+ * Join or leave the mailing list. Opened only from the ⚙ menu — it never
+ * appears on its own.
  *
- * Asked once, a few seconds after a signed-in user who has never answered
- * arrives — which is how people who signed in before this existed get asked:
- * in the app, never by an email asking for consent, since that email would
- * itself be advertising. Changeable any time from the ⚙ menu (`manageOpen`).
- *
- * The notice lists what the law asks a separate consent to disclose: the item,
- * the purpose (advertising included), how long it is kept, and the right to
- * refuse without penalty. The two answers are styled identically on purpose —
+ * Signed in: shows what a separate consent has to disclose (the item, the
+ * purpose including advertising, how long it is kept, the right to refuse
+ * without penalty), the current choice, and two identically styled answers —
  * consent that is nudged toward "yes" is not freely given.
+ *
+ * Signed out: the list uses the Google account's email, so the dialog offers
+ * sign-in and reopens itself after the round trip (see consumeMarketingResume).
  */
 export function MarketingConsent({
-  manageOpen,
-  onManageClose,
-  suppressAutoAsk,
+  open,
+  onOpenChange,
 }: {
-  /** Opened from the ⚙ menu. */
-  manageOpen: boolean;
-  onManageClose: () => void;
-  /** Another flow is on screen (onboarding, a privacy gate…) — don't ask now. */
-  suppressAutoAsk: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
   const { t } = useTranslation();
-  const { user, loading } = useAuth();
-  const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<'ask' | 'manage'>('ask');
+  const { user, loading, login } = useAuth();
   const [state, setState] = useState<MarketingState | null>(null);
   const [saving, setSaving] = useState(false);
-  const askedRef = useRef(false);
 
   useEffect(() => {
-    if (loading || !user || suppressAutoAsk || askedRef.current || wasRecentlyDismissed()) return;
-    let cancelled = false;
-    const id = window.setTimeout(() => {
-      void fetchMarketing().then((s) => {
-        if (cancelled || !s || s.decided) return;
-        askedRef.current = true;
-        setState(s);
-        setMode('ask');
-        setOpen(true);
-      });
-    }, AUTO_ASK_DELAY_MS);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(id);
-    };
-  }, [loading, user, suppressAutoAsk]);
-
-  useEffect(() => {
-    if (!manageOpen) return;
+    if (!open || !user) return;
     let cancelled = false;
     void fetchMarketing().then((s) => {
-      if (cancelled) return;
-      setState(s);
-      setMode('manage');
-      setOpen(true);
+      if (!cancelled) setState(s);
     });
     return () => {
       cancelled = true;
     };
-  }, [manageOpen]);
+  }, [open, user]);
 
-  function finish(answered: boolean) {
-    // Walking away from the question is not an answer; hold it back a while.
-    if (!answered && mode === 'ask') rememberDismissal();
-    setOpen(false);
-    if (mode === 'manage') onManageClose();
+  function signIn() {
+    rememberMarketingResume();
+    login();
   }
 
   async function choose(optIn: boolean) {
@@ -101,7 +66,7 @@ export function MarketingConsent({
     setSaving(false);
     if (result === 'stale') {
       toast.error(t('marketing.stale'));
-      finish(true);
+      onOpenChange(false);
       return;
     }
     if (!result) {
@@ -112,42 +77,50 @@ export function MarketingConsent({
     // Telling the person what was recorded, and when, is part of handling it.
     const date = localDate(result.decidedAt ?? Date.now());
     toast.success(t(optIn ? 'marketing.doneIn' : 'marketing.doneOut', { date }), { duration: 8000 });
-    finish(true);
+    onOpenChange(false);
   }
 
   return (
-    <Dialog open={open} onOpenChange={(next) => { if (!next) finish(false); }}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5 text-primary" />
             {t('marketing.title')}
           </DialogTitle>
-          <DialogDescription>{t('marketing.body')}</DialogDescription>
+          <DialogDescription>{t(user || loading ? 'marketing.body' : 'marketing.signInBody')}</DialogDescription>
         </DialogHeader>
 
-        <ul className="flex flex-col gap-1.5 rounded-lg border border-border bg-surface p-3 text-xs text-foreground" data-marketing-notice>
-          <li>{t('marketing.items')}</li>
-          <li>{t('marketing.purpose')}</li>
-          <li>{t('marketing.retention')}</li>
-        </ul>
+        {user ? (
+          <>
+            <ul className="flex flex-col gap-1.5 rounded-lg border border-border bg-surface p-3 text-xs text-foreground" data-marketing-notice>
+              <li>{t('marketing.items')}</li>
+              <li>{t('marketing.purpose')}</li>
+              <li>{t('marketing.retention')}</li>
+            </ul>
 
-        <p className="text-xs text-muted-foreground">{t('marketing.refuse')}</p>
+            <p className="text-xs text-muted-foreground">{t('marketing.refuse')}</p>
 
-        {mode === 'manage' && state?.decided ? (
-          <p className="text-xs font-medium text-foreground" data-marketing-current>
-            {state.optIn ? t('marketing.currentIn', { date: localDate(state.decidedAt ?? 0) }) : t('marketing.currentOut')}
-          </p>
+            {state?.decided ? (
+              <p className="text-xs font-medium text-foreground" data-marketing-current>
+                {state.optIn ? t('marketing.currentIn', { date: localDate(state.decidedAt ?? 0) }) : t('marketing.currentOut')}
+              </p>
+            ) : null}
+
+            <DialogFooter className="grid grid-cols-2 gap-2 sm:flex">
+              <Button variant="outline" onClick={() => void choose(false)} disabled={saving}>
+                {t('marketing.decline')}
+              </Button>
+              <Button variant="outline" onClick={() => void choose(true)} disabled={saving}>
+                {t('marketing.accept')}
+              </Button>
+            </DialogFooter>
+          </>
+        ) : !loading ? (
+          <DialogFooter>
+            <Button onClick={signIn}>{t('auth.login')}</Button>
+          </DialogFooter>
         ) : null}
-
-        <DialogFooter className="grid grid-cols-2 gap-2 sm:flex">
-          <Button variant="outline" onClick={() => void choose(false)} disabled={saving}>
-            {t('marketing.decline')}
-          </Button>
-          <Button variant="outline" onClick={() => void choose(true)} disabled={saving}>
-            {t('marketing.accept')}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
