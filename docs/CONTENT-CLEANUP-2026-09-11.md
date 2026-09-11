@@ -25,8 +25,8 @@ AdSense account review, payment policy enforcement and approval decisions are ex
 
 Production build passed; publishing validator passed 110 HTML pages, 8 app locales, 2692 local resources, and 3 guarded editorial pages. Browser verification covered 95 routes at 390px width, 190 language-view checks: no horizontal overflow, missing visible main heading, broken image, or page script error. Lazy images were explicitly decoded before checking. Blog independent review passed (BLOG-INDEPENDENT-REVIEW-2026-09-11.md). Sitemap modification dates updated only for changed HTML routes. Deployment status is reported separately after Git publication.
 
-## Publication blocked
+## Publication
 
-Git staging (`git add` for the reviewed content changes) was rejected by automatic approval review: "Your workspace is out of credits. Ask your workspace owner to refill in order to continue." No workaround was attempted. No commit, push or deployment was performed by this content-cleanup task. All changes remain in the working tree. The last read-only GitHub check showed existing HEAD 6abacac619a181f794306d2b69e2cd4bf21d2e5b successfully deployed, which is NOT this uncommitted cleanup.
+The reviewed content was committed as `8fe6fed9d7083f2a34ec516119252ce2a77071d8` and pushed to `main`. Cloudflare's `Workers Builds: 24houringp` check completed successfully. Live checks returned HTTP 200 and the new content markers on the app, guide, blog, health, stories, localized template, gallery, sitemap and `llms.txt` routes.
 
-Last cosmetic correction: template generator strips whitespace-only output lines; regenerated and git diff --check passed. Resume with staging the scoped reviewed changes, inspect staged diff, commit, push and verify the new commit's Cloudflare check and live content. No further editorial authoring is pending.
+An earlier staging attempt was blocked when automatic approval review ran out of workspace credits. No workaround was attempted; publication resumed only after the user explicitly asked to continue. The template generator also strips whitespace-only output lines, and the regenerated output passes `git diff --check`.
