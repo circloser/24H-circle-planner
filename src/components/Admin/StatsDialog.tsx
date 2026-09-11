@@ -1,18 +1,29 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { localDate } from '@/lib/marketing';
 
 /**
  * Admin-only anonymous stats dashboard (opened via #stats). Shows COUNTS ONLY —
  * signups / logins / active users / sync users / Pro subs / push devices — from
  * the admin-gated /api/admin/stats endpoint. Timetable and diary CONTENT are
  * never stored server-side, so nothing here can reveal what anyone wrote.
+ *
+ * The one list it can hand over is the news-email opt-in list, and only the
+ * people who explicitly said yes — see worker/marketing.ts.
  */
 interface Stats {
   totals: { users: number; syncUsers: number; pushDevices: number; pushUsers: number; grants: number; proSubs: number };
   active7d: number;
   daily: { day: string; signups: number; logins: number }[];
   generatedAt: number;
+}
+
+interface MarketingCounts {
+  optedIn: number;
+  declined: number;
+  undecided: number;
+  version: string;
 }
 
 function Tile({ label, value }: { label: string; value: number }) {
@@ -62,8 +73,10 @@ function DailyChart({ daily }: { daily: Stats['daily'] }) {
 
 export function StatsDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const [data, setData] = useState<Stats | null>(null);
+  const [marketing, setMarketing] = useState<MarketingCounts | null>(null);
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -74,10 +87,31 @@ export function StatsDialog({ open, onOpenChange }: { open: boolean; onOpenChang
       if (res.status === 403) { setErr('관리자만 볼 수 있습니다.'); setData(null); return; }
       if (!res.ok) { setErr('통계를 불러오지 못했습니다.'); setData(null); return; }
       setData((await res.json()) as Stats);
+      // Opt-in counts are best-effort: the dashboard stays useful without them.
+      const m = await fetch('/api/admin/marketing', { credentials: 'include' }).catch(() => null);
+      setMarketing(m?.ok ? ((await m.json()) as MarketingCounts) : null);
     } catch {
       setErr('네트워크 오류로 불러오지 못했습니다.');
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  const exportOptIns = useCallback(async () => {
+    setExporting(true);
+    try {
+      const res = await fetch('/api/admin/marketing?format=csv', { credentials: 'include' });
+      if (!res.ok) { setErr('동의자 목록을 내려받지 못했습니다.'); return; }
+      const url = URL.createObjectURL(await res.blob());
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `24houring-news-optin-${localDate(Date.now())}.csv`;
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      setErr('네트워크 오류로 내려받지 못했습니다.');
+    } finally {
+      setExporting(false);
     }
   }, []);
 
@@ -113,6 +147,25 @@ export function StatsDialog({ open, onOpenChange }: { open: boolean; onOpenChang
               <p className="mb-1 text-xs font-medium text-muted-foreground">최근 30일 · 가입 / 로그인</p>
               <DailyChart daily={data.daily} />
             </div>
+
+            {marketing && (
+              <div className="flex flex-col gap-2" data-marketing-admin>
+                <p className="text-xs font-medium text-muted-foreground">소식 이메일 수신</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <Tile label="동의" value={marketing.optedIn} />
+                  <Tile label="거부·철회" value={marketing.declined} />
+                  <Tile label="미응답" value={marketing.undecided} />
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-muted-foreground">
+                    동의한 사람만 담깁니다. 행마다 있는 수신 거부 링크를 그 사람에게 가는 메일에 반드시 넣으세요.
+                  </p>
+                  <Button variant="outline" size="sm" onClick={() => void exportOptIns()} disabled={exporting || marketing.optedIn === 0}>
+                    CSV
+                  </Button>
+                </div>
+              </div>
+            )}
 
             <p className="text-xs text-muted-foreground">
               시간표·일기 <strong>내용</strong>은 서버에 저장하지 않아 표시할 수 없습니다(개인정보 보호). 위 숫자는 익명 집계입니다.

@@ -11,6 +11,7 @@ import { sendWebPush } from '../src/lib/webpush';
 import { legacyRedirectTarget } from './legacy-redirects';
 import { handleShareCreate, handleShareGet, handleShareOg, handleShareView } from './shares';
 import { handleWidgetPut, handleWidgetPng, handleWidgetDelete } from './widget';
+import { handleMarketingRoute } from './marketing';
 
 export interface Env {
   /** Static assets binding (the built SPA in ./dist). */
@@ -1186,6 +1187,12 @@ export default {
           if (!widget[2] && m === 'PUT') return handleWidgetPut(request, env, widget[1]);
           if (!widget[2] && m === 'DELETE') return handleWidgetDelete(env, widget[1]);
         }
+      }
+      // News-email consent: explicit opt-in only (see worker/marketing.ts).
+      if (p === '/api/marketing' || p.startsWith('/api/marketing/') || p === '/api/admin/marketing') {
+        const user = await currentUser(request, env);
+        const res = await handleMarketingRoute(request, env, p, m, user, isAdminEmail(env, user?.email));
+        if (res) return res;
       }
       return json({ error: 'not_found' }, 404);
     }

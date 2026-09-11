@@ -61,6 +61,7 @@ import { useSyncStatus } from '@/hooks/useSync';
 import { useAuth } from '@/hooks/useAuth';
 import { E2eeDialog } from '@/components/Sync/E2eeDialog';
 import { SyncPrivacyDialog } from '@/components/Sync/SyncPrivacyDialog';
+import { MarketingConsent } from '@/components/Marketing/MarketingConsentDialog';
 import { hasSyncConsent } from '@/lib/sync/consent';
 import { UpgradeDialog } from '@/components/Billing/UpgradeDialog';
 import { StatsDialog } from '@/components/Admin/StatsDialog';
@@ -176,6 +177,7 @@ function App() {
   };
   const [getAppOpen, setGetAppOpen] = useState(false);
   const [referralOpen, setReferralOpen] = useState(false);
+  const [marketingOpen, setMarketingOpen] = useState(false);
   // The very end of the first-run flow: a get-the-app QR, shown once.
   const finishFirstRun = () => {
     try { if (!localStorage.getItem(GETAPP_KEY)) setGetAppOpen(true); } catch { /* */ }
@@ -564,6 +566,7 @@ function App() {
         onOpenReferral={() => setReferralOpen(true)}
         onOpenPip={pip.supported ? () => void pip.open() : undefined}
         onOpenWidgetConnect={isPlayStoreApp() ? () => setWidgetConnectOpen(true) : undefined}
+        onOpenMarketing={() => setMarketingOpen(true)}
       />
 
       {/* Invite a friend → 1 month Pro for the inviter once the friend signs in. */}
@@ -838,6 +841,12 @@ function App() {
         variant={privacyNotice ?? 'diary'}
         isPro={syncStatus !== 'disabled'}
         onSetPassphrase={() => setE2eeOpen(true)}
+      />
+      {/* News-email opt-in: asked once in the app, changeable from ⚙. */}
+      <MarketingConsent
+        manageOpen={marketingOpen}
+        onManageClose={() => setMarketingOpen(false)}
+        suppressAutoAsk={firstSession || welcomeOpen || magicianOpen || tutorialOpen || askTutorialOpen || privacyNotice !== null}
       />
       <UpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} />
       <StatsDialog open={statsOpen} onOpenChange={setStatsOpen} />

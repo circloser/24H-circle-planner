@@ -1,4 +1,4 @@
-import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target, Lock, CalendarClock, CreditCard, Tags, Scale, CalendarRange, Sun, Moon, GraduationCap, Wand2, BellRing, UserPlus, LayoutGrid, PictureInPicture2 } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target, Lock, CalendarClock, CreditCard, Tags, Scale, CalendarRange, Sun, Moon, GraduationCap, Wand2, BellRing, UserPlus, LayoutGrid, PictureInPicture2, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -47,6 +47,8 @@ export interface AppHeaderProps {
   onOpenMagician: () => void;
   /** Invite-a-friend dialog (personal ?ref= link → Pro reward). */
   onOpenReferral: () => void;
+  /** News-email opt-in (signed-in users). */
+  onOpenMarketing: () => void;
   /** Open the always-on-top PiP mini widget (undefined = unsupported browser). */
   onOpenPip?: () => void;
   /** Android home-widget hookup dialog (undefined = not the Play Store app). */
@@ -84,6 +86,7 @@ export function AppHeader({
   onOpenTutorial,
   onOpenMagician,
   onOpenReferral,
+  onOpenMarketing,
   onOpenPip,
   onOpenWidgetConnect,
 }: AppHeaderProps) {
@@ -344,6 +347,10 @@ export function AppHeader({
                           {t('billing.upgrade')}
                         </DropdownMenuItem>
                       ) : null}
+                      <DropdownMenuItem onClick={onOpenMarketing} className="gap-2">
+                        <Mail className="h-4 w-4" />
+                        {t('marketing.menu')}
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={handleLogout} className="gap-2">
                         <LogOut className="h-4 w-4" />
                         {t('auth.logout')}
