@@ -3,6 +3,7 @@ import { Newspaper, X, Search, RefreshCw, Loader2, Settings, Plus } from 'lucide
 import { useTranslation, usePreferences } from '@/hooks/usePreferences';
 import { makeDragStart, anchoredStyle, marginSpawn, clampOffset, loadPosProfile, savePosProfile, type Pos } from '@/components/ClockTools/clock-utils';
 import { NEWS_SYNC_EVENT, NEWS_WINDOWS_KEY } from '@/lib/sync/widgetSync';
+import { readStoredChartLayout } from '@/lib/chart-layout';
 
 const WINDOWS_KEY = NEWS_WINDOWS_KEY;
 const LEGACY_CFG_KEY = '24h-news.config';
@@ -31,7 +32,7 @@ const cacheKey = (id: string) => `24h-news.cache.${id}`;
 function newWindow(index: number): NewsWindow {
   // First window lands in the BOTTOM-LEFT margin (the news toggle's home spot);
   // extra windows cascade up-and-right from it so each stays grabbable.
-  const base = marginSpawn('news', CARD_W, 300);
+  const base = marginSpawn('news', CARD_W, 300, readStoredChartLayout());
   return { id: uid(), q: '', country: 'KR', intervalH: 24, pos: { x: base.x + index * 28, y: base.y - index * 46 } };
 }
 

@@ -1,4 +1,5 @@
 import { useEffect, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import type { ChartLayout } from '@/lib/chart-layout';
 
 export interface Pos {
   x: number;
@@ -101,14 +102,32 @@ export function spawnNearCentre(dx: number, dy: number, w = 180, h = 180): Pos {
   return toStored(x, y);
 }
 
+export type MarginSlot = 'clock' | 'calendar' | 'weather' | 'news' | 'memo';
+
+/** The footprint each margin slot is laid out for. */
+export const MARGIN_SLOT_SIZE: Record<MarginSlot, readonly [number, number]> = {
+  clock: [168, 150],
+  calendar: [232, 240],
+  weather: [204, 200],
+  news: [300, 300],
+  memo: [200, 200],
+};
+
 /** Fixed "margin" spots the design magician places widgets into — the empty
  *  band AROUND the chart. Left column top-to-bottom: clock (top-left),
  *  calendar under it, weather at mid-height, news at the bottom; the post-it
- *  goes to the RIGHT margin. Viewport coords → stored centre-offsets,
- *  clamped fully on-screen. */
-export function marginSpawn(slot: 'clock' | 'calendar' | 'weather' | 'news' | 'memo', w: number, h: number): Pos {
+ *  goes to the RIGHT margin. A side chart layout takes one margin, so the spots
+ *  move to the free side: `left` mirrors the column to the right edge with the
+ *  post-it beside it, `right` puts the post-it beside the left column.
+ *  Viewport coords → stored centre-offsets, clamped fully on-screen. */
+export function marginSpawn(slot: MarginSlot, w: number, h: number, layout: ChartLayout = 'center'): Pos {
   const W = vw(), H = vh();
-  const x = slot === 'memo' ? W - w - 28 : 20;
+  // Second column: clears the widest column widget (the 232px calendar) + a gap.
+  const beside = 20 + MARGIN_SLOT_SIZE.calendar[0] + 24;
+  const x =
+    layout === 'left' ? (slot === 'memo' ? W - w - beside : W - w - 20)
+      : layout === 'right' ? (slot === 'memo' ? beside : 20)
+      : slot === 'memo' ? W - w - 28 : 20;
   const y =
     slot === 'clock' ? 84
       : slot === 'calendar' ? 248
@@ -119,6 +138,18 @@ export function marginSpawn(slot: 'clock' | 'calendar' | 'weather' | 'news' | 'm
     Math.min(Math.max(8, x), Math.max(8, W - w - 8)),
     Math.min(Math.max(72, y), Math.max(72, H - h - 8)),
   );
+}
+
+/** Where a widget the magician placed goes when the chart layout changes: the
+ *  new layout's spot, but only while it still sits on the old layout's spot
+ *  (±2px, i.e. never dragged since) — anything the user arranged stays put.
+ *  Null when it shouldn't move. */
+export function relocateSlot(pos: Pos, slot: MarginSlot, from: ChartLayout, to: ChartLayout): Pos | null {
+  const [w, h] = MARGIN_SLOT_SIZE[slot];
+  const was = marginSpawn(slot, w, h, from);
+  if (Math.abs(pos.x - was.x) > 2 || Math.abs(pos.y - was.y) > 2) return null;
+  const next = marginSpawn(slot, w, h, to);
+  return next.x === was.x && next.y === was.y ? null : next;
 }
 
 /* ── Per-resolution position profiles ────────────────────────────────────────

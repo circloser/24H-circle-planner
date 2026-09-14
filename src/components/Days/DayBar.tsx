@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, X, Copy, FileText, LayoutGrid, Lock, Unlock, CalendarDays, ChevronLeft, ChevronRight, LogOut, Undo2, BookMarked } from 'lucide-react';
 import { v4 as uuid } from 'uuid';
 import { toast } from 'sonner';
+import { chartCentreLeft, type ChartLayout } from '@/lib/chart-layout';
 import {
   Dialog,
   DialogContent,
@@ -55,13 +56,15 @@ function DayThumb({ schedule, size }: { schedule: Schedule; size: number }) {
  *    and a "Day M of N" indicator at bottom-centre.
  * The + asks whether to duplicate the current schedule or start empty.
  */
-export function DayBar({ onOpenDiary }: { onOpenDiary?: () => void }) {
+export function DayBar({ onOpenDiary, layout = 'center' }: { onOpenDiary?: () => void; layout?: ChartLayout }) {
   const { days, activeId, activeIndex, switchTo, addDay, addDayFromSlices, deleteDay } = useDays();
   const { t, lang } = useTranslation();
   const coarse = useCoarsePointer();
   const isMobile = useIsMobile();
   const diaryDate = useStoreSelector((s) => s.diaryDate);
   const locked = useStoreSelector((s) => s.locked);
+  // Desktop: centred over the chart, which a side layout moves off the middle.
+  const overChart = isMobile ? undefined : chartCentreLeft(layout);
   const canUndo = useStoreSelector((s) => s.history.past.length > 0);
   const dispatch = useStoreDispatch();
   const { entries: diaryEntries } = useDiary();
@@ -156,7 +159,7 @@ export function DayBar({ onOpenDiary }: { onOpenDiary?: () => void }) {
   return (
     <>
       {/* Day strip — pinned in-flow at the top on mobile; floating top-centre on desktop. */}
-      <div className={isMobile ? 'z-20 mb-1 flex w-full justify-center' : 'fixed left-1/2 top-16 z-20 -translate-x-1/2'}>
+      <div className={isMobile ? 'z-20 mb-1 flex w-full justify-center' : 'fixed left-1/2 top-16 z-20 -translate-x-1/2'} style={{ left: overChart }}>
         <div
           className="flex items-center gap-2 overflow-x-auto rounded-full px-2 py-1.5 shadow-md max-w-[88vw]"
           style={multi ? pillStyle : { background: 'transparent', border: 'none', boxShadow: 'none' }}
@@ -223,6 +226,7 @@ export function DayBar({ onOpenDiary }: { onOpenDiary?: () => void }) {
         <div
           className={`${bottomWrap} py-1.5 pl-3 pr-1.5 bg-surface/94 border border-border text-foreground`}
           style={{
+            left: overChart,
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
           }}
@@ -290,6 +294,7 @@ export function DayBar({ onOpenDiary }: { onOpenDiary?: () => void }) {
         <div
           className={`${bottomWrap} px-3 py-1 bg-surface/92 border border-border text-foreground`}
           style={{
+            left: overChart,
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
           }}

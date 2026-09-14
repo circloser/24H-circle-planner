@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import './index.css';
-import { Sparkles, Plus } from 'lucide-react';
+import { Sparkles, Plus, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
 import { Button } from '@/components/ui/button';
@@ -45,8 +45,9 @@ import { AddToHomeDialog, type BeforeInstallPromptEvent } from '@/components/Add
 import { AboutDialog } from '@/components/About/AboutDialog';
 import { requestPersistentStorage } from '@/lib/persistent-storage';
 import { setWidgetSnapEnabled } from '@/components/ClockTools/clock-utils';
-import { useTranslation, useChartView, usePreferences } from '@/hooks/usePreferences';
+import { useTranslation, useChartView, useChartLayout, usePreferences } from '@/hooks/usePreferences';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { effectiveChartLayout, CHART_WIDTH, CHART_SIDE_GAP, HIDDEN_CHART_STYLE } from '@/lib/chart-layout';
 import { useDayChange } from '@/hooks/useDayChange';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useSliceInteraction } from '@/hooks/useSliceInteraction';
@@ -120,7 +121,7 @@ function markOnboarded(): void {
 
 function App() {
   const present = useStoreSelector((s) => s.history.present);
-  const { prefs } = usePreferences();
+  const { prefs, setPreference } = usePreferences();
   const locked = useStoreSelector((s) => s.locked);
   const diaryDate = useStoreSelector((s) => s.diaryDate);
   const dispatch = useStoreDispatch();
@@ -298,6 +299,11 @@ function App() {
   })();
   const isMobile = useIsMobile();
   const chartView = useChartView();
+  // Desktop chart placement (centre / left / right / hidden). Phones, the table
+  // and record views, and a running tutorial always get the centred chart.
+  const chosenLayout = useChartLayout();
+  const layout = effectiveChartLayout(chosenLayout, { isMobile, chartView, tutorialOpen });
+  const sideLayout = layout === 'left' || layout === 'right';
   const { refresh: refreshAuth, user } = useAuth();
   // Back from a Google sign-in that the mailing-list dialog started: reopen it,
   // so the person lands where they were. Never opens it otherwise.
@@ -593,12 +599,23 @@ function App() {
         className={
           isMobile
             ? 'flex-1 container mx-auto flex flex-col items-center gap-6 px-3 pb-12 pt-3'
-            : 'flex-1 container mx-auto py-8 flex items-center justify-center px-4'
+            : sideLayout
+              // A side layout spans the whole window so the chart really hugs
+              // the edge (the centred container would leave it floating inside).
+              ? `flex w-full flex-1 items-center py-8 ${layout === 'left' ? 'justify-start' : 'justify-end'}`
+              : 'flex-1 container mx-auto py-8 flex items-center justify-center px-4'
         }
+        style={sideLayout ? { paddingLeft: CHART_SIDE_GAP, paddingRight: CHART_SIDE_GAP } : undefined}
       >
         {/* Multi-day switcher — pinned at the top in-flow on mobile, floating on desktop. */}
-        {chartView !== 'record' && <DayBar onOpenDiary={() => setDiaryOpen(true)} />}
-        <div className="flex w-full flex-col items-center gap-4" data-tour="chart">
+        {chartView !== 'record' && layout !== 'hidden' && <DayBar layout={layout} onOpenDiary={() => setDiaryOpen(true)} />}
+        <div
+          className={sideLayout ? 'flex flex-col gap-4' : 'flex w-full flex-col items-center gap-4'}
+          // Side layouts size the column to the chart, so the day's note lines up
+          // under it instead of stretching across the window.
+          style={sideLayout ? { width: CHART_WIDTH } : undefined}
+          data-tour="chart"
+        >
         {chartView === 'record' ? (
           <RecordView />
         ) : chartView === 'table' ? (
@@ -619,7 +636,11 @@ function App() {
           // day bar, footer, padding ≈ 250px) so the planner fits ONE screen and
           // never adds a scrollbar of its own; 320px keeps it usable on very
           // short windows (which then scroll, as before).
-          style={isMobile ? undefined : { width: 'min(720px, 100%, max(320px, calc(100dvh - 250px)))' }}
+          style={isMobile ? undefined : layout === 'hidden' ? HIDDEN_CHART_STYLE : { width: CHART_WIDTH }}
+          // Hidden keeps the chart mounted (export, share and the phone widget
+          // read this svg) but parks it offscreen, away from focus and screen readers.
+          aria-hidden={layout === 'hidden' || undefined}
+          inert={layout === 'hidden'}
         >
           <CircleTimeline
             slices={present.slices}
@@ -653,7 +674,7 @@ function App() {
 
           {/* Empty-state hero — a value-prop CTA when the circle is empty
               (e.g. after a reset). Sits in the lower band, clear of the hub. */}
-          {isEmptyState && !welcomeOpen && (
+          {isEmptyState && !welcomeOpen && layout !== 'hidden' && (
             <div className="pointer-events-none absolute inset-0 flex items-end justify-center pb-[14%]">
               <div
                 className="pointer-events-auto flex flex-col items-center gap-2 rounded-xl border border-border bg-surface px-4 py-3 text-center shadow-lg"
@@ -674,7 +695,19 @@ function App() {
         </div>
         )}
           {/* Day's free-form note, shown directly under the timetable. */}
-          {chartView !== 'record' && <DiaryNotePanel />}
+          {chartView !== 'record' && layout !== 'hidden' && <DiaryNotePanel />}
+          {/* Hidden layout: one quiet way back to the chart. */}
+          {layout === 'hidden' && (
+            <button
+              type="button"
+              data-show-chart
+              onClick={() => setPreference('chartLayout', 'center')}
+              className="fixed bottom-20 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-border bg-surface/90 px-3 py-1.5 text-xs font-medium text-muted-foreground shadow transition-colors hover:text-foreground"
+            >
+              <Eye className="h-3.5 w-3.5" />
+              {t('settings.layoutShowChart')}
+            </button>
+          )}
         </div>
 
         {/* Mobile: stacked sections below the chart. Editing stays enabled (touch

@@ -5,9 +5,9 @@ import {
   usePreferences, GRADIENT_PRESETS, FONT_FAMILIES, BACKGROUNDS,
   FONT_SCALE_MIN, FONT_SCALE_MAX, FONT_SCALE_STEP, RING_INNER_MIN, RING_INNER_MAX,
 } from '@/hooks/usePreferences';
-import { useTranslation } from '@/hooks/usePreferences';
+import { useTranslation, useChartLayout } from '@/hooks/usePreferences';
 import { RING_OUTER_MIN, RING_OUTER_MAX } from '@/lib/svg-geometry';
-import { makeDragStart, spawnNearCentre, marginSpawn, type Pos } from '@/components/ClockTools/clock-utils';
+import { makeDragStart, spawnNearCentre, marginSpawn, MARGIN_SLOT_SIZE, type Pos } from '@/components/ClockTools/clock-utils';
 import { useMemos } from '@/hooks/useMemos';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useClockTools } from '@/components/ClockTools/useClockTools';
@@ -15,6 +15,8 @@ import { CLOCKTOOLS_SYNC_EVENT } from '@/lib/sync/widgetSync';
 import { COLOR_THEMES } from '@/data/color-themes';
 import type { TKey } from '@/i18n/translations';
 import { useTheme } from '@/hooks/useTheme';
+import { useSwitchChartLayout } from '@/hooks/useSwitchChartLayout';
+import { ChartLayoutPicker } from '@/components/Settings/ChartLayoutPicker';
 
 // Where the magician last placed each widget: turning a tool OFF snapshots its
 // position here, so turning it back ON restores the exact same spot. Without a
@@ -56,6 +58,8 @@ function DesignMagicianSession({ open, onClose, onFinish }: DesignMagicianProps)
   const present = useStoreSelector((s) => s.history.present);
   const clock = useClockTools();
   const [step, setStep] = useState(0);
+  const chartLayout = useChartLayout();
+  const switchLayout = useSwitchChartLayout();
 
   // Recolour the current schedule to a palette (slice[i] → colors[i % n]).
   const applyTheme = (colors: string[]) => {
@@ -271,7 +275,7 @@ function DesignMagicianSession({ open, onClose, onFinish }: DesignMagicianProps)
     // calendar under it, weather mid, news bottom; post-it right). Turning a
     // tool off snapshots its position so on restores the same spot.
     { title: t('magician.stepClock'), body: onOff(clockOn, (v) => {
-      if (v && !clockOn) clock.addClock(loadMagPos().clock ?? marginSpawn('clock', 168, 150));
+      if (v && !clockOn) clock.addClock(loadMagPos().clock ?? marginSpawn('clock', ...MARGIN_SLOT_SIZE.clock, chartLayout));
       else if (!v && clockOn) {
         saveMagPos('clock', clock.state.clocks[0].pos);
         clock.state.clocks.forEach((c) => clock.removeClock(c.id));
@@ -280,7 +284,7 @@ function DesignMagicianSession({ open, onClose, onFinish }: DesignMagicianProps)
     }) },
     { title: t('magician.stepCalendar'), body: onOff(clock.state.calendar.on, (v) => {
       if (v && !clock.state.calendar.on) {
-        clock.setCalendar({ on: true, pos: loadMagPos().calendar ?? marginSpawn('calendar', 232, 240) });
+        clock.setCalendar({ on: true, pos: loadMagPos().calendar ?? marginSpawn('calendar', ...MARGIN_SLOT_SIZE.calendar, chartLayout) });
       } else if (!v && clock.state.calendar.on) {
         saveMagPos('calendar', clock.state.calendar.pos);
         clock.setCalendar({ on: false });
@@ -288,7 +292,7 @@ function DesignMagicianSession({ open, onClose, onFinish }: DesignMagicianProps)
       syncClocks();
     }) },
     { title: t('magician.stepWeather'), body: onOff(weatherOn, (v) => {
-      if (v && !weatherOn) clock.addWeather(loadMagPos().weather ?? marginSpawn('weather', 204, 200));
+      if (v && !weatherOn) clock.addWeather(loadMagPos().weather ?? marginSpawn('weather', ...MARGIN_SLOT_SIZE.weather, chartLayout));
       else if (!v && weatherOn) {
         saveMagPos('weather', clock.state.weathers[0].pos);
         clock.state.weathers.forEach((w) => clock.removeWeather(w.id));
@@ -306,7 +310,7 @@ function DesignMagicianSession({ open, onClose, onFinish }: DesignMagicianProps)
           if (!memos.visible) memos.toggleVisible();
           if (magMemo) memos.restoreMemo(magMemo.id);
           else {
-            const id = memos.addMemo(marginSpawn('memo', 200, 200));
+            const id = memos.addMemo(marginSpawn('memo', ...MARGIN_SLOT_SIZE.memo, chartLayout));
             try { localStorage.setItem(MAG_MEMO_KEY, id); } catch { /* */ }
           }
         } else if (magMemo) {
@@ -315,6 +319,10 @@ function DesignMagicianSession({ open, onClose, onFinish }: DesignMagicianProps)
       });
     })() },
     { title: t('magician.stepNews'), body: onOff(prefs.newsOpen, (v) => setPreference('newsOpen', v)) },
+    // ── Layout — the last choice, made with everything else already on screen.
+    // Widgets the magician put in the margins step aside if the chart moves
+    // onto their side.
+    { title: t('magician.stepLayout'), body: <ChartLayoutPicker compact value={chartLayout} onChange={switchLayout} /> },
   ];
 
   const last = step === steps.length - 1;

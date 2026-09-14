@@ -24,10 +24,13 @@ import {
   RING_INNER_MIN,
   RING_INNER_MAX,
   CHIME_OPTIONS,
+  useChartLayout,
   type Background,
   type WorldClock,
 } from '@/hooks/usePreferences';
 import { RING_OUTER_MIN, RING_OUTER_MAX } from '@/lib/svg-geometry';
+import { useSwitchChartLayout } from '@/hooks/useSwitchChartLayout';
+import { ChartLayoutPicker } from './ChartLayoutPicker';
 import { fileToBackgroundDataUrl } from '@/lib/image-bg';
 import { track } from '@/lib/track';
 import { useAuth } from '@/hooks/useAuth';
@@ -41,7 +44,7 @@ import { LANGUAGES, type Lang } from '@/i18n/translations';
 import type { TKey } from '@/i18n/translations';
 
 /** Each settings category is its own focused dialog, opened from the gear menu. */
-export type SettingsSection = 'language' | 'font' | 'icons' | 'timeline' | 'background' | 'theme' | 'alarms' | 'widgets';
+export type SettingsSection = 'language' | 'font' | 'icons' | 'timeline' | 'background' | 'theme' | 'alarms' | 'widgets' | 'layout';
 
 export interface SettingsDialogProps {
   section: SettingsSection | null;
@@ -59,6 +62,7 @@ const SECTION_TITLE: Record<SettingsSection, TKey> = {
   theme: 'settings.colorTheme',
   alarms: 'settings.alarms',
   widgets: 'settings.widgets',
+  layout: 'settings.layout',
 };
 
 const BG_LABEL: Record<Background, TKey> = {
@@ -152,6 +156,9 @@ export function SettingsDialog({ section, onClose, onOpenMagician }: SettingsDia
     }
   };
 
+  const chartLayout = useChartLayout();
+  const switchLayout = useSwitchChartLayout();
+
   const removeImage = () => {
     setPreference('bgImage', null);
     setPreference('bgType', 'pattern');
@@ -232,6 +239,11 @@ export function SettingsDialog({ section, onClose, onOpenMagician }: SettingsDia
                 </div>
               </section>
             </>
+          )}
+
+          {/* Chart layout: centre / left / right / hidden. */}
+          {section === 'layout' && (
+            <ChartLayoutPicker value={chartLayout} onChange={switchLayout} />
           )}
 
           {/* Icons on/off */}

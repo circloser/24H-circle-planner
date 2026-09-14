@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import type { Lang, TKey } from '@/i18n/translations';
 import { translate } from '@/i18n/translations';
 import type { ChartView } from '@/lib/chart-view';
+import { isChartLayout, type ChartLayout } from '@/lib/chart-layout';
 import { PREFS_SYNC_EVENT } from '@/lib/sync/syncData';
 
 // ─── Options ──────────────────────────────────────────────────────────────────
@@ -107,6 +108,10 @@ export interface Preferences {
   showWidgets: boolean;
   worldClocks: WorldClock[]; // extra timezone lines
   chartView: ChartView; // 24h ('full') / 12h day / 12h night clock window
+  /** Where the circular chart sits on wide screens: centre (default), hugging
+   *  the left or right edge, or hidden (still mounted offscreen so export,
+   *  share and the phone widget keep working). Phones always keep it centred. */
+  chartLayout: ChartLayout;
   /** Browser notification when the day crosses into the next slice of the
    *  active timetable (needs per-device Notification permission too). */
   sliceAlarms: boolean;
@@ -166,6 +171,7 @@ const DEFAULT_PREFS: Preferences = {
   showWidgets: true,
   worldClocks: [],
   chartView: 'full',
+  chartLayout: 'center',
   sliceAlarms: false,
   pushAlarms: false,
   snapMinutes: 5,
@@ -395,6 +401,14 @@ export function useWorldClocks(): WorldClock[] {
 export function useChartView(): ChartView {
   const ctx = useContext(PreferencesContext);
   return ctx?.prefs.chartView ?? 'full';
+}
+
+/** Null-safe read of the chart layout; anything unrecognised (an older or
+ *  hand-edited profile) reads as the default centre. */
+export function useChartLayout(): ChartLayout {
+  const ctx = useContext(PreferencesContext);
+  const v = ctx?.prefs.chartLayout;
+  return isChartLayout(v) ? v : 'center';
 }
 
 export function useSnapMinutes(): SnapStep {

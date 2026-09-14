@@ -1,4 +1,4 @@
-import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target, Lock, CalendarClock, CreditCard, Tags, Scale, CalendarRange, Sun, Moon, GraduationCap, Wand2, BellRing, UserPlus, LayoutGrid, PictureInPicture2, Mail } from 'lucide-react';
+import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target, Lock, CalendarClock, CreditCard, Tags, Scale, CalendarRange, Sun, Moon, GraduationCap, Wand2, BellRing, UserPlus, LayoutGrid, LayoutPanelLeft, PictureInPicture2, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -238,6 +238,10 @@ export function AppHeader({
                 {t('palette.title')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onOpenSettings('layout')} className="gap-2">
+                <LayoutPanelLeft className="h-4 w-4" />
+                {t('settings.layout')}
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onOpenSettings('font')} className="gap-2">
                 <Type className="h-4 w-4" />
                 {t('settings.font')}
