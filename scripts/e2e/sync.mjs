@@ -108,6 +108,32 @@ export async function run() {
     pass("device A's memo edit survived (memo in cloud)", memoCount(store) > 0, `memos=${memoCount(store)}`);
     pass('both edits merged & stable (no whole-blob loss, no revert)', merged && !!d[GOALS] && d[GOALS].includes('GOALFROMB') && memoCount(store) > 0, `v=${store.version}`);
 
+    // 5. A settings change from the cloud shows the sync toast, and it leaves on
+    //    its own even with the mouse resting on it (sonner pauses its own
+    //    countdown on hover, which used to leave it up for good).
+    {
+      const PREFS_KEY = K('prefs');
+      const env = JSON.parse(store.blob);
+      const p = JSON.parse(env.data[PREFS_KEY]);
+      p.prefs.showIcons = !(p.prefs.showIcons ?? true);
+      env.data[PREFS_KEY] = JSON.stringify(p);
+      env.modifiedAt += 1;
+      store.blob = JSON.stringify(env);
+      store.version += 1;
+      store.updatedAt = Date.now();
+    }
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    const syncToast = page.locator('[data-sonner-toast]:not([data-removed="true"])', { hasText: '클라우드에서 동기화되었습니다' });
+    const toastShown = await until(async () => (await syncToast.count()) > 0, 20000);
+    pass('a settings change from the cloud shows the sync toast', toastShown);
+    if (toastShown) {
+      const box = await syncToast.first().boundingBox();
+      await page.mouse.move(box.x + 30, box.y + box.height / 2);
+      const gone = await until(async () => (await syncToast.count()) === 0, 15000);
+      pass('the sync toast leaves on its own even with the mouse on it', gone);
+      await page.mouse.move(5, 300);
+    }
+
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
   } finally {
     await browser.close();

@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
+import { dismissAfterVisible } from '@/lib/toast-dismiss';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/hooks/usePreferences';
 import { collectSyncData, applySyncData, dataFingerprint, changedSyncKeys, mergeSyncData, LIVE_APPLY_KEYS, PREFS_KEY, PREFS_SYNC_EVENT, VIEW_KEY, VIEW_SYNC_EVENT, type SyncEnvelope } from '@/lib/sync/syncData';
@@ -48,6 +49,8 @@ function saveBase(data: Record<string, string>): void {
 }
 
 const PUSH_DEBOUNCE_MS = 1500;
+/** How long the "synced from the cloud" toast (with its undo) stays on screen. */
+const SYNC_TOAST_MS = 8000;
 const TICK_MS = 2000;
 const PULL_EVERY_TICKS = 8; // ~16s background pull
 
@@ -114,10 +117,12 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (localStorage.getItem(APPLIED_KEY) !== '1') return;
     localStorage.removeItem(APPLIED_KEY);
-    toast.success(t('sync.appliedFromCloud'), {
+    // Capped by on-screen time: sonner's own countdown pauses while the pointer
+    // rests on the toast (or after a tap on a phone), which left it up for good.
+    dismissAfterVisible(toast.success(t('sync.appliedFromCloud'), {
       action: { label: t('sync.undo'), onClick: () => restorePrevious() },
-      duration: 8000,
-    });
+      duration: SYNC_TOAST_MS,
+    }), SYNC_TOAST_MS);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -179,10 +184,10 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         stat('synced');
         // Toast only for a settings change; a diary-view follow is self-evident.
         if (withToast && changed.includes(PREFS_KEY)) {
-          toast.success(tRef.current('sync.appliedFromCloud'), {
+          dismissAfterVisible(toast.success(tRef.current('sync.appliedFromCloud'), {
             action: { label: tRef.current('sync.undo'), onClick: () => restorePrevious() },
-            duration: 8000,
-          });
+            duration: SYNC_TOAST_MS,
+          }), SYNC_TOAST_MS);
         }
         return;
       }
