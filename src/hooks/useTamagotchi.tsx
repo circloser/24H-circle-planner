@@ -3,11 +3,14 @@ import { createContext, useContext, useCallback, useEffect, useRef, useState } f
 import { petMood, moodJitterFactor, moodSpeedFactor } from '@/lib/tama-mood';
 import {
   TAMA_SYNC_EVENT,
+  isCheckpointSeen,
+  markCheckpointSeen,
   mergeCheckpointPets,
   readTamaCheckpoint,
   tamaSignature,
   toTamaCheckpoint,
   writeTamaCheckpoint,
+  type TamaCheckpoint,
 } from '@/lib/sync/tamaSync';
 
 /**
@@ -257,7 +260,8 @@ function poopStep(pets: Pet[], hygiene: number, poops: Poop[], now: number): { p
   return { pets: next, hygiene: h, poops: pp };
 }
 
-function load(): Stored {
+/** This device's own last state (positions included). */
+function loadLocal(): Stored {
   const base: Stored = { version: 1, on: false, pets: [], selectedId: null, hygiene: 100, poops: [], savedAt: Date.now() };
   try {
     const raw = localStorage.getItem(KEY);
@@ -280,6 +284,49 @@ function load(): Stored {
   } catch {
     return base;
   }
+}
+
+/**
+ * Fold a cloud checkpoint into a local state: keep this screen's positions,
+ * replay the time since it was written, and match the shared poop pile (its
+ * coordinates are this screen's pixels, so only the COUNT travels). Shared by
+ * the first load and the live adopt so both behave identically.
+ */
+function adoptCheckpoint(s: Stored, cp: TamaCheckpoint, world: { w: number; h: number } | null, now: number): Stored {
+  const dt = Math.max(0, now - cp.savedAt);
+  // A pet arriving from another device lands inside the ACTIVE world (the
+  // mobile terrarium, else the window) — same rule as a freshly laid egg.
+  const spawn = () => ({
+    ...(world ? { x: rand(20, world.w - 20), y: rand(20, world.h - 20) } : spawnXY()),
+    heading: rand(0, Math.PI * 2),
+  });
+  // Strings come from our own writer, so the unions are safe here.
+  const merged = mergeCheckpointPets(cp, s.pets, spawn) as unknown as Pet[];
+  const pets = merged.map((p) => advance(p, now, dt));
+  const spot = () => {
+    const p = pets[Math.floor(Math.random() * pets.length)];
+    return p ? { x: p.x + rand(-26, 26), y: p.y + rand(18, 40) } : spawnXY();
+  };
+  const poops = cp.poops <= s.poops.length
+    ? s.poops.slice(0, cp.poops)
+    : [...s.poops, ...Array.from({ length: cp.poops - s.poops.length }, () => ({ id: uid(), ...spot() }))];
+  const selectedId = pets.some((p) => p.id === s.selectedId) ? s.selectedId : (pets[0]?.id ?? null);
+  return { ...s, on: cp.on, hygiene: cp.hygiene, pets, poops, selectedId, savedAt: now };
+}
+
+/**
+ * The state the app starts from: this device's own, plus any cloud checkpoint it
+ * has not taken up yet (another device fed, played with or added a pet while
+ * this one was closed — or a sync reloaded the page, which drops the live
+ * adopt). Marking it seen keeps a later load from replaying it over local play.
+ */
+function load(): Stored {
+  const now = Date.now();
+  const local = loadLocal();
+  const cp = readTamaCheckpoint();
+  if (!cp || isCheckpointSeen(cp)) return local;
+  markCheckpointSeen(cp);
+  return adoptCheckpoint(local, cp, null, now);
 }
 
 interface TamagotchiApi {
@@ -362,7 +409,9 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
     if (sig === lastSigRef.current) return;
     lastSigRef.current = sig;
     if (adopting) return; // this change CAME from the cloud — don't bounce it back
-    writeTamaCheckpoint(toTamaCheckpoint(state, Date.now()));
+    const cp = toTamaCheckpoint(state, Date.now());
+    writeTamaCheckpoint(cp);
+    markCheckpointSeen(cp); // this device already holds what it just wrote
   }, [state]);
 
   // A checkpoint arrived from another device (Pro sync applied it to storage) —
@@ -372,32 +421,9 @@ export function TamagotchiProvider({ children }: { children: React.ReactNode }) 
     const onSync = () => {
       const cp = readTamaCheckpoint();
       if (!cp) return;
+      markCheckpointSeen(cp); // …so the next load doesn't replay it
       adoptingRef.current = true;
-      setState((s) => {
-        const now = Date.now();
-        const dt = Math.max(0, now - cp.savedAt);
-        // A pet arriving from another device lands inside the ACTIVE world (the
-        // mobile terrarium, else the window) — same rule as a freshly laid egg.
-        const world = worldRef.current;
-        const spawn = () => ({
-          ...(world ? { x: rand(20, world.w - 20), y: rand(20, world.h - 20) } : spawnXY()),
-          heading: rand(0, Math.PI * 2),
-        });
-        // Strings come from our own writer, so the unions are safe here.
-        const merged = mergeCheckpointPets(cp, s.pets, spawn) as unknown as Pet[];
-        const pets = merged.map((p) => advance(p, now, dt));
-        const spot = () => {
-          const p = pets[Math.floor(Math.random() * pets.length)];
-          return p ? { x: p.x + rand(-26, 26), y: p.y + rand(18, 40) } : spawnXY();
-        };
-        // Poops travel as a COUNT (their coordinates are this screen's pixels):
-        // keep the ones already drawn, then trim or top up to match.
-        const poops = cp.poops <= s.poops.length
-          ? s.poops.slice(0, cp.poops)
-          : [...s.poops, ...Array.from({ length: cp.poops - s.poops.length }, () => ({ id: uid(), ...spot() }))];
-        const selectedId = pets.some((p) => p.id === s.selectedId) ? s.selectedId : (pets[0]?.id ?? null);
-        return { ...s, on: cp.on, hygiene: cp.hygiene, pets, poops, selectedId, savedAt: now };
-      });
+      setState((s) => adoptCheckpoint(s, cp, worldRef.current, Date.now()));
     };
     window.addEventListener(TAMA_SYNC_EVENT, onSync);
     return () => window.removeEventListener(TAMA_SYNC_EVENT, onSync);

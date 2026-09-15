@@ -134,6 +134,37 @@ export async function run() {
       await page.mouse.move(5, 300);
     }
 
+    // 6. The pet crosses devices even when the live adopt is missed: a sync that
+    //    also changes days/diary RELOADS the page, and a device that was closed
+    //    never sees the event at all. Both land on the startup path.
+    const TAMA = '24h-tamagotchi.sync';
+    const cloudCheckpoint = {
+      v: 1, savedAt: Date.now() - 60000, on: true, hygiene: 90, poops: 0,
+      pets: [{ id: 'cloudpet', species: 'blob', phase: 'baby', bornAt: 1, hatchAt: 1, hatchedAt: 1, hunger: 90, happiness: 70, energy: 80, sleeping: false, plays: 42, name: null, lastPoopAt: Date.now(), nextPoopIn: 9000000, hungerZeroSince: null }],
+    };
+    {
+      const env = JSON.parse(store.blob);
+      env.data[TAMA] = JSON.stringify(cloudCheckpoint);
+      env.modifiedAt += 1;
+      store.blob = JSON.stringify(env);
+      store.version += 1;
+      store.updatedAt = Date.now();
+    }
+    // This device was closed while that happened: no live event, no pet of its own.
+    await page.evaluate(() => {
+      localStorage.removeItem('24h-tamagotchi');
+      localStorage.removeItem('24h-tamagotchi.seen');
+    });
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await wait(2500);
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
+    await wait(1500);
+    const pet = await page.evaluate(() => { try { return JSON.parse(localStorage.getItem('24h-tamagotchi')); } catch { return null; } });
+    pass('a pet fed on another device arrives after a reload',
+      !!pet && pet.pets?.[0]?.id === 'cloudpet' && pet.pets[0].plays === 42,
+      JSON.stringify(pet && pet.pets ? pet.pets.map((p) => [p.id, p.plays]) : pet));
+
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
   } finally {
     await browser.close();

@@ -155,6 +155,30 @@ export function writeTamaCheckpoint(cp: TamaCheckpoint): void {
   }
 }
 
+/** Device-local marker (never synced): the checkpoint this device last wrote or
+ *  took up, by the moment it was taken. A stored checkpoint that differs came
+ *  from ANOTHER device, so the next load adopts it — which is what makes the pet
+ *  cross-device at all. The live TAMA_SYNC_EVENT only fires while a tab is open
+ *  AND the same pull changed nothing that forces a reload, so without this a
+ *  device that was closed (or that reloaded) kept its own stale pet forever. */
+const SEEN_KEY = '24h-tamagotchi.seen';
+
+export function markCheckpointSeen(cp: TamaCheckpoint): void {
+  try {
+    localStorage.setItem(SEEN_KEY, String(cp.savedAt));
+  } catch {
+    /* storage unavailable — at worst the checkpoint is adopted twice */
+  }
+}
+
+export function isCheckpointSeen(cp: TamaCheckpoint): boolean {
+  try {
+    return localStorage.getItem(SEEN_KEY) === String(cp.savedAt);
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Rebuild the pet list from a checkpoint, keeping each device's own positions:
  * a pet already on this screen stays where it stands and only adopts the
