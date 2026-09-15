@@ -356,7 +356,8 @@ svg text {
 .memo-paper:active {
   cursor: grabbing;
 }
-.memo-del {
+.memo-del,
+.memo-add {
   position: absolute;
   top: 5px;
   right: 5px;
@@ -372,13 +373,20 @@ svg text {
   transition: opacity 0.12s, background 0.12s, color 0.12s;
   z-index: 2;
 }
-.memo-del:hover {
+.memo-del:hover,
+.memo-add:hover {
   background: rgba(0, 0, 0, 0.16);
   color: rgba(0, 0, 0, 0.82);
 }
 .memo-note:hover .memo-del,
-.memo-note:focus-within .memo-del {
+.memo-note:focus-within .memo-del,
+.memo-note:hover .memo-add,
+.memo-note:focus-within .memo-add {
   opacity: 1;
+}
+/* The add (+) button sits just left of the delete (×) button. */
+.memo-add {
+  right: 31px;
 }
 .memo-grip {
   position: absolute;
@@ -469,6 +477,7 @@ svg text {
    there — but the editable text keeps native touch behaviour for caret/scroll. */
 @media (hover: none) {
   .memo-del,
+  .memo-add,
   .memo-grip {
     opacity: 1;
   }

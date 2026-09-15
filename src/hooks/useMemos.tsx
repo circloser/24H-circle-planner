@@ -5,6 +5,7 @@ import { randomQuote } from '@/data/quotes';
 import { useTranslation } from '@/hooks/usePreferences';
 import { usePersistedState, type PersistedCodec } from '@/hooks/usePersistedState';
 import { toStored, migrateLegacyPos, clampOffset } from '@/components/ClockTools/clock-utils';
+import { visibleChartRect } from '@/components/Memo/memo-spawn';
 
 const MEMO_SIZE = 200;
 
@@ -81,11 +82,12 @@ function pickSpawn(size: number): { x: number; y: number } {
   const headerY = 64;
   const rand = (lo: number, hi: number) => lo + Math.random() * Math.max(0, hi - lo);
 
-  const chart =
-    typeof document !== 'undefined' ? document.querySelector('svg[role="img"]') : null;
-  const cr = chart?.getBoundingClientRect();
+  // The chart's on-screen rect; none in the table/record views or while a hidden
+  // layout parks it offscreen. (This used to look for svg[role="img"], which the
+  // chart no longer carries, so notes could land on top of it.)
+  const cr = typeof document !== 'undefined' ? visibleChartRect() : null;
 
-  if (cr && cr.width > 0) {
+  if (cr) {
     const regions: Array<[number, number, number, number]> = []; // [xLo,xHi,yLo,yHi]
     if (cr.left - m >= size + m) regions.push([m, cr.left - size - m, headerY, vh - size - m]);
     if (vw - cr.right >= size + m) regions.push([cr.right + m, vw - size - m, headerY, vh - size - m]);

@@ -1,8 +1,9 @@
 import { type PointerEvent as ReactPointerEvent } from 'react';
-import { X, GripHorizontal, AlignLeft, AlignCenter } from 'lucide-react';
+import { X, Plus, GripHorizontal, AlignLeft, AlignCenter } from 'lucide-react';
 import { useMemos, MEMO_COLORS, type Memo } from '@/hooks/useMemos';
 import { FONT_FAMILIES, useTranslation } from '@/hooks/usePreferences';
 import { anchoredStyle, dragFloor, snapWidgetCoord } from '@/components/ClockTools/clock-utils';
+import { spotBeside } from './memo-spawn';
 
 const SIZE = 200; // fixed (size not adjustable, by request)
 const FOLD = 26; // folded-corner size (px)
@@ -38,7 +39,7 @@ function placeCaretAtEnd(el: HTMLElement) {
 }
 
 export function MemoNote({ memo }: { memo: Memo }) {
-  const { updateMemo, archiveMemo } = useMemos();
+  const { memos, addMemo, updateMemo, archiveMemo } = useMemos();
   const { t } = useTranslation();
   const fontCss = resolveFontCss(memo.fontFamily);
   const align = memo.align === 'left' ? 'left' : 'center';
@@ -49,7 +50,7 @@ export function MemoNote({ memo }: { memo: Memo }) {
   // pointer-downs pass through so the caret/selection work normally.
   function onPaperPointerDown(e: ReactPointerEvent<HTMLDivElement>) {
     const target = e.target as Element;
-    if (target.closest('.memo-del')) return; // delete button handles itself
+    if (target.closest('.memo-del, .memo-add')) return; // the corner buttons handle themselves
     const el = e.currentTarget;
     const textEl = el.querySelector('.memo-text') as HTMLElement | null;
     if (textEl && document.activeElement === textEl) return; // editing → don't hijack
@@ -156,6 +157,22 @@ export function MemoNote({ memo }: { memo: Memo }) {
         <div className="memo-grip" aria-hidden="true">
           <GripHorizontal className="h-3.5 w-3.5 text-black/40" />
         </div>
+
+        {/* Hover add — just left of delete: another note right beside this one,
+            in the same colour, font and alignment (like the news card's +). */}
+        <button
+          type="button"
+          className="memo-add"
+          aria-label={t('memo.add')}
+          title={t('memo.add')}
+          onClick={() => {
+            const others = memos.filter((m) => m.onScreen).map((m) => ({ x: m.x, y: m.y }));
+            const id = addMemo(spotBeside({ x: memo.x, y: memo.y }, others));
+            updateMemo(id, { color: memo.color, fontFamily: memo.fontFamily, align: memo.align });
+          }}
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </button>
 
         {/* Hover delete — top-right corner. */}
         <button

@@ -43,6 +43,28 @@ export async function run() {
     await wait(200);
     pass('a click enters edit mode', await page.evaluate(() => document.activeElement?.classList?.contains('memo-text') ?? false));
 
+    // The + on a note adds another one right beside it, in the same colour.
+    await note.hover();
+    await note.locator('button[aria-label="#bfdbfe"]').click(); // colour this note blue first
+    await wait(150);
+    await note.hover();
+    await note.locator('.memo-add').click();
+    await wait(400);
+    const notes = page.locator('.memo-note');
+    pass('+ adds another post-it', (await notes.count()) === 2, `count=${await notes.count()}`);
+    if ((await notes.count()) === 2) {
+      const a = await notes.nth(0).boundingBox();
+      const b = await notes.nth(1).boundingBox();
+      const hit = (r, s) => !(s.x >= r.x + r.width || s.x + s.width <= r.x || s.y >= r.y + r.height || s.y + s.height <= r.y);
+      pass('the new post-it sits beside it, not on top', !hit(a, b), `a=(${Math.round(a.x)},${Math.round(a.y)}) b=(${Math.round(b.x)},${Math.round(b.y)})`);
+      const vp = page.viewportSize();
+      pass('…fully on screen', b.x >= 0 && b.y >= 0 && b.x + b.width <= vp.width && b.y + b.height <= vp.height);
+      const chartBox = await page.locator('svg[data-circle-timeline]').boundingBox();
+      pass('…and clear of the chart', !hit(chartBox, b));
+      const colours = await page.evaluate(() => JSON.parse(localStorage.getItem('24h-circle-planner.memos')).memos.map((m) => m.color));
+      pass('…in the same colour', colours.length === 2 && colours[0] === '#bfdbfe' && colours[1] === '#bfdbfe', JSON.stringify(colours));
+    }
+
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
   } finally {
     await browser.close();
