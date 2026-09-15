@@ -86,6 +86,7 @@ import { PolaroidAlbum } from '@/components/Polaroid/PolaroidAlbum';
 import { ReferralDialog } from '@/components/Referral/ReferralDialog';
 import { DiaryViewSync } from '@/components/DiaryViewSync';
 import { RecordView } from '@/components/Record/RecordView';
+import { CalendarView } from '@/components/Calendar/CalendarView';
 import { WeekdayScheduleDialog } from '@/components/Weekday/WeekdayScheduleDialog';
 import { loadWeekdayMap, weekdayName, STORAGE_KEY_WEEKDAY_PROMPTED } from '@/lib/weekday-schedules';
 import { loadSlots } from '@/lib/slots';
@@ -304,6 +305,9 @@ function App() {
   const chosenLayout = useChartLayout();
   const layout = effectiveChartLayout(chosenLayout, { isMobile, tutorialOpen });
   const sideLayout = layout === 'left' || layout === 'right';
+  // Calendar mode is a planner, not the timetable: it takes the whole canvas and
+  // every floating widget (and the pet) steps aside for it.
+  const calendarMode = chartView === 'calendar';
   const { refresh: refreshAuth, user } = useAuth();
   // Back from a Google sign-in that the mailing-list dialog started: reopen it,
   // so the person lands where they were. Never opens it otherwise.
@@ -608,7 +612,7 @@ function App() {
         style={sideLayout ? { paddingLeft: CHART_SIDE_GAP, paddingRight: CHART_SIDE_GAP } : undefined}
       >
         {/* Multi-day switcher — pinned at the top in-flow on mobile, floating on desktop. */}
-        {chartView !== 'record' && layout !== 'hidden' && <DayBar layout={layout} onOpenDiary={() => setDiaryOpen(true)} />}
+        {chartView !== 'record' && !calendarMode && layout !== 'hidden' && <DayBar layout={layout} onOpenDiary={() => setDiaryOpen(true)} />}
         <div
           className={sideLayout ? 'flex flex-col gap-4' : 'flex w-full flex-col items-center gap-4'}
           // Side layouts size the column to the current view, so it hugs the edge
@@ -616,7 +620,7 @@ function App() {
           style={sideLayout ? { width: viewWidth(chartView) } : undefined}
           data-tour="chart"
         >
-        {chartView === 'record' || chartView === 'table' ? (
+        {chartView === 'record' || chartView === 'table' || calendarMode ? (
           // Always this wrapper, so hiding never remounts the view (the record
           // view keeps its ticking clock and a half-typed entry). Shown, it adds
           // no box of its own; hidden, it parks the view offscreen like the chart.
@@ -628,6 +632,8 @@ function App() {
           >
             {chartView === 'record' ? (
               <RecordView />
+            ) : calendarMode ? (
+              <CalendarView />
             ) : (
               <ScheduleTable
                 locked={locked}
@@ -707,7 +713,7 @@ function App() {
         </div>
         )}
           {/* Day's free-form note, shown directly under the timetable. */}
-          {chartView !== 'record' && layout !== 'hidden' && <DiaryNotePanel />}
+          {chartView !== 'record' && !calendarMode && layout !== 'hidden' && <DiaryNotePanel />}
           {/* Hidden layout: one quiet way back to the chart. */}
           {layout === 'hidden' && (
             <button
@@ -724,7 +730,7 @@ function App() {
 
         {/* Mobile: stacked sections below the chart. Editing stays enabled (touch
             + long-press); only the desktop floating overlays are replaced. */}
-        {isMobile && chartView !== 'record' && (
+        {isMobile && chartView !== 'record' && !calendarMode && (
           <>
             <div className="-mt-2 flex flex-col items-center gap-1.5">
               <div className="flex items-center justify-center gap-2">
@@ -941,17 +947,17 @@ function App() {
       <DiaryViewSync />
       {/* prefs.showWidgets = master switch (환경설정 > 위젯): off hides every
           floating widget AND its FAB for a completely clean canvas. */}
-      {!isMobile && !firstRunClean && prefs.showWidgets && prefs.showMemos && <MemoLayer />}
-      {!isMobile && !firstRunClean && prefs.showWidgets && <GoalsWidget onSetup={() => setGoalsOpen(true)} />}
-      {!isMobile && !firstRunClean && prefs.showWidgets && <ClockToolsLayer />}
+      {!isMobile && !firstRunClean && !calendarMode && prefs.showWidgets && prefs.showMemos && <MemoLayer />}
+      {!isMobile && !firstRunClean && !calendarMode && prefs.showWidgets && <GoalsWidget onSetup={() => setGoalsOpen(true)} />}
+      {!isMobile && !firstRunClean && !calendarMode && prefs.showWidgets && <ClockToolsLayer />}
       {/* Keyword news headlines — desktop: the FAB is always shown; its window
           open/closed is a pref (magician-toggleable). Mobile: a bottom section. */}
-      {!isMobile && !firstRunClean && prefs.showWidgets && <NewsWidget />}
+      {!isMobile && !firstRunClean && !calendarMode && prefs.showWidgets && <NewsWidget />}
       {/* Polaroid photo wall — photos live only on this device (IndexedDB). */}
-      {!isMobile && !firstRunClean && prefs.showWidgets && <PolaroidAlbum />}
+      {!isMobile && !firstRunClean && !calendarMode && prefs.showWidgets && <PolaroidAlbum />}
       {/* Background pet — desktop: roams the window from a FAB console. Mobile
           renders it as a section inside <main> instead (see MobileTamaSection). */}
-      {!isMobile && !firstRunClean && <TamagotchiLayer />}
+      {!isMobile && !firstRunClean && !calendarMode && <TamagotchiLayer />}
 
       {/* In-app slice-start popup (bottom-right / bottom, 5s, above everything).
           Fires from useSliceAlarms on a block boundary — shows even without OS

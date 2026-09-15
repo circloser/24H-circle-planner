@@ -59,6 +59,9 @@ export const SYNC_KEYS: readonly string[] = [
   // byte-stable on load→save, so syncing it is loop-safe; keep-if-absent below
   // protects it from old cloud blobs that predate the key.
   'palette',
+  // Calendar events (user-authored, their own store) — kept if an older cloud
+  // blob predates the key, like the other user-authored stores.
+  'events',
   'prefs',
   'view',
 ].map((k) => PREFIX + k)
@@ -80,6 +83,7 @@ const KEEP_IF_ABSENT = new Set<string>([
   PREFIX + 'palette',
   PREFIX + 'slots',
   PREFIX + 'weekday-schedules',
+  PREFIX + 'events',
 ]);
 
 /** The synced preferences key — applied live (no reload) when it alone changes. */

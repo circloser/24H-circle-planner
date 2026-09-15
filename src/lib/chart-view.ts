@@ -6,11 +6,12 @@
  *  - 'night': 18:00 → 06:00, the 18/06 seam at the BOTTOM, midnight at top.
  * Editing stays linked because angle↔time uses the same spec in both directions.
  */
-export type ChartView = 'full' | 'day' | 'night' | 'table' | 'record';
+export type ChartView = 'full' | 'day' | 'night' | 'table' | 'record' | 'calendar';
 
-// The top toggle only cycles the schedule views. 'record' is a separate mode
-// entered from the clock-tools menu (not part of the cycle), so it's excluded
-// here while remaining a valid ChartView.
+// The top toggle only cycles the schedule views. 'record' (clock-tools menu)
+// and 'calendar' (a month planner, not a circle window) are separate modes the
+// toggle lists explicitly, so both stay out of this cycle while remaining
+// valid ChartViews.
 export const CHART_VIEWS: ChartView[] = ['full', 'day', 'night', 'table'];
 
 export interface ViewSpec {

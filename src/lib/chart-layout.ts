@@ -34,6 +34,8 @@ export const CHART_SIDE_GAP = 40;
 export function viewWidth(view: ChartView, room = '100%'): string {
   if (view === 'table') return `min(560px, ${room})`;
   if (view === 'record') return `min(720px, ${room})`;
+  // Two months side by side need room; it scrolls rather than squeezing.
+  if (view === 'calendar') return `min(1040px, ${room})`;
   return `min(720px, ${room}, max(320px, calc(100dvh - 250px)))`;
 }
 

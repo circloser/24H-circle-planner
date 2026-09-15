@@ -1,4 +1,4 @@
-import { Clock, Sun, Moon, Table as TableIcon, Timer } from 'lucide-react';
+import { Clock, Sun, Moon, Table as TableIcon, Timer, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
@@ -11,9 +11,10 @@ const ICON: Record<ChartView, typeof Clock> = {
   night: Moon,
   table: TableIcon,
   record: Timer,
+  calendar: CalendarDays,
 };
 
-const SELECTABLE_VIEWS: ChartView[] = [...CHART_VIEWS, 'record'];
+const SELECTABLE_VIEWS: ChartView[] = [...CHART_VIEWS, 'calendar', 'record'];
 
 const LABEL_KEY: Record<ChartView, TKey> = {
   full: 'view.full',
@@ -21,6 +22,7 @@ const LABEL_KEY: Record<ChartView, TKey> = {
   night: 'view.night',
   table: 'view.table',
   record: 'view.record',
+  calendar: 'view.calendar',
 };
 
 /** Choose any view directly; all views edit the same underlying schedule. */

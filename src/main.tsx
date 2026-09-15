@@ -9,6 +9,7 @@ import { ScheduleStoreProvider } from './hooks/useScheduleStore.tsx'
 import { PreferencesProvider } from './hooks/usePreferences.tsx'
 import { AuthProvider } from './hooks/useAuth.tsx'
 import { SyncProvider } from './hooks/useSync.tsx'
+import { EventsProvider } from './hooks/useEvents.tsx'
 import { MemoProvider } from './hooks/useMemos.tsx'
 import { UserPresetsProvider } from './hooks/useUserPresets.tsx'
 import { DaysProvider } from './hooks/useDays.tsx'
@@ -120,7 +121,9 @@ if (isSpike) {
                       <GoalsProvider>
                         <RecordsProvider>
                           <TimePaletteProvider>
-                            <App />
+                            <EventsProvider>
+                              <App />
+                            </EventsProvider>
                           </TimePaletteProvider>
                         </RecordsProvider>
                       </GoalsProvider>
