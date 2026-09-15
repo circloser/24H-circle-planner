@@ -108,9 +108,10 @@ export interface Preferences {
   showWidgets: boolean;
   worldClocks: WorldClock[]; // extra timezone lines
   chartView: ChartView; // 24h ('full') / 12h day / 12h night clock window
-  /** Where the circular chart sits on wide screens: centre (default), hugging
-   *  the left or right edge, or hidden (still mounted offscreen so export,
-   *  share and the phone widget keep working). Phones always keep it centred. */
+  /** Where the main view (circle, table or record) sits on wide screens:
+   *  centre (default), hugging the left or right edge, or hidden (still mounted
+   *  offscreen so export, share and the phone widget keep working). Phones
+   *  always keep it centred. */
   chartLayout: ChartLayout;
   /** Browser notification when the day crosses into the next slice of the
    *  active timetable (needs per-device Notification permission too). */

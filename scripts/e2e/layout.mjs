@@ -2,7 +2,8 @@
  * Chart layout: 디자인 → 레이아웃 moves the circle to the left or right edge or
  * hides it (still mounted, so PNG export keeps working, with a way back); the
  * design magician ends on the same choice and moves the widget it placed out of
- * the chart's way; a phone-width window keeps the chart centred whatever is saved.
+ * the chart's way; a phone-width window keeps the chart centred whatever is saved;
+ * and the table and record views follow the same layout (hidden included).
  */
 import { mkdtempSync, readFileSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
@@ -117,8 +118,18 @@ export async function run() {
     pass('…on screen too, clear of the chart', clockLeft !== null && clockLeft >= c.right, `clock left=${clockLeft} chart right=${c.right}`);
     await mag.locator('button:has-text("완성")').click();
     await wait(500);
-    await page.keyboard.press('Escape');
-    await wait(300);
+    // Finishing offers the tutorial next, as a modal over everything: decline it.
+    const askTutorial = page.locator('[role="dialog"][aria-modal="true"]').filter({ hasText: '튜토리얼을 진행할까요?' });
+    if (await askTutorial.count()) {
+      await askTutorial.locator('button', { hasText: '나중에 하기' }).click();
+      await wait(400);
+    }
+    // …which, on a first run, offers the phone app next (also covers the screen).
+    const getApp = page.locator('[role="dialog"][aria-label="휴대폰에서도 24Houring"]');
+    if (await getApp.count()) {
+      await getApp.getByRole('button', { name: '나중에', exact: true }).click();
+      await wait(400);
+    }
     pass('the magician’s choice is saved', (await saved()) === 'left');
 
     // 3. Phone width: always centred.
@@ -126,6 +137,62 @@ export async function run() {
     await wait(700);
     c = await chart();
     pass('phone width keeps the chart centred with a side layout saved', Math.abs(c.cx - 195) <= 12, `cx=${c.cx}`);
+
+    // 4. The table and record views follow the layout too (back on a wide window).
+    await page.setViewportSize({ width: W, height: 860 });
+    await wait(500);
+    const pickView = async (label) => {
+      await page.locator('button[aria-label="보기 선택"]').first().click();
+      await wait(250);
+      await page.getByRole('menuitemradio', { name: label, exact: true }).click();
+      await wait(500);
+    };
+    const pickLayout = async (layout) => {
+      await openDesign('레이아웃');
+      await page.locator(`[role="dialog"] button[data-layout="${layout}"]`).first().click();
+      await wait(300);
+      await page.keyboard.press('Escape');
+      await wait(400);
+    };
+    const column = () => page.evaluate(() => {
+      const r = document.querySelector('[data-tour="chart"]').getBoundingClientRect();
+      return { left: Math.round(r.left), right: Math.round(r.right), width: Math.round(r.width), cx: Math.round(r.left + r.width / 2) };
+    });
+    // The day strip's bottom pill (edit-mode badge with 일기 저장), centred over the view.
+    const pillCx = () => page.evaluate(() => {
+      const pills = [...document.querySelectorAll('.fixed')]
+        .filter((el) => (el.textContent ?? '').includes('일기 저장'))
+        .map((el) => el.getBoundingClientRect())
+        .sort((a, b) => a.width - b.width);
+      return pills.length ? Math.round(pills[0].left + pills[0].width / 2) : null;
+    });
+    const recordRing = () => page.evaluate(() => {
+      const el = document.querySelector('svg[aria-label="record-ring"]');
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { right: Math.round(r.right), cx: Math.round(r.left + r.width / 2) };
+    });
+
+    await pickView('표');
+    let col = await column();
+    pass('table view: hugs the left edge too', edgeGap(col.left) && Math.abs(col.width - 560) <= 4, `left=${col.left} width=${col.width}`);
+    const pill = await pillCx();
+    pass('table view: the day strip follows the table', pill !== null && Math.abs(pill - col.cx) <= 16, `pill=${pill} column=${col.cx}`);
+
+    await pickLayout('right');
+    await pickView('기록');
+    col = await column();
+    pass('record view: hugs the right edge', edgeGap(W - col.right), `gap=${W - col.right}`);
+
+    await pickLayout('hidden');
+    const hiddenRing = await recordRing();
+    pass('record view: hidden leaves the screen but stays mounted', !!hiddenRing && hiddenRing.right < 0, JSON.stringify(hiddenRing));
+    await page.locator('[data-show-chart]').click();
+    await wait(500);
+    const shownRing = await recordRing();
+    pass('record view: "시간표 보이기" brings it back to the centre',
+      !!shownRing && Math.abs(shownRing.cx - W / 2) <= 16 && (await saved()) === 'center', JSON.stringify(shownRing));
+    await pickView('24시간');
 
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
   } finally {

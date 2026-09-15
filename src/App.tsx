@@ -47,7 +47,7 @@ import { requestPersistentStorage } from '@/lib/persistent-storage';
 import { setWidgetSnapEnabled } from '@/components/ClockTools/clock-utils';
 import { useTranslation, useChartView, useChartLayout, usePreferences } from '@/hooks/usePreferences';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { effectiveChartLayout, CHART_WIDTH, CHART_SIDE_GAP, HIDDEN_CHART_STYLE } from '@/lib/chart-layout';
+import { effectiveChartLayout, viewWidth, CHART_WIDTH, CHART_SIDE_GAP, HIDDEN_CHART_STYLE } from '@/lib/chart-layout';
 import { useDayChange } from '@/hooks/useDayChange';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useSliceInteraction } from '@/hooks/useSliceInteraction';
@@ -299,10 +299,10 @@ function App() {
   })();
   const isMobile = useIsMobile();
   const chartView = useChartView();
-  // Desktop chart placement (centre / left / right / hidden). Phones, the table
-  // and record views, and a running tutorial always get the centred chart.
+  // Desktop placement of the main view — circle, table or record alike (centre /
+  // left / right / hidden). Phones and a running tutorial always get it centred.
   const chosenLayout = useChartLayout();
-  const layout = effectiveChartLayout(chosenLayout, { isMobile, chartView, tutorialOpen });
+  const layout = effectiveChartLayout(chosenLayout, { isMobile, tutorialOpen });
   const sideLayout = layout === 'left' || layout === 'right';
   const { refresh: refreshAuth, user } = useAuth();
   // Back from a Google sign-in that the mailing-list dialog started: reopen it,
@@ -611,19 +611,31 @@ function App() {
         {chartView !== 'record' && layout !== 'hidden' && <DayBar layout={layout} onOpenDiary={() => setDiaryOpen(true)} />}
         <div
           className={sideLayout ? 'flex flex-col gap-4' : 'flex w-full flex-col items-center gap-4'}
-          // Side layouts size the column to the chart, so the day's note lines up
-          // under it instead of stretching across the window.
-          style={sideLayout ? { width: CHART_WIDTH } : undefined}
+          // Side layouts size the column to the current view, so it hugs the edge
+          // and the day's note lines up under it instead of stretching across.
+          style={sideLayout ? { width: viewWidth(chartView) } : undefined}
           data-tour="chart"
         >
-        {chartView === 'record' ? (
-          <RecordView />
-        ) : chartView === 'table' ? (
-          <ScheduleTable
-            locked={locked}
-            onEditLabel={(id) => { if (locked) { toast(t('diary.locked')); } else { setEditingSliceId(id); } }}
-            onAddRow={() => (locked ? toast(t('diary.locked')) : setTimeBlockOpen(true))}
-          />
+        {chartView === 'record' || chartView === 'table' ? (
+          // Always this wrapper, so hiding never remounts the view (the record
+          // view keeps its ticking clock and a half-typed entry). Shown, it adds
+          // no box of its own; hidden, it parks the view offscreen like the chart.
+          <div
+            className={layout === 'hidden' ? undefined : 'contents'}
+            style={layout === 'hidden' ? HIDDEN_CHART_STYLE : undefined}
+            aria-hidden={layout === 'hidden' || undefined}
+            inert={layout === 'hidden'}
+          >
+            {chartView === 'record' ? (
+              <RecordView />
+            ) : (
+              <ScheduleTable
+                locked={locked}
+                onEditLabel={(id) => { if (locked) { toast(t('diary.locked')); } else { setEditingSliceId(id); } }}
+                onAddRow={() => (locked ? toast(t('diary.locked')) : setTimeBlockOpen(true))}
+              />
+            )}
+          </div>
         ) : (
         <div
           className={

@@ -17,7 +17,7 @@ import { slicePath } from '@/lib/svg-geometry';
 import { useDays, MAX_DAYS } from '@/hooks/useDays';
 import { useDiary } from '@/hooks/useDiary';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
-import { useTranslation } from '@/hooks/usePreferences';
+import { useTranslation, useChartView } from '@/hooks/usePreferences';
 import { useCoarsePointer } from '@/hooks/useCoarsePointer';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { PRESETS } from '@/data/presets';
@@ -63,8 +63,10 @@ export function DayBar({ onOpenDiary, layout = 'center' }: { onOpenDiary?: () =>
   const isMobile = useIsMobile();
   const diaryDate = useStoreSelector((s) => s.diaryDate);
   const locked = useStoreSelector((s) => s.locked);
-  // Desktop: centred over the chart, which a side layout moves off the middle.
-  const overChart = isMobile ? undefined : chartCentreLeft(layout);
+  // Desktop: centred over the main view (chart or table), which a side layout
+  // moves off the middle and which differs in width per view.
+  const currentView = useChartView();
+  const overChart = isMobile ? undefined : chartCentreLeft(layout, currentView);
   const canUndo = useStoreSelector((s) => s.history.past.length > 0);
   const dispatch = useStoreDispatch();
   const { entries: diaryEntries } = useDiary();
