@@ -154,13 +154,30 @@ export function relocateSlot(pos: Pos, slot: MarginSlot, from: ChartLayout, to: 
 
 /* ── Per-resolution position profiles ────────────────────────────────────────
    Different monitors want different layouts: a spot tuned on a 2560-wide screen
-   lands badly on a 1366 laptop. Every widget position save also records into a
-   per-resolution profile; on load, a profile entry for the CURRENT resolution
-   wins over the plain (synced/last-used) value. Profiles are local-only (never
-   synced), so each device keeps its own layout per screen size. */
+   lands badly on a 1366 laptop. Each device remembers its own spot for every
+   widget, per MONITOR, locally (never synced). Widgets draw at that spot
+   (screenPos), else at the synced position; a drag records the spot for this
+   screen and also updates the synced value (the seed for devices that haven't
+   placed the widget yet); a widget first seen on a screen is remembered where it
+   shows (rememberOnScreen), so later moves on OTHER devices no longer shift it.
+   Rule: never bake a profile or a viewport clamp into a value that is saved back
+   to a synced key. That pushed one device's layout onto every other device. */
 const PROFILE_KEY = '24h-circle-planner.pos-profiles';
 
-const resKey = () => `${vw()}x${vh()}`;
+/** The pre-2026-09-15 key: the WINDOW size. Any resize, zoom or bookmarks bar
+ *  missed it and fell back to positions synced from another device, so it is
+ *  only read now, as a fallback for layouts saved before the switch. */
+const windowKey = () => `${vw()}x${vh()}`;
+
+/** The layout memory for THIS monitor, which stays put while the window changes.
+ *  In physical pixels (CSS screen size × devicePixelRatio): browser zoom changes
+ *  both in opposite directions, so zooming doesn't switch memories either. */
+const screenKey = () => {
+  const s = typeof window !== 'undefined' ? window.screen : undefined;
+  if (!s || !(s.width > 0)) return windowKey();
+  const dpr = window.devicePixelRatio || 1;
+  return `screen:${Math.round(s.width * dpr)}x${Math.round(s.height * dpr)}`;
+};
 
 type ProfileMap = Record<string, Record<string, Pos>>;
 
@@ -175,7 +192,8 @@ function readProfiles(): ProfileMap {
 /** The stored position for `key` at the current resolution, if the user has
  *  placed it on a screen this size before. */
 export function loadPosProfile(key: string): Pos | null {
-  const p = readProfiles()[resKey()]?.[key];
+  const all = readProfiles();
+  const p = all[screenKey()]?.[key] ?? all[windowKey()]?.[key];
   return p && typeof p.x === 'number' && typeof p.y === 'number' ? p : null;
 }
 
@@ -184,10 +202,25 @@ export function loadPosProfile(key: string): Pos | null {
 export function savePosProfile(key: string, pos: Pos): void {
   try {
     const all = readProfiles();
-    const rk = resKey();
+    const rk = screenKey();
     all[rk] = { ...(all[rk] ?? {}), [key]: { x: Math.round(pos.x), y: Math.round(pos.y) } };
     localStorage.setItem(PROFILE_KEY, JSON.stringify(all));
   } catch { /* storage unavailable */ }
+}
+
+/** Where THIS screen draws a widget: the spot remembered for this screen, else
+ *  the stored (possibly synced) position, kept on screen either way. Render-time
+ *  only: never write the result back into a synced value. */
+export function screenPos(key: string, stored: Pos, w: number, h: number): Pos {
+  return clampOffset(loadPosProfile(key) ?? stored, w, h);
+}
+
+/** First sight on this screen: remember where the widget shows now, so a move
+ *  made later on another device no longer shifts it here. A no-op once this
+ *  screen has a spot for it, and on phones (widgets render inline there). */
+export function rememberOnScreen(key: string, stored: Pos): void {
+  if (vw() < 768 || readProfiles()[screenKey()]?.[key]) return;
+  savePosProfile(key, loadPosProfile(key) ?? stored);
 }
 
 /** Current time, re-rendered every `intervalMs` while `active` (no ticking when off). */

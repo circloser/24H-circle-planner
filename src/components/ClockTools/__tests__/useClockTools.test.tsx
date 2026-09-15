@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useClockTools, MAX_WEATHERS, MAX_CLOCKS } from '../useClockTools';
-import { clampOffset, migrateLegacyPos } from '../clock-utils';
+import { migrateLegacyPos } from '../clock-utils';
 
 const KEY = '24h-circle-planner.clocktools';
 
 beforeEach(() => localStorage.clear());
 
 describe('useClockTools — multi-window weather', () => {
-  it('migrates a legacy ON weather widget into one list item (place preserved, pos re-based to a clamped centre offset)', () => {
+  it('migrates a legacy ON weather widget into one list item (place preserved, pos re-based to a centre offset)', () => {
     localStorage.setItem(KEY, JSON.stringify({
       version: 1,
       state: { weather: { on: true, pos: { x: 300, y: 400 }, place: { name: '서울', lat: 37.56, lon: 126.97 } } },
@@ -18,7 +18,8 @@ describe('useClockTools — multi-window weather', () => {
     expect(result.current.state.weathers[0].place?.name).toBe('서울');
     // Unmarked legacy envelope → absolute pixels become centre offsets (same
     // rendered spot), then the on-screen clamp applies.
-    expect(result.current.state.weathers[0].pos).toEqual(clampOffset(migrateLegacyPos({ x: 300, y: 400 }), 204, 200));
+    // (Clamping on screen happens at render now, never in the synced state.)
+    expect(result.current.state.weathers[0].pos).toEqual(migrateLegacyPos({ x: 300, y: 400 }));
     expect(typeof result.current.state.weathers[0].id).toBe('string');
   });
 
@@ -55,7 +56,7 @@ describe('useClockTools — multi-window weather', () => {
     expect(result.current.state.weathers[0].id).toBe(second.id);
   });
 
-  it('migrates a legacy ON clock into one list item (mode kept, tz local, pos re-based to a clamped centre offset)', () => {
+  it('migrates a legacy ON clock into one list item (mode kept, tz local, pos re-based to a centre offset)', () => {
     localStorage.setItem(KEY, JSON.stringify({
       version: 1,
       state: { clock: { on: true, mode: 'digital', pos: { x: 30, y: 40 } } },
@@ -63,7 +64,7 @@ describe('useClockTools — multi-window weather', () => {
     const { result } = renderHook(() => useClockTools());
     expect(result.current.state.clocks).toHaveLength(1);
     expect(result.current.state.clocks[0]).toMatchObject({ mode: 'digital', tz: null });
-    expect(result.current.state.clocks[0].pos).toEqual(clampOffset(migrateLegacyPos({ x: 30, y: 40 }), 168, 150));
+    expect(result.current.state.clocks[0].pos).toEqual(migrateLegacyPos({ x: 30, y: 40 }));
   });
 
   it('migrates a legacy OFF clock to no clocks; missing clock info → no clocks (quiet default)', () => {

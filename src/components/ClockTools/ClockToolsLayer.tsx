@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Clock, Timer, AlarmClock, Calendar, CloudSun, Check, CircleDot, Plus, Hourglass } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation, usePreferences } from '@/hooks/usePreferences';
 import { useClockTools, MAX_WEATHERS, MAX_CLOCKS, type ToolKind } from './useClockTools';
-import { playBeep } from './clock-utils';
+import { playBeep, screenPos, savePosProfile, rememberOnScreen, type Pos } from './clock-utils';
 import { ClockWidget } from './ClockWidget';
 import { TimerWidget } from './TimerWidget';
 import { AlarmWidget } from './AlarmWidget';
@@ -22,6 +22,25 @@ export function ClockToolsLayer() {
   const { prefs, setPreference } = usePreferences();
   const isRecord = (prefs.chartView ?? 'full') === 'record';
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Each screen keeps its own layout. A widget draws at the spot remembered for
+  // this screen (else its synced position); a drag records the spot for this
+  // screen as well as updating the synced value; and a widget seen here for the
+  // first time is remembered where it shows.
+  const placed = <T extends { pos: Pos }>(item: T, key: string, w: number, h: number): T =>
+    ({ ...item, pos: screenPos(key, item.pos, w, h) });
+  const moveOnScreen = (key: string, move: (pos: Pos) => void) => (pos: Pos) => {
+    savePosProfile(key, pos);
+    move(pos);
+  };
+  useEffect(() => {
+    state.clocks.forEach((c) => rememberOnScreen(`ct.clock.${c.id}`, c.pos));
+    state.weathers.forEach((w) => rememberOnScreen(`ct.weather.${w.id}`, w.pos));
+    if (state.calendar.on) rememberOnScreen('ct.calendar', state.calendar.pos);
+    if (state.nownext.on) rememberOnScreen('ct.nownext', state.nownext.pos);
+    if (state.timer.on) rememberOnScreen('ct.timer', state.timer.pos);
+    if (state.alarm.on) rememberOnScreen('ct.alarm', state.alarm.pos);
+  }, [state]);
 
   const ringTimer = () => {
     playBeep(5);
@@ -49,41 +68,41 @@ export function ClockToolsLayer() {
       {state.clocks.map((c) => (
         <ClockWidget
           key={c.id}
-          clock={c}
+          clock={placed(c, `ct.clock.${c.id}`, 168, 150)}
           onChange={(patch) => setClock(c.id, patch)}
-          onMove={(pos) => setClock(c.id, { pos })}
+          onMove={moveOnScreen(`ct.clock.${c.id}`, (pos) => setClock(c.id, { pos }))}
           onClose={() => removeClock(c.id)}
         />
       ))}
       {state.timer.on && (
         <TimerWidget
-          timer={state.timer}
+          timer={placed(state.timer, 'ct.timer', 200, 160)}
           onChange={setTimer}
-          onMove={(pos) => setTimer({ pos })}
+          onMove={moveOnScreen('ct.timer', (pos) => setTimer({ pos }))}
           onClose={() => toggle('timer')}
           onRing={ringTimer}
         />
       )}
       {state.alarm.on && (
         <AlarmWidget
-          alarm={state.alarm}
+          alarm={placed(state.alarm, 'ct.alarm', 200, 140)}
           onChange={setAlarm}
-          onMove={(pos) => setAlarm({ pos })}
+          onMove={moveOnScreen('ct.alarm', (pos) => setAlarm({ pos }))}
           onClose={() => toggle('alarm')}
           onRing={ringAlarm}
         />
       )}
       {state.calendar.on && (
         <CalendarWidget
-          calendar={state.calendar}
-          onMove={(pos) => setCalendar({ pos })}
+          calendar={placed(state.calendar, 'ct.calendar', 232, 240)}
+          onMove={moveOnScreen('ct.calendar', (pos) => setCalendar({ pos }))}
           onClose={() => toggle('calendar')}
         />
       )}
       {state.nownext.on && (
         <NowNextWidget
-          nownext={state.nownext}
-          onMove={(pos) => setNownext({ pos })}
+          nownext={placed(state.nownext, 'ct.nownext', 210, 180)}
+          onMove={moveOnScreen('ct.nownext', (pos) => setNownext({ pos }))}
           onClose={() => toggle('nownext')}
         />
       )}
@@ -91,9 +110,9 @@ export function ClockToolsLayer() {
       {state.weathers.map((w) => (
         <WeatherWidget
           key={w.id}
-          weather={w}
+          weather={placed(w, `ct.weather.${w.id}`, 204, 200)}
           onChange={(patch) => setWeather(w.id, patch)}
-          onMove={(pos) => setWeather(w.id, { pos })}
+          onMove={moveOnScreen(`ct.weather.${w.id}`, (pos) => setWeather(w.id, { pos }))}
           onClose={() => removeWeather(w.id)}
         />
       ))}

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Newspaper, X, Search, RefreshCw, Loader2, Settings, Plus } from 'lucide-react';
 import { useTranslation, usePreferences } from '@/hooks/usePreferences';
-import { makeDragStart, anchoredStyle, marginSpawn, clampOffset, loadPosProfile, savePosProfile, type Pos } from '@/components/ClockTools/clock-utils';
+import { makeDragStart, anchoredStyle, marginSpawn, screenPos, savePosProfile, rememberOnScreen, type Pos } from '@/components/ClockTools/clock-utils';
 import { NEWS_SYNC_EVENT, NEWS_WINDOWS_KEY } from '@/lib/sync/widgetSync';
 import { readStoredChartLayout } from '@/lib/chart-layout';
 
@@ -83,7 +83,8 @@ function NewsCard({ win, inline, canAdd, onChange, onAdd, onRemove }: {
   // Where THIS device draws the card: its own per-resolution profile wins,
   // else the stored (possibly synced-from-another-screen) pos clamped into
   // view. Render-time only — the wire value is never rewritten by either.
-  const renderPos = loadPosProfile(`news.${win.id}`) ?? clampOffset(win.pos, CARD_W, 300);
+  const renderPos = screenPos(`news.${win.id}`, win.pos, CARD_W, 300);
+  useEffect(() => { if (!inline) rememberOnScreen(`news.${win.id}`, win.pos); }, [inline, win.id, win.pos]);
   const [showSettings, setShowSettings] = useState(() => !win.q.trim());
   const [draft, setDraft] = useState({ q: win.q, country: win.country, intervalH: win.intervalH });
   const [cached] = useState<CacheEntry | null>(() => {

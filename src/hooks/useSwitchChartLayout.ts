@@ -68,8 +68,11 @@ export function useSwitchChartLayout(): (next: ChartLayout) => void {
 
     for (const m of memos) {
       if (!m.onScreen) continue;
-      const to = relocateSlot({ x: m.x, y: m.y }, 'memo', from, next);
-      if (to) updateMemo(m.id, to);
+      const key = `memo.${m.id}`;
+      const to = relocateSlot(loadPosProfile(key) ?? { x: m.x, y: m.y }, 'memo', from, next);
+      if (!to) continue;
+      savePosProfile(key, to);
+      updateMemo(m.id, to);
     }
     rewriteStored(CLOCKTOOLS_KEY, CLOCKTOOLS_SYNC_EVENT, (env: ClockToolsEnvelope) => relocateClockToolsEnvelope(env, from, next));
     rewriteStored(NEWS_WINDOWS_KEY, NEWS_SYNC_EVENT, (list: Placed[]) => relocateNewsWindows(list, from, next));

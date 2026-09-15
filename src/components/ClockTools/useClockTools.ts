@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { v4 as uuid } from 'uuid';
-import { spawnNearCentre, migrateLegacyPos, clampOffset, loadPosProfile, savePosProfile, type Pos } from './clock-utils';
+import { spawnNearCentre, migrateLegacyPos, type Pos } from './clock-utils';
 import { CLOCKTOOLS_SYNC_EVENT } from '@/lib/sync/widgetSync';
 
 export type ClockMode = 'analog' | 'digital';
@@ -168,26 +168,14 @@ function loadState(): ClockToolsState {
           merged.weathers = merged.weathers.map((w) => ({ ...w, pos: migrateLegacyPos(w.pos) }));
           merged.alarm = { ...merged.alarm, pos: migrateLegacyPos(merged.alarm.pos) };
         }
-        // Every position gets clamped on-screen — an unreachable widget can't be
-        // dragged back (in-range values pass through unchanged → byte-stable).
-        merged.clocks = merged.clocks.map((c) => ({ ...c, pos: clampOffset(c.pos, 168, 150) }));
-        merged.calendar = { ...merged.calendar, pos: clampOffset(merged.calendar.pos, 232, 240) };
-        merged.nownext = { ...merged.nownext, pos: clampOffset(merged.nownext.pos, 210, 180) };
-        merged.timer = { ...merged.timer, pos: clampOffset(merged.timer.pos, 200, 160) };
-        merged.weathers = merged.weathers.map((w) => ({ ...w, pos: clampOffset(w.pos, 204, 200) }));
-        merged.alarm = { ...merged.alarm, pos: clampOffset(merged.alarm.pos, 200, 140) };
+        // No on-screen clamp and no per-screen layout in here: this state is saved
+        // straight back to the SYNCED key, so anything viewport- or device-
+        // dependent baked in would push this device's layout onto the others.
+        // Both apply at render instead (screenPos in ClockToolsLayer).
         // A timer that finished while the tab was closed: stop it silently.
         if (merged.timer.running && (!merged.timer.endAt || merged.timer.endAt <= Date.now())) {
           merged.timer = { ...merged.timer, running: false, endAt: null, remainingSec: 0 };
         }
-        // Per-resolution layout memory: a position the user set on THIS screen
-        // size wins over the plain (possibly other-device/synced) value.
-        merged.calendar = { ...merged.calendar, pos: loadPosProfile('ct.calendar') ?? merged.calendar.pos };
-        merged.nownext = { ...merged.nownext, pos: loadPosProfile('ct.nownext') ?? merged.nownext.pos };
-        merged.timer = { ...merged.timer, pos: loadPosProfile('ct.timer') ?? merged.timer.pos };
-        merged.alarm = { ...merged.alarm, pos: loadPosProfile('ct.alarm') ?? merged.alarm.pos };
-        merged.clocks = merged.clocks.map((c) => ({ ...c, pos: loadPosProfile(`ct.clock.${c.id}`) ?? c.pos }));
-        merged.weathers = merged.weathers.map((w) => ({ ...w, pos: loadPosProfile(`ct.weather.${w.id}`) ?? w.pos }));
         return merged;
       }
     }
@@ -205,13 +193,8 @@ function saveState(state: ClockToolsState): void {
   } catch {
     // storage unavailable — tools simply won't persist
   }
-  // Mirror every position into the per-resolution profile (local-only).
-  savePosProfile('ct.calendar', state.calendar.pos);
-  savePosProfile('ct.nownext', state.nownext.pos);
-  savePosProfile('ct.timer', state.timer.pos);
-  savePosProfile('ct.alarm', state.alarm.pos);
-  for (const c of state.clocks) savePosProfile(`ct.clock.${c.id}`, c.pos);
-  for (const w of state.weathers) savePosProfile(`ct.weather.${w.id}`, w.pos);
+  // This screen's layout is recorded by drags and on first sight (ClockToolsLayer),
+  // never from here: saves also run for positions just applied from the cloud.
 }
 
 export interface ClockToolsApi {

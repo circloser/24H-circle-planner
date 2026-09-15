@@ -4,7 +4,7 @@ import { useDiary } from '@/hooks/useDiary';
 import { useGoals } from '@/hooks/useGoals';
 import { useTranslation } from '@/hooks/usePreferences';
 import { accumulatedMinutes } from '@/lib/goals';
-import { makeDragStart, anchoredStyle, spawnNearCentre, migrateLegacyPos, clampOffset, loadPosProfile, savePosProfile, type Pos } from '@/components/ClockTools/clock-utils';
+import { makeDragStart, anchoredStyle, spawnNearCentre, migrateLegacyPos, screenPos, savePosProfile, rememberOnScreen, type Pos } from '@/components/ClockTools/clock-utils';
 import { GOALS_WIDGET_SYNC_EVENT } from '@/lib/sync/widgetSync';
 
 const POS_KEY = '24h-circle-planner.goalswidget';
@@ -15,19 +15,18 @@ function defaultPos(): Pos {
   return spawnNearCentre(40, 120, CARD_W, 300);
 }
 
+/** The stored (synced) position, transform-free apart from the one-time legacy
+ *  migration: it is written straight back to the synced key, so this screen's
+ *  own spot and the on-screen clamp apply at render (screenPos). */
 function loadPos(): Pos {
-  // A position saved on THIS screen size wins (per-resolution layout memory).
-  const prof = loadPosProfile(POS_KEY);
-  if (prof) return clampOffset(prof, CARD_W, 300);
   try {
     const raw = localStorage.getItem(POS_KEY);
     if (raw) {
       const p = JSON.parse(raw) as Partial<Pos> & { c?: number };
       if (p && typeof p.x === 'number' && typeof p.y === 'number') {
         // `c:1` marks centre-offset space (current); unmarked values are legacy
-        // absolute pixels → re-express as offsets (same rendered spot). Always
-        // clamp on-screen — an off-screen card can't even be dragged back.
-        return clampOffset(p.c === 1 ? { x: p.x, y: p.y } : migrateLegacyPos({ x: p.x, y: p.y }), CARD_W, 300);
+        // absolute pixels → re-express as offsets (same rendered spot).
+        return p.c === 1 ? { x: p.x, y: p.y } : migrateLegacyPos({ x: p.x, y: p.y });
       }
     }
   } catch {
@@ -47,24 +46,26 @@ export function GoalsWidget({ onSetup }: { onSetup: () => void }) {
   const { entries } = useDiary();
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<Pos>(loadPos);
+  const [stored, setStored] = useState<Pos>(loadPos);
+  // Where this screen draws the card: its own remembered spot, kept on screen.
+  const pos = screenPos(POS_KEY, stored, CARD_W, 300);
   // Boundary only appears on hover — transparent + frameless at rest, but framed
   // like the clock/calendar widgets while pointed at (a consistent "movable" cue).
   const [hover, setHover] = useState(false);
 
   useEffect(() => {
     try {
-      localStorage.setItem(POS_KEY, JSON.stringify({ x: pos.x, y: pos.y, c: 1 }));
+      localStorage.setItem(POS_KEY, JSON.stringify({ x: stored.x, y: stored.y, c: 1 }));
     } catch {
       // storage unavailable — position simply won't persist
     }
-    savePosProfile(POS_KEY, pos); // remember per screen size too
-  }, [pos]);
+    rememberOnScreen(POS_KEY, stored); // first sight on this screen
+  }, [stored]);
 
   // Cloud sync applied a new position to localStorage (no reload) — adopt it live.
-  // loadPos clamps to this viewport, so the card can't land off-screen.
+  // This screen keeps drawing its own remembered spot (screenPos).
   useEffect(() => {
-    const onSync = () => setPos(loadPos());
+    const onSync = () => setStored(loadPos());
     window.addEventListener(GOALS_WIDGET_SYNC_EVENT, onSync);
     return () => window.removeEventListener(GOALS_WIDGET_SYNC_EVENT, onSync);
   }, []);
@@ -77,7 +78,7 @@ export function GoalsWidget({ onSetup }: { onSetup: () => void }) {
         <div
           data-goals-card="1"
           data-hover={hover ? '1' : '0'}
-          onPointerDown={makeDragStart(pos, setPos)}
+          onPointerDown={makeDragStart(pos, (p) => { savePosProfile(POS_KEY, p); setStored(p); })}
           onPointerMove={() => { if (!hover) setHover(true); }}
           onPointerLeave={() => setHover(false)}
           className="absolute z-30 max-h-[60vh] w-[300px] cursor-grab touch-none overflow-y-auto rounded-xl p-3 transition-shadow active:cursor-grabbing"

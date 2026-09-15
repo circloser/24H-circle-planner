@@ -1,8 +1,8 @@
-import { type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, type PointerEvent as ReactPointerEvent } from 'react';
 import { X, Plus, GripHorizontal, AlignLeft, AlignCenter } from 'lucide-react';
 import { useMemos, MEMO_COLORS, type Memo } from '@/hooks/useMemos';
 import { FONT_FAMILIES, useTranslation } from '@/hooks/usePreferences';
-import { anchoredStyle, dragFloor, snapWidgetCoord } from '@/components/ClockTools/clock-utils';
+import { anchoredStyle, dragFloor, snapWidgetCoord, screenPos, savePosProfile, rememberOnScreen } from '@/components/ClockTools/clock-utils';
 import { spotBeside } from './memo-spawn';
 
 const SIZE = 200; // fixed (size not adjustable, by request)
@@ -43,6 +43,10 @@ export function MemoNote({ memo }: { memo: Memo }) {
   const { t } = useTranslation();
   const fontCss = resolveFontCss(memo.fontFamily);
   const align = memo.align === 'left' ? 'left' : 'center';
+  // This screen's own spot for the note (else its synced position), on screen.
+  const posKey = `memo.${memo.id}`;
+  const at = screenPos(posKey, { x: memo.x, y: memo.y }, SIZE, SIZE);
+  useEffect(() => { rememberOnScreen(posKey, { x: memo.x, y: memo.y }); }, [posKey, memo.x, memo.y]);
 
   // Drag the note from ANYWHERE on the paper (incl. the text) when it isn't being
   // edited. A press that doesn't move is treated as a click → focus the text to
@@ -57,8 +61,8 @@ export function MemoNote({ memo }: { memo: Memo }) {
     e.preventDefault(); // stop the paper/text from grabbing focus on a would-be drag
     const startX = e.clientX;
     const startY = e.clientY;
-    const origX = memo.x;
-    const origY = memo.y;
+    const origX = at.x;
+    const origY = at.y;
     const { minX, minY } = dragFloor();
     let moved = false;
     // Window-level listeners (not pointer-capture): capture on the paper isn't
@@ -66,10 +70,12 @@ export function MemoNote({ memo }: { memo: Memo }) {
     const onMove = (ev: PointerEvent) => {
       if (!moved && Math.hypot(ev.clientX - startX, ev.clientY - startY) < 4) return;
       moved = true;
-      updateMemo(memo.id, {
+      const next = {
         x: Math.max(minX, snapWidgetCoord(origX + (ev.clientX - startX), ev.shiftKey)),
         y: Math.max(minY, snapWidgetCoord(origY + (ev.clientY - startY), ev.shiftKey)),
-      });
+      };
+      savePosProfile(posKey, next); // this screen's spot…
+      updateMemo(memo.id, next); // …and the synced position
     };
     const onUp = () => {
       window.removeEventListener('pointermove', onMove);
@@ -104,7 +110,7 @@ export function MemoNote({ memo }: { memo: Memo }) {
   return (
     <div
       className="memo-note group"
-      style={{ ...anchoredStyle(memo.x, memo.y), width: SIZE, height: SIZE, zIndex: 20 }}
+      style={{ ...anchoredStyle(at.x, at.y), width: SIZE, height: SIZE, zIndex: 20 }}
     >
       {/* Hover toolbar — colour + alignment + font, above the note (not clipped). */}
       <div className="memo-toolbar">
@@ -166,8 +172,8 @@ export function MemoNote({ memo }: { memo: Memo }) {
           aria-label={t('memo.add')}
           title={t('memo.add')}
           onClick={() => {
-            const others = memos.filter((m) => m.onScreen).map((m) => ({ x: m.x, y: m.y }));
-            const id = addMemo(spotBeside({ x: memo.x, y: memo.y }, others));
+            const others = memos.filter((m) => m.onScreen).map((m) => screenPos(`memo.${m.id}`, { x: m.x, y: m.y }, SIZE, SIZE));
+            const id = addMemo(spotBeside(at, others));
             updateMemo(id, { color: memo.color, fontFamily: memo.fontFamily, align: memo.align });
           }}
         >
