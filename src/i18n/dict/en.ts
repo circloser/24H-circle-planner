@@ -703,7 +703,7 @@ export const en: Record<TKey, string> = {
   'ical.disconnect': 'Disconnect',
   'ical.refresh': 'Refresh',
   'ical.readOnly': 'Read-only',
-  'ical.secretNote': 'This address is like a password. It is kept on this device only and never stored on our server, so paste it again on your other devices.',
+  'ical.secretNote': 'This address is like a password. It syncs to your other signed-in devices, and is stored encrypted when the diary lock (end-to-end encryption) is on.',
   'ical.syncedAt': 'as of {when}',
   'ical.loading': 'Loading…',
   'ical.errBadUrl': 'That is not a private iCal address from Google Calendar.',

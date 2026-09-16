@@ -83,7 +83,7 @@ function Chip({ ev, showText = true, inGrid = false }: { ev: DayEvent; showText?
         data-all-day
         data-imported={imported || undefined}
         data-span={ev.length > 1 ? (mid ? 'mid' : 'start') : undefined}
-        className={`block truncate px-1 text-[11px] leading-[17px] ${imported ? 'text-foreground' : 'text-white'} ${ends} ${bleed}`}
+        className={`block truncate px-1 text-[10px] leading-[15px] sm:text-[11px] sm:leading-[17px] ${imported ? 'text-foreground' : 'text-white'} ${ends} ${bleed}`}
         style={imported ? { boxShadow: outline(color, ev) } : { backgroundColor: color }}
       >
         {mid && !showText ? ' ' : ev.text}
@@ -92,8 +92,8 @@ function Chip({ ev, showText = true, inGrid = false }: { ev: DayEvent; showText?
   }
   return (
     <span data-event data-imported={imported || undefined}
-      className={`flex items-center gap-1 overflow-hidden px-1 text-[11px] leading-[17px] text-foreground ${bleed}`}>
-      <span className={`h-2 w-2 shrink-0 rounded-full ${imported ? 'border-2' : ''}`}
+      className={`flex items-center gap-1 overflow-hidden px-1 text-[10px] leading-[15px] text-foreground sm:text-[11px] sm:leading-[17px] ${bleed}`}>
+      <span className={`h-1.5 w-1.5 shrink-0 rounded-full sm:h-2 sm:w-2 ${imported ? 'border-2' : ''}`}
         style={imported ? { borderColor: color } : { backgroundColor: color }} />
       <span className="shrink-0 tabular-nums text-muted-foreground">{ev.time}</span>
       <span className="truncate">{ev.text}</span>
@@ -242,7 +242,7 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver }: MonthPro
                   {shown.map((ev, lane) => (!ev ? (
                     // An empty lane still holds its line, so the bars below it
                     // stay level with the same bars in the next day.
-                    <span key={`gap${lane}`} className="h-[17px] shrink-0" aria-hidden />
+                    <span key={`gap${lane}`} className="h-[15px] shrink-0 sm:h-[17px]" aria-hidden />
                   ) : ev.src === 'ical' ? (
                     <Chip key={`${ev.from}-${ev.id}`} ev={ev} showText={false} inGrid />
                   ) : (
@@ -251,7 +251,7 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver }: MonthPro
                     </Handle>
                   )))}
                   {hidden > 0 && (
-                    <span className="px-1 text-[10px] leading-[17px] text-muted-foreground">{t('calendar.more', { n: String(hidden) })}</span>
+                    <span className="px-1 text-[9px] leading-[15px] text-muted-foreground sm:text-[10px] sm:leading-[17px]">{t('calendar.more', { n: String(hidden) })}</span>
                   )}
                 </span>
               </button>

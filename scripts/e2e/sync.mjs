@@ -165,6 +165,40 @@ export async function run() {
       !!pet && pet.pets?.[0]?.id === 'cloudpet' && pet.pets[0].plays === 42,
       JSON.stringify(pet && pet.pets ? pet.pets.map((p) => [p.id, p.plays]) : pet));
 
+    // Connected Google calendars follow the account; their downloaded text does not.
+    const ICAL = K('ical');
+    const ICAL_CACHE = K('ical-cache');
+    const FEED = 'https://calendar.google.com/calendar/ical/me%40example.com/private-abc/basic.ics';
+    {
+      const env = JSON.parse(store.blob);
+      env.data[ICAL] = JSON.stringify({ version: 3, feeds: [{ id: 'f1', url: FEED }] });
+      env.modifiedAt += 1;
+      store.blob = JSON.stringify(env);
+      store.version += 1;
+      store.updatedAt = Date.now();
+    }
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await wait(2500);
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
+    await wait(1500);
+    pass('a calendar connected on another device arrives here',
+      String(await page.evaluate((k) => localStorage.getItem(k), ICAL)).includes(FEED),
+      String(await page.evaluate((k) => localStorage.getItem(k), ICAL)).slice(0, 80));
+
+    const beforePush = store.version;
+    await page.evaluate(([cache, goals]) => {
+      localStorage.setItem(cache, JSON.stringify({ version: 1, byId: { f1: { ics: 'BEGIN:VCALENDAR END:VCALENDAR', fetchedAt: Date.now() } } }));
+      localStorage.setItem(goals, JSON.stringify({ version: 1, goals: [{ id: 'g', label: 'PUSHME', targetMinutes: 60, period: 'day' }] }));
+      window.dispatchEvent(new StorageEvent('storage', { key: goals }));
+    }, [ICAL_CACHE, GOALS]);
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await wait(5000);
+    const pushed = JSON.parse(store.blob).data;
+    pass('…but the downloaded feed text never goes up',
+      store.version > beforePush && !(ICAL_CACHE in pushed) && ICAL in pushed,
+      JSON.stringify(Object.keys(pushed).filter((k) => k.includes('ical'))));
+
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
 
     // A PHONE is not a lesser device: a Pro account syncs there the same way.

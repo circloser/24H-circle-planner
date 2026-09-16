@@ -12,6 +12,12 @@ describe('sync payload keys', () => {
     expect(PREFS_KEY).toBe(K('prefs'));
   });
 
+  it('carries the connected calendars but never their downloaded text', () => {
+    // The addresses follow the account; the feed text is a device-local cache.
+    expect(SYNC_KEYS).toContain(K('ical'));
+    expect(SYNC_KEYS).not.toContain(K('ical-cache'));
+  });
+
   it('syncs the saved-schedule library and the weekday map (cross-device "내 시간표")', () => {
     expect(SYNC_KEYS).toContain(K('slots'));
     expect(SYNC_KEYS).toContain(K('weekday-schedules'));

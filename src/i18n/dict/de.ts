@@ -703,7 +703,7 @@ export const de: Record<TKey, string> = {
   'ical.disconnect': 'Trennen',
   'ical.refresh': 'Aktualisieren',
   'ical.readOnly': 'Nur lesen',
-  'ical.secretNote': 'Diese Adresse ist wie ein Passwort. Sie bleibt nur auf diesem Gerät und wird nie auf unserem Server gespeichert – füge sie auf anderen Geräten erneut ein.',
+  'ical.secretNote': 'Diese Adresse ist wie ein Passwort. Sie wird mit deinen anderen angemeldeten Geräten synchronisiert und verschlüsselt gespeichert, wenn die Tagebuchsperre (Ende-zu-Ende-Verschlüsselung) aktiv ist.',
   'ical.syncedAt': 'Stand {when}',
   'ical.loading': 'Wird geladen…',
   'ical.errBadUrl': 'Das ist keine geheime iCal-Adresse aus Google Kalender.',

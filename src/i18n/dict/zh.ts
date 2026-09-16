@@ -698,7 +698,7 @@ export const zh: Record<TKey, string> = {
   'ical.disconnect': '断开连接',
   'ical.refresh': '刷新',
   'ical.readOnly': '只读',
-  'ical.secretNote': '该地址等同于密码。它只保存在本设备，不会存到我们的服务器，请在其他设备上重新粘贴。',
+  'ical.secretNote': '该地址等同于密码。它会同步到你已登录的其他设备；开启日记锁（端到端加密）后将以加密形式保存。',
   'ical.syncedAt': '截至 {when}',
   'ical.loading': '正在载入…',
   'ical.errBadUrl': '这不是 Google 日历的私密 iCal 地址。',

@@ -704,7 +704,7 @@ export const ko = {
   'ical.disconnect': '연결 해제',
   'ical.refresh': '새로 고침',
   'ical.readOnly': '읽기 전용',
-  'ical.secretNote': '이 주소는 비밀번호와 같습니다. 이 기기에만 저장하고 서버에는 보관하지 않으니, 다른 기기에서는 다시 붙여넣어 주세요.',
+  'ical.secretNote': '이 주소는 비밀번호와 같습니다. 로그인한 다른 기기에도 함께 동기화되며, 일기 잠금(종단간 암호화)을 켜면 암호화된 채로 보관됩니다.',
   'ical.syncedAt': '{when} 기준',
   'ical.loading': '불러오는 중…',
   'ical.errBadUrl': '구글 캘린더의 비공개 iCal 주소가 아니에요.',

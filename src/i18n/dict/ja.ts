@@ -700,7 +700,7 @@ export const ja: Record<TKey, string> = {
   'ical.disconnect': '連携を解除',
   'ical.refresh': '再読み込み',
   'ical.readOnly': '読み取り専用',
-  'ical.secretNote': 'この URL はパスワードと同じです。この端末にだけ保存し、サーバーには保存しません。ほかの端末では貼り付け直してください。',
+  'ical.secretNote': 'この URL はパスワードと同じです。ログイン中のほかの端末にも同期され、日記ロック（エンドツーエンド暗号化）を有効にすると暗号化された状態で保存されます。',
   'ical.syncedAt': '{when} 時点',
   'ical.loading': '読み込み中…',
   'ical.errBadUrl': 'Google カレンダーの限定公開 iCal URL ではありません。',

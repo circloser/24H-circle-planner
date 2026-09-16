@@ -62,6 +62,12 @@ export const SYNC_KEYS: readonly string[] = [
   // Calendar events (user-authored, their own store) — kept if an older cloud
   // blob predates the key, like the other user-authored stores.
   'events',
+  // Which Google calendars are connected (their private iCal ADDRESSES). The
+  // fetched text is NOT here: it lives in a device-local cache key, because it
+  // is hundreds of KB, re-fetchable, and only useful to the device holding it.
+  // An address is a bearer secret and travels like everything else that syncs —
+  // ciphertext under the diary lock, plaintext on our server without it.
+  'ical',
   'prefs',
   'view',
 ].map((k) => PREFIX + k)
@@ -84,6 +90,7 @@ const KEEP_IF_ABSENT = new Set<string>([
   PREFIX + 'slots',
   PREFIX + 'weekday-schedules',
   PREFIX + 'events',
+  PREFIX + 'ical',
 ]);
 
 /** The synced preferences key — applied live (no reload) when it alone changes. */

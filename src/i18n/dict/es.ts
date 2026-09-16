@@ -702,7 +702,7 @@ export const es: Record<TKey, string> = {
   'ical.disconnect': 'Desconectar',
   'ical.refresh': 'Actualizar',
   'ical.readOnly': 'Solo lectura',
-  'ical.secretNote': 'Esta dirección es como una contraseña. Se guarda solo en este dispositivo y nunca en nuestro servidor: vuelve a pegarla en los demás.',
+  'ical.secretNote': 'Esta dirección es como una contraseña. Se sincroniza con tus otros dispositivos con sesión iniciada y se guarda cifrada cuando el bloqueo del diario (cifrado de extremo a extremo) está activo.',
   'ical.syncedAt': 'a fecha de {when}',
   'ical.loading': 'Cargando…',
   'ical.errBadUrl': 'Esa no es una dirección iCal privada de Google Calendar.',

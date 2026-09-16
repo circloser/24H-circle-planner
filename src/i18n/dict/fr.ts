@@ -700,7 +700,7 @@ export const fr: Record<TKey, string> = {
   'ical.disconnect': 'Déconnecter',
   'ical.refresh': 'Actualiser',
   'ical.readOnly': 'Lecture seule',
-  'ical.secretNote': 'Cette adresse vaut un mot de passe. Elle reste sur cet appareil et n’est jamais stockée sur notre serveur : recollez-la sur vos autres appareils.',
+  'ical.secretNote': 'Cette adresse vaut un mot de passe. Elle se synchronise avec vos autres appareils connectés et reste chiffrée lorsque le verrou du journal (chiffrement de bout en bout) est activé.',
   'ical.syncedAt': 'au {when}',
   'ical.loading': 'Chargement…',
   'ical.errBadUrl': 'Ce n’est pas une adresse iCal secrète de Google Agenda.',

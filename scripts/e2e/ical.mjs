@@ -174,8 +174,15 @@ export async function run() {
     // 5. It survives a reload (cached), and removing one keeps the other.
     await reloadCalendar();
     pass('imported events survive a reload', (await chips(mine)).some((x) => x.includes('구글 주간 회의')));
-    const stored = await page.evaluate(() => Object.keys(localStorage).filter((k) => k.includes('ical')));
-    pass('the address is kept on the device only', JSON.stringify(stored) === '["24h-circle-planner.ical"]', JSON.stringify(stored));
+    // The address list travels with the account; the downloaded text stays here.
+    const stored = await page.evaluate(() => {
+      const addr = localStorage.getItem('24h-circle-planner.ical');
+      const cache = localStorage.getItem('24h-circle-planner.ical-cache');
+      return { addr: addr ?? '', cachedFeeds: cache ? Object.keys(JSON.parse(cache).byId ?? {}).length : 0 };
+    });
+    pass('the addresses are kept apart from the downloaded text',
+      stored.addr.includes('calendar.google.com') && !stored.addr.includes('BEGIN:VCALENDAR') && stored.cachedFeeds >= 1,
+      JSON.stringify({ addr: stored.addr.slice(0, 70), cachedFeeds: stored.cachedFeeds }));
 
     await openDialog();
     await page.locator('[data-ical-row]').first().locator('button').click();
