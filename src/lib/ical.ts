@@ -20,8 +20,9 @@ import { sortDayEvents, type DayEvent } from './calendar-events';
 export const ICAL_COLORS = ['#64748b', '#0e7490', '#7c3aed', '#b45309', '#be123c'] as const;
 export const ICAL_COLOR = ICAL_COLORS[0];
 export const icalColor = (i: number): string => ICAL_COLORS[i % ICAL_COLORS.length];
-/** Ceiling on occurrences expanded from one rule, so a broken feed cannot hang. */
-const MAX_OCCURRENCES = 800;
+/** Ceiling on dates walked for one rule. The walk starts at the window when it
+ *  can, so this is only ever reached by a counted rule or a broken feed. */
+const MAX_OCCURRENCES = 5000;
 
 export interface IcalEvent {
   uid: string;
@@ -110,40 +111,16 @@ export function calendarName(text: string): string {
   return '';
 }
 
-/** Every VEVENT in a feed, in the order they appear. */
-export function parseIcs(text: string): IcalEvent[] {
-  const out: IcalEvent[] = [];
-  let cur: Partial<IcalEvent> & { end?: { key: string; time: string | null } } | null = null;
+/** One VEVENT's properties (the lines between BEGIN and END), or null when it
+ *  has no usable start. */
+const WANTED = /^(?:UID|SUMMARY|DTSTART|DTEND|RRULE|EXDATE|RECURRENCE-ID|STATUS)[;:]/i;
 
-  for (const line of unfold(text)) {
-    if (line === 'BEGIN:VEVENT') { cur = { exdates: [] }; continue; }
-    if (line === 'END:VEVENT') {
-      if (cur?.start) {
-        const allDay = cur.time == null;
-        let days = 1;
-        if (cur.end) {
-          // DTEND is exclusive for a date, and a timed event may still run past
-          // midnight; either way the span is the whole-day distance.
-          const gap = dayGap(cur.start, cur.end.key);
-          days = Math.max(1, allDay ? gap : gap + 1);
-        }
-        out.push({
-          uid: cur.uid ?? `${cur.start}-${out.length}`,
-          text: cur.text ?? '',
-          start: cur.start,
-          time: cur.time ?? null,
-          days,
-          rrule: cur.rrule ?? null,
-          exdates: cur.exdates ?? [],
-          recurrenceId: cur.recurrenceId ?? null,
-          cancelled: cur.cancelled ?? false,
-        });
-      }
-      cur = null;
-      continue;
-    }
-    if (!cur) continue;
-
+function readEvent(lines: string[], index: number): IcalEvent | null {
+  const cur: Partial<IcalEvent> & { end?: { key: string; time: string | null } } = { exdates: [] };
+  for (const line of lines) {
+    // Descriptions, attendees and the like are often the bulk of a feed and
+    // nothing here reads them — skip them before doing any work on them.
+    if (!WANTED.test(line)) continue;
     const prop = parseProp(line);
     if (!prop) continue;
     if (prop.name === 'UID') cur.uid = prop.value.trim();
@@ -165,7 +142,55 @@ export function parseIcs(text: string): IcalEvent[] {
       if (when) cur.recurrenceId = when.key;
     } else if (prop.name === 'STATUS') cur.cancelled = prop.value.trim().toUpperCase() === 'CANCELLED';
   }
-  return out;
+  if (!cur.start) return null;
+  const allDay = cur.time == null;
+  let days = 1;
+  if (cur.end) {
+    // DTEND is exclusive for a date, and a timed event may still run past
+    // midnight; either way the span is the whole-day distance.
+    const gap = dayGap(cur.start, cur.end.key);
+    days = Math.max(1, allDay ? gap : gap + 1);
+  }
+  return {
+    uid: cur.uid ?? `${cur.start}-${index}`,
+    text: cur.text ?? '',
+    start: cur.start,
+    time: cur.time ?? null,
+    days,
+    rrule: cur.rrule ?? null,
+    exdates: cur.exdates ?? [],
+    recurrenceId: cur.recurrenceId ?? null,
+    cancelled: cur.cancelled ?? false,
+  };
+}
+
+interface Block {
+  lines: string[];
+  ev: IcalEvent | null;
+}
+
+/** The calendar header (name, time zones…) and every VEVENT with its raw lines. */
+function scanIcs(text: string): { head: string[]; blocks: Block[] } {
+  const head: string[] = [];
+  const blocks: Block[] = [];
+  let cur: string[] | null = null;
+  let inHead = true;
+  for (const line of unfold(text)) {
+    if (line === 'BEGIN:VEVENT') { cur = []; inHead = false; continue; }
+    if (line === 'END:VEVENT') {
+      if (cur) blocks.push({ lines: cur, ev: readEvent(cur, blocks.length) });
+      cur = null;
+      continue;
+    }
+    if (cur) cur.push(line);
+    else if (inHead) head.push(line);
+  }
+  return { head, blocks };
+}
+
+/** Every VEVENT in a feed, in the order they appear. */
+export function parseIcs(text: string): IcalEvent[] {
+  return scanIcs(text).blocks.map((b) => b.ev).filter((e): e is IcalEvent => e !== null);
 }
 
 // ─── Rules → dates ────────────────────────────────────────────────────────────
@@ -218,6 +243,11 @@ function nthWeekday(y: number, m: number, day: number, nth: number): string | nu
 /**
  * Start dates this event lands on between `from` and `to` (inclusive), the
  * one-off date when it does not repeat. EXDATEs are already removed.
+ *
+ * Without a COUNT nothing before the window can change the answer, so the walk
+ * starts right at the window — a weekly meeting begun years ago still reaches
+ * this month, and the loop stays as short as the window. With a COUNT every
+ * earlier occurrence has to be counted, so that walk starts at the beginning.
  */
 export function occurrenceStarts(ev: IcalEvent, from: string, to: string): string[] {
   const keep = (key: string) => !ev.exdates.includes(key);
@@ -228,11 +258,15 @@ export function occurrenceStarts(ev: IcalEvent, from: string, to: string): strin
   const out: string[] = [];
   const base = partsOf(ev.start);
   const startWeekday = weekdayOf(ev.start);
-  // Never start before the event itself; a long span may begin before the window.
+  // A long span may begin before the window and still show inside it.
   const floor = addDays(from, -(ev.days - 1));
+  const skip = rule.count == null && floor > ev.start;
   let taken = 0;
+  let walked = 0;
 
+  /** false = stop walking. */
   const offer = (key: string): boolean => {
+    if (++walked > MAX_OCCURRENCES) return false;
     if (key < ev.start) return true;
     if (rule.until && key > rule.until) return false;
     taken++;
@@ -242,29 +276,43 @@ export function occurrenceStarts(ev: IcalEvent, from: string, to: string): strin
     return true;
   };
 
-  if (rule.freq === 'DAILY' || rule.freq === 'WEEKLY') {
-    const days = rule.freq === 'WEEKLY'
-      ? (rule.byday.length ? rule.byday.map((b) => b.day) : [startWeekday])
-      : [];
-    const step = rule.freq === 'DAILY' ? rule.interval : 1;
+  if (rule.freq === 'DAILY') {
     let key = ev.start;
-    for (let i = 0; i < MAX_OCCURRENCES && key <= to; i++, key = addDays(key, step)) {
-      if (rule.freq === 'WEEKLY') {
-        // Weeks advance by INTERVAL; days inside a chosen week all count.
-        const week = Math.floor(dayGap(addDays(ev.start, -startWeekday), key) / 7);
-        if (week % rule.interval !== 0 || !days.includes(weekdayOf(key))) continue;
-      }
-      if (!offer(key)) break;
-    }
+    if (skip) key = addDays(ev.start, Math.floor(dayGap(ev.start, floor) / rule.interval) * rule.interval);
+    while (offer(key)) key = addDays(key, rule.interval);
     return out;
+  }
+
+  if (rule.freq === 'WEEKLY') {
+    // Weeks run Sunday→Saturday and advance by INTERVAL; every chosen weekday
+    // inside a chosen week counts.
+    const days = (rule.byday.length ? rule.byday.map((b) => b.day) : [startWeekday]).sort((a, b) => a - b);
+    const firstWeek = addDays(ev.start, -startWeekday);
+    let week = 0;
+    if (skip) week = Math.floor(dayGap(firstWeek, floor) / 7 / rule.interval) * rule.interval;
+    for (;;) {
+      const sunday = addDays(firstWeek, week * 7);
+      if (sunday > to) return out;
+      for (const d of days) {
+        if (!offer(addDays(sunday, d))) return out;
+      }
+      week += rule.interval;
+    }
   }
 
   const monthly = rule.freq === 'MONTHLY';
   const step = monthly ? rule.interval : rule.interval * 12;
-  for (let i = 0; i < MAX_OCCURRENCES; i++) {
+  let i = 0;
+  if (skip) {
+    const f = partsOf(floor);
+    const months = (f.y - base.y) * 12 + (f.m - base.m);
+    i = Math.max(0, Math.floor(months / step) - 1);
+  }
+  for (;; i++) {
     const m = base.m + i * step;
     const y = base.y + Math.floor(m / 12);
     const month = ((m % 12) + 12) % 12;
+    if (dateKey(y, month, 1) > to) return out;
     let key: string | null;
     if (monthly && rule.byday.length) {
       const b = rule.byday[0];
@@ -274,12 +322,8 @@ export function occurrenceStarts(ev: IcalEvent, from: string, to: string): strin
       const last = new Date(y, month + 1, 0).getDate();
       key = base.d > last ? null : dateKey(y, month, base.d);
     }
-    if (key) {
-      if (key > to) break;
-      if (!offer(key)) break;
-    }
+    if (key ? !offer(key) : ++walked > MAX_OCCURRENCES) return out;
   }
-  return out;
 }
 
 // ─── Feed → days ──────────────────────────────────────────────────────────────
@@ -340,4 +384,32 @@ export function icalDays(
 
   for (const key of Object.keys(byDay)) byDay[key] = sortDayEvents(byDay[key]) as IcalDayEvent[];
   return byDay;
+}
+
+/**
+ * The same feed, cut down to what can show between `from` and `to`: the
+ * calendar header, one-offs that touch the window, repeats with at least one
+ * occurrence inside it, and the overrides of either. A personal calendar
+ * carries years of history; this is what keeps the download small enough to
+ * cache on a phone.
+ */
+export function trimIcs(text: string, from: string, to: string): string {
+  const { head, blocks } = scanIcs(text);
+  const touches = (start: string, days: number) => start <= to && addDays(start, days - 1) >= from;
+  const out = [...head];
+  for (const { lines, ev } of blocks) {
+    if (!ev) continue;
+    const keepIt = ev.recurrenceId
+      // An override matters if the day it replaces OR the day it moved to is in view
+      // (a cancelled one still has to hide its occurrence).
+      ? (ev.recurrenceId >= from && ev.recurrenceId <= to) || touches(ev.start, ev.days)
+      : ev.cancelled
+        ? false
+        : ev.rrule
+          ? occurrenceStarts({ ...ev, exdates: [] }, from, to).length > 0
+          : touches(ev.start, ev.days);
+    if (keepIt) out.push('BEGIN:VEVENT', ...lines, 'END:VEVENT');
+  }
+  out.push('END:VCALENDAR');
+  return out.join('\r\n');
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePersistedState } from './usePersistedState';
 import { calendarName, icalColor, icalDays, parseIcs, type IcalDayEvent } from '@/lib/ical';
+import { addDays, todayKey } from '@/lib/calendar-grid';
 
 /**
  * Read-only Google calendars, pulled from their private iCal addresses (Pro).
@@ -28,6 +29,8 @@ const STALE_MS = 30 * 60 * 1000;
 const MAX_CACHE = 300_000;
 /** Enough for a person's own calendars without letting the grid turn to soup. */
 export const MAX_FEEDS = 5;
+/** Days either side of today that are loaded (about six months). */
+const WINDOW_DAYS = 183;
 
 /** What travels with the account: which calendars are connected. */
 interface StoredFeed {
@@ -165,46 +168,55 @@ export function useIcalFeeds(): IcalFeeds {
     todo.forEach((id) => inFlight.add(id));
     let live = true;
 
+    // Only six months either side of today are asked for; the server cuts the
+    // rest, so the answer is small enough to keep here and reopen instantly.
+    const today = todayKey();
+    const window = { from: addDays(today, -WINDOW_DAYS), to: addDays(today, WINDOW_DAYS) };
+
+    const fetchOne = async (id: string) => {
+      const feed = feeds.find((f) => f.id === id);
+      if (!feed) return;
+      try {
+        // The address goes in the BODY: it is a credential, and a query
+        // string is the part of a request most likely to be written down.
+        const res = await fetch('/api/ical', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ url: feed.url, ...window }),
+        });
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as { error?: string };
+          const known: IcalError[] = ['pro_required', 'unauthorized', 'bad_url', 'feed_not_found'];
+          const why = known.find((k) => k === body.error) ?? 'failed';
+          if (live) {
+            setLastError(why);
+            // An address the server will never accept is not a calendar, so
+            // it is not kept in the list — only the reason is shown. Every
+            // other failure keeps its row, to retry or remove deliberately.
+            if (why === 'bad_url') setFeeds((list) => list.filter((f) => f.id !== id));
+            else setErrors((e) => ({ ...e, [id]: why }));
+          }
+          return;
+        }
+        const ics = await res.text();
+        if (!live) return;
+        setErrors(without(id));
+        setLastError(null);
+        setCache((c) => ({ ...c, [id]: { ics, fetchedAt: Date.now() } }));
+      } catch {
+        if (live) { setErrors((e) => ({ ...e, [id]: 'failed' })); setLastError('failed'); }
+      } finally {
+        inFlight.delete(id);
+        // Each calendar shows the moment its own answer lands.
+        if (live) setBusy((b) => b.filter((x) => x !== id));
+      }
+    };
+
     const run = async () => {
       setBusy((b) => [...new Set([...b, ...todo])]);
-      for (const id of todo) {
-        const feed = feeds.find((f) => f.id === id);
-        if (!feed) continue;
-        try {
-          // The address goes in the BODY: it is a credential, and a query
-          // string is the part of a request most likely to be written down.
-          const res = await fetch('/api/ical', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ url: feed.url }),
-          });
-          if (!res.ok) {
-            const body = (await res.json().catch(() => ({}))) as { error?: string };
-            const known: IcalError[] = ['pro_required', 'unauthorized', 'bad_url', 'feed_not_found'];
-            const why = known.find((k) => k === body.error) ?? 'failed';
-            if (live) {
-              setLastError(why);
-              // An address the server will never accept is not a calendar, so
-              // it is not kept in the list — only the reason is shown. Every
-              // other failure keeps its row, to retry or remove deliberately.
-              if (why === 'bad_url') setFeeds((list) => list.filter((f) => f.id !== id));
-              else setErrors((e) => ({ ...e, [id]: why }));
-            }
-            continue;
-          }
-          const ics = await res.text();
-          if (!live) return;
-          setErrors(without(id));
-          setLastError(null);
-          setCache((c) => ({ ...c, [id]: { ics, fetchedAt: Date.now() } }));
-        } catch {
-          if (live) { setErrors((e) => ({ ...e, [id]: 'failed' })); setLastError('failed'); }
-        } finally {
-          inFlight.delete(id);
-        }
-      }
-      if (live) setBusy((b) => b.filter((x) => !todo.includes(x)));
+      // All at once: one slow calendar must not hold the others back.
+      await Promise.all(todo.map(fetchOne));
     };
     void run();
     return () => { live = false; todo.forEach((id) => inFlight.delete(id)); };

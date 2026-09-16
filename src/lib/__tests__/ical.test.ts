@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { icalDays, occurrenceStarts, parseIcs, parseRrule, type IcalEvent } from '../ical';
+import { icalDays, occurrenceStarts, parseIcs, parseRrule, trimIcs, type IcalEvent } from '../ical';
 
 /** A feed shaped the way Google writes one, folded lines and all. */
 const FEED = [
@@ -120,6 +120,28 @@ describe('repeat rules', () => {
       .toEqual(['2026-09-16', '2026-09-30']);
   });
 
+  it('still finds a repeat that began years before the window', () => {
+    // Walking day by day from 2020 used to run out long before reaching 2026.
+    const weekly = at({ start: '2020-01-06', rrule: 'FREQ=WEEKLY;BYDAY=MO' });
+    expect(occurrenceStarts(weekly, '2026-09-01', '2026-09-30'))
+      .toEqual(['2026-09-07', '2026-09-14', '2026-09-21', '2026-09-28']);
+    expect(occurrenceStarts(at({ start: '2015-03-01', rrule: 'FREQ=DAILY;INTERVAL=2' }), '2026-09-01', '2026-09-06'))
+      .toHaveLength(3);
+    expect(occurrenceStarts(at({ start: '2010-02-10', rrule: 'FREQ=MONTHLY' }), '2026-09-01', '2026-11-30'))
+      .toEqual(['2026-09-10', '2026-10-10', '2026-11-10']);
+    expect(occurrenceStarts(at({ start: '1990-09-17', rrule: 'FREQ=YEARLY' }), '2026-01-01', '2026-12-31'))
+      .toEqual(['2026-09-17']);
+    // Every other week keeps its own rhythm after the jump (2020-01-06 + 14n).
+    expect(occurrenceStarts(at({ start: '2020-01-06', rrule: 'FREQ=WEEKLY;INTERVAL=2;BYDAY=MO' }), '2026-09-01', '2026-09-30'))
+      .toEqual(['2026-09-07', '2026-09-21']);
+  });
+
+  it('still counts from the start when the rule has a COUNT', () => {
+    // 10 weekly meetings from 2020 are long over by 2026.
+    expect(occurrenceStarts(at({ start: '2020-01-06', rrule: 'FREQ=WEEKLY;COUNT=10' }), '2026-09-01', '2026-09-30'))
+      .toEqual([]);
+  });
+
   it('never runs away on a rule with no end', () => {
     expect(occurrenceStarts(at({ rrule: 'FREQ=DAILY' }), '2026-09-16', '2026-09-20')).toHaveLength(5);
   });
@@ -147,5 +169,47 @@ describe('a feed laid onto days', () => {
 
   it('gives an imported occurrence a stable id per date', () => {
     expect(days['2026-09-16'][0].id).toBe('standup@google.com@2026-09-16');
+  });
+});
+
+describe('trimming a feed to a window', () => {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const block = (uid: string, lines: string[]) => ['BEGIN:VEVENT', `UID:${uid}`, `SUMMARY:${uid}`, ...lines, 'END:VEVENT'];
+  const feed = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'X-WR-CALNAME:긴 역사',
+    // Years of one-offs the window never shows.
+    ...Array.from({ length: 200 }, (_, i) => block(`old${i}`, [`DTSTART;VALUE=DATE:2019${pad((i % 12) + 1)}${pad((i % 27) + 1)}`])).flat(),
+    ...block('inside', ['DTSTART;VALUE=DATE:20260920']),
+    ...block('spanning-in', ['DTSTART;VALUE=DATE:20260227', 'DTEND;VALUE=DATE:20260320']),
+    ...block('old-weekly', ['DTSTART;TZID=Asia/Seoul:20200106T100000', 'RRULE:FREQ=WEEKLY;BYDAY=MO']),
+    ...block('ended-weekly', ['DTSTART;VALUE=DATE:20190101', 'RRULE:FREQ=WEEKLY;UNTIL=20191231']),
+    ...block('moved-in', ['DTSTART;TZID=Asia/Seoul:20260921T110000', 'RECURRENCE-ID;TZID=Asia/Seoul:20260101T100000']),
+    ...block('gone', ['DTSTART;VALUE=DATE:20260922', 'STATUS:CANCELLED']),
+    'END:VCALENDAR',
+  ].join('\r\n');
+  const trimmed = trimIcs(feed, '2026-03-17', '2027-03-17');
+  const uids = parseIcs(trimmed).map((e) => e.uid);
+
+  it('keeps what can show and drops what cannot', () => {
+    expect(uids).toEqual(['inside', 'spanning-in', 'old-weekly', 'moved-in']);
+  });
+
+  it('keeps the calendar header, so its name survives', () => {
+    expect(trimmed.startsWith('BEGIN:VCALENDAR')).toBe(true);
+    expect(trimmed).toContain('X-WR-CALNAME:긴 역사');
+    expect(trimmed.endsWith('END:VCALENDAR')).toBe(true);
+  });
+
+  it('is a fraction of the original size', () => {
+    expect(trimmed.length).toBeLessThan(feed.length / 5);
+  });
+
+  it('lays out exactly as the full feed does inside the window', () => {
+    const range = ['2026-09-01', '2026-10-31'] as const;
+    const full = icalDays(parseIcs(feed), ...range);
+    const cut = icalDays(parseIcs(trimmed), ...range);
+    expect(cut).toEqual(full);
   });
 });

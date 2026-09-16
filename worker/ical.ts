@@ -16,6 +16,7 @@
  * in — both checked by the caller.
  */
 import type { Env } from './index';
+import { trimIcs } from '../src/lib/ical';
 
 /** Google serves personal feeds from exactly one host and path prefix. */
 const FEED_HOST = 'calendar.google.com';
@@ -24,6 +25,24 @@ const FEED_PATH = '/calendar/ical/';
 const MAX_BYTES = 4_000_000;
 /** How long the edge may reuse one fetch. Google updates a feed slowly anyway. */
 const CACHE_SECONDS = 600;
+/** Half the window sent back: the app shows six months either side of today. */
+const HALF_WINDOW_DAYS = 183;
+/** The widest window a client may ask for (a little over a year). */
+const MAX_WINDOW_DAYS = 400;
+
+const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+const DAY_MS = 86_400_000;
+const keyOf = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+
+/** The window to cut the feed to: the one asked for when it is sane, else six
+ *  months either side of today. */
+export function feedWindow(from: unknown, to: unknown, now = Date.now()): { from: string; to: string } {
+  if (typeof from === 'string' && typeof to === 'string' && DAY_RE.test(from) && DAY_RE.test(to)) {
+    const span = (Date.parse(to) - Date.parse(from)) / DAY_MS;
+    if (span >= 0 && span <= MAX_WINDOW_DAYS) return { from, to };
+  }
+  return { from: keyOf(now - HALF_WINDOW_DAYS * DAY_MS), to: keyOf(now + HALF_WINDOW_DAYS * DAY_MS) };
+}
 
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -56,9 +75,9 @@ export async function handleIcalFetch(
   if (!user) return json({ error: 'unauthorized' }, 401);
   if (!isPro) return json({ error: 'pro_required' }, 403);
 
-  let asked: { url?: unknown } | null;
+  let asked: { url?: unknown; from?: unknown; to?: unknown } | null;
   try {
-    asked = (await request.json()) as { url?: unknown } | null;
+    asked = (await request.json()) as { url?: unknown; from?: unknown; to?: unknown } | null;
   } catch {
     return json({ error: 'bad_json' }, 400);
   }
@@ -85,7 +104,10 @@ export async function handleIcalFetch(
   if (body.length > MAX_BYTES) return json({ error: 'too_large' }, 413);
   if (!body.includes('BEGIN:VCALENDAR')) return json({ error: 'not_a_calendar' }, 422);
 
-  return new Response(body, {
+  // Years of history are not what the calendar shows: send only the window, so
+  // the download is small enough for the phone to keep and reopen instantly.
+  const window = feedWindow(asked?.from, asked?.to);
+  return new Response(trimIcs(body, window.from, window.to), {
     headers: {
       'content-type': 'text/calendar; charset=utf-8',
       // Private: this is one person's calendar, never a shared cache's business.

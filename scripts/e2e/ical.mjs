@@ -56,6 +56,7 @@ export async function run() {
   let me = { user: { id: 'u1', email: 'me@example.com', provider: 'google' }, plan: 'free', admin: false };
   const asked = [];
   const urlLeaks = [];
+  const windows = [];
 
   const cell = (key) => page.locator(`[data-day="${key}"]`).first();
   const chips = (key) => cell(key).locator('[data-event]').allInnerTexts();
@@ -82,10 +83,12 @@ export async function run() {
     await page.route('**/api/me', (route) => route.fulfill(json(me)));
     await page.route('**/api/ical*', (route) => {
       const req = route.request();
-      const target = (() => {
-        try { return JSON.parse(req.postData() || '{}').url ?? ''; } catch { return ''; }
+      const sent = (() => {
+        try { return JSON.parse(req.postData() || '{}'); } catch { return {}; }
       })();
+      const target = sent.url ?? '';
       asked.push(target);
+      windows.push({ from: sent.from, to: sent.to });
       // The address is a credential: it must never ride in the URL.
       if (new URL(req.url()).search) urlLeaks.push(req.url());
       if (me.plan !== 'pro') return route.fulfill(json({ error: 'pro_required' }, 403));
@@ -213,6 +216,13 @@ export async function run() {
     pass('…and the other calendar still shows', (await chips(dayAfter(4))).some((x) => x.includes('팀 워크숍')));
 
     pass('the address never appears in a request URL', urlLeaks.length === 0, JSON.stringify(urlLeaks.slice(0, 2)));
+    // Only about six months either side of today are asked for.
+    const spans = windows.filter((w) => w.from && w.to).map((w) => Math.round((Date.parse(w.to) - Date.parse(w.from)) / 86400000));
+    const t0 = keyOf(new Date());
+    pass('each request asks for a window around today, not the whole history',
+      spans.length === windows.length && spans.every((d) => d >= 360 && d <= 370)
+        && windows.every((w) => w.from < t0 && w.to > t0),
+      JSON.stringify(windows.slice(0, 1)));
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
   } finally {
     await browser.close();
