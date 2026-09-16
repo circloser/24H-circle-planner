@@ -166,6 +166,43 @@ export async function run() {
       JSON.stringify(pet && pet.pets ? pet.pets.map((p) => [p.id, p.plays]) : pet));
 
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
+
+    // A PHONE is not a lesser device: a Pro account syncs there the same way.
+    // (Reported as "sync doesn't work on mobile", so it is pinned here.)
+    const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+    const small = await phone.newPage();
+    try {
+      await mockApi(small, store);
+      await small.addInitScript(() => localStorage.setItem('24h-circle-planner.sync-consent', '1'));
+      // Something only the cloud knows about, waiting for the phone.
+      {
+        const env = JSON.parse(store.blob);
+        env.data[GOALS] = goal('FROMDESKTOP');
+        env.modifiedAt += 1;
+        store.blob = JSON.stringify(env);
+        store.version += 1;
+        store.updatedAt = Date.now();
+      }
+      await small.goto(`${base}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await small.waitForSelector('svg[data-circle-timeline]', { timeout: 20000 });
+      await wait(6000);
+      const onPhone = await small.evaluate((k) => localStorage.getItem(k), GOALS);
+      pass('a phone takes down what the desktop pushed', String(onPhone).includes('FROMDESKTOP'), String(onPhone).slice(0, 60));
+
+      // …and what it changes goes back up.
+      const was = store.version;
+      await small.evaluate((k) => {
+        localStorage.setItem(k, JSON.stringify({ version: 1, goals: [{ id: 'g', label: 'FROMPHONE', targetMinutes: 60, period: 'day' }] }));
+        window.dispatchEvent(new StorageEvent('storage', { key: k }));
+      }, GOALS);
+      await small.evaluate(() => window.dispatchEvent(new Event('focus')));
+      await wait(6000);
+      const cloud = JSON.parse(store.blob).data[GOALS] ?? '';
+      pass('…and a change made on the phone reaches the cloud', cloud.includes('FROMPHONE') && store.version > was,
+        `v${was} → v${store.version}`);
+    } finally {
+      await phone.close();
+    }
   } finally {
     await browser.close();
     close();

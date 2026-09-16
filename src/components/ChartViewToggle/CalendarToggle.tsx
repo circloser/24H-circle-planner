@@ -24,7 +24,9 @@ export function CalendarToggle() {
       onClick={() => setPreference('chartView', on ? timetableView() : 'calendar')}
     >
       <CalendarDays className="h-4 w-4 shrink-0" />
-      <span className="hidden sm:inline">{t('view.calendar')}</span>
+      {/* The label stays on a phone too: this button sits beside the timetable
+          one, and an icon-only twin next to a labelled button reads as broken. */}
+      <span className="max-w-24 truncate">{t('view.calendar')}</span>
     </Button>
   );
 }

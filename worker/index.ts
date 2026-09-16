@@ -258,19 +258,41 @@ async function isEntitled(env: Env, user: { id: string; email: string | null }):
   }
 }
 
-async function handleMe(request: Request, env: Env): Promise<Response> {
+/** How often a still-valid session is pushed back out to its full life. */
+const SESSION_REFRESH_MS = 24 * 60 * 60 * 1000;
+
+async function handleMe(request: Request, env: Env, ctx?: Waiter): Promise<Response> {
   if (!env.DB) return json({ user: null });
   const sid = parseCookies(request.headers.get('cookie'))[SID_COOKIE];
   if (!sid) return json({ user: null });
   const user = await sessionUser(env.DB, sid);
   if (!user) return json({ user: null });
+
+  // A session that is being used is a session worth keeping. The cookie is only
+  // ever written at login otherwise, and a phone browser routinely shortens the
+  // life of a cookie set right after a cross-site redirect (which is exactly
+  // what returning from Google is) - so a quiet phone can find itself signed
+  // out, and a signed-out device stops syncing. Re-issuing it on use keeps
+  // anyone who opens the app signed in.
+  const fresh = cookie(SID_COOKIE, sid, Math.floor(SESSION_TTL_MS / 1000));
+  ctx?.waitUntil(
+    env.DB.prepare('UPDATE sessions SET expires_at=? WHERE token=? AND expires_at < ?')
+      .bind(Date.now() + SESSION_TTL_MS, sid, Date.now() + SESSION_TTL_MS - SESSION_REFRESH_MS)
+      .run()
+      .then(() => undefined)
+      .catch(() => undefined),
+  );
   // Entitlement = admin allowlist OR a live Polar subscription OR an active
   // coupon grant. Admins are always Pro (no subscription needed).
   const admin = isAdminEmail(env, user.email);
   const active = admin || (await isEntitled(env, user));
   // `billing` lets the client hide the upgrade CTA until Polar is actually wired up
   // (token set); `admin` reveals the coupon-issuing panel.
-  return json({ user: { id: user.id, email: user.email, provider: user.provider }, plan: active ? 'pro' : 'free', billing: Boolean(env.POLAR_ACCESS_TOKEN), admin });
+  return json(
+    { user: { id: user.id, email: user.email, provider: user.provider }, plan: active ? 'pro' : 'free', billing: Boolean(env.POLAR_ACCESS_TOKEN), admin },
+    200,
+    { 'set-cookie': fresh },
+  );
 }
 
 async function handleLogout(request: Request, env: Env): Promise<Response> {
@@ -1153,7 +1175,7 @@ export default {
       }
       if (p === '/api/auth/google/start' && m === 'GET') return handleStart(request, env);
       if (p === '/api/auth/google/callback' && m === 'GET') return handleCallback(request, env, ctx);
-      if (p === '/api/me' && m === 'GET') return handleMe(request, env);
+      if (p === '/api/me' && m === 'GET') return handleMe(request, env, ctx);
       if (p === '/api/logout' && m === 'POST') return handleLogout(request, env);
       if (p === '/api/sync' && m === 'GET') return handleSyncGet(request, env);
       if (p === '/api/sync' && m === 'PUT') return handleSyncPut(request, env);

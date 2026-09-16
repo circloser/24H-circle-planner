@@ -144,8 +144,13 @@ function useChipRoom(grid: React.RefObject<HTMLDivElement | null>): number {
   return room;
 }
 
+/** A week's height on a phone, where the calendar scrolls instead of filling
+ *  the window — every week the same, whether or not it holds anything. */
+const PHONE_ROW_H = 72;
+
 /** One month: name, weekday header and six rows of days filling the height. */
 function Month({ at, imported, drag, onOpen, onDragStart, onDragOver }: MonthProps) {
+  const isMobile = useIsMobile();
   const { t, lang } = useTranslation();
   const { events } = useEvents();
   const [peek, setPeek] = useState<string | null>(null);
@@ -176,14 +181,19 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver }: MonthPro
   const dropOn = drag?.kind === 'move' ? drag.over : null;
 
   return (
-    <section className="flex min-h-0 min-w-0 flex-1 flex-col" data-calendar-month={`${at.y}-${String(at.m + 1).padStart(2, '0')}`}>
+    <section className={`flex min-w-0 flex-col ${isMobile ? 'shrink-0' : 'min-h-0 flex-1'}`}
+      data-calendar-month={`${at.y}-${String(at.m + 1).padStart(2, '0')}`}>
       <h3 className="mb-0.5 text-center text-xs font-semibold text-foreground">{label}</h3>
       <div className="grid grid-cols-7">
         {weekdays.map((w, i) => (
           <div key={`${w}${i}`} className={`py-0.5 text-center text-[10px] font-medium ${weekdayTone(i)}`}>{w}</div>
         ))}
       </div>
-      <div ref={gridRef} className="grid min-h-0 flex-1 grid-cols-7 grid-rows-6 overflow-hidden rounded-lg border border-border bg-surface">
+      <div ref={gridRef}
+        style={isMobile ? { gridTemplateRows: `repeat(${MONTH_ROWS}, ${PHONE_ROW_H}px)` } : undefined}
+        className={`grid grid-cols-7 overflow-hidden rounded-lg border border-border bg-surface ${
+          isMobile ? '' : 'min-h-0 flex-1 grid-rows-6'
+        }`}>
         {cells.map((cell, i) => {
           const list = byDay[cell.key] ?? [];
           const lanes = weeks[Math.floor(i / 7)];

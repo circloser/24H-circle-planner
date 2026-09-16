@@ -204,6 +204,37 @@ export async function run() {
       pass('slice deleted via editor', after === before - 1, `before=${before} after=${after}`);
     }
 
+    // 4. The calendar on a phone: the two top buttons are twins, and every week
+    //    is the same height whether or not it holds anything.
+    await page.locator('[data-calendar-toggle]').click();
+    await wait(800);
+    const twins = await page.evaluate(() => {
+      const box = (sel) => {
+        const r = document.querySelector(sel)?.getBoundingClientRect();
+        return r ? { w: Math.round(r.width), h: Math.round(r.height) } : null;
+      };
+      return { timetable: box('[data-view-toggle]'), calendar: box('[data-calendar-toggle]') };
+    });
+    pass('the timetable and calendar buttons are the same size',
+      !!twins.timetable && !!twins.calendar
+      && Math.abs(twins.timetable.w - twins.calendar.w) <= 12
+      && twins.timetable.h === twins.calendar.h,
+      JSON.stringify(twins));
+
+    const rows = await page.evaluate(() => {
+      const months = [...document.querySelectorAll('[data-calendar-month]')];
+      return months.map((m) => {
+        const cells = [...m.querySelectorAll('[data-day]')];
+        return [0, 1, 2, 3, 4, 5].map((r) => Math.round(cells[r * 7].getBoundingClientRect().height));
+      });
+    });
+    const flat = rows.flat();
+    pass('every week of both months is the same height',
+      flat.length === 12 && flat.every((h) => h === flat[0]) && flat[0] >= 48,
+      JSON.stringify(rows));
+    pass('no sideways scroll in calendar mode',
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
   } finally {
     await browser.close();
