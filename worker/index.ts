@@ -12,6 +12,7 @@ import { legacyRedirectTarget } from './legacy-redirects';
 import { handleShareCreate, handleShareGet, handleShareOg, handleShareView } from './shares';
 import { handleWidgetPut, handleWidgetPng, handleWidgetDelete } from './widget';
 import { handleMarketingRoute } from './marketing';
+import { handleIcalFetch } from './ical';
 
 export interface Env {
   /** Static assets binding (the built SPA in ./dist). */
@@ -1187,6 +1188,11 @@ export default {
           if (!widget[2] && m === 'PUT') return handleWidgetPut(request, env, widget[1]);
           if (!widget[2] && m === 'DELETE') return handleWidgetDelete(env, widget[1]);
         }
+      }
+      // Read-only Google Calendar import, Pro only (see worker/ical.ts).
+      if (p === '/api/ical' && m === 'GET') {
+        const user = await currentUser(request, env);
+        return handleIcalFetch(request, env, user, user ? await isEntitled(env, user) : false);
       }
       // News-email consent: explicit opt-in only (see worker/marketing.ts).
       if (p === '/api/marketing' || p.startsWith('/api/marketing/') || p === '/api/admin/marketing') {

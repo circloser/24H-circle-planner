@@ -35,6 +35,8 @@ export interface DayEvent extends CalendarEvent {
   index: number;
   /** How many days this occurrence covers. */
   length: number;
+  /** Set when the entry came from an imported feed — shown, never edited. */
+  src?: 'ical';
 }
 
 /** Chip colours, kept close to the calendar palettes people expect. */

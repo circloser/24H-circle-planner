@@ -1,15 +1,20 @@
-import { useEffect, useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, Pencil, Plus, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { CalendarDays, ChevronLeft, ChevronRight, Link, Pencil, Plus, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { MAX_EVENT_CHARS, useEvents } from '@/hooks/useEvents';
 import {
-  DEFAULT_EVENT_COLOR, EVENT_COLORS, REPEATS, dayEvents, dragRange, spanOf,
+  DEFAULT_EVENT_COLOR, EVENT_COLORS, REPEATS, dayEvents, dragRange, sortDayEvents, spanOf,
   type DayEvent, type Repeat,
 } from '@/lib/calendar-events';
+import { useIcalFeed } from '@/hooks/useIcalFeed';
+import { IcalConnect } from './IcalConnect';
 import { addDays, dayGap, monthCells, monthPair, partsOf, shiftMonth, thisMonth, todayKey, type YearMonth } from '@/lib/calendar-grid';
+
+/** Cells in one six-week month grid. */
+const MONTH_CELLS = 42;
 import type { TKey } from '@/i18n/translations';
 
 /** Chips drawn straight in a day cell; the rest hide behind “+n”. */
@@ -36,22 +41,29 @@ function Chip({ ev, showText = true }: { ev: DayEvent; showText?: boolean }) {
   const color = ev.color ?? DEFAULT_EVENT_COLOR;
   const mid = ev.index > 0;
   const ends = ev.length === 1 ? 'rounded' : ev.index === 0 ? 'rounded-l' : ev.index === ev.length - 1 ? 'rounded-r' : '';
+  // An imported entry is drawn hollow: it is someone else's, and read-only.
+  const imported = ev.src === 'ical';
   if (!ev.time) {
     return (
       <span
         data-event
         data-all-day
+        data-imported={imported || undefined}
         data-span={ev.length > 1 ? (mid ? 'mid' : 'start') : undefined}
-        className={`block truncate px-1 text-[11px] leading-5 text-white ${ends}`}
-        style={{ backgroundColor: color }}
+        className={`block truncate px-1 text-[11px] leading-5 ${imported ? 'text-foreground' : 'text-white'} ${ends}`}
+        style={imported
+          ? { boxShadow: `inset 0 0 0 1px ${color}`, borderLeft: `3px solid ${color}` }
+          : { backgroundColor: color }}
       >
         {mid && !showText ? ' ' : ev.text}
       </span>
     );
   }
   return (
-    <span data-event className="flex items-center gap-1 overflow-hidden px-1 text-[11px] leading-5 text-foreground">
-      <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+    <span data-event data-imported={imported || undefined}
+      className="flex items-center gap-1 overflow-hidden px-1 text-[11px] leading-5 text-foreground">
+      <span className={`h-2 w-2 shrink-0 rounded-full ${imported ? 'border-2' : ''}`}
+        style={imported ? { borderColor: color } : { backgroundColor: color }} />
       <span className="shrink-0 tabular-nums text-muted-foreground">{ev.time}</span>
       <span className="truncate">{ev.text}</span>
     </span>
@@ -75,6 +87,8 @@ function Handle({ ev, on, onDragStart, children }: {
 
 interface MonthProps {
   at: YearMonth;
+  /** Read-only entries pulled from a connected feed, keyed by day. */
+  imported: Record<string, DayEvent[]>;
   drag: Drag | null;
   onOpen: (start: string, days: number) => void;
   onDragStart: (d: Drag) => void;
@@ -82,7 +96,7 @@ interface MonthProps {
 }
 
 /** One month: name, weekday header and six rows of days filling the height. */
-function Month({ at, drag, onOpen, onDragStart, onDragOver }: MonthProps) {
+function Month({ at, imported, drag, onOpen, onDragStart, onDragOver }: MonthProps) {
   const { t, lang } = useTranslation();
   const { events } = useEvents();
   const [peek, setPeek] = useState<string | null>(null);
@@ -105,7 +119,8 @@ function Month({ at, drag, onOpen, onDragStart, onDragOver }: MonthProps) {
       </div>
       <div className="grid min-h-0 flex-1 grid-cols-7 grid-rows-6 gap-px rounded-lg border border-border bg-border/60">
         {monthCells(at.y, at.m).map((cell, i) => {
-          const list = dayEvents(events, cell.key);
+          const mine = dayEvents(events, cell.key);
+          const list = imported[cell.key] ? sortDayEvents([...mine, ...imported[cell.key]]) : mine;
           const hidden = Math.max(0, list.length - MAX_CHIPS);
           const expanded = peek === cell.key && hidden > 0 && !drag;
           const number = (
@@ -139,11 +154,13 @@ function Month({ at, drag, onOpen, onDragStart, onDragOver }: MonthProps) {
               >
                 {number}
                 <span className="flex min-h-0 flex-col gap-0.5 overflow-hidden">
-                  {list.slice(0, MAX_CHIPS).map((ev) => (
+                  {list.slice(0, MAX_CHIPS).map((ev) => (ev.src === 'ical' ? (
+                    <Chip key={`${ev.from}-${ev.id}`} ev={ev} showText={false} />
+                  ) : (
                     <Handle key={`${ev.from}-${ev.id}`} ev={ev} on={cell.key} onDragStart={onDragStart}>
                       <Chip ev={ev} showText={false} />
                     </Handle>
-                  ))}
+                  )))}
                   {hidden > 0 && (
                     <span className="px-1 text-[10px] text-muted-foreground">{t('calendar.more', { n: String(hidden) })}</span>
                   )}
@@ -157,11 +174,13 @@ function Month({ at, drag, onOpen, onDragStart, onDragOver }: MonthProps) {
                   className="absolute left-1/2 top-1/2 z-40 flex w-[max(100%,180px)] max-h-[60vh] -translate-x-1/2 -translate-y-1/2 cursor-pointer flex-col gap-0.5 overflow-auto rounded-lg border border-border bg-surface p-1 shadow-xl"
                 >
                   {number}
-                  {list.map((ev) => (
+                  {list.map((ev) => (ev.src === 'ical' ? (
+                    <Chip key={`${ev.from}-${ev.id}`} ev={ev} />
+                  ) : (
                     <Handle key={`${ev.from}-${ev.id}`} ev={ev} on={cell.key} onDragStart={onDragStart}>
                       <Chip ev={ev} />
                     </Handle>
-                  ))}
+                  )))}
                 </div>
               )}
             </div>
@@ -192,7 +211,19 @@ export function CalendarView() {
   const [drag, setDrag] = useState<Drag | null>(null);
   const [ghost, setGhost] = useState<{ x: number; y: number } | null>(null);
   const [left, right] = monthPair(at);
-  const dayList = picked ? dayEvents(events, picked.start) : [];
+  const feed = useIcalFeed();
+  const [connecting, setConnecting] = useState(false);
+  // Only the two months on screen are expanded — the six-week grids overshoot
+  // the months themselves, so the window runs from the first cell to the last.
+  const importedDays = feed.days;
+  const imported = useMemo(() => {
+    const first = monthCells(left.y, left.m)[0].key;
+    const last = monthCells(right.y, right.m)[MONTH_CELLS - 1].key;
+    return importedDays(first, last);
+  }, [importedDays, left.y, left.m, right.y, right.m]);
+  const dayList = picked
+    ? sortDayEvents([...dayEvents(events, picked.start), ...(imported[picked.start] ?? [])])
+    : [];
 
   const blankDraft = { text: '', allDay: true, time: '09:00', color: DEFAULT_EVENT_COLOR as string, repeat: 'none' as Repeat };
   const openDay = (start: string, days: number) => {
@@ -307,6 +338,14 @@ export function CalendarView() {
           onClick={() => setAt((m) => shiftMonth(m, 1))} className={navBtn}>
           <ChevronRight className="h-4 w-4" />
         </button>
+        <button type="button" data-ical-open onClick={() => setConnecting(true)}
+          aria-label={t('ical.title')} title={t('ical.title')}
+          className={`flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-xs transition-colors hover:bg-accent/10 ${
+            feed.url ? 'border-primary text-foreground' : 'border-border text-muted-foreground'
+          }`}>
+          <Link className="h-3.5 w-3.5" />
+          {t('ical.button')}
+        </button>
         <span className="ml-1 text-[11px] text-muted-foreground">{t('calendar.dragHint')}</span>
       </div>
 
@@ -315,6 +354,7 @@ export function CalendarView() {
           <Month
             key={`${month.y}-${month.m}`}
             at={month}
+            imported={imported}
             drag={drag}
             onOpen={openDay}
             onDragStart={setDrag}
@@ -329,6 +369,8 @@ export function CalendarView() {
           <Chip ev={drag.ev} />
         </div>
       )}
+
+      <IcalConnect feed={feed} open={connecting} onOpenChange={setConnecting} />
 
       <Dialog open={picked !== null} onOpenChange={(o) => { if (!o) closeDay(); }}>
         <DialogContent className="max-w-sm">
@@ -402,13 +444,19 @@ export function CalendarView() {
                   <div className="flex items-center gap-2">
                     <span className="min-w-0 flex-1"><Chip ev={ev} /></span>
                     {repeating && <span className="shrink-0 text-[10px] text-muted-foreground">{t(REPEAT_LABEL[ev.repeat ?? 'none'])}</span>}
-                    <button type="button" aria-label={t('calendar.editPlan')} data-event-edit className={rowBtn} onClick={() => startEdit(ev)}>
-                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                    </button>
-                    <button type="button" aria-label={t('common.close')} data-event-del className={rowBtn}
-                      onClick={() => (repeating ? setDeleting(deleting === rowKey ? null : rowKey) : removeEvent(ev.from, ev.id))}>
-                      <X className="h-3.5 w-3.5 text-muted-foreground" />
-                    </button>
+                    {ev.src === 'ical' ? (
+                      <span className="shrink-0 text-[10px] text-muted-foreground" data-row-imported>{t('ical.readOnly')}</span>
+                    ) : (
+                      <>
+                        <button type="button" aria-label={t('calendar.editPlan')} data-event-edit className={rowBtn} onClick={() => startEdit(ev)}>
+                          <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                        </button>
+                        <button type="button" aria-label={t('common.close')} data-event-del className={rowBtn}
+                          onClick={() => (repeating ? setDeleting(deleting === rowKey ? null : rowKey) : removeEvent(ev.from, ev.id))}>
+                          <X className="h-3.5 w-3.5 text-muted-foreground" />
+                        </button>
+                      </>
+                    )}
                   </div>
                   {/* A repeat asks how much to remove. */}
                   {repeating && deleting === rowKey && (
