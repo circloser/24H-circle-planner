@@ -601,7 +601,10 @@ function App() {
 
       <main
         className={
-          isMobile
+          calendarMode
+            // Calendar mode fills the window: no centred column, no chart layout.
+            ? 'flex min-h-0 w-full flex-1 flex-col px-3 pb-3 pt-2'
+            : isMobile
             ? 'flex-1 container mx-auto flex flex-col items-center gap-6 px-3 pb-12 pt-3'
             : sideLayout
               // A side layout spans the whole window so the chart really hugs
@@ -609,8 +612,10 @@ function App() {
               ? `flex w-full flex-1 items-center py-8 ${layout === 'left' ? 'justify-start' : 'justify-end'}`
               : 'flex-1 container mx-auto py-8 flex items-center justify-center px-4'
         }
-        style={sideLayout ? { paddingLeft: CHART_SIDE_GAP, paddingRight: CHART_SIDE_GAP } : undefined}
+        style={sideLayout && !calendarMode ? { paddingLeft: CHART_SIDE_GAP, paddingRight: CHART_SIDE_GAP } : undefined}
       >
+        {calendarMode ? <CalendarView /> : (
+        <>
         {/* Multi-day switcher — pinned at the top in-flow on mobile, floating on desktop. */}
         {chartView !== 'record' && !calendarMode && layout !== 'hidden' && <DayBar layout={layout} onOpenDiary={() => setDiaryOpen(true)} />}
         <div
@@ -620,7 +625,7 @@ function App() {
           style={sideLayout ? { width: viewWidth(chartView) } : undefined}
           data-tour="chart"
         >
-        {chartView === 'record' || chartView === 'table' || calendarMode ? (
+        {chartView === 'record' || chartView === 'table' ? (
           // Always this wrapper, so hiding never remounts the view (the record
           // view keeps its ticking clock and a half-typed entry). Shown, it adds
           // no box of its own; hidden, it parks the view offscreen like the chart.
@@ -632,8 +637,6 @@ function App() {
           >
             {chartView === 'record' ? (
               <RecordView />
-            ) : calendarMode ? (
-              <CalendarView />
             ) : (
               <ScheduleTable
                 locked={locked}
@@ -766,6 +769,8 @@ function App() {
                 roaming creatures (they stay inside the LCD here). */}
             {!firstRunClean && <MobileTamaSection />}
           </>
+        )}
+        </>
         )}
       </main>
 

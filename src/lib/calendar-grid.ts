@@ -35,21 +35,44 @@ export function thisMonth(now: Date = new Date()): YearMonth {
   return { y: now.getFullYear(), m: now.getMonth() };
 }
 
+/** Split a 'YYYY-MM-DD' key back into numbers (m is 0-11). */
+export function partsOf(key: string): { y: number; m: number; d: number } {
+  return { y: Number(key.slice(0, 4)), m: Number(key.slice(5, 7)) - 1, d: Number(key.slice(8, 10)) };
+}
+
+/** Day of week for a key: 0 = Sunday … 6 = Saturday. */
+export function weekdayOf(key: string): number {
+  const { y, m, d } = partsOf(key);
+  return new Date(y, m, d).getDay();
+}
+
 export interface DayCell {
   day: number;
   /** The 'YYYY-MM-DD' key this day's events are filed under. */
   key: string;
+  /** False for the neighbouring-month days that pad the first and last rows. */
+  inMonth: boolean;
 }
 
+/** Cells per row, and rows per month — always six, like Google's month view, so
+ *  the grid keeps one height and the layout never jumps between months. */
+export const WEEK_DAYS = 7;
+export const MONTH_ROWS = 6;
+
 /**
- * One month as a flat list of cells, weeks starting Sunday. Leading and
- * trailing blanks are null so the list always divides into rows of 7.
+ * One month as six weeks starting Sunday. The leading and trailing cells carry
+ * the neighbouring months' days (marked `inMonth: false`) rather than blanks,
+ * so every square is a real date the user can drop a plan on.
  */
-export function monthCells(y: number, m: number): Array<DayCell | null> {
+export function monthCells(y: number, m: number): DayCell[] {
   const lead = new Date(y, m, 1).getDay();
-  const days = new Date(y, m + 1, 0).getDate();
-  const cells: Array<DayCell | null> = Array.from({ length: lead }, () => null);
-  for (let d = 1; d <= days; d++) cells.push({ day: d, key: dateKey(y, m, d) });
-  while (cells.length % 7 !== 0) cells.push(null);
-  return cells;
+  const start = new Date(y, m, 1 - lead);
+  return Array.from({ length: WEEK_DAYS * MONTH_ROWS }, (_, i) => {
+    const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+    return {
+      day: d.getDate(),
+      key: dateKey(d.getFullYear(), d.getMonth(), d.getDate()),
+      inMonth: d.getMonth() === m && d.getFullYear() === y,
+    };
+  });
 }
