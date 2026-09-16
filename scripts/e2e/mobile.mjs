@@ -232,6 +232,44 @@ export async function run() {
     pass('every week of both months is the same height',
       flat.length === 12 && flat.every((h) => h === flat[0]) && flat[0] >= 48,
       JSON.stringify(rows));
+    // Phone type: small, and a long title is cut rather than elided. Needs a
+    // plan on screen to measure, so one with a long title is put on today.
+    await page.evaluate(() => {
+      const d = new Date();
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      localStorage.setItem('24h-circle-planner.events', JSON.stringify({ version: 1, events: {
+        [key]: [
+          { id: 'long', text: '아주아주 긴 제목을 가진 종일 일정 하나', color: '#3b82f6' },
+          { id: 'timed', text: '제목이 꽤 긴 시간 약속', time: '09:30', color: '#ef4444' },
+        ],
+      } }));
+    });
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+    // This suite's init script puts the view back on every load.
+    if ((await page.locator('[data-calendar-view]').count()) === 0) {
+      await page.locator('[data-calendar-toggle]').click();
+    }
+    await page.waitForSelector('[data-calendar-view]', { timeout: 15000 });
+    await wait(800);
+    const chipType = await page.evaluate(() => {
+      const allDay = document.querySelector('[data-calendar-month] [data-event][data-all-day]');
+      const timed = document.querySelector('[data-calendar-month] [data-event]:not([data-all-day])');
+      if (!allDay || !timed) return null;
+      const title = timed.children[1];
+      return {
+        size: parseFloat(getComputedStyle(allDay).fontSize),
+        allDayOverflow: getComputedStyle(allDay).textOverflow,
+        timedOverflow: getComputedStyle(title).textOverflow,
+        // A clipped title is wider than the box it sits in.
+        allDayClipped: allDay.scrollWidth > allDay.clientWidth,
+        timeLast: timed.lastElementChild?.textContent === '09:30',
+      };
+    });
+    pass('calendar plans use the small phone type and are cut, not elided',
+      !!chipType && chipType.size <= 9 && chipType.allDayOverflow === 'clip' && chipType.timedOverflow === 'clip'
+        && chipType.allDayClipped && chipType.timeLast,
+      JSON.stringify(chipType));
+
     pass('no sideways scroll in calendar mode',
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
 

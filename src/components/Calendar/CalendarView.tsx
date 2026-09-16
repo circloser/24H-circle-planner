@@ -20,8 +20,15 @@ import type { TKey } from '@/i18n/translations';
 /** Fallback before the grid has been measured; the real number comes from how
  *  many lines actually fit in a cell (see useChipRoom). */
 const MAX_CHIPS = 3;
-/** One chip line: 17px of text plus the 1px gap under it. */
+/** One chip line plus the 1px gap under it. A phone uses the smaller type,
+ *  which is also what lets more plans fit in the same cell. */
 const LINE_H = 18;
+const LINE_H_PHONE = 14;
+/** Chip type: small on a phone, a touch larger from `sm` up. */
+const TYPE = 'text-[9px] leading-[13px] sm:text-[11px] sm:leading-[17px]';
+/** A long title is simply cut on a phone (no room to spare for "…"), and
+ *  elided on wider screens. */
+const CLIP = 'overflow-hidden whitespace-nowrap text-clip sm:text-ellipsis';
 /** The day number above the chips, plus the cell's own padding. */
 const HEAD_H = 20;
 
@@ -58,7 +65,7 @@ type Drag =
  *  actually starts and ends on, so the days in between run straight through. */
 function outline(color: string, ev: DayEvent): string {
   const sides = [`inset 0 1px 0 ${color}`, `inset 0 -1px 0 ${color}`];
-  if (ev.index === 0) sides.push(`inset 3px 0 0 ${color}`);
+  if (ev.index === 0) sides.push(`inset 1px 0 0 ${color}`);
   if (ev.index === ev.length - 1) sides.push(`inset -1px 0 0 ${color}`);
   return sides.join(', ');
 }
@@ -83,7 +90,7 @@ function Chip({ ev, showText = true, inGrid = false }: { ev: DayEvent; showText?
         data-all-day
         data-imported={imported || undefined}
         data-span={ev.length > 1 ? (mid ? 'mid' : 'start') : undefined}
-        className={`block truncate px-1 text-[10px] leading-[15px] sm:text-[11px] sm:leading-[17px] ${imported ? 'text-foreground' : 'text-white'} ${ends} ${bleed}`}
+        className={`block px-1 ${CLIP} ${TYPE} ${imported ? 'text-foreground' : 'text-white'} ${ends} ${bleed}`}
         style={imported ? { boxShadow: outline(color, ev) } : { backgroundColor: color }}
       >
         {mid && !showText ? ' ' : ev.text}
@@ -92,11 +99,11 @@ function Chip({ ev, showText = true, inGrid = false }: { ev: DayEvent; showText?
   }
   return (
     <span data-event data-imported={imported || undefined}
-      className={`flex items-center gap-1 overflow-hidden px-1 text-[10px] leading-[15px] text-foreground sm:text-[11px] sm:leading-[17px] ${bleed}`}>
-      <span className={`h-1.5 w-1.5 shrink-0 rounded-full sm:h-2 sm:w-2 ${imported ? 'border-2' : ''}`}
+      className={`flex items-center gap-1 overflow-hidden px-1 ${TYPE} text-foreground ${bleed}`}>
+      <span className={`h-1.5 w-1.5 shrink-0 rounded-full sm:h-2 sm:w-2 ${imported ? 'border' : ''}`}
         style={imported ? { borderColor: color } : { backgroundColor: color }} />
+      <span className={`min-w-0 flex-1 ${CLIP}`}>{ev.text}</span>
       <span className="shrink-0 tabular-nums text-muted-foreground">{ev.time}</span>
-      <span className="truncate">{ev.text}</span>
     </span>
   );
 }
@@ -128,7 +135,7 @@ interface MonthProps {
 
 /** How many chip lines fit in one day cell right now — remeasured whenever the
  *  grid changes size, so a taller window simply shows more plans. */
-function useChipRoom(grid: React.RefObject<HTMLDivElement | null>): number {
+function useChipRoom(grid: React.RefObject<HTMLDivElement | null>, lineH: number): number {
   const [room, setRoom] = useState(MAX_CHIPS);
   useEffect(() => {
     const el = grid.current;
@@ -136,11 +143,11 @@ function useChipRoom(grid: React.RefObject<HTMLDivElement | null>): number {
     // ResizeObserver fires once on observe, which is the first measurement.
     const ro = new ResizeObserver(() => {
       const rowH = el.clientHeight / MONTH_ROWS;
-      setRoom(Math.max(1, Math.floor((rowH - HEAD_H) / LINE_H)));
+      setRoom(Math.max(1, Math.floor((rowH - HEAD_H) / lineH)));
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [grid]);
+  }, [grid, lineH]);
   return room;
 }
 
@@ -173,7 +180,7 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver }: MonthPro
     [cells, byDay],
   );
   const gridRef = useRef<HTMLDivElement>(null);
-  const room = useChipRoom(gridRef);
+  const room = useChipRoom(gridRef, isMobile ? LINE_H_PHONE : LINE_H);
   const painting = drag?.kind === 'create' ? dragRange(drag.from, drag.over) : null;
   const inPaint = (key: string) =>
     !!painting && key >= painting.start && dayGap(painting.start, key) < painting.days;
@@ -242,7 +249,7 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver }: MonthPro
                   {shown.map((ev, lane) => (!ev ? (
                     // An empty lane still holds its line, so the bars below it
                     // stay level with the same bars in the next day.
-                    <span key={`gap${lane}`} className="h-[15px] shrink-0 sm:h-[17px]" aria-hidden />
+                    <span key={`gap${lane}`} className="h-[13px] shrink-0 sm:h-[17px]" aria-hidden />
                   ) : ev.src === 'ical' ? (
                     <Chip key={`${ev.from}-${ev.id}`} ev={ev} showText={false} inGrid />
                   ) : (
@@ -251,7 +258,7 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver }: MonthPro
                     </Handle>
                   )))}
                   {hidden > 0 && (
-                    <span className="px-1 text-[9px] leading-[15px] text-muted-foreground sm:text-[10px] sm:leading-[17px]">{t('calendar.more', { n: String(hidden) })}</span>
+                    <span className="px-1 text-[8px] leading-[13px] text-muted-foreground sm:text-[10px] sm:leading-[17px]">{t('calendar.more', { n: String(hidden) })}</span>
                   )}
                 </span>
               </button>
@@ -511,62 +518,6 @@ export function CalendarView() {
             <DialogTitle>{pickedLabel}</DialogTitle>
           </DialogHeader>
 
-          <div className="flex flex-col gap-2">
-            {picked && picked.days > 1 && (
-              <span className="text-xs text-muted-foreground" data-span-days>{t('calendar.spanDays', { n: String(picked.days) })}</span>
-            )}
-            <input
-              autoFocus
-              value={draft.text}
-              maxLength={MAX_EVENT_CHARS}
-              onChange={(e) => setDraft((d) => ({ ...d, text: e.target.value }))}
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } }}
-              placeholder={t('calendar.placeholder')}
-              aria-label={t('calendar.placeholder')}
-              data-event-input
-              className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
-            />
-            <div className="flex flex-wrap items-center gap-1.5">
-              <button type="button" data-all-day-on aria-pressed={draft.allDay} className={chip(draft.allDay)}
-                onClick={() => setDraft((d) => ({ ...d, allDay: true }))}>
-                {t('calendar.allDay')}
-              </button>
-              <button type="button" data-all-day-off aria-pressed={!draft.allDay} className={chip(!draft.allDay)}
-                onClick={() => setDraft((d) => ({ ...d, allDay: false }))}>
-                {t('calendar.atTime')}
-              </button>
-              {!draft.allDay && (
-                <input type="time" value={draft.time} data-event-time aria-label={t('calendar.atTime')}
-                  onChange={(e) => setDraft((d) => ({ ...d, time: e.target.value }))}
-                  className="rounded-md border border-border bg-background px-2 py-1 text-sm text-foreground" />
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">{t('calendar.color')}</span>
-              {EVENT_COLORS.map((c) => (
-                <button key={c} type="button" aria-label={c} data-event-color={c} aria-pressed={draft.color === c}
-                  onClick={() => setDraft((d) => ({ ...d, color: c }))}
-                  className="h-5 w-5 rounded-full border border-black/20"
-                  style={{ backgroundColor: c, outline: draft.color === c ? '2px solid hsl(var(--primary))' : 'none', outlineOffset: '1px' }} />
-              ))}
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">{t('calendar.repeat')}</span>
-              <select value={draft.repeat} data-event-repeat aria-label={t('calendar.repeat')}
-                onChange={(e) => setDraft((d) => ({ ...d, repeat: e.target.value as Repeat }))}
-                className="flex-1 rounded-md border border-border bg-background px-2 py-1 text-sm text-foreground">
-                {REPEATS.map((r) => <option key={r} value={r}>{t(REPEAT_LABEL[r])}</option>)}
-              </select>
-            </div>
-            <Button onClick={submit} disabled={!draft.text.trim()} className="gap-1 bg-primary text-primary-foreground" data-event-add>
-              <Plus className="h-4 w-4" />
-              {editing ? t('common.save') : t('calendar.add')}
-            </Button>
-            {editing && editing.repeat && editing.repeat !== 'none' && (
-              <p className="text-[11px] text-muted-foreground" data-edit-scope>{t('calendar.editOccurrenceNote')}</p>
-            )}
-          </div>
-
           <ul className="flex max-h-[32vh] flex-col gap-1 overflow-y-auto">
             {dayList.length === 0 && <li className="py-2 text-center text-sm text-muted-foreground">{t('calendar.none')}</li>}
             {dayList.map((ev, i) => {
@@ -625,6 +576,62 @@ export function CalendarView() {
               );
             })}
           </ul>
+
+          <div className="flex flex-col gap-2 border-t border-border pt-3" data-event-form>
+            {picked && picked.days > 1 && (
+              <span className="text-xs text-muted-foreground" data-span-days>{t('calendar.spanDays', { n: String(picked.days) })}</span>
+            )}
+            <input
+              autoFocus
+              value={draft.text}
+              maxLength={MAX_EVENT_CHARS}
+              onChange={(e) => setDraft((d) => ({ ...d, text: e.target.value }))}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } }}
+              placeholder={t('calendar.placeholder')}
+              aria-label={t('calendar.placeholder')}
+              data-event-input
+              className="rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+            />
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button type="button" data-all-day-on aria-pressed={draft.allDay} className={chip(draft.allDay)}
+                onClick={() => setDraft((d) => ({ ...d, allDay: true }))}>
+                {t('calendar.allDay')}
+              </button>
+              <button type="button" data-all-day-off aria-pressed={!draft.allDay} className={chip(!draft.allDay)}
+                onClick={() => setDraft((d) => ({ ...d, allDay: false }))}>
+                {t('calendar.atTime')}
+              </button>
+              {!draft.allDay && (
+                <input type="time" value={draft.time} data-event-time aria-label={t('calendar.atTime')}
+                  onChange={(e) => setDraft((d) => ({ ...d, time: e.target.value }))}
+                  className="rounded-md border border-border bg-background px-2 py-1 text-sm text-foreground" />
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">{t('calendar.color')}</span>
+              {EVENT_COLORS.map((c) => (
+                <button key={c} type="button" aria-label={c} data-event-color={c} aria-pressed={draft.color === c}
+                  onClick={() => setDraft((d) => ({ ...d, color: c }))}
+                  className="h-5 w-5 rounded-full border border-black/20"
+                  style={{ backgroundColor: c, outline: draft.color === c ? '2px solid hsl(var(--primary))' : 'none', outlineOffset: '1px' }} />
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">{t('calendar.repeat')}</span>
+              <select value={draft.repeat} data-event-repeat aria-label={t('calendar.repeat')}
+                onChange={(e) => setDraft((d) => ({ ...d, repeat: e.target.value as Repeat }))}
+                className="flex-1 rounded-md border border-border bg-background px-2 py-1 text-sm text-foreground">
+                {REPEATS.map((r) => <option key={r} value={r}>{t(REPEAT_LABEL[r])}</option>)}
+              </select>
+            </div>
+            {editing && editing.repeat && editing.repeat !== 'none' && (
+              <p className="text-[11px] text-muted-foreground" data-edit-scope>{t('calendar.editOccurrenceNote')}</p>
+            )}
+            <Button onClick={submit} disabled={!draft.text.trim()} className="gap-1 bg-primary text-primary-foreground" data-event-add>
+              <Plus className="h-4 w-4" />
+              {editing ? t('common.save') : t('calendar.add')}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

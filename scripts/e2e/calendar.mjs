@@ -122,6 +122,31 @@ export async function run() {
     pass('an all-day plan is a filled chip', (await cell(today).locator('[data-event][data-all-day]').count()) === 1);
     const timed = await cell(today).locator('[data-event]:not([data-all-day])').allInnerTexts();
     pass('a timed plan shows its time with a dot', timed.some((x) => x.includes('09:30') && x.includes('팀 회의')), JSON.stringify(timed));
+    pass('…title first, time last', timed.some((x) => x.indexOf('팀 회의') < x.indexOf('09:30')), JSON.stringify(timed));
+
+    // The day editor reads top to bottom: the day's plans, a rule, the form, Add.
+    await cell(today).click();
+    await wait(350);
+    const order = await page.evaluate(() => {
+      const dlg = document.querySelector('[role="dialog"]');
+      const y = (sel) => dlg?.querySelector(sel)?.getBoundingClientRect().top ?? -1;
+      const form = dlg?.querySelector('[data-event-form]');
+      return {
+        list: y('[data-event-row]'),
+        form: y('[data-event-form]'),
+        input: y('[data-event-input]'),
+        add: y('[data-event-add]'),
+        rule: form ? getComputedStyle(form).borderTopWidth : '',
+        addIsLast: form ? form.lastElementChild?.hasAttribute('data-event-add') : false,
+      };
+    });
+    pass('the day editor lists the plans above the form',
+      order.list >= 0 && order.list < order.form && order.form <= order.input && order.input < order.add,
+      JSON.stringify(order));
+    pass('…with a rule between them, and Add at the very bottom', order.rule === '1px' && order.addIsLast === true,
+      JSON.stringify({ rule: order.rule, addIsLast: order.addIsLast }));
+    await page.keyboard.press('Escape');
+    await wait(300);
 
     // 5. Drag across days blocks out a span.
     // A week row that doesn't hold today, so the plans added above can't interfere.

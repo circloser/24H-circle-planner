@@ -180,6 +180,8 @@ export async function run() {
       return [tone(at(a)), tone(at(b))];
     }, [dayAfter(1), dayAfter(4)]);
     pass('each calendar gets its own colour', tones[0] !== tones[1] && !!tones[0] && !!tones[1], JSON.stringify(tones));
+    pass('the outline is one weight all round (no thick left edge)',
+      tones.every((t) => !/(?:^|[ ,])[2-9]px 0px 0px 0px inset/.test(t)), JSON.stringify(tones[0]));
 
     // A span must read as ONE bar: its parts touch the edges of their cells.
     const seam = await page.evaluate(([a, b]) => {
