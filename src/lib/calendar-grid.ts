@@ -46,6 +46,22 @@ export function weekdayOf(key: string): number {
   return new Date(y, m, d).getDay();
 }
 
+/** The key `n` days after `key` (`n` may be negative). */
+export function addDays(key: string, n: number): string {
+  const { y, m, d } = partsOf(key);
+  const x = new Date(y, m, d + n);
+  return dateKey(x.getFullYear(), x.getMonth(), x.getDate());
+}
+
+/** Whole days from `a` to `b`; negative when `b` is the earlier one. Rounded,
+ *  so a daylight-saving hour in between never costs a day. */
+export function dayGap(a: string, b: string): number {
+  const pa = partsOf(a);
+  const pb = partsOf(b);
+  const ms = new Date(pb.y, pb.m, pb.d).getTime() - new Date(pa.y, pa.m, pa.d).getTime();
+  return Math.round(ms / 86_400_000);
+}
+
 export interface DayCell {
   day: number;
   /** The 'YYYY-MM-DD' key this day's events are filed under. */

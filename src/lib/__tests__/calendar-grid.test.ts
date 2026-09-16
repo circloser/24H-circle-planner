@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dateKey, monthCells, monthPair, partsOf, shiftMonth, thisMonth, todayKey, weekdayOf } from '../calendar-grid';
+import { addDays, dateKey, dayGap, monthCells, monthPair, partsOf, shiftMonth, thisMonth, todayKey, weekdayOf } from '../calendar-grid';
 
 describe('calendar grid', () => {
   it('moves by whole months, rolling the year over both ways', () => {
@@ -37,5 +37,21 @@ describe('calendar grid', () => {
   it('handles a leap February', () => {
     expect(monthCells(2024, 1).filter((c) => c.inMonth)).toHaveLength(29);
     expect(monthCells(2026, 1).filter((c) => c.inMonth)).toHaveLength(28);
+  });
+});
+
+describe('day arithmetic', () => {
+  it('steps forward and back across month and year ends', () => {
+    expect(addDays('2026-09-16', 3)).toBe('2026-09-19');
+    expect(addDays('2026-09-30', 1)).toBe('2026-10-01');
+    expect(addDays('2027-01-01', -1)).toBe('2026-12-31');
+  });
+
+  it('counts whole days between two dates, in either direction', () => {
+    expect(dayGap('2026-09-16', '2026-09-19')).toBe(3);
+    expect(dayGap('2026-09-19', '2026-09-16')).toBe(-3);
+    expect(dayGap('2026-09-16', '2026-09-16')).toBe(0);
+    // A daylight-saving change in between must not cost a day.
+    expect(dayGap('2026-03-01', '2026-04-01')).toBe(31);
   });
 });

@@ -1,8 +1,8 @@
 /**
- * Calendar mode (top view toggle): two months filling the window, weekend
- * colouring, day numbers centred at the top, all-day vs timed plans, repeats,
- * a hover peek for crowded days, the background setting, and every floating
- * widget hidden while it is on.
+ * Calendar mode: its own button beside the timetable toggle, two months filling
+ * the window, weekend colouring, day numbers centred at the top, all-day vs
+ * timed plans, drag to block out several days, drag to move a plan, repeats with
+ * per-occurrence deletes, a centred hover peek, and widgets hidden while it is on.
  */
 import { makeReporter, launchPage, gotoApp, seedBasicData, wait, isMain, runStandalone } from './_helpers.mjs';
 
@@ -16,21 +16,36 @@ export async function run() {
   const months = () => page.$$eval('[data-calendar-month]', (els) => els.map((e) => e.getAttribute('data-calendar-month')));
   const fabCount = () => page.locator('button[class*="bottom-5"]').count();
   const cell = (key) => page.locator(`[data-day="${key}"]`).first();
-  const pickView = async (label) => {
-    await page.locator('button[aria-label="보기 선택"]').first().click();
-    await wait(250);
-    await page.getByRole('menuitemradio', { name: label, exact: true }).click();
-    await wait(600);
+  const chips = (key) => cell(key).locator('[data-event]').allInnerTexts();
+  const centre = async (key) => {
+    const b = await cell(key).boundingBox();
+    return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
   };
-  /** Add one plan to a day through the dialog. */
-  const addPlan = async (key, text, { time, repeat } = {}) => {
-    await cell(key).click();
-    await wait(350);
+  const dragFrom = async (a, toKey) => {
+    const b = await centre(toKey);
+    await page.mouse.move(a.x, a.y);
+    await page.mouse.down();
+    await page.mouse.move(b.x, b.y, { steps: 10 });
+    await page.mouse.up();
+    await wait(400);
+  };
+  const dragChip = async (fromKey, toKey) => {
+    const box = await cell(fromKey).locator('[data-drag-handle]').first().boundingBox();
+    await dragFrom({ x: box.x + box.width / 2, y: box.y + box.height / 2 }, toKey);
+  };
+  const dragCells = async (fromKey, toKey) => {
+    const a = await centre(fromKey);
+    const b = await centre(toKey);
+    await page.mouse.move(a.x, a.y);
+    await page.mouse.down();
+    await page.mouse.move(b.x, b.y, { steps: 10 });
+    await page.mouse.up();
+    await wait(400);
+  };
+  const fillPlan = async (text, { time, repeat } = {}) => {
     if (time) {
       await page.locator('[data-all-day-off]').click();
       await page.locator('[data-event-time]').fill(time);
-    } else {
-      await page.locator('[data-all-day-on]').click();
     }
     if (repeat) await page.locator('[data-event-repeat]').selectOption(repeat);
     await page.locator('[data-event-input]').fill(text);
@@ -39,32 +54,39 @@ export async function run() {
     await page.keyboard.press('Escape');
     await wait(300);
   };
+  const addPlan = async (key, text, opts) => {
+    await cell(key).click();
+    await wait(350);
+    await fillPlan(text, opts);
+  };
 
   try {
     await gotoApp(page);
     await seedBasicData(page);
     const fabsBefore = await fabCount();
 
-    await pickView('캘린더');
-    pass('the view toggle opens calendar mode', (await page.locator('[data-calendar-view]').count()) === 1);
+    // 1. Its own button in the header switches straight in and back.
+    await page.locator('[data-calendar-toggle]').click();
+    await wait(600);
+    pass('the header button opens calendar mode', (await page.locator('[data-calendar-view]').count()) === 1);
+    pass('…and reads as pressed', (await page.locator('[data-calendar-toggle]').getAttribute('aria-pressed')) === 'true');
 
-    // 1. Two months, side by side, filling the window.
+    // 2. Two months filling the window, six rows each.
     const shown = await months();
-    const next = (ym) => {
+    const nextMonth = (ym) => {
       const [y, m] = ym.split('-').map(Number);
       return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`;
     };
-    pass('two months, the second after the first', shown.length === 2 && shown[1] === next(shown[0]), JSON.stringify(shown));
+    pass('two months, the second after the first', shown.length === 2 && shown[1] === nextMonth(shown[0]), JSON.stringify(shown));
     const fit = await page.evaluate(() => {
       const r = document.querySelector('[data-calendar-view]').getBoundingClientRect();
       return { w: Math.round(r.width), h: Math.round(r.height), vw: window.innerWidth, vh: window.innerHeight };
     });
-    pass('it fills the window width', fit.w >= fit.vw - 60, JSON.stringify(fit));
-    pass('…and most of its height', fit.h >= fit.vh * 0.55, JSON.stringify(fit));
+    pass('it fills the window', fit.w >= fit.vw - 60 && fit.h >= fit.vh * 0.55, JSON.stringify(fit));
     const rows = await page.$$eval('[data-calendar-month]', (els) => els.map((e) => e.querySelectorAll('[data-day]').length));
     pass('each month is a full six-week grid', JSON.stringify(rows) === '[42,42]', JSON.stringify(rows));
 
-    // 2. Sunday red, Saturday blue.
+    // 3. Sunday red, Saturday blue (computed colours are oklch → paint to read).
     const today = await page.evaluate(() => {
       const d = new Date();
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -72,8 +94,6 @@ export async function run() {
     const tones = await page.evaluate((todayKey) => {
       const cells = [...document.querySelectorAll('[data-calendar-month]')[0].querySelectorAll('[data-day]')];
       const at = (mod) => cells.find((c, i) => i % 7 === mod && c.getAttribute('data-day') !== todayKey);
-      // Computed colours come back as oklch() in Tailwind v4 — paint each one to
-      // read its actual channels.
       const channels = (el) => {
         const canvas = document.createElement('canvas');
         canvas.width = canvas.height = 1;
@@ -87,7 +107,6 @@ export async function run() {
     pass('Sunday numbers are red', tones.sun[0] > tones.sun[1] && tones.sun[0] > tones.sun[2], JSON.stringify(tones.sun));
     pass('Saturday numbers are blue', tones.sat[2] > tones.sat[0], JSON.stringify(tones.sat));
 
-    // 3. The day number sits centred at the top of its cell.
     const place = await page.evaluate((key) => {
       const c = document.querySelector(`[data-day="${key}"]`);
       const s = c.querySelector('span');
@@ -97,69 +116,116 @@ export async function run() {
     }, today);
     pass('the day number is centred at the top', place.dx <= 4 && place.dy <= 14, JSON.stringify(place));
 
-    // 4. All-day vs timed plans look different.
+    // 4. All-day vs timed.
     await addPlan(today, '워크숍');
     await addPlan(today, '팀 회의', { time: '09:30' });
-    const allDayChips = await cell(today).locator('[data-event][data-all-day]').count();
+    pass('an all-day plan is a filled chip', (await cell(today).locator('[data-event][data-all-day]').count()) === 1);
     const timed = await cell(today).locator('[data-event]:not([data-all-day])').allInnerTexts();
-    pass('an all-day plan is a filled chip', allDayChips === 1);
     pass('a timed plan shows its time with a dot', timed.some((x) => x.includes('09:30') && x.includes('팀 회의')), JSON.stringify(timed));
-    const chipBg = await cell(today).locator('[data-event][data-all-day]').first().evaluate((el) => getComputedStyle(el).backgroundColor);
-    pass('…and the all-day chip carries a colour', chipBg !== 'rgba(0, 0, 0, 0)', chipBg);
 
-    // 5. A weekly plan shows up again seven days later.
+    // 5. Drag across days blocks out a span.
+    // A week row that doesn't hold today, so the plans added above can't interfere.
+    const week = await page.evaluate((todayKey) => {
+      const cells = [...document.querySelectorAll('[data-calendar-month]')[0].querySelectorAll('[data-day]')]
+        .map((e) => e.getAttribute('data-day'));
+      for (let r = 0; r < 6; r++) {
+        const row = cells.slice(r * 7, r * 7 + 7);
+        if (!row.includes(todayKey)) return row;
+      }
+      return cells.slice(0, 7);
+    }, today);
+    await dragCells(week[1], week[3]);
+    pass('dragging across days opens the editor for the span', (await page.locator('[data-span-days]').count()) === 1,
+      await page.locator('[data-span-days]').first().innerText().catch(() => ''));
+    await fillPlan('출장');
+    const spanned = await Promise.all([chips(week[1]), chips(week[2]), chips(week[3]), chips(week[4])]);
+    pass('the plan covers every dragged day', spanned.slice(0, 3).every((c) => c.length === 1) && spanned[3].length === 0, JSON.stringify(spanned));
+    pass('…as one bar (only the first day carries the text)', spanned[0][0].includes('출장') && !spanned[1][0].includes('출장'), JSON.stringify(spanned.slice(0, 2)));
+
+    const barFit = await page.evaluate((key) => {
+      const c = document.querySelector(`[data-day="${key}"]`);
+      const b = c.querySelector('[data-event][data-all-day]');
+      return { cell: Math.round(c.getBoundingClientRect().width), bar: Math.round(b.getBoundingClientRect().width) };
+    }, week[1]);
+    pass('…running the full width of the day, like a real calendar', barFit.bar >= barFit.cell - 14, JSON.stringify(barFit));
+
+    // 6. Drag a plan to another day.
+    await addPlan(week[5], '이사');
+    await dragChip(week[5], week[6]);
+    pass('a move drag does not open the editor', (await page.locator('[data-event-input]').count()) === 0);
+    pass('dragging a plan moves it to the day it is dropped on',
+      (await chips(week[6])).some((x) => x.includes('이사')) && (await chips(week[5])).length === 0,
+      JSON.stringify([await chips(week[5]), await chips(week[6])]));
+
+    // …and a plain click on a plan (no move) opens that day.
+    await cell(week[6]).locator('[data-drag-handle]').first().click();
+    await wait(350);
+    pass('clicking a plan opens its day', (await page.locator('[data-event-input]').count()) === 1);
+    await page.keyboard.press('Escape');
+    await wait(300);
+
+    // 7. A repeat, then deleting one occurrence and the later ones.
     await addPlan(today, '스터디', { repeat: 'weekly' });
-    const inAWeek = keyOf(new Date(Date.now() + 7 * 86400000));
-    const weekLater = await cell(inAWeek).locator('[data-event]').allInnerTexts();
-    pass('a weekly plan repeats on the next week', weekLater.some((x) => x.includes('스터디')), JSON.stringify(weekLater));
+    const plus7 = keyOf(new Date(Date.now() + 7 * 86400000));
+    const plus14 = keyOf(new Date(Date.now() + 14 * 86400000));
+    pass('a weekly plan repeats', (await chips(plus7)).some((x) => x.includes('스터디')));
 
-    // 6. A crowded day shows +n and lifts the full list on hover.
+    await cell(plus7).click();
+    await wait(350);
+    await page.locator('[data-event-row]', { hasText: '스터디' }).locator('[data-event-del]').click();
+    await wait(200);
+    await page.locator('[data-del-one]').click();
+    await wait(250);
+    await page.keyboard.press('Escape');
+    await wait(350);
+    pass('"this day" drops one occurrence only',
+      !(await chips(plus7)).some((x) => x.includes('스터디')) && (await chips(plus14)).some((x) => x.includes('스터디')),
+      JSON.stringify([await chips(plus7), await chips(plus14)]));
+
+    await cell(plus14).click();
+    await wait(350);
+    await page.locator('[data-event-row]', { hasText: '스터디' }).locator('[data-event-del]').click();
+    await wait(200);
+    await page.locator('[data-del-future]').click();
+    await wait(250);
+    await page.keyboard.press('Escape');
+    await wait(350);
+    pass('"this and later" keeps the earlier ones and stops the rest',
+      !(await chips(plus14)).some((x) => x.includes('스터디')) && (await chips(today)).some((x) => x.includes('스터디')),
+      JSON.stringify([await chips(today), await chips(plus14)]));
+
+    // 8. A crowded day shows +n, and the peek opens from the cell's middle.
     await addPlan(today, '장보기');
     await addPlan(today, '운동');
-    const more = await cell(today).locator('text=/^\\+\\d/').count();
-    pass('a crowded day shows a "+n" line', more === 1);
+    pass('a crowded day shows a "+n" line', (await cell(today).locator('text=/^\\+\\d/').count()) === 1);
     await cell(today).hover();
     await wait(400);
-    const peeked = await page.locator('[data-day-peek] [data-event]').count();
-    pass('hovering lifts the whole list above the grid', peeked === 5, `chips=${peeked}`);
+    const peek = await page.evaluate((key) => {
+      const c = document.querySelector(`[data-day="${key}"]`).closest('div');
+      const p = document.querySelector('[data-day-peek]');
+      if (!p) return null;
+      const cr = c.getBoundingClientRect();
+      const pr = p.getBoundingClientRect();
+      return { chips: p.querySelectorAll('[data-event]').length, dy: Math.round((pr.top + pr.height / 2) - (cr.top + cr.height / 2)) };
+    }, today);
+    pass('hovering lifts the whole list', !!peek && peek.chips === 5, JSON.stringify(peek));
+    pass('…growing from the middle of the cell, not the bottom', !!peek && Math.abs(peek.dy) <= 8, JSON.stringify(peek));
     await page.mouse.move(5, 300);
     await wait(200);
 
-    // 7. The background setting reaches the grid.
-    const cellBg = () => cell(today).evaluate((el) => getComputedStyle(el).backgroundColor);
-    const solid = await cellBg();
-    await page.locator('[data-cal-bg="clear"]').click();
-    await wait(300);
-    const clear = await cellBg();
-    pass('the transparent setting clears the cell background', clear === 'rgba(0, 0, 0, 0)' && solid !== clear, `${solid} → ${clear}`);
-    await page.locator('[data-cal-bg="soft"]').click();
-    await wait(300);
-    const soft = await cellBg();
-    pass('the translucent setting sits between the two', soft !== clear && soft !== solid, soft);
-    await page.locator('[data-cal-bg="solid"]').click();
-    await wait(300);
-
-    // 8. Plans persist, and both months move together.
+    // 9. Everything persists, and the widgets stay away until the calendar closes.
     const saved = await page.evaluate((k) => localStorage.getItem(k), EVENTS_KEY);
-    pass('plans are saved in their own store', !!saved && saved.includes('스터디'), (saved ?? '').slice(0, 60));
-    await page.locator('[data-cal-next]').click();
-    await wait(300);
-    const moved = await months();
-    pass('the arrow moves BOTH months forward', moved[0] === next(shown[0]) && moved[1] === next(shown[1]), JSON.stringify(moved));
-    await page.locator('[data-cal-today]').click();
-    await wait(300);
-    pass('"이번 달" returns to this month', JSON.stringify(await months()) === JSON.stringify(shown));
-
+    pass('plans are saved in their own store', !!saved && saved.includes('출장'), (saved ?? '').slice(0, 60));
     await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForSelector('[data-calendar-view]', { timeout: 15000 });
     await wait(700);
     pass('they survive a reload', (await cell(today).locator('[data-event]').count()) >= 3);
-
-    // 9. Widgets step aside while the calendar is on, and come back after.
     pass('all widget buttons are hidden in calendar mode', (await fabCount()) === 0);
-    await pickView('24시간');
-    pass('leaving calendar mode brings the widgets back', (await fabCount()) === fabsBefore, `${fabsBefore} → ${await fabCount()}`);
-    pass('the chart is back', (await page.locator('svg[data-circle-timeline]').count()) === 1);
+
+    await page.locator('[data-calendar-toggle]').click();
+    await wait(600);
+    pass('the same button returns to the timetable', (await page.locator('svg[data-circle-timeline]').count()) === 1);
+    pass('the widgets come back', (await fabCount()) === fabsBefore, `${fabsBefore} → ${await fabCount()}`);
 
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
   } finally {

@@ -4,9 +4,6 @@ import type { Lang, TKey } from '@/i18n/translations';
 import { translate } from '@/i18n/translations';
 import type { ChartView } from '@/lib/chart-view';
 import { isChartLayout, type ChartLayout } from '@/lib/chart-layout';
-
-/** How solid the calendar grid sits on the app background (calendar mode). */
-export type CalendarBg = 'solid' | 'soft' | 'clear';
 import { PREFS_SYNC_EVENT } from '@/lib/sync/syncData';
 
 // ─── Options ──────────────────────────────────────────────────────────────────
@@ -116,8 +113,6 @@ export interface Preferences {
    *  offscreen so export, share and the phone widget keep working). Phones
    *  always keep it centred. */
   chartLayout: ChartLayout;
-  /** Calendar mode: an opaque grid, a translucent one, or none at all. */
-  calendarBg: CalendarBg;
   /** Browser notification when the day crosses into the next slice of the
    *  active timetable (needs per-device Notification permission too). */
   sliceAlarms: boolean;
@@ -178,7 +173,6 @@ const DEFAULT_PREFS: Preferences = {
   worldClocks: [],
   chartView: 'full',
   chartLayout: 'center',
-  calendarBg: 'solid',
   sliceAlarms: false,
   pushAlarms: false,
   snapMinutes: 5,

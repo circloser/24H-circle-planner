@@ -14,7 +14,7 @@ const ICON: Record<ChartView, typeof Clock> = {
   calendar: CalendarDays,
 };
 
-const SELECTABLE_VIEWS: ChartView[] = [...CHART_VIEWS, 'calendar', 'record'];
+const SELECTABLE_VIEWS: ChartView[] = [...CHART_VIEWS, 'record'];
 
 const LABEL_KEY: Record<ChartView, TKey> = {
   full: 'view.full',
@@ -29,7 +29,9 @@ const LABEL_KEY: Record<ChartView, TKey> = {
 export function ChartViewToggle() {
   const { prefs, setPreference } = usePreferences();
   const { t } = useTranslation();
-  const view = prefs.chartView ?? 'full';
+  // While the calendar is on this stays the TIMETABLE button: it shows the view
+  // the chart will come back to, and picking one leaves the calendar.
+  const view = prefs.chartView === 'calendar' ? 'full' : (prefs.chartView ?? 'full');
   const Icon = ICON[view];
   return (
     <DropdownMenu>
