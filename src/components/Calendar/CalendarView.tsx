@@ -6,12 +6,12 @@ import { useTranslation } from '@/hooks/usePreferences';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { MAX_EVENT_CHARS, useEvents } from '@/hooks/useEvents';
 import {
-  DEFAULT_EVENT_COLOR, EVENT_COLORS, REPEATS, dayEvents, dragRange, sortDayEvents, spanOf,
+  DEFAULT_EVENT_COLOR, EVENT_COLORS, REPEATS, dayEvents, dragRange, laneRows, sortDayEvents, spanOf,
   type DayEvent, type Repeat,
 } from '@/lib/calendar-events';
-import { useIcalFeed } from '@/hooks/useIcalFeed';
+import { useIcalFeeds } from '@/hooks/useIcalFeed';
 import { IcalConnect } from './IcalConnect';
-import { addDays, dayGap, monthCells, monthPair, partsOf, shiftMonth, thisMonth, todayKey, type YearMonth } from '@/lib/calendar-grid';
+import { MONTH_ROWS, addDays, dayGap, monthCells, monthPair, partsOf, shiftMonth, thisMonth, todayKey, type YearMonth } from '@/lib/calendar-grid';
 
 /** Cells in one six-week month grid. */
 const MONTH_CELLS = 42;
@@ -37,12 +37,17 @@ type Drag =
 
 /** One entry. All day fills the chip with its colour and a multi-day entry runs
  *  as one bar; a timed entry gets a dot and its clock time. */
-function Chip({ ev, showText = true }: { ev: DayEvent; showText?: boolean }) {
+function Chip({ ev, showText = true, inGrid = false }: { ev: DayEvent; showText?: boolean; inGrid?: boolean }) {
   const color = ev.color ?? DEFAULT_EVENT_COLOR;
   const mid = ev.index > 0;
   const ends = ev.length === 1 ? 'rounded' : ev.index === 0 ? 'rounded-l' : ev.index === ev.length - 1 ? 'rounded-r' : '';
   // An imported entry is drawn hollow: it is someone else's, and read-only.
   const imported = ev.src === 'ical';
+  // Bleed over the cell's padding on the sides the span continues on; the cell
+  // clips at its padding edge, so the bar meets the grid line either way.
+  const bleed = inGrid
+    ? `${ev.index > 0 ? '-ml-1' : ''} ${ev.index < ev.length - 1 ? '-mr-1' : ''}`
+    : '';
   if (!ev.time) {
     return (
       <span
@@ -50,7 +55,7 @@ function Chip({ ev, showText = true }: { ev: DayEvent; showText?: boolean }) {
         data-all-day
         data-imported={imported || undefined}
         data-span={ev.length > 1 ? (mid ? 'mid' : 'start') : undefined}
-        className={`block truncate px-1 text-[11px] leading-5 ${imported ? 'text-foreground' : 'text-white'} ${ends}`}
+        className={`block truncate px-1 text-[11px] leading-5 ${imported ? 'text-foreground' : 'text-white'} ${ends} ${bleed}`}
         style={imported
           ? { boxShadow: `inset 0 0 0 1px ${color}`, borderLeft: `3px solid ${color}` }
           : { backgroundColor: color }}
@@ -61,7 +66,7 @@ function Chip({ ev, showText = true }: { ev: DayEvent; showText?: boolean }) {
   }
   return (
     <span data-event data-imported={imported || undefined}
-      className="flex items-center gap-1 overflow-hidden px-1 text-[11px] leading-5 text-foreground">
+      className={`flex items-center gap-1 overflow-hidden px-1 text-[11px] leading-5 text-foreground ${bleed}`}>
       <span className={`h-2 w-2 shrink-0 rounded-full ${imported ? 'border-2' : ''}`}
         style={imported ? { borderColor: color } : { backgroundColor: color }} />
       <span className="shrink-0 tabular-nums text-muted-foreground">{ev.time}</span>
@@ -103,6 +108,21 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver }: MonthPro
   const today = todayKey();
   const label = new Date(at.y, at.m, 1).toLocaleDateString(lang, { year: 'numeric', month: 'long' });
   const weekdays = Array.from({ length: 7 }, (_, i) => new Date(2024, 0, 7 + i).toLocaleDateString(lang, { weekday: 'short' }));
+  const cells = useMemo(() => monthCells(at.y, at.m), [at.y, at.m]);
+  const byDay = useMemo(() => {
+    const out: Record<string, DayEvent[]> = {};
+    for (const cell of cells) {
+      const mine = dayEvents(events, cell.key);
+      const all = imported[cell.key] ? sortDayEvents([...mine, ...imported[cell.key]]) : mine;
+      if (all.length) out[cell.key] = all;
+    }
+    return out;
+  }, [cells, events, imported]);
+  /** One lane table per week: lanes[week][lane][weekday]. */
+  const weeks = useMemo(
+    () => Array.from({ length: MONTH_ROWS }, (_, r) => laneRows(cells.slice(r * 7, r * 7 + 7).map((c) => c.key), byDay)),
+    [cells, byDay],
+  );
   const painting = drag?.kind === 'create' ? dragRange(drag.from, drag.over) : null;
   const inPaint = (key: string) =>
     !!painting && key >= painting.start && dayGap(painting.start, key) < painting.days;
@@ -118,10 +138,12 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver }: MonthPro
         ))}
       </div>
       <div className="grid min-h-0 flex-1 grid-cols-7 grid-rows-6 gap-px rounded-lg border border-border bg-border/60">
-        {monthCells(at.y, at.m).map((cell, i) => {
-          const mine = dayEvents(events, cell.key);
-          const list = imported[cell.key] ? sortDayEvents([...mine, ...imported[cell.key]]) : mine;
-          const hidden = Math.max(0, list.length - MAX_CHIPS);
+        {cells.map((cell, i) => {
+          const list = byDay[cell.key] ?? [];
+          const lanes = weeks[Math.floor(i / 7)];
+          const col = i % 7;
+          const shown = lanes.slice(0, MAX_CHIPS).map((lane) => lane[col]);
+          const hidden = list.length - shown.filter(Boolean).length;
           const expanded = peek === cell.key && hidden > 0 && !drag;
           const number = (
             <span
@@ -153,12 +175,16 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver }: MonthPro
                 } ${cell.inMonth ? '' : 'opacity-70'}`}
               >
                 {number}
-                <span className="flex min-h-0 flex-col gap-0.5 overflow-hidden">
-                  {list.slice(0, MAX_CHIPS).map((ev) => (ev.src === 'ical' ? (
-                    <Chip key={`${ev.from}-${ev.id}`} ev={ev} showText={false} />
+                <span className="flex min-h-0 flex-col gap-0.5">
+                  {shown.map((ev, lane) => (!ev ? (
+                    // An empty lane still holds its line, so the bars below it
+                    // stay level with the same bars in the next day.
+                    <span key={`gap${lane}`} className="h-5 shrink-0" aria-hidden />
+                  ) : ev.src === 'ical' ? (
+                    <Chip key={`${ev.from}-${ev.id}`} ev={ev} showText={false} inGrid />
                   ) : (
                     <Handle key={`${ev.from}-${ev.id}`} ev={ev} on={cell.key} onDragStart={onDragStart}>
-                      <Chip ev={ev} showText={false} />
+                      <Chip ev={ev} showText={false} inGrid />
                     </Handle>
                   )))}
                   {hidden > 0 && (
@@ -211,11 +237,11 @@ export function CalendarView() {
   const [drag, setDrag] = useState<Drag | null>(null);
   const [ghost, setGhost] = useState<{ x: number; y: number } | null>(null);
   const [left, right] = monthPair(at);
-  const feed = useIcalFeed();
+  const feeds = useIcalFeeds();
   const [connecting, setConnecting] = useState(false);
   // Only the two months on screen are expanded — the six-week grids overshoot
   // the months themselves, so the window runs from the first cell to the last.
-  const importedDays = feed.days;
+  const importedDays = feeds.days;
   const imported = useMemo(() => {
     const first = monthCells(left.y, left.m)[0].key;
     const last = monthCells(right.y, right.m)[MONTH_CELLS - 1].key;
@@ -341,12 +367,12 @@ export function CalendarView() {
         <button type="button" data-ical-open onClick={() => setConnecting(true)}
           aria-label={t('ical.title')} title={t('ical.title')}
           className={`flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-xs transition-colors hover:bg-accent/10 ${
-            feed.url ? 'border-primary text-foreground' : 'border-border text-muted-foreground'
+            feeds.calendars.length ? 'border-primary text-foreground' : 'border-border text-muted-foreground'
           }`}>
           <Link className="h-3.5 w-3.5" />
           {t('ical.button')}
+          {feeds.calendars.length > 1 && <span className="tabular-nums">{feeds.calendars.length}</span>}
         </button>
-        <span className="ml-1 text-[11px] text-muted-foreground">{t('calendar.dragHint')}</span>
       </div>
 
       <div className={`flex min-h-0 flex-1 gap-3 ${isMobile ? 'flex-col overflow-y-auto' : 'flex-row'}`}>
@@ -370,7 +396,7 @@ export function CalendarView() {
         </div>
       )}
 
-      <IcalConnect feed={feed} open={connecting} onOpenChange={setConnecting} />
+      <IcalConnect feeds={feeds} open={connecting} onOpenChange={setConnecting} />
 
       <Dialog open={picked !== null} onOpenChange={(o) => { if (!o) closeDay(); }}>
         <DialogContent className="max-w-sm">

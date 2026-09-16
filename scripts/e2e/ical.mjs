@@ -11,6 +11,7 @@ const json = (data, status = 200) => ({ status, contentType: 'application/json',
 const keyOf = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const stamp = (key) => key.replace(/-/g, '');
 const FEED_URL = 'https://calendar.google.com/calendar/ical/me%40example.com/private-abc/basic.ics';
+const FEED2_URL = 'https://calendar.google.com/calendar/ical/team%40example.com/private-def/basic.ics';
 
 export async function run() {
   const { pass, allOk } = makeReporter('ical');
@@ -23,6 +24,7 @@ export async function run() {
   const feed = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
+    'X-WR-CALNAME:내 캘린더',
     'BEGIN:VEVENT',
     `DTSTART;TZID=Asia/Seoul:${stamp(dayAfter(0))}T140000`,
     `DTEND;TZID=Asia/Seoul:${stamp(dayAfter(0))}T150000`,
@@ -35,6 +37,18 @@ export async function run() {
     `DTEND;VALUE=DATE:${stamp(dayAfter(3))}`,
     'UID:trip@example.com',
     'SUMMARY:구글 출장',
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n');
+  // A second calendar, shown beside the first in its own tone.
+  const feed2 = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'X-WR-CALNAME:팀 캘린더',
+    'BEGIN:VEVENT',
+    `DTSTART;VALUE=DATE:${stamp(dayAfter(4))}`,
+    'UID:team@example.com',
+    'SUMMARY:팀 워크숍',
     'END:VEVENT',
     'END:VCALENDAR',
   ].join('\r\n');
@@ -51,7 +65,7 @@ export async function run() {
   const connect = async (url) => {
     await page.locator('[data-ical-input]').fill(url);
     await page.locator('[data-ical-connect]').click();
-    await wait(700);
+    await wait(900);
   };
   const reloadCalendar = async () => {
     await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
@@ -71,7 +85,11 @@ export async function run() {
       asked.push(target);
       if (me.plan !== 'pro') return route.fulfill(json({ error: 'pro_required' }, 403));
       if (!target.startsWith('https://calendar.google.com/calendar/ical/')) return route.fulfill(json({ error: 'bad_url' }, 400));
-      return route.fulfill({ status: 200, contentType: 'text/calendar; charset=utf-8', body: feed });
+      return route.fulfill({
+        status: 200,
+        contentType: 'text/calendar; charset=utf-8',
+        body: target === FEED2_URL ? feed2 : feed,
+      });
     });
 
     await page.goto(`${base}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
@@ -96,6 +114,7 @@ export async function run() {
     await connect('https://example.com/not-a-calendar.ics');
     pass('a wrong address is refused with a reason', (await page.locator('[data-ical-error]').count()) === 1,
       await page.locator('[data-ical-error]').first().innerText().catch(() => ''));
+    pass('…and is not left behind as a calendar', (await page.locator('[data-ical-row]').count()) === 0);
 
     // 3. The real feed lands on the grid.
     await connect(FEED_URL);
@@ -122,19 +141,50 @@ export async function run() {
     await page.keyboard.press('Escape');
     await wait(300);
 
-    // 5. It survives a reload (cached), and disconnecting removes it.
+    // 4b. A second calendar joins the first, in its own tone.
+    await openDialog();
+    await connect(FEED2_URL);
+    pass('both calendars are listed', (await page.locator('[data-ical-row]').count()) === 2);
+    const names = await page.locator('[data-ical-row]').allInnerTexts();
+    pass('…by the names the feeds give', names.join(' ').includes('내 캘린더') && names.join(' ').includes('팀 캘린더'),
+      JSON.stringify(names));
+    await page.keyboard.press('Escape');
+    await wait(500);
+    pass('the second calendar shows on the grid too', (await chips(dayAfter(4))).some((x) => x.includes('팀 워크숍')),
+      JSON.stringify(await chips(dayAfter(4))));
+    const tones = await page.evaluate(([a, b]) => {
+      const at = (key) => document.querySelector(`[data-day="${key}"] [data-event][data-imported]`);
+      const tone = (el) => (el ? getComputedStyle(el).borderLeftColor || getComputedStyle(el).boxShadow : '');
+      return [tone(at(a)), tone(at(b))];
+    }, [dayAfter(1), dayAfter(4)]);
+    pass('each calendar gets its own colour', tones[0] !== tones[1] && !!tones[0] && !!tones[1], JSON.stringify(tones));
+
+    // A span must read as ONE bar: its parts touch the edges of their cells.
+    const seam = await page.evaluate(([a, b]) => {
+      const bar = (key) => document.querySelector(`[data-day="${key}"] [data-event][data-all-day]`);
+      const one = bar(a); const two = bar(b);
+      if (!one || !two) return null;
+      const r1 = one.getBoundingClientRect(); const r2 = two.getBoundingClientRect();
+      const cell = document.querySelector(`[data-day="${a}"]`).getBoundingClientRect();
+      return { gap: Math.round(r2.left - r1.right), rightEdge: Math.round(cell.right - r1.right) };
+    }, [dayAfter(1), dayAfter(2)]);
+    pass('a span has no break between its days', !!seam && seam.gap <= 2 && seam.rightEdge <= 1, JSON.stringify(seam));
+
+    // 5. It survives a reload (cached), and removing one keeps the other.
     await reloadCalendar();
     pass('imported events survive a reload', (await chips(mine)).some((x) => x.includes('구글 주간 회의')));
     const stored = await page.evaluate(() => Object.keys(localStorage).filter((k) => k.includes('ical')));
     pass('the address is kept on the device only', JSON.stringify(stored) === '["24h-circle-planner.ical"]', JSON.stringify(stored));
 
     await openDialog();
-    await page.locator('[data-ical-disconnect]').click();
+    await page.locator('[data-ical-row]').first().locator('button').click();
     await wait(500);
+    pass('removing one leaves the other connected', (await page.locator('[data-ical-row]').count()) === 1);
     await page.keyboard.press('Escape');
     await wait(400);
-    pass('disconnecting clears the imported events', !(await chips(mine)).some((x) => x.includes('구글 주간 회의')),
+    pass('its events are gone from the grid', !(await chips(mine)).some((x) => x.includes('구글 주간 회의')),
       JSON.stringify(await chips(mine)));
+    pass('…and the other calendar still shows', (await chips(dayAfter(4))).some((x) => x.includes('팀 워크숍')));
 
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
   } finally {

@@ -15,8 +15,11 @@
 import { addDays, dateKey, dayGap, partsOf, weekdayOf } from './calendar-grid';
 import { sortDayEvents, type DayEvent } from './calendar-events';
 
-/** Imported chips are one muted colour: they are someone else's data. */
-export const ICAL_COLOR = '#64748b';
+/** Imported chips stay muted — they are someone else's data — but each
+ *  connected calendar gets its own tone so several can be told apart. */
+export const ICAL_COLORS = ['#64748b', '#0e7490', '#7c3aed', '#b45309', '#be123c'] as const;
+export const ICAL_COLOR = ICAL_COLORS[0];
+export const icalColor = (i: number): string => ICAL_COLORS[i % ICAL_COLORS.length];
 /** Ceiling on occurrences expanded from one rule, so a broken feed cannot hang. */
 const MAX_OCCURRENCES = 800;
 
@@ -95,6 +98,16 @@ function parseWhen(prop: Prop): { key: string; time: string | null } | null {
     };
   }
   return { key: `${y}-${m}-${d}`, time: `${hh}:${mm}` };
+}
+
+/** The calendar's own name (X-WR-CALNAME), or '' when the feed omits it. */
+export function calendarName(text: string): string {
+  for (const line of unfold(text)) {
+    const prop = parseProp(line);
+    if (prop?.name === 'X-WR-CALNAME') return unescapeText(prop.value).trim();
+    if (line === 'BEGIN:VEVENT') break; // the header is over
+  }
+  return '';
 }
 
 /** Every VEVENT in a feed, in the order they appear. */
@@ -276,7 +289,14 @@ export function occurrenceStarts(ev: IcalEvent, from: string, to: string): strin
  * in display order. A VEVENT carrying RECURRENCE-ID replaces that one date of
  * its series; a cancelled one removes it.
  */
-export function icalDays(events: IcalEvent[], from: string, to: string): Record<string, IcalDayEvent[]> {
+export function icalDays(
+  events: IcalEvent[],
+  from: string,
+  to: string,
+  feed: { id?: string; color?: string } = {},
+): Record<string, IcalDayEvent[]> {
+  const color = feed.color ?? ICAL_COLOR;
+  const tag = feed.id ? `${feed.id}:` : '';
   const overrides = new Map<string, IcalEvent>();
   for (const ev of events) {
     if (ev.recurrenceId) overrides.set(`${ev.uid}@${ev.recurrenceId}`, ev);
@@ -289,10 +309,10 @@ export function icalDays(events: IcalEvent[], from: string, to: string): Record<
       const key = addDays(start, index);
       if (key < from || key > to) continue;
       (byDay[key] ??= []).push({
-        id: `${ev.uid}@${start}`,
+        id: `${tag}${ev.uid}@${start}`,
         text: ev.text,
         time: ev.time,
-        color: ICAL_COLOR,
+        color,
         from: start,
         start,
         index,
@@ -314,7 +334,7 @@ export function icalDays(events: IcalEvent[], from: string, to: string): Record<
   // day), so place any that were never consumed above.
   for (const ev of overrides.values()) {
     if (ev.cancelled) continue;
-    const placed = (byDay[ev.start] ?? []).some((x) => x.id === `${ev.uid}@${ev.start}`);
+    const placed = (byDay[ev.start] ?? []).some((x) => x.id === `${tag}${ev.uid}@${ev.start}`);
     if (!placed && ev.start >= addDays(from, -(ev.days - 1)) && ev.start <= to) put(ev, ev.start);
   }
 
