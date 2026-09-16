@@ -210,6 +210,24 @@ export async function run() {
     }, today);
     pass('hovering lifts the whole list', !!peek && peek.chips === 5, JSON.stringify(peek));
     pass('…growing from the middle of the cell, not the bottom', !!peek && Math.abs(peek.dy) <= 8, JSON.stringify(peek));
+
+    // …and a plan can be carried straight out of the open peek.
+    const peekDrag = async (text, toKey) => {
+      await cell(today).hover();
+      await wait(400);
+      const handles = await page.locator('[data-day-peek] [data-drag-handle]').allInnerTexts();
+      const box = await page.locator('[data-day-peek] [data-drag-handle]', { hasText: text }).first().boundingBox();
+      await dragFrom({ x: box.x + box.width / 2, y: box.y + box.height / 2 }, toKey);
+      return handles;
+    };
+    const moved = week[0];
+    const peeked = await peekDrag('운동', moved);
+    pass('the peek lists every plan of the day', peeked.length === 5, JSON.stringify(peeked));
+    // The cell only ever draws three chips, so read the store for the real move.
+    const after = await page.evaluate((k) => JSON.parse(localStorage.getItem(k)).events, EVENTS_KEY);
+    const has = (key) => (after[key] ?? []).some((e) => e.text === '운동');
+    pass('a plan can be dragged out of the expanded list', has(moved) && !has(today),
+      JSON.stringify({ today: (after[today] ?? []).map((e) => e.text), moved: (after[moved] ?? []).map((e) => e.text) }));
     await page.mouse.move(5, 300);
     await wait(200);
 
@@ -222,6 +240,14 @@ export async function run() {
     pass('they survive a reload', (await cell(today).locator('[data-event]').count()) >= 3);
     pass('all widget buttons are hidden in calendar mode', (await fabCount()) === 0);
 
+    // 10. The timetable button itself switches back without opening its menu.
+    await page.locator('[data-view-toggle]').click();
+    await wait(600);
+    pass('the timetable button leaves the calendar in one press', (await page.locator('svg[data-circle-timeline]').count()) === 1);
+    pass('…without opening a menu', (await page.locator('[role="menuitemradio"]').count()) === 0);
+
+    await page.locator('[data-calendar-toggle]').click();
+    await wait(600);
     await page.locator('[data-calendar-toggle]').click();
     await wait(600);
     pass('the same button returns to the timetable', (await page.locator('svg[data-circle-timeline]').count()) === 1);

@@ -58,6 +58,21 @@ function Chip({ ev, showText = true }: { ev: DayEvent; showText?: boolean }) {
   );
 }
 
+/** Wraps a chip so it can be picked up and carried to another day. */
+function Handle({ ev, on, onDragStart, children }: {
+  ev: DayEvent; on: string; onDragStart: (d: Drag) => void; children: React.ReactNode;
+}) {
+  return (
+    <span
+      data-drag-handle
+      className="block min-w-0 cursor-grab active:cursor-grabbing"
+      onPointerDown={(e) => { e.stopPropagation(); if (e.button === 0) onDragStart({ kind: 'move', from: on, over: on, ev }); }}
+    >
+      {children}
+    </span>
+  );
+}
+
 interface MonthProps {
   at: YearMonth;
   drag: Drag | null;
@@ -77,6 +92,8 @@ function Month({ at, drag, onOpen, onDragStart, onDragOver }: MonthProps) {
   const painting = drag?.kind === 'create' ? dragRange(drag.from, drag.over) : null;
   const inPaint = (key: string) =>
     !!painting && key >= painting.start && dayGap(painting.start, key) < painting.days;
+  /** The day a carried plan would land on. */
+  const dropOn = drag?.kind === 'move' ? drag.over : null;
 
   return (
     <section className="flex min-h-0 min-w-0 flex-1 flex-col" data-calendar-month={`${at.y}-${String(at.m + 1).padStart(2, '0')}`}>
@@ -117,20 +134,15 @@ function Month({ at, drag, onOpen, onDragStart, onDragOver }: MonthProps) {
                 // Keyboard activation only: a mouse click is handled by the drag.
                 onClick={(e) => { if (e.detail === 0) onOpen(cell.key, 1); }}
                 className={`flex h-full w-full min-h-0 select-none flex-col gap-0.5 overflow-hidden bg-surface p-1 text-left transition-colors hover:bg-accent/10 ${
-                  inPaint(cell.key) ? 'ring-2 ring-inset ring-primary' : ''
+                  inPaint(cell.key) || cell.key === dropOn ? 'ring-2 ring-inset ring-primary' : ''
                 } ${cell.inMonth ? '' : 'opacity-70'}`}
               >
                 {number}
                 <span className="flex min-h-0 flex-col gap-0.5 overflow-hidden">
                   {list.slice(0, MAX_CHIPS).map((ev) => (
-                    <span
-                      key={`${ev.from}-${ev.id}`}
-                      data-drag-handle
-                      className="block min-w-0 cursor-grab active:cursor-grabbing"
-                      onPointerDown={(e) => { e.stopPropagation(); if (e.button === 0) onDragStart({ kind: 'move', from: cell.key, over: cell.key, ev }); }}
-                    >
+                    <Handle key={`${ev.from}-${ev.id}`} ev={ev} on={cell.key} onDragStart={onDragStart}>
                       <Chip ev={ev} showText={false} />
-                    </span>
+                    </Handle>
                   ))}
                   {hidden > 0 && (
                     <span className="px-1 text-[10px] text-muted-foreground">{t('calendar.more', { n: String(hidden) })}</span>
@@ -145,7 +157,11 @@ function Month({ at, drag, onOpen, onDragStart, onDragOver }: MonthProps) {
                   className="absolute left-1/2 top-1/2 z-40 flex w-[max(100%,180px)] max-h-[60vh] -translate-x-1/2 -translate-y-1/2 cursor-pointer flex-col gap-0.5 overflow-auto rounded-lg border border-border bg-surface p-1 shadow-xl"
                 >
                   {number}
-                  {list.map((ev) => <Chip key={`${ev.from}-${ev.id}`} ev={ev} />)}
+                  {list.map((ev) => (
+                    <Handle key={`${ev.from}-${ev.id}`} ev={ev} on={cell.key} onDragStart={onDragStart}>
+                      <Chip ev={ev} />
+                    </Handle>
+                  ))}
                 </div>
               )}
             </div>
@@ -174,6 +190,7 @@ export function CalendarView() {
   /** Which repeating row is asking what to delete. */
   const [deleting, setDeleting] = useState<string | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
+  const [ghost, setGhost] = useState<{ x: number; y: number } | null>(null);
   const [left, right] = monthPair(at);
   const dayList = picked ? dayEvents(events, picked.start) : [];
 
@@ -201,6 +218,15 @@ export function CalendarView() {
       repeat: ev.repeat ?? 'none',
     });
   };
+
+  // While a plan is being carried, a copy of it follows the pointer — the peek
+  // closes as soon as the drag starts, so this is what the eye follows.
+  useEffect(() => {
+    if (drag?.kind !== 'move') return; // the ghost only renders during a move anyway
+    const track = (e: PointerEvent) => setGhost({ x: e.clientX, y: e.clientY });
+    window.addEventListener('pointermove', track);
+    return () => window.removeEventListener('pointermove', track);
+  }, [drag]);
 
   // A drag ends wherever the pointer is released, inside the grid or not.
   useEffect(() => {
@@ -296,6 +322,13 @@ export function CalendarView() {
           />
         ))}
       </div>
+
+      {drag?.kind === 'move' && ghost && (
+        <div data-drag-ghost className="pointer-events-none fixed z-50 w-36 opacity-90"
+          style={{ left: ghost.x + 10, top: ghost.y + 10 }}>
+          <Chip ev={drag.ev} />
+        </div>
+      )}
 
       <Dialog open={picked !== null} onOpenChange={(o) => { if (!o) closeDay(); }}>
         <DialogContent className="max-w-sm">
