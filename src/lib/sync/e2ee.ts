@@ -116,6 +116,18 @@ let sessionSalt: Uint8Array | null = null;
 /** Fired when the E2EE lock state changes (key set or cleared) so the engine
  *  and UI can react (e.g. resume sync / close the unlock dialog). */
 export const E2EE_EVENT = '24h:e2ee-changed';
+
+/** Fired to ask the app shell to open the passphrase dialog from anywhere. */
+export const OPEN_E2EE_EVENT = '24h:open-e2ee';
+
+/** Ask the app to open the passphrase dialog (any surface that needs a key). */
+export function requestPassphrase(): void {
+  try {
+    window.dispatchEvent(new Event(OPEN_E2EE_EVENT));
+  } catch {
+    /* non-browser / SSR — no-op */
+  }
+}
 /** Ask the sync engine to immediately (re-)push — used right after ENABLING so
  *  the existing cloud copy is replaced with ciphertext even though the DATA
  *  (and thus its fingerprint) is unchanged. */

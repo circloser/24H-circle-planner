@@ -3,7 +3,12 @@ import { feedUrl, handleIcalFetch } from '../ical';
 import type { Env } from '../index';
 
 const env = {} as Env;
-const get = (url: string) => new Request(`https://24houring.com/api/ical?url=${encodeURIComponent(url)}`);
+/** The address travels in the body, never in the URL. */
+const get = (url: string) => new Request('https://24houring.com/api/ical', {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ url }),
+});
 const FEED = 'https://calendar.google.com/calendar/ical/abc%40group.calendar.google.com/private-123/basic.ics';
 const user = { id: 'u1' };
 
@@ -41,6 +46,22 @@ describe('the endpoint', () => {
     expect((await handleIcalFetch(get(FEED), env, user, false)).status).toBe(403);
     // Neither case may reach out to Google at all.
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('keeps the address out of the request URL', async () => {
+    const req = get(FEED);
+    expect(req.method).toBe('POST');
+    expect(req.url).toBe('https://24houring.com/api/ical');
+    expect(req.url).not.toContain('private-');
+  });
+
+  it('refuses a body that is not JSON, or carries no address', async () => {
+    const bare = new Request('https://24houring.com/api/ical', { method: 'POST', body: 'not json' });
+    expect((await handleIcalFetch(bare, env, user, true)).status).toBe(400);
+    const empty = new Request('https://24houring.com/api/ical', {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}',
+    });
+    expect((await handleIcalFetch(empty, env, user, true)).status).toBe(400);
   });
 
   it('rejects a non-Google address before fetching anything', async () => {

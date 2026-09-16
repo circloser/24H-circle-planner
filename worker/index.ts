@@ -1212,7 +1212,7 @@ export default {
         }
       }
       // Read-only Google Calendar import, Pro only (see worker/ical.ts).
-      if (p === '/api/ical' && m === 'GET') {
+      if (p === '/api/ical' && m === 'POST') {
         const user = await currentUser(request, env);
         return handleIcalFetch(request, env, user, user ? await isEntitled(env, user) : false);
       }

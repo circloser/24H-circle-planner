@@ -171,7 +171,14 @@ export function useIcalFeeds(): IcalFeeds {
         const feed = feeds.find((f) => f.id === id);
         if (!feed) continue;
         try {
-          const res = await fetch(`/api/ical?url=${encodeURIComponent(feed.url)}`, { credentials: 'include' });
+          // The address goes in the BODY: it is a credential, and a query
+          // string is the part of a request most likely to be written down.
+          const res = await fetch('/api/ical', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ url: feed.url }),
+          });
           if (!res.ok) {
             const body = (await res.json().catch(() => ({}))) as { error?: string };
             const known: IcalError[] = ['pro_required', 'unauthorized', 'bad_url', 'feed_not_found'];

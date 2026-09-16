@@ -55,6 +55,7 @@ export async function run() {
 
   let me = { user: { id: 'u1', email: 'me@example.com', provider: 'google' }, plan: 'free', admin: false };
   const asked = [];
+  const urlLeaks = [];
 
   const cell = (key) => page.locator(`[data-day="${key}"]`).first();
   const chips = (key) => cell(key).locator('[data-event]').allInnerTexts();
@@ -80,9 +81,13 @@ export async function run() {
     await page.route('**/api/sync*', (route) => route.fulfill(json({ version: 0, data: {}, updatedAt: 0 })));
     await page.route('**/api/me', (route) => route.fulfill(json(me)));
     await page.route('**/api/ical*', (route) => {
-      const url = new URL(route.request().url());
-      const target = url.searchParams.get('url') ?? '';
+      const req = route.request();
+      const target = (() => {
+        try { return JSON.parse(req.postData() || '{}').url ?? ''; } catch { return ''; }
+      })();
       asked.push(target);
+      // The address is a credential: it must never ride in the URL.
+      if (new URL(req.url()).search) urlLeaks.push(req.url());
       if (me.plan !== 'pro') return route.fulfill(json({ error: 'pro_required' }, 403));
       if (!target.startsWith('https://calendar.google.com/calendar/ical/')) return route.fulfill(json({ error: 'bad_url' }, 400));
       return route.fulfill({
@@ -106,11 +111,24 @@ export async function run() {
     await page.keyboard.press('Escape');
     await wait(300);
 
-    // 2. Pro gets the field; a wrong address is reported, not swallowed.
+    // 2. Pro without a passphrase is asked for one FIRST — the address syncs,
+    //    so it may only go up once this device can encrypt what it uploads.
     me = { ...me, plan: 'pro' };
     await reloadCalendar();
     await openDialog();
-    pass('a Pro account gets the address field', (await page.locator('[data-ical-input]').count()) === 1);
+    pass('a Pro account with no passphrase is asked for one', (await page.locator('[data-ical-locked]').count()) === 1);
+    pass('…and gets no address field until then', (await page.locator('[data-ical-input]').count()) === 0);
+    await page.keyboard.press('Escape');
+    await wait(300);
+
+    // 3. With the diary lock on, the field appears.
+    await page.evaluate(() => {
+      localStorage.setItem('24h-circle-planner.e2ee-key', JSON.stringify({ keyB64: 'x', saltB64: 'y' }));
+      window.dispatchEvent(new Event('24h:e2ee-changed'));
+    });
+    await reloadCalendar();
+    await openDialog();
+    pass('a locked device gets the address field', (await page.locator('[data-ical-input]').count()) === 1);
     await connect('https://example.com/not-a-calendar.ics');
     pass('a wrong address is refused with a reason', (await page.locator('[data-ical-error]').count()) === 1,
       await page.locator('[data-ical-error]').first().innerText().catch(() => ''));
@@ -194,6 +212,7 @@ export async function run() {
       JSON.stringify(await chips(mine)));
     pass('…and the other calendar still shows', (await chips(dayAfter(4))).some((x) => x.includes('팀 워크숍')));
 
+    pass('the address never appears in a request URL', urlLeaks.length === 0, JSON.stringify(urlLeaks.slice(0, 2)));
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
   } finally {
     await browser.close();

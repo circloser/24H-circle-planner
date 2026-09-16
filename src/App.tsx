@@ -69,6 +69,7 @@ import { hasSyncConsent } from '@/lib/sync/consent';
 import { UpgradeDialog } from '@/components/Billing/UpgradeDialog';
 import { StatsDialog } from '@/components/Admin/StatsDialog';
 import { OPEN_UPGRADE_EVENT } from '@/lib/pro';
+import { OPEN_E2EE_EVENT } from '@/lib/sync/e2ee';
 import { WelcomeOverlay } from '@/components/Onboarding/WelcomeOverlay';
 import { DesignMagician } from '@/components/Onboarding/DesignMagician';
 import { TutorialOverlay } from '@/components/Onboarding/TutorialOverlay';
@@ -371,15 +372,18 @@ function App() {
   // never hit a gate) to reach the coupon-issuing panel, and for anyone with a code.
   useEffect(() => {
     const onUpgrade = () => setUpgradeOpen(true);
+    const onPassphrase = () => setE2eeOpen(true);
     const onHash = () => {
       if (window.location.hash === '#coupons') setUpgradeOpen(true);
       if (window.location.hash === '#stats') setStatsOpen(true); // admin-only (endpoint 403s others)
     };
     onHash();
     window.addEventListener(OPEN_UPGRADE_EVENT, onUpgrade);
+    window.addEventListener(OPEN_E2EE_EVENT, onPassphrase);
     window.addEventListener('hashchange', onHash);
     return () => {
       window.removeEventListener(OPEN_UPGRADE_EVENT, onUpgrade);
+      window.removeEventListener(OPEN_E2EE_EVENT, onPassphrase);
       window.removeEventListener('hashchange', onHash);
     };
   }, []);

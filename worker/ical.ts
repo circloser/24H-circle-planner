@@ -1,17 +1,19 @@
 /**
  * Read-only Google Calendar import (Pro).
  *
- *   GET /api/ical?url=…  → text/calendar
+ *   POST /api/ical  { url }  → text/calendar
  *
  * Two reasons this goes through the Worker at all: a Google feed sends no CORS
  * headers, so the browser cannot read it directly, and the edge cache keeps us
  * from hammering Google when several devices open the calendar at once.
  *
  * The feed URL is the user's SECRET — whoever holds it can read that calendar.
- * So it is never stored here: the app keeps it on the device and sends it with
- * each request, we never log it, and only Google's own calendar host is
- * accepted, which also means this endpoint can never be aimed at anything else
- * (no SSRF surface). Pro only, and signed in — both checked by the caller.
+ * So it travels in the REQUEST BODY, not the query string: a URL is the part of
+ * a request that proxies, caches and analytics are most likely to write down,
+ * and a credential has no business being there. It is never stored here, and
+ * only Google's own calendar host is accepted, which also means this endpoint
+ * can never be aimed at anything else (no SSRF surface). Pro only, and signed
+ * in — both checked by the caller.
  */
 import type { Env } from './index';
 
@@ -54,7 +56,14 @@ export async function handleIcalFetch(
   if (!user) return json({ error: 'unauthorized' }, 401);
   if (!isPro) return json({ error: 'pro_required' }, 403);
 
-  const target = feedUrl(new URL(request.url).searchParams.get('url'));
+  let asked: { url?: unknown } | null;
+  try {
+    asked = (await request.json()) as { url?: unknown } | null;
+  } catch {
+    return json({ error: 'bad_json' }, 400);
+  }
+  const given = asked?.url;
+  const target = feedUrl(typeof given === 'string' ? given : null);
   if (!target) return json({ error: 'bad_url' }, 400);
 
   let res: Response;

@@ -1,12 +1,26 @@
-import { useState } from 'react';
-import { CalendarDays, Plus, RefreshCw, X } from 'lucide-react';
+import { useState, useSyncExternalStore } from 'react';
+import { CalendarDays, Lock, Plus, RefreshCw, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useAuth } from '@/hooks/useAuth';
 import { requestUpgrade } from '@/lib/pro';
 import { MAX_FEEDS, type IcalError, type IcalFeeds } from '@/hooks/useIcalFeed';
+import { E2EE_EVENT, isE2eeEnabled, requestPassphrase } from '@/lib/sync/e2ee';
 import type { TKey } from '@/i18n/translations';
+
+/** Whether this device holds a passphrase, kept live (the dialog can turn it on
+ *  from here, and the answer changes while this dialog is open). */
+function useLocked(): boolean {
+  return !useSyncExternalStore(
+    (onChange) => {
+      window.addEventListener(E2EE_EVENT, onChange);
+      return () => window.removeEventListener(E2EE_EVENT, onChange);
+    },
+    () => isE2eeEnabled(),
+    () => false,
+  );
+}
 
 const ERROR_KEY: Record<IcalError, TKey> = {
   pro_required: 'ical.proBody',
@@ -42,6 +56,7 @@ export function IcalConnect({ feeds, open, onOpenChange }: {
 function IcalBody({ feeds }: { feeds: IcalFeeds }) {
   const { t, lang } = useTranslation();
   const isPro = useAuth().plan === 'pro';
+  const locked = useLocked();
   const [draft, setDraft] = useState('');
 
   const stamp = (at: number) => (at
@@ -93,6 +108,20 @@ function IcalBody({ feeds }: { feeds: IcalFeeds }) {
         </ul>
       )}
 
+      {locked ? (
+        <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-border px-3 py-4 text-center" data-ical-locked>
+          <span className="grid h-10 w-10 place-items-center rounded-full bg-primary/10">
+            <Lock className="h-5 w-5 text-primary" />
+          </span>
+          <p className="text-sm font-medium text-foreground">{t('ical.lockTitle')}</p>
+          <p className="max-w-xs text-xs leading-relaxed text-muted-foreground">{t('ical.lockBody')}</p>
+          <Button data-ical-setlock onClick={requestPassphrase} className="mt-1 gap-1.5">
+            <Lock className="h-4 w-4" />
+            {t('ical.lockCta')}
+          </Button>
+        </div>
+      ) : (
+      <>
       <p className="text-xs leading-relaxed text-muted-foreground">{t('ical.how')}</p>
       <div className="flex items-center gap-2">
         <input
@@ -113,6 +142,8 @@ function IcalBody({ feeds }: { feeds: IcalFeeds }) {
       <p className="text-[11px] leading-relaxed text-muted-foreground">
         {feeds.full ? t('ical.full', { n: String(MAX_FEEDS) }) : t('ical.secretNote')}
       </p>
+      </>
+      )}
 
       {/* The one just pasted may not have a row yet, so its error shows here. */}
       {feeds.lastError && <p className="text-xs text-red-500" data-ical-error>{t(ERROR_KEY[feeds.lastError])}</p>}
