@@ -23,6 +23,9 @@ export interface CalendarEvent {
   skip?: string[];
   /** Last date a repeat may start on ("delete this and later" sets it back). */
   until?: string;
+  /** Where the user dragged this entry in the day's list. Lower sits higher;
+   *  entries never reordered by hand keep the default order below. */
+  order?: number;
 }
 
 /** A day's entry: the stored event, the date it is FILED under, and where this
@@ -91,9 +94,14 @@ export function spanIndexOn(
   return null;
 }
 
-/** All-day (and multi-day) entries first, then by time, keeping insertion order. */
+/** A hand-placed entry keeps its place; everything else falls in behind. */
+const placed = (ev: Pick<CalendarEvent, 'order'>) =>
+  (typeof ev.order === 'number' ? ev.order : Number.POSITIVE_INFINITY);
+
+/** Hand-placed entries first, then all-day (and multi-day) ones, then by time. */
 export function sortDayEvents<T extends CalendarEvent>(list: T[]): T[] {
   return [...list].sort((x, y) => {
+    if (placed(x) !== placed(y)) return placed(x) - placed(y);
     const xa = !x.time;
     const ya = !y.time;
     if (xa !== ya) return xa ? -1 : 1;
@@ -137,7 +145,7 @@ export function dragRange(a: string, b: string): { start: string; days: number }
  */
 export function laneRows(days: string[], byDay: Record<string, DayEvent[]>): Array<Array<DayEvent | null>> {
   const width = days.length;
-  interface Run { first: number; last: number; per: Array<DayEvent | null>; start: string; length: number; time?: string | null }
+  interface Run { first: number; last: number; per: Array<DayEvent | null>; start: string; length: number; time?: string | null; order?: number }
   const runs = new Map<string, Run>();
 
   days.forEach((key, i) => {
@@ -145,7 +153,7 @@ export function laneRows(days: string[], byDay: Record<string, DayEvent[]>): Arr
       const id = `${ev.src ?? 'me'}|${ev.from}|${ev.id}|${ev.start}`;
       let run = runs.get(id);
       if (!run) {
-        run = { first: i, last: i, per: new Array<DayEvent | null>(width).fill(null), start: ev.start, length: ev.length, time: ev.time };
+        run = { first: i, last: i, per: new Array<DayEvent | null>(width).fill(null), start: ev.start, length: ev.length, time: ev.time, order: ev.order };
         runs.set(id, run);
       }
       run.last = i;
@@ -154,6 +162,7 @@ export function laneRows(days: string[], byDay: Record<string, DayEvent[]>): Arr
   });
 
   const order = [...runs.values()].sort((a, b) => {
+    if (placed(a) !== placed(b)) return placed(a) - placed(b); // the user's own order wins
     const aAll = !a.time;
     const bAll = !b.time;
     if (aAll !== bAll) return aAll ? -1 : 1;   // all-day bars above timed ones

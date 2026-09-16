@@ -30,6 +30,8 @@ function cleanEvent(e: unknown): CalendarEvent | null {
   const skip = Array.isArray(o['skip']) ? o['skip'].filter(isDateKey) : [];
   if (skip.length) ev.skip = skip;
   if (isDateKey(o['until'])) ev.until = o['until'];
+  const order = Number(o['order']);
+  if (Number.isFinite(order) && order >= 0) ev.order = Math.floor(order);
   return ev;
 }
 
@@ -76,6 +78,9 @@ interface EventsApi {
   endSeriesBefore: (dateKey: string, id: string, day: string) => void;
   /** Remove the entry outright (a repeat loses every occurrence). */
   removeEvent: (dateKey: string, id: string) => void;
+  /** Put a day's entries in the order the user dragged them into. Each entry is
+   *  stamped where it sits, so the order survives a reload and a sync. */
+  orderDay: (entries: Array<{ from: string; id: string }>) => void;
 }
 
 const Ctx = createContext<EventsApi | null>(null);
@@ -99,6 +104,18 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
       // carries days that actually hold something.
       if (kept.length) out[dateKey] = kept;
       else delete out[dateKey];
+      return out;
+    });
+  }, [setEvents]);
+
+  const orderDay = useCallback((entries: Array<{ from: string; id: string }>) => {
+    setEvents((prev) => {
+      const out = { ...prev };
+      entries.forEach(({ from, id }, i) => {
+        const list = out[from];
+        if (!list) return;
+        out[from] = list.map((ev) => (ev.id === id ? { ...ev, order: i } : ev));
+      });
       return out;
     });
   }, [setEvents]);
@@ -161,8 +178,8 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
   }, [patchOne]);
 
   const api = useMemo(
-    () => ({ events, addEvent, updateEvent, moveEvent, skipOccurrence, endSeriesBefore, removeEvent }),
-    [events, addEvent, updateEvent, moveEvent, skipOccurrence, endSeriesBefore, removeEvent],
+    () => ({ events, addEvent, updateEvent, moveEvent, skipOccurrence, endSeriesBefore, removeEvent, orderDay }),
+    [events, addEvent, updateEvent, moveEvent, skipOccurrence, endSeriesBefore, removeEvent, orderDay],
   );
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }

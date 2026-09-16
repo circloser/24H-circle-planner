@@ -91,6 +91,17 @@ describe('a day’s plans', () => {
   });
 });
 
+describe('an order the user set by hand', () => {
+  it('comes before the default all-day-then-time order', () => {
+    const list: CalendarEvent[] = [
+      { id: 'a', text: 'all day' },
+      { id: 'b', text: 'nine', time: '09:00', order: 0 },
+      { id: 'c', text: 'noon', time: '12:00', order: 1 },
+    ];
+    expect(sortDayEvents(list).map((e) => e.id)).toEqual(['b', 'c', 'a']);
+  });
+});
+
 describe('a week laid out in lanes', () => {
   const week = ['2026-09-13', '2026-09-14', '2026-09-15', '2026-09-16', '2026-09-17', '2026-09-18', '2026-09-19'];
   const bar = (id: string, start: string, length: number, index: number, over: Partial<DayEvent> = {}): DayEvent =>

@@ -97,6 +97,14 @@ describe('calendar events', () => {
     expect(all()[DAY]).toBeUndefined();
   });
 
+  it('keeps a hand-placed order, and reads one back', () => {
+    expect(eventsCodec.decode({ version: 1, events: { [DAY]: [{ id: 'a', text: 'ok', order: 2 }] } }))
+      .toEqual({ [DAY]: [{ id: 'a', text: 'ok', order: 2 }] });
+    // A nonsense order is dropped rather than trusted.
+    expect(eventsCodec.decode({ version: 1, events: { [DAY]: [{ id: 'a', text: 'ok', order: -1 }] } }))
+      .toEqual({ [DAY]: [{ id: 'a', text: 'ok' }] });
+  });
+
   it('reads entries from the first version (id + text) as all-day one-offs', () => {
     expect(eventsCodec.decode({ version: 1, events: { [DAY]: [{ id: 'a', text: 'ok' }] } }))
       .toEqual({ [DAY]: [{ id: 'a', text: 'ok' }] });

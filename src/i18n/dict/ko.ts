@@ -687,6 +687,7 @@ export const ko = {
   'calendar.repeatYearly': '매년',
   'calendar.spanDays': '{n}일간',
   'calendar.editPlan': '수정',
+  'calendar.reorder': '순서 바꾸기',
   'calendar.editOccurrenceNote': '반복 일정은 이 날짜만 바뀌고 나머지는 그대로예요.',
   'calendar.scopeOne': '이 날짜만',
   'calendar.scopeFuture': '이후 모두',

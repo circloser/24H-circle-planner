@@ -685,6 +685,7 @@ export const es: Record<TKey, string> = {
   'calendar.repeatYearly': 'Anual',
   'calendar.spanDays': '{n} días',
   'calendar.editPlan': 'Editar',
+  'calendar.reorder': 'Reordenar',
   'calendar.editOccurrenceNote': 'Solo cambia este día; el resto de la serie sigue igual.',
   'calendar.scopeOne': 'Solo este día',
   'calendar.scopeFuture': 'Este y posteriores',

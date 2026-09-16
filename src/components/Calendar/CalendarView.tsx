@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, Link, Pencil, Plus, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { CalendarDays, ChevronLeft, ChevronRight, GripVertical, Link, Pencil, Plus, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/usePreferences';
@@ -17,8 +17,13 @@ import { MONTH_ROWS, addDays, dayGap, monthCells, monthPair, partsOf, shiftMonth
 const MONTH_CELLS = 42;
 import type { TKey } from '@/i18n/translations';
 
-/** Chips drawn straight in a day cell; the rest hide behind “+n”. */
+/** Fallback before the grid has been measured; the real number comes from how
+ *  many lines actually fit in a cell (see useChipRoom). */
 const MAX_CHIPS = 3;
+/** One chip line: 17px of text plus the 1px gap under it. */
+const LINE_H = 18;
+/** The day number above the chips, plus the cell's own padding. */
+const HEAD_H = 20;
 
 const REPEAT_LABEL: Record<Repeat, TKey> = {
   none: 'calendar.repeatNone',
@@ -27,6 +32,20 @@ const REPEAT_LABEL: Record<Repeat, TKey> = {
   monthly: 'calendar.repeatMonthly',
   yearly: 'calendar.repeatYearly',
 };
+/**
+ * The grid lines, drawn as the cell's own inset shadow rather than as gaps
+ * between cells: an inset shadow sits UNDER the cell's contents, so a bar that
+ * runs to the edge covers the line and a span reads as one unbroken bar.
+ */
+function cellLines(i: number, lit: boolean): string {
+  const line = 'hsl(var(--border))';
+  const parts: string[] = [];
+  if (i % 7 !== 6) parts.push(`inset -1px 0 0 ${line}`);
+  if (i < 35) parts.push(`inset 0 -1px 0 ${line}`);
+  if (lit) parts.push('inset 0 0 0 2px hsl(var(--primary))');
+  return parts.join(', ');
+}
+
 /** Sunday reads red and Saturday blue, as Korean calendars do. */
 const weekdayTone = (i: number) => (i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-muted-foreground');
 
@@ -34,6 +53,15 @@ const weekdayTone = (i: number) => (i === 0 ? 'text-red-500' : i === 6 ? 'text-b
 type Drag =
   | { kind: 'create'; from: string; over: string }
   | { kind: 'move'; from: string; over: string; ev: DayEvent };
+
+/** The hollow outline of an imported bar — closed only on the days the span
+ *  actually starts and ends on, so the days in between run straight through. */
+function outline(color: string, ev: DayEvent): string {
+  const sides = [`inset 0 1px 0 ${color}`, `inset 0 -1px 0 ${color}`];
+  if (ev.index === 0) sides.push(`inset 3px 0 0 ${color}`);
+  if (ev.index === ev.length - 1) sides.push(`inset -1px 0 0 ${color}`);
+  return sides.join(', ');
+}
 
 /** One entry. All day fills the chip with its colour and a multi-day entry runs
  *  as one bar; a timed entry gets a dot and its clock time. */
@@ -55,10 +83,8 @@ function Chip({ ev, showText = true, inGrid = false }: { ev: DayEvent; showText?
         data-all-day
         data-imported={imported || undefined}
         data-span={ev.length > 1 ? (mid ? 'mid' : 'start') : undefined}
-        className={`block truncate px-1 text-[11px] leading-5 ${imported ? 'text-foreground' : 'text-white'} ${ends} ${bleed}`}
-        style={imported
-          ? { boxShadow: `inset 0 0 0 1px ${color}`, borderLeft: `3px solid ${color}` }
-          : { backgroundColor: color }}
+        className={`block truncate px-1 text-[11px] leading-[17px] ${imported ? 'text-foreground' : 'text-white'} ${ends} ${bleed}`}
+        style={imported ? { boxShadow: outline(color, ev) } : { backgroundColor: color }}
       >
         {mid && !showText ? ' ' : ev.text}
       </span>
@@ -66,7 +92,7 @@ function Chip({ ev, showText = true, inGrid = false }: { ev: DayEvent; showText?
   }
   return (
     <span data-event data-imported={imported || undefined}
-      className={`flex items-center gap-1 overflow-hidden px-1 text-[11px] leading-5 text-foreground ${bleed}`}>
+      className={`flex items-center gap-1 overflow-hidden px-1 text-[11px] leading-[17px] text-foreground ${bleed}`}>
       <span className={`h-2 w-2 shrink-0 rounded-full ${imported ? 'border-2' : ''}`}
         style={imported ? { borderColor: color } : { backgroundColor: color }} />
       <span className="shrink-0 tabular-nums text-muted-foreground">{ev.time}</span>
@@ -100,6 +126,24 @@ interface MonthProps {
   onDragOver: (key: string) => void;
 }
 
+/** How many chip lines fit in one day cell right now — remeasured whenever the
+ *  grid changes size, so a taller window simply shows more plans. */
+function useChipRoom(grid: React.RefObject<HTMLDivElement | null>): number {
+  const [room, setRoom] = useState(MAX_CHIPS);
+  useEffect(() => {
+    const el = grid.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    // ResizeObserver fires once on observe, which is the first measurement.
+    const ro = new ResizeObserver(() => {
+      const rowH = el.clientHeight / MONTH_ROWS;
+      setRoom(Math.max(1, Math.floor((rowH - HEAD_H) / LINE_H)));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [grid]);
+  return room;
+}
+
 /** One month: name, weekday header and six rows of days filling the height. */
 function Month({ at, imported, drag, onOpen, onDragStart, onDragOver }: MonthProps) {
   const { t, lang } = useTranslation();
@@ -123,6 +167,8 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver }: MonthPro
     () => Array.from({ length: MONTH_ROWS }, (_, r) => laneRows(cells.slice(r * 7, r * 7 + 7).map((c) => c.key), byDay)),
     [cells, byDay],
   );
+  const gridRef = useRef<HTMLDivElement>(null);
+  const room = useChipRoom(gridRef);
   const painting = drag?.kind === 'create' ? dragRange(drag.from, drag.over) : null;
   const inPaint = (key: string) =>
     !!painting && key >= painting.start && dayGap(painting.start, key) < painting.days;
@@ -131,23 +177,29 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver }: MonthPro
 
   return (
     <section className="flex min-h-0 min-w-0 flex-1 flex-col" data-calendar-month={`${at.y}-${String(at.m + 1).padStart(2, '0')}`}>
-      <h3 className="mb-1 text-center text-sm font-semibold text-foreground">{label}</h3>
+      <h3 className="mb-0.5 text-center text-xs font-semibold text-foreground">{label}</h3>
       <div className="grid grid-cols-7">
         {weekdays.map((w, i) => (
-          <div key={`${w}${i}`} className={`py-1 text-center text-[11px] font-medium ${weekdayTone(i)}`}>{w}</div>
+          <div key={`${w}${i}`} className={`py-0.5 text-center text-[10px] font-medium ${weekdayTone(i)}`}>{w}</div>
         ))}
       </div>
-      <div className="grid min-h-0 flex-1 grid-cols-7 grid-rows-6 gap-px rounded-lg border border-border bg-border/60">
+      <div ref={gridRef} className="grid min-h-0 flex-1 grid-cols-7 grid-rows-6 overflow-hidden rounded-lg border border-border bg-surface">
         {cells.map((cell, i) => {
           const list = byDay[cell.key] ?? [];
           const lanes = weeks[Math.floor(i / 7)];
           const col = i % 7;
-          const shown = lanes.slice(0, MAX_CHIPS).map((lane) => lane[col]);
-          const hidden = list.length - shown.filter(Boolean).length;
+          const drawn = (n: number) => lanes.slice(0, n).map((lane) => lane[col]);
+          // Everything fits, or one line is given up to say how many don't.
+          let shown = drawn(room);
+          let hidden = list.length - shown.filter(Boolean).length;
+          if (hidden > 0 && room > 1) {
+            shown = drawn(room - 1);
+            hidden = list.length - shown.filter(Boolean).length;
+          }
           const expanded = peek === cell.key && hidden > 0 && !drag;
           const number = (
             <span
-              className={`mx-auto grid h-5 min-w-[20px] place-items-center rounded-full px-1 text-[11px] ${
+              className={`mx-auto grid h-4 min-w-[18px] place-items-center rounded-full px-1 text-[10px] ${
                 cell.key === today
                   ? 'bg-primary font-bold text-primary-foreground'
                   : `${weekdayTone(i % 7)} ${cell.inMonth ? '' : 'opacity-40'}`
@@ -170,16 +222,17 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver }: MonthPro
                 onPointerDown={(e) => { if (e.button === 0) onDragStart({ kind: 'create', from: cell.key, over: cell.key }); }}
                 // Keyboard activation only: a mouse click is handled by the drag.
                 onClick={(e) => { if (e.detail === 0) onOpen(cell.key, 1); }}
-                className={`flex h-full w-full min-h-0 select-none flex-col gap-0.5 overflow-hidden bg-surface p-1 text-left transition-colors hover:bg-accent/10 ${
-                  inPaint(cell.key) || cell.key === dropOn ? 'ring-2 ring-inset ring-primary' : ''
-                } ${cell.inMonth ? '' : 'opacity-70'}`}
+                style={{ boxShadow: cellLines(i, inPaint(cell.key) || cell.key === dropOn) }}
+                className={`flex h-full w-full min-h-0 select-none flex-col gap-px overflow-hidden bg-surface p-0.5 text-left transition-colors hover:bg-accent/10 ${
+                  cell.inMonth ? '' : 'opacity-70'
+                }`}
               >
                 {number}
-                <span className="flex min-h-0 flex-col gap-0.5">
+                <span className="flex min-h-0 flex-col gap-px">
                   {shown.map((ev, lane) => (!ev ? (
                     // An empty lane still holds its line, so the bars below it
                     // stay level with the same bars in the next day.
-                    <span key={`gap${lane}`} className="h-5 shrink-0" aria-hidden />
+                    <span key={`gap${lane}`} className="h-[17px] shrink-0" aria-hidden />
                   ) : ev.src === 'ical' ? (
                     <Chip key={`${ev.from}-${ev.id}`} ev={ev} showText={false} inGrid />
                   ) : (
@@ -188,7 +241,7 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver }: MonthPro
                     </Handle>
                   )))}
                   {hidden > 0 && (
-                    <span className="px-1 text-[10px] text-muted-foreground">{t('calendar.more', { n: String(hidden) })}</span>
+                    <span className="px-1 text-[10px] leading-[17px] text-muted-foreground">{t('calendar.more', { n: String(hidden) })}</span>
                   )}
                 </span>
               </button>
@@ -226,7 +279,7 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver }: MonthPro
 export function CalendarView() {
   const { t, lang } = useTranslation();
   const isMobile = useIsMobile();
-  const { events, addEvent, updateEvent, moveEvent, skipOccurrence, endSeriesBefore, removeEvent } = useEvents();
+  const { events, addEvent, updateEvent, moveEvent, skipOccurrence, endSeriesBefore, removeEvent, orderDay } = useEvents();
   const [at, setAt] = useState<YearMonth>(() => thisMonth());
   const [picked, setPicked] = useState<{ start: string; days: number } | null>(null);
   const [draft, setDraft] = useState({ text: '', allDay: true, time: '09:00', color: DEFAULT_EVENT_COLOR as string, repeat: 'none' as Repeat });
@@ -235,6 +288,8 @@ export function CalendarView() {
   /** Which repeating row is asking what to delete. */
   const [deleting, setDeleting] = useState<string | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
+  /** The day list as it looks mid-drag: [from, to] positions being swapped. */
+  const [carry, setCarry] = useState<{ id: string; over: number } | null>(null);
   const [ghost, setGhost] = useState<{ x: number; y: number } | null>(null);
   const [left, right] = monthPair(at);
   const feeds = useIcalFeeds();
@@ -247,9 +302,19 @@ export function CalendarView() {
     const last = monthCells(right.y, right.m)[MONTH_CELLS - 1].key;
     return importedDays(first, last);
   }, [importedDays, left.y, left.m, right.y, right.m]);
-  const dayList = picked
+  const sorted = picked
     ? sortDayEvents([...dayEvents(events, picked.start), ...(imported[picked.start] ?? [])])
     : [];
+  // While a row is carried it is shown where it would land, not where it is.
+  const dayList = (() => {
+    if (!carry) return sorted;
+    const at = sorted.findIndex((e) => `${e.from}-${e.id}` === carry.id);
+    if (at < 0) return sorted;
+    const next = [...sorted];
+    const [row] = next.splice(at, 1);
+    next.splice(Math.max(0, Math.min(next.length, carry.over)), 0, row);
+    return next;
+  })();
 
   const blankDraft = { text: '', allDay: true, time: '09:00', color: DEFAULT_EVENT_COLOR as string, repeat: 'none' as Repeat };
   const openDay = (start: string, days: number) => {
@@ -343,20 +408,52 @@ export function CalendarView() {
     setDraft((d) => ({ ...d, text: '' }));
   };
 
-  const navBtn = 'grid h-9 w-9 place-items-center rounded-md border border-border transition-colors hover:bg-accent/10';
+  const startCarry = (e: React.PointerEvent, rowKey: string) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const list = e.currentTarget.closest('ul');
+    if (!list) return;
+    const rows = () => [...list.querySelectorAll('[data-event-row]')] as HTMLElement[];
+    const at = rows().findIndex((r) => r.contains(e.currentTarget as Node));
+    setCarry({ id: rowKey, over: at });
+
+    const move = (ev: PointerEvent) => {
+      const boxes = rows().map((r) => r.getBoundingClientRect());
+      let over = boxes.findIndex((b) => ev.clientY < b.top + b.height / 2);
+      if (over < 0) over = boxes.length - 1;
+      setCarry((c) => (c && c.over !== over ? { ...c, over } : c));
+    };
+    const done = () => {
+      window.removeEventListener('pointermove', move);
+      // The rows themselves are the record of where things ended up. Only the
+      // user's own entries carry an order; imported ones are passengers.
+      const order = rows()
+        .filter((r) => r.dataset.rowSrc !== 'ical')
+        .map((r) => ({ from: r.dataset.rowFrom ?? '', id: r.dataset.rowId ?? '' }))
+        .filter((r) => r.from && r.id);
+      if (order.length) orderDay(order);
+      setCarry(null);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', done, { once: true });
+    window.addEventListener('pointercancel', done, { once: true });
+  };
+
+  const navBtn = 'grid h-8 w-8 place-items-center rounded-md border border-border transition-colors hover:bg-accent/10';
   const chip = (on: boolean) =>
     `rounded-md border px-2 py-1 text-xs transition-colors ${on ? 'border-primary bg-primary/10 text-foreground' : 'border-border text-muted-foreground hover:bg-accent/10'}`;
   const rowBtn = 'grid h-6 w-6 shrink-0 place-items-center rounded transition-colors hover:bg-black/10';
 
   return (
-    <div className="flex min-h-0 w-full flex-1 flex-col gap-2" data-calendar-view>
+    <div className="flex min-h-0 w-full flex-1 flex-col gap-1" data-calendar-view>
       <div className="flex flex-wrap items-center justify-center gap-2">
         <button type="button" aria-label={t('calendar.prev')} title={t('calendar.prev')} data-cal-prev
           onClick={() => setAt((m) => shiftMonth(m, -1))} className={navBtn}>
           <ChevronLeft className="h-4 w-4" />
         </button>
         <button type="button" onClick={() => setAt(thisMonth())} data-cal-today
-          className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm transition-colors hover:bg-accent/10">
+          className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1 text-xs transition-colors hover:bg-accent/10">
           <CalendarDays className="h-4 w-4" />
           {t('calendar.today')}
         </button>
@@ -462,12 +559,25 @@ export function CalendarView() {
 
           <ul className="flex max-h-[32vh] flex-col gap-1 overflow-y-auto">
             {dayList.length === 0 && <li className="py-2 text-center text-sm text-muted-foreground">{t('calendar.none')}</li>}
-            {dayList.map((ev) => {
+            {dayList.map((ev, i) => {
               const rowKey = `${ev.from}-${ev.id}`;
               const repeating = !!ev.repeat && ev.repeat !== 'none';
               return (
-                <li key={rowKey} data-event-row className="flex flex-col gap-1 rounded-md border border-border px-2 py-1.5">
+                <li key={rowKey} data-event-row data-row-index={i}
+                  data-row-from={ev.from} data-row-id={ev.id} data-row-src={ev.src ?? 'me'}
+                  className={`flex flex-col gap-1 rounded-md border px-2 py-1.5 ${
+                    carry?.id === rowKey ? 'border-primary bg-primary/5' : 'border-border'
+                  }`}>
                   <div className="flex items-center gap-2">
+                    {ev.src === 'ical' ? (
+                      <span className="w-4 shrink-0" aria-hidden />
+                    ) : (
+                      <button type="button" data-row-handle aria-label={t('calendar.reorder')} title={t('calendar.reorder')}
+                        onPointerDown={(e) => startCarry(e, rowKey)}
+                        className="w-4 shrink-0 cursor-grab touch-none text-muted-foreground active:cursor-grabbing">
+                        <GripVertical className="h-4 w-4" />
+                      </button>
+                    )}
                     <span className="min-w-0 flex-1"><Chip ev={ev} /></span>
                     {repeating && <span className="shrink-0 text-[10px] text-muted-foreground">{t(REPEAT_LABEL[ev.repeat ?? 'none'])}</span>}
                     {ev.src === 'ical' ? (

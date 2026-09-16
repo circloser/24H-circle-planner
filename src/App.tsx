@@ -603,7 +603,7 @@ function App() {
         className={
           calendarMode
             // Calendar mode fills the window: no centred column, no chart layout.
-            ? 'flex min-h-0 w-full flex-1 flex-col px-3 pb-3 pt-2'
+            ? 'flex min-h-0 w-full flex-1 flex-col px-2 pb-1 pt-1'
             : isMobile
             ? 'flex-1 container mx-auto flex flex-col items-center gap-6 px-3 pb-12 pt-3'
             : sideLayout

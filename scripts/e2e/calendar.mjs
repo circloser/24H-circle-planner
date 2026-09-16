@@ -194,6 +194,34 @@ export async function run() {
       !(await chips(plus14)).some((x) => x.includes('스터디')) && (await chips(today)).some((x) => x.includes('스터디')),
       JSON.stringify([await chips(today), await chips(plus14)]));
 
+    // 7b. The day's list can be put in any order by its handles.
+    await cell(today).click();
+    await wait(350);
+    const rowTexts = () => page.locator('[data-event-row]').allInnerTexts();
+    const wasOrder = await rowTexts();
+    const handleBox = await page.locator('[data-event-row]').last().locator('[data-row-handle]').boundingBox();
+    const topBox = await page.locator('[data-event-row]').first().boundingBox();
+    await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(topBox.x + topBox.width / 2, topBox.y + 4, { steps: 8 });
+    await page.mouse.up();
+    await wait(400);
+    const nowOrder = await rowTexts();
+    pass('a row dragged by its handle lands at the top',
+      nowOrder[0] === wasOrder[wasOrder.length - 1] && nowOrder.length === wasOrder.length,
+      JSON.stringify([wasOrder, nowOrder]));
+    await page.keyboard.press('Escape');
+    await wait(350);
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.waitForSelector('[data-calendar-view]', { timeout: 15000 });
+    await wait(700);
+    await cell(today).click();
+    await wait(400);
+    pass('…and the order is still there after a reload', (await rowTexts())[0] === nowOrder[0],
+      JSON.stringify(await rowTexts()));
+    await page.keyboard.press('Escape');
+    await wait(350);
+
     // 8. A crowded day shows +n, and the peek opens from the cell's middle.
     await addPlan(today, '장보기');
     await addPlan(today, '운동');

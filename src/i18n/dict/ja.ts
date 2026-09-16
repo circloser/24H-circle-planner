@@ -683,6 +683,7 @@ export const ja: Record<TKey, string> = {
   'calendar.repeatYearly': '毎年',
   'calendar.spanDays': '{n}日間',
   'calendar.editPlan': '編集',
+  'calendar.reorder': '並べ替え',
   'calendar.editOccurrenceNote': 'この日だけ変わり、ほかの繰り返しはそのままです。',
   'calendar.scopeOne': 'この日だけ',
   'calendar.scopeFuture': 'これ以降',

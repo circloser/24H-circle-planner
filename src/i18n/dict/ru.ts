@@ -683,6 +683,7 @@ export const ru: Record<TKey, string> = {
   'calendar.repeatYearly': 'Ежегодно',
   'calendar.spanDays': '{n} дн.',
   'calendar.editPlan': 'Изменить',
+  'calendar.reorder': 'Изменить порядок',
   'calendar.editOccurrenceNote': 'Изменится только этот день, остальная серия останется.',
   'calendar.scopeOne': 'Только этот день',
   'calendar.scopeFuture': 'Этот и последующие',

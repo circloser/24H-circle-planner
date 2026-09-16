@@ -681,6 +681,7 @@ export const zh: Record<TKey, string> = {
   'calendar.repeatYearly': '每年',
   'calendar.spanDays': '{n} 天',
   'calendar.editPlan': '编辑',
+  'calendar.reorder': '调整顺序',
   'calendar.editOccurrenceNote': '只改这一天，其余重复日程保持不变。',
   'calendar.scopeOne': '仅这一天',
   'calendar.scopeFuture': '此日及以后',

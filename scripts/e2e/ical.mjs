@@ -152,9 +152,10 @@ export async function run() {
     await wait(500);
     pass('the second calendar shows on the grid too', (await chips(dayAfter(4))).some((x) => x.includes('팀 워크숍')),
       JSON.stringify(await chips(dayAfter(4))));
+    // The outline is painted as a box-shadow, so that is where the tone lives.
     const tones = await page.evaluate(([a, b]) => {
       const at = (key) => document.querySelector(`[data-day="${key}"] [data-event][data-imported]`);
-      const tone = (el) => (el ? getComputedStyle(el).borderLeftColor || getComputedStyle(el).boxShadow : '');
+      const tone = (el) => (el ? getComputedStyle(el).boxShadow : '');
       return [tone(at(a)), tone(at(b))];
     }, [dayAfter(1), dayAfter(4)]);
     pass('each calendar gets its own colour', tones[0] !== tones[1] && !!tones[0] && !!tones[1], JSON.stringify(tones));
