@@ -14,13 +14,15 @@
     // Clean URLs for the static legal pages: /about → about.html, etc.
     // (auto-trailing-slash is the default; set explicitly so it's guaranteed.)
     "html_handling": "auto-trailing-slash",
-    // This is a single-page app: serve index.html for paths with no asset match.
-    "not_found_handling": "single-page-application",
-    // CRITICAL: without this, the SPA fallback above intercepts *browser document
+    // Every public app entry and editorial URL is pre-rendered into ./dist.
+    // Return a real 404 for unknown paths so crawlers cannot index the app shell
+    // as thousands of duplicate, low-value URLs.
+    "not_found_handling": "404-page",
+    // CRITICAL: without this, static asset routing intercepts *browser document
     // navigations* to /api/* (Accept: text/html) and serves index.html before the
     // Worker runs — which silently broke the OAuth login redirect (curl worked, the
     // browser didn't). Run the Worker first for /api/* so it owns those routes;
-    // everything else stays asset-first with the SPA fallback.
+    // everything else stays asset-first with the custom 404 fallback.
     // /health/* and /stories/* also run Worker-first so the 40 retired article
     // URLs can answer with a real 301 (see worker/legacy-redirects.ts); every
     // other path under them falls straight through to ASSETS.

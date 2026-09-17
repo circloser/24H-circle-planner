@@ -5,7 +5,7 @@
  * Editorial content stays outside React so it remains available after mount.
  * Ships only FULLY-prepared locales — see docs/multilingual-seo-plan.md.
  */
-import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -105,8 +105,21 @@ function buildLocale(base, L) {
 const base = readFileSync(indexPath, 'utf8');
 
 // Root (/) — English, just add the hreflang cluster.
-writeFileSync(indexPath, withHreflang(base), 'utf8');
+const rootHtml = withHreflang(base);
+writeFileSync(indexPath, rootHtml, 'utf8');
 console.log('i18n-html: wrote / (en) + hreflang');
+
+// Client-only entry points still need concrete HTML assets now that unknown URLs
+// return a real 404. Keep these utility views out of search results.
+const utilityHtml = rootHtml
+  .replace(
+    '<meta name="robots" content="index, follow, max-image-preview:large" />',
+    '<meta name="robots" content="noindex, follow" />',
+  );
+for (const path of ['s.html', 'widget.html']) {
+  writeFileSync(join(dist, path), utilityHtml, 'utf8');
+  console.log(`i18n-html: wrote /${path.replace(/\.html$/, '')} (noindex utility entry)`);
+}
 
 for (const lang of LOCALES.filter((l) => l !== 'en')) {
   const L = (await import(`./content/${lang}.mjs`)).default;
@@ -115,18 +128,3 @@ for (const lang of LOCALES.filter((l) => l !== 'en')) {
   writeFileSync(join(outDir, 'index.html'), buildLocale(base, L), 'utf8');
   console.log(`i18n-html: wrote /${lang}/`);
 }
-
-// Instrument only static editorial/template pages, never the app locale roots.
-function instrumentContent(dir) {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const path = join(dir, entry.name);
-    if (entry.isDirectory()) instrumentContent(path);
-    else if (entry.name.endsWith('.html')) {
-      const html = readFileSync(path, 'utf8');
-      if (/rel="canonical" href="https:\/\/24houring\.com\/(?:[a-z]{2}\/)?(?:templates|guides|stories|health)(?:\/|"|$)/.test(html) && !html.includes('/content-analytics.js')) {
-        writeFileSync(path, html.replace('</head>', '<script defer src="/content-analytics.js"></script>\n</head>'));
-      }
-    }
-  }
-}
-instrumentContent(dist);
