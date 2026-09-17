@@ -113,6 +113,10 @@ export interface Preferences {
    *  offscreen so export, share and the phone widget keep working). Phones
    *  always keep it centred. */
   chartLayout: ChartLayout;
+  /** The colour theme last applied (a COLOR_THEMES id), or null for none. The
+   *  timetable takes a theme once, at the moment it is applied; the calendar
+   *  keeps wearing it — plans are shown in its colours. */
+  colorTheme: string | null;
   /** Browser notification when the day crosses into the next slice of the
    *  active timetable (needs per-device Notification permission too). */
   sliceAlarms: boolean;
@@ -173,6 +177,7 @@ const DEFAULT_PREFS: Preferences = {
   worldClocks: [],
   chartView: 'full',
   chartLayout: 'center',
+  colorTheme: null,
   sliceAlarms: false,
   pushAlarms: false,
   snapMinutes: 5,

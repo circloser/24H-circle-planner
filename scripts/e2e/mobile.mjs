@@ -262,12 +262,14 @@ export async function run() {
         timedOverflow: getComputedStyle(title).textOverflow,
         // A clipped title is wider than the box it sits in.
         allDayClipped: allDay.scrollWidth > allDay.clientWidth,
-        timeLast: timed.lastElementChild?.textContent === '09:30',
+        // A phone's cell gives the title the room; the time is left to the day list.
+        titleShown: title.getBoundingClientRect().width > 12,
+        timeHidden: getComputedStyle(timed.lastElementChild).display === 'none',
       };
     });
     pass('calendar plans use the small phone type and are cut, not elided',
       !!chipType && chipType.size <= 9 && chipType.allDayOverflow === 'clip' && chipType.timedOverflow === 'clip'
-        && chipType.allDayClipped && chipType.timeLast,
+        && chipType.allDayClipped && chipType.titleShown && chipType.timeHidden,
       JSON.stringify(chipType));
 
     pass('no sideways scroll in calendar mode',

@@ -10,6 +10,7 @@ import { PreferencesProvider } from './hooks/usePreferences.tsx'
 import { AuthProvider } from './hooks/useAuth.tsx'
 import { SyncProvider } from './hooks/useSync.tsx'
 import { EventsProvider } from './hooks/useEvents.tsx'
+import { DecorProvider } from './hooks/useDecor.tsx'
 import { MemoProvider } from './hooks/useMemos.tsx'
 import { UserPresetsProvider } from './hooks/useUserPresets.tsx'
 import { DaysProvider } from './hooks/useDays.tsx'
@@ -122,7 +123,9 @@ if (isSpike) {
                         <RecordsProvider>
                           <TimePaletteProvider>
                             <EventsProvider>
-                              <App />
+                              <DecorProvider>
+                                <App />
+                              </DecorProvider>
                             </EventsProvider>
                           </TimePaletteProvider>
                         </RecordsProvider>

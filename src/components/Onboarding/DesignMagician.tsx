@@ -138,7 +138,7 @@ function DesignMagicianSession({ open, onClose, onFinish }: DesignMagicianProps)
       body: (
         <div className="grid grid-cols-2 gap-1.5">
           {COLOR_THEMES.map((th) => (
-            <button key={th.id} type="button" onClick={() => applyTheme(th.colors)}
+            <button key={th.id} type="button" onClick={() => { applyTheme(th.colors); setPreference('colorTheme', th.id); }}
               className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1.5 text-xs hover:ring-1 hover:ring-primary">
               <span className="flex gap-0.5">
                 {th.colors.slice(0, 4).map((c, i) => <span key={i} className="h-3 w-3 rounded-full" style={{ background: c }} />)}

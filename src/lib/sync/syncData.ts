@@ -68,6 +68,9 @@ export const SYNC_KEYS: readonly string[] = [
   // An address is a bearer secret and travels like everything else that syncs —
   // ciphertext under the diary lock, plaintext on our server without it.
   'ical',
+  // Diary decorating (stickers + highlighter per day) — user-authored, so kept
+  // if an older cloud blob predates the key.
+  'decor',
   'prefs',
   'view',
 ].map((k) => PREFIX + k)
@@ -91,6 +94,7 @@ const KEEP_IF_ABSENT = new Set<string>([
   PREFIX + 'weekday-schedules',
   PREFIX + 'events',
   PREFIX + 'ical',
+  PREFIX + 'decor',
 ]);
 
 /** The synced preferences key — applied live (no reload) when it alone changes. */

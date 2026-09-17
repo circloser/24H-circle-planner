@@ -827,7 +827,10 @@ export function SettingsDialog({ section, onClose, onOpenMagician }: SettingsDia
                 <button
                   key={theme.id}
                   type="button"
-                  onClick={() => dispatch({ type: 'APPLY_PALETTE', colors: theme.colors })}
+                  onClick={() => {
+                    dispatch({ type: 'APPLY_PALETTE', colors: theme.colors });
+                    setPreference('colorTheme', theme.id);
+                  }}
                   className="opt-pick flex items-center gap-2 px-2 py-1.5 rounded-md text-left hover:bg-muted transition-colors"
                 >
                   <span className="flex gap-0.5 shrink-0">

@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, GripVertical, Link, Pencil, Plus, X } from 'lucide-react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { CalendarDays, ChevronLeft, ChevronRight, GripVertical, Link, Palette, Pencil, Plus, X } from 'lucide-react';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useTranslation } from '@/hooks/usePreferences';
+import { usePreferences, useTranslation } from '@/hooks/usePreferences';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { MAX_EVENT_CHARS, useEvents } from '@/hooks/useEvents';
 import {
@@ -11,6 +14,12 @@ import {
 } from '@/lib/calendar-events';
 import { useIcalFeeds } from '@/hooks/useIcalFeed';
 import { IcalConnect } from './IcalConnect';
+import { DayDecorEditor, StickerButton, StickerTray } from './Decor';
+import { useDecor } from '@/hooks/useDecor';
+import { useAuth } from '@/hooks/useAuth';
+import { stickerGlyph } from '@/lib/decor';
+import { COLOR_THEMES } from '@/data/color-themes';
+import { chipInk, shownColor, themeAccent } from '@/lib/calendar-theme';
 import { MONTH_ROWS, addDays, dayGap, monthCells, monthPair, partsOf, shiftMonth, thisMonth, todayKey, type YearMonth } from '@/lib/calendar-grid';
 
 /** Cells in one six-week month grid. */
@@ -53,6 +62,9 @@ function cellLines(i: number, lit: boolean): string {
   return parts.join(', ');
 }
 
+/** The colour theme the calendar wears (a COLOR_THEMES id, or null). */
+const LookContext = createContext<string | null>(null);
+
 /** Sunday reads red and Saturday blue, as Korean calendars do. */
 const weekdayTone = (i: number) => (i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-muted-foreground');
 
@@ -73,7 +85,11 @@ function outline(color: string, ev: DayEvent): string {
 /** One entry. All day fills the chip with its colour and a multi-day entry runs
  *  as one bar; a timed entry gets a dot and its clock time. */
 function Chip({ ev, showText = true, inGrid = false }: { ev: DayEvent; showText?: boolean; inGrid?: boolean }) {
-  const color = ev.color ?? DEFAULT_EVENT_COLOR;
+  const theme = useContext(LookContext);
+  const raw = ev.color ?? DEFAULT_EVENT_COLOR;
+  // A plan's stored colour is shown in the theme; an imported calendar keeps
+  // its own tone, so the two never blur together.
+  const color = ev.src === 'ical' ? raw : shownColor(raw, theme);
   const mid = ev.index > 0;
   const ends = ev.length === 1 ? 'rounded' : ev.index === 0 ? 'rounded-l' : ev.index === ev.length - 1 ? 'rounded-r' : '';
   // An imported entry is drawn hollow: it is someone else's, and read-only.
@@ -90,8 +106,9 @@ function Chip({ ev, showText = true, inGrid = false }: { ev: DayEvent; showText?
         data-all-day
         data-imported={imported || undefined}
         data-span={ev.length > 1 ? (mid ? 'mid' : 'start') : undefined}
-        className={`block px-1 ${CLIP} ${TYPE} ${imported ? 'text-foreground' : 'text-white'} ${ends} ${bleed}`}
-        style={imported ? { boxShadow: outline(color, ev) } : { backgroundColor: color }}
+        className={`block px-1 ${CLIP} ${TYPE} ${imported ? 'text-foreground' : ''} ${ends} ${bleed}`}
+        // Light theme colours need dark ink; the default ones keep white.
+        style={imported ? { boxShadow: outline(color, ev) } : { backgroundColor: color, color: chipInk(color) }}
       >
         {mid && !showText ? ' ' : ev.text}
       </span>
@@ -103,7 +120,9 @@ function Chip({ ev, showText = true, inGrid = false }: { ev: DayEvent; showText?
       <span className={`h-1.5 w-1.5 shrink-0 rounded-full sm:h-2 sm:w-2 ${imported ? 'border' : ''}`}
         style={imported ? { borderColor: color } : { backgroundColor: color }} />
       <span className={`min-w-0 flex-1 ${CLIP}`}>{ev.text}</span>
-      <span className="shrink-0 tabular-nums text-muted-foreground">{ev.time}</span>
+      {/* In a phone's narrow cell the title wins: the time would squeeze it to
+          nothing, and the day's list still shows it. */}
+      <span className={`shrink-0 tabular-nums text-muted-foreground ${inGrid ? 'hidden sm:inline' : ''}`}>{ev.time}</span>
     </span>
   );
 }
@@ -131,6 +150,9 @@ interface MonthProps {
   onOpen: (start: string, days: number) => void;
   onDragStart: (d: Drag) => void;
   onDragOver: (key: string) => void;
+  /** Set while a sticker is armed: a tap on a day stamps it there. */
+  stamping: boolean;
+  onStamp: (day: string) => void;
 }
 
 /** How many chip lines fit in one day cell right now — remeasured whenever the
@@ -156,10 +178,15 @@ function useChipRoom(grid: React.RefObject<HTMLDivElement | null>, lineH: number
 const PHONE_ROW_H = 72;
 
 /** One month: name, weekday header and six rows of days filling the height. */
-function Month({ at, imported, drag, onOpen, onDragStart, onDragOver }: MonthProps) {
+function Month({ at, imported, drag, onOpen, onDragStart: startDrag, onDragOver, stamping, onStamp }: MonthProps) {
   const isMobile = useIsMobile();
   const { t, lang } = useTranslation();
   const { events } = useEvents();
+  const { decor } = useDecor();
+  const accent = themeAccent(useContext(LookContext));
+  // With a sticker armed, pressing a day (or a plan on it) stamps instead of
+  // starting a drag.
+  const onDragStart = (d: Drag) => (stamping ? onStamp(d.from) : startDrag(d));
   const [peek, setPeek] = useState<string | null>(null);
   const today = todayKey();
   const label = new Date(at.y, at.m, 1).toLocaleDateString(lang, { year: 'numeric', month: 'long' });
@@ -218,16 +245,20 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver }: MonthPro
             <span
               className={`mx-auto grid h-4 min-w-[18px] place-items-center rounded-full px-1 text-[10px] ${
                 cell.key === today
-                  ? 'bg-primary font-bold text-primary-foreground'
+                  ? `font-bold ${accent ? '' : 'bg-primary text-primary-foreground'}`
                   : `${weekdayTone(i % 7)} ${cell.inMonth ? '' : 'opacity-40'}`
               }`}
+              style={cell.key === today && accent ? { backgroundColor: accent, color: chipInk(accent) } : undefined}
             >
               {cell.day}
             </span>
           );
+          const deco = decor[cell.key];
+          const stickers = deco?.s ?? [];
           return (
             <div
               key={cell.key}
+              data-decor-tint={deco?.t}
               className="relative min-h-0"
               onMouseEnter={() => setPeek(cell.key)}
               onMouseLeave={() => setPeek(null)}
@@ -239,10 +270,15 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver }: MonthPro
                 onPointerDown={(e) => { if (e.button === 0) onDragStart({ kind: 'create', from: cell.key, over: cell.key }); }}
                 // Keyboard activation only: a mouse click is handled by the drag.
                 onClick={(e) => { if (e.detail === 0) onOpen(cell.key, 1); }}
-                style={{ boxShadow: cellLines(i, inPaint(cell.key) || cell.key === dropOn) }}
+                style={{
+                  boxShadow: cellLines(i, inPaint(cell.key) || cell.key === dropOn),
+                  // A highlighter tint is mixed into the cell, so the plans on
+                  // top keep their contrast in either theme.
+                  ...(deco?.t ? { backgroundColor: `color-mix(in srgb, ${deco.t} 55%, hsl(var(--surface)))` } : {}),
+                }}
                 className={`flex h-full w-full min-h-0 select-none flex-col gap-px overflow-hidden bg-surface p-0.5 text-left transition-colors hover:bg-accent/10 ${
                   cell.inMonth ? '' : 'opacity-70'
-                }`}
+                } ${stamping ? 'cursor-copy' : ''}`}
               >
                 {number}
                 <span className="flex min-h-0 flex-col gap-px">
@@ -262,6 +298,12 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver }: MonthPro
                   )}
                 </span>
               </button>
+              {stickers.length > 0 && (
+                // Stamped stickers ride the top-right corner, clear of the date.
+                <span className="pointer-events-none absolute right-0.5 top-0 flex text-[10px] leading-4 sm:text-sm sm:leading-5" data-cell-stickers aria-hidden>
+                  {stickers.slice(0, isMobile ? 1 : 3).map((id, n) => <span key={`${id}-${n}`}>{stickerGlyph(id)}</span>)}
+                </span>
+              )}
               {/* Hovering a crowded day opens the full list from the cell's middle. */}
               {expanded && (
                 <div
@@ -296,6 +338,14 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver }: MonthPro
 export function CalendarView() {
   const { t, lang } = useTranslation();
   const isMobile = useIsMobile();
+  const { prefs, setPreference } = usePreferences();
+  const theme = COLOR_THEMES.some((th) => th.id === prefs.colorTheme) ? prefs.colorTheme : null;
+  const isPro = useAuth().plan === 'pro';
+  const { addSticker } = useDecor();
+  const [trayOpen, setTrayOpen] = useState(false);
+  const [armed, setArmed] = useState<string | null>(null);
+  // Only a Pro account can stamp; a lapsed one simply stops.
+  const stamping = isPro && !!armed;
   const { events, addEvent, updateEvent, moveEvent, skipOccurrence, endSeriesBefore, removeEvent, orderDay } = useEvents();
   const [at, setAt] = useState<YearMonth>(() => thisMonth());
   const [picked, setPicked] = useState<{ start: string; days: number } | null>(null);
@@ -463,7 +513,8 @@ export function CalendarView() {
   const rowBtn = 'grid h-6 w-6 shrink-0 place-items-center rounded transition-colors hover:bg-black/10';
 
   return (
-    <div className="flex min-h-0 w-full flex-1 flex-col gap-1" data-calendar-view>
+    <LookContext.Provider value={theme}>
+    <div className="flex min-h-0 w-full flex-1 flex-col gap-1" data-calendar-view data-cal-look={theme ?? ''}>
       <div className="flex flex-wrap items-center justify-center gap-2">
         <button type="button" aria-label={t('calendar.prev')} title={t('calendar.prev')} data-cal-prev
           onClick={() => setAt((m) => shiftMonth(m, -1))} className={navBtn}>
@@ -487,7 +538,39 @@ export function CalendarView() {
           {t('ical.button')}
           {feeds.calendars.length > 1 && <span className="tabular-nums">{feeds.calendars.length}</span>}
         </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button type="button" data-cal-theme title={t('calendar.theme')}
+              className={`flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-xs transition-colors hover:bg-accent/10 ${
+                theme ? 'border-primary text-foreground' : 'border-border text-muted-foreground'
+              }`}>
+              <Palette className="h-3.5 w-3.5" />
+              {t('calendar.theme')}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuRadioGroup value={theme ?? ''} onValueChange={(v) => setPreference('colorTheme', v || null)}>
+              <DropdownMenuRadioItem value="" data-cal-theme-option="">{t('calendar.themeDefault')}</DropdownMenuRadioItem>
+              {COLOR_THEMES.map((th) => (
+                <DropdownMenuRadioItem key={th.id} value={th.id} data-cal-theme-option={th.id} className="gap-2">
+                  <span className="flex gap-0.5">
+                    {th.colors.slice(1, 5).map((c) => <span key={c} className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: c }} />)}
+                  </span>
+                  {lang === 'ko' ? th.ko : th.en}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <StickerButton open={trayOpen} armed={!!armed} onToggle={() => {
+          setTrayOpen((v) => !v);
+          setArmed(null);
+        }} />
       </div>
+
+      {trayOpen && isPro && (
+        <StickerTray armed={armed} onArm={setArmed} onClose={() => { setTrayOpen(false); setArmed(null); }} />
+      )}
 
       <div className={`flex min-h-0 flex-1 gap-3 ${isMobile ? 'flex-col overflow-y-auto' : 'flex-row'}`}>
         {[left, right].map((month) => (
@@ -499,6 +582,8 @@ export function CalendarView() {
             onOpen={openDay}
             onDragStart={setDrag}
             onDragOver={(key) => setDrag((d) => (d ? { ...d, over: key } : d))}
+            stamping={stamping}
+            onStamp={(day) => { if (armed) addSticker(day, armed); }}
           />
         ))}
       </div>
@@ -579,6 +664,12 @@ export function CalendarView() {
             })}
           </ul>
 
+          {picked && (
+            <div className="border-t border-border pt-3">
+              <DayDecorEditor day={picked.start} />
+            </div>
+          )}
+
           <div className="flex flex-col gap-2 border-t border-border pt-3" data-event-form>
             {picked && picked.days > 1 && (
               <span className="text-xs text-muted-foreground" data-span-days>{t('calendar.spanDays', { n: String(picked.days) })}</span>
@@ -615,7 +706,7 @@ export function CalendarView() {
                 <button key={c} type="button" aria-label={c} data-event-color={c} aria-pressed={draft.color === c}
                   onClick={() => setDraft((d) => ({ ...d, color: c }))}
                   className="h-5 w-5 rounded-full border border-black/20"
-                  style={{ backgroundColor: c, outline: draft.color === c ? '2px solid hsl(var(--primary))' : 'none', outlineOffset: '1px' }} />
+                  style={{ backgroundColor: shownColor(c, theme), outline: draft.color === c ? '2px solid hsl(var(--primary))' : 'none', outlineOffset: '1px' }} />
               ))}
             </div>
             <div className="flex items-center gap-2">
@@ -637,5 +728,6 @@ export function CalendarView() {
         </DialogContent>
       </Dialog>
     </div>
+    </LookContext.Provider>
   );
 }
