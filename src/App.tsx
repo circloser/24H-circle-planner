@@ -150,6 +150,15 @@ function App() {
   const [magicianOpen, setMagicianOpen] = useState(false);
   // One count per page load: the denominator for every other usage count.
   useEffect(() => { trackOnce('app_open'); }, []);
+  // /?view=calendar (linked from the /calendar page) opens the calendar, once.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('view') !== 'calendar') return;
+    setPreference('chartView', 'calendar');
+    url.searchParams.delete('view');
+    window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
     if (!firstRunClean) return;
     const id = window.setTimeout(() => {

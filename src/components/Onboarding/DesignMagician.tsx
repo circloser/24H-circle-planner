@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Wand2, X, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { Wand2, X, ChevronLeft, ChevronRight, Check, Lock } from 'lucide-react';
 import {
   usePreferences, GRADIENT_PRESETS, FONT_FAMILIES, BACKGROUNDS,
   FONT_SCALE_MIN, FONT_SCALE_MAX, FONT_SCALE_STEP, RING_INNER_MIN, RING_INNER_MAX,
@@ -17,6 +17,15 @@ import type { TKey } from '@/i18n/translations';
 import { useTheme } from '@/hooks/useTheme';
 import { useSwitchChartLayout } from '@/hooks/useSwitchChartLayout';
 import { ChartLayoutPicker } from '@/components/Settings/ChartLayoutPicker';
+import { useAuth } from '@/hooks/useAuth';
+import { requestUpgrade } from '@/lib/pro';
+import { requestCalendar } from '@/lib/calendar-requests';
+import { CALENDAR_PAPERS, paperOf, type CalendarPaper } from '@/lib/decor-layer';
+import { track } from '@/lib/track';
+
+const PAPER_KEY: Record<CalendarPaper, TKey> = {
+  none: 'decor.paperNone', grid: 'decor.paperGrid', lined: 'decor.paperLined', dot: 'decor.paperDot', kraft: 'decor.paperKraft',
+};
 
 // Where the magician last placed each widget: turning a tool OFF snapshots its
 // position here, so turning it back ON restores the exact same spot. Without a
@@ -57,6 +66,7 @@ function DesignMagicianSession({ open, onClose, onFinish }: DesignMagicianProps)
   const dispatch = useStoreDispatch();
   const present = useStoreSelector((s) => s.history.present);
   const clock = useClockTools();
+  const pro = useAuth().plan === 'pro';
   const [step, setStep] = useState(0);
   const chartLayout = useChartLayout();
   const switchLayout = useSwitchChartLayout();
@@ -322,6 +332,44 @@ function DesignMagicianSession({ open, onClose, onFinish }: DesignMagicianProps)
     // ── Layout — the last choice, made with everything else already on screen.
     // Widgets the magician put in the margins step aside if the chart moves
     // onto their side.
+    // ── Calendar decorating (다꾸) — the colour theme above already dresses
+    // the calendar; paper and stickers are Pro. "Go decorate" ends the
+    // magician and opens the sticker panel on the calendar.
+    {
+      title: t('magician.stepCalDecor'),
+      body: (
+        <div className="flex flex-col gap-2" data-magician-caldecor>
+          <p className="text-xs leading-relaxed text-muted-foreground">{t('magician.calDecorBody')}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {CALENDAR_PAPERS.map((p) => (
+              <button key={p} type="button" data-magician-paper={p}
+                aria-pressed={paperOf(prefs.calendarPaper) === p}
+                onClick={() => {
+                  if (!pro) return requestUpgrade('decor');
+                  setPreference('calendarPaper', p);
+                  track('paper_set', { paper: p });
+                }}
+                className="opt-chip flex items-center gap-1 rounded-md px-2 py-1 text-xs">
+                {t(PAPER_KEY[p])}
+                {!pro && p !== 'none' && <Lock className="h-3 w-3 opacity-60" aria-hidden />}
+              </button>
+            ))}
+          </div>
+          <button type="button" data-magician-decorate
+            onClick={() => {
+              if (!pro) return requestUpgrade('decor');
+              setPreference('chartView', 'calendar');
+              requestCalendar({ kind: 'decor', tool: 'sticker' });
+              track('decor_tool', { tool: 'sticker' });
+              onClose();
+            }}
+            className="flex items-center justify-center gap-1.5 rounded-md border border-primary px-2 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10">
+            🎀 {t('magician.calDecorGo')}
+            {!pro && <Lock className="h-3 w-3" aria-hidden />}
+          </button>
+        </div>
+      ),
+    },
     { title: t('magician.stepLayout'), body: <ChartLayoutPicker compact value={chartLayout} onChange={switchLayout} /> },
   ];
 

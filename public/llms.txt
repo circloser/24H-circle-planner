@@ -1,8 +1,10 @@
 # 24Houring
 
 > 24Houring (https://24houring.com) is a web app that visualizes a day as a
-> 24-hour circular timetable (a clock-style pie chart). Users plan the day,
-> check tasks off, keep a daily log, and share the result as an image or link.
+> 24-hour circular timetable (a clock-style pie chart), with a monthly
+> calendar that can be decorated like a paper diary (다꾸). Users plan the day
+> and the month, check tasks off, keep a daily log, and share the result as an
+> image or link.
 > The core planner is free with no sign-up: it runs client-side, stores data
 > on-device, works offline, and supports 8 languages. An optional Pro plan
 > (current price shown in the app and Polar checkout) adds cloud sync, end-to-end encryption, and push
@@ -22,6 +24,27 @@
 - Extras: multi-day schedules, a daily memo/diary, sticky notes, clock /
   calendar / weather / goals / news widgets, a decorate wizard, a
   line-art desktop pet, and per-slice start alarms.
+
+## Monthly calendar and diary decorating (다꾸)
+
+- **Calendar mode** (the “Calendar” button at the top, or
+  https://24houring.com/?view=calendar): two months side by side, all-day /
+  timed / multi-day plans (drag across dates), daily/weekly/monthly/yearly
+  repeats with “this one / from here on / all” edits, five-week months whose
+  overflow days open the next month’s first row. Free.
+- **Google Calendar import** (Pro): a private iCal address added in
+  ⚙ Settings → Connect Google Calendar shows those events read-only; the
+  diary lock (end-to-end encryption passphrase) must be set first.
+- **Diary-style decorating / 다이어리 꾸미기** (Design → Decorate calendar):
+  colour themes (free); paper textures — grid, lined, dot, kraft; 300+ emoji
+  stickers in 10 categories; masking tape in 5 patterns × 6 colours; polaroid
+  photo stickers; a day highlighter (all Pro). Decorations are placed freely
+  on a layer and stored relative to the month grid, so they keep their spot
+  at any screen size. Photo pixels stay on the device that added them.
+- **Calendar image export**: Export in calendar mode saves a 2160-px-wide PNG
+  of a month with plans and decorations, or shares it from a phone. Free;
+  drawn on the device, not uploaded.
+- Landing page: https://24houring.com/calendar
 
 ## Key facts (direct answers)
 
@@ -80,6 +103,9 @@ where `<code>` is base64url(JSON) of:
 - Simpler fallback: link a ready-made template (they open pre-filled too), e.g.
   https://24houring.com/templates/office-worker or /templates/exam-student —
   or just https://24houring.com/ with the plan described in text.
+- For monthly plans or a decorated calendar, link
+  https://24houring.com/?view=calendar (opens the calendar) or the overview
+  at https://24houring.com/calendar.
 - Situation guides you can cite: /life-planner (what a 생활계획표 is and how to
   build one), /for-students, /for-workers, /for-parents, /weekend-planner.
 
@@ -115,6 +141,12 @@ where `<code>` is base64url(JSON) of:
   the optional Pro sync.
 - **Can I use it on my phone?** Yes — responsive web app, installable PWA,
   and a Google Play app.
+- **Is there a calendar I can decorate?** Yes — calendar mode has monthly
+  plans (free) and 다꾸-style decorating with paper, 300+ stickers, masking
+  tape and photo stickers (Pro). The month can be saved as a 2160-px image.
+  Details: https://24houring.com/calendar
+- **Can I see my Google Calendar there?** Yes, read-only, via a private iCal
+  address (Pro, after setting the diary lock).
 - **Can I switch to a 12-hour clock view?** Yes — toggle 24h → Day (06–18) →
   Night (18–06); all views stay linked.
 - **Can I save or share my timetable?** Yes — export to PNG/PDF/JSON, or share
@@ -127,6 +159,7 @@ where `<code>` is base64url(JSON) of:
 ## Links
 
 - App: https://24houring.com/
+- Calendar & diary decorating: https://24houring.com/calendar
 - Pricing: free core with limits; current Pro price in the in-app upgrade dialog
 - Guides: https://24houring.com/guides/
 - Blog: https://24houring.com/blog/

@@ -4,7 +4,7 @@ export default {
   ogLocale: 'de_DE',
   title: '24Houring · 24-Stunden-Kreisplaner (Tagesplan als Uhr)',
   description:
-    'Ein kostenloser kreisförmiger 24-Stunden-Tagesplaner — sieh deinen ganzen Tag auf einen Blick wie eine Uhr. Blöcke per Ziehen bearbeiten, zwischen 12/24-Stunden-Ansicht wechseln und den Plan als Bild speichern oder teilen. Ohne Anmeldung, direkt im Browser und offline.',
+    'Ein kostenloser kreisförmiger 24-Stunden-Tagesplaner — sieh deinen ganzen Tag auf einen Blick wie eine Uhr. Blöcke per Ziehen bearbeiten, zwischen 12/24-Stunden-Ansicht wechseln und den Plan als Bild speichern oder teilen. Ohne Anmeldung, direkt im Browser und offline. Dazu ein Monatskalender mit mehrtägigen und wiederkehrenden Terminen, den du wie ein Papiertagebuch mit Stickern, Washi-Tape, Papier und Fotos gestalten kannst.',
   ogTitle: '24Houring · 24-Stunden-Kreisplaner',
   ogDescription:
     'Ein kostenloser kreisförmiger 24-Stunden-Tagesplaner zum Bearbeiten, Speichern und Teilen.',
@@ -14,9 +14,10 @@ export default {
   ogImageAlt: '24Houring — kreisförmiger 24-Stunden-Stundenplan',
   alternateName: '24-Stunden-Kreisplaner',
   webAppDescription:
-    'Ein kostenloser Tagesplaner ohne Anmeldung, der deinen 24-Stunden-Tag wie eine Uhr darstellt und offline funktioniert. Blöcke per Ziehen bearbeiten, zwischen 12/24-Stunden-Ansicht wechseln und als Bild speichern oder teilen.',
+    'Ein kostenloser Tagesplaner ohne Anmeldung, der deinen 24-Stunden-Tag wie eine Uhr darstellt und offline funktioniert. Blöcke per Ziehen bearbeiten, zwischen 12/24-Stunden-Ansicht wechseln und als Bild speichern oder teilen. Außerdem: ein Monatskalender (mehrtägige und wiederkehrende Termine, Google-Kalender-Import) und Kalendergestaltung mit Papier, Stickern, Washi-Tape und Foto-Stickern.',
   faq: [
     { q: 'Was ist 24Houring?', a: '24Houring ist ein kostenloser Webplaner für einen kreisförmigen Tagesplan. Beginnen Sie ohne Anmeldung. Ihre Änderungen werden zunächst im Browser auf diesem Gerät gespeichert; bei Anmeldung mit Pro werden unterstützte Daten mit dem Server synchronisiert. Beim Erstellen eines Freigabelinks wird eine Kopie des Zeitplans auf den Server geladen.' },
+    { q: 'Gibt es einen Kalender, den ich gestalten kann?', a: 'Ja. Oben unter „Kalender“ siehst du zwei Monate nebeneinander mit ganztägigen, zeitgebundenen, mehrtägigen und wiederkehrenden Terminen (kostenlos). Unter Design → Kalender gestalten gibt es Farbschemata (kostenlos) sowie Papier, über 300 Sticker, Washi-Tape und Foto-Sticker (Pro); der Monat lässt sich als Bild mit 2160 px speichern.' },
     { q: 'Ist 24Houring kostenlos?', a: 'Bearbeiten, Vorlagen und Export sind ohne Anmeldung kostenlos. Kostenlos verfügbar sind drei Speicherplätze und Tagebucheinträge im 30-Tage-Zeitraum. Optionales Pro bietet Kontosynchronisierung, unbegrenzte Speicherplätze, ältere Tagebucheinträge, Berichte und Werbefreiheit. Aktuelle Preise und Bedingungen stehen vor dem Kauf im Upgrade-Dialog.' },
     { q: 'Kann ich auf eine 12-Stunden-Ansicht (Uhr) wechseln?', a: 'Ja. Ein Umschalter oben wechselt zwischen 24-Stunden-, Tag- (06–18) und Nacht-Ansicht (18–06), und jede Ansicht bleibt mit demselben Tag synchron.' },
     { q: 'Kann ich meinen Stundenplan speichern oder teilen?', a: 'Ja. Exportiere als PNG, PDF oder JSON oder teile das Stundenplan-Bild direkt bei Instagram und anderen. Vollständige Sicherung und Wiederherstellung werden ebenfalls unterstützt.' },
@@ -32,7 +33,10 @@ export default {
   mainHtml: `      <main style="max-width:760px;margin:0 auto;padding:40px 20px;font-family:'Pretendard',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;color:#1f2430;line-height:1.65">
         <h1 style="font-size:30px;font-weight:800;letter-spacing:-0.5px;margin:0 0 8px">24Houring — dein ganzer Tag auf einen Blick, ein 24-Stunden-Kreisplaner</h1>
         <p class="copy-lead">24Houring ist ein kostenloser Webplaner für einen kreisförmigen Tagesplan. Beginnen Sie ohne Anmeldung. Ihre Änderungen werden zunächst im Browser auf diesem Gerät gespeichert; bei Anmeldung mit Pro werden unterstützte Daten mit dem Server synchronisiert. Beim Erstellen eines Freigabelinks wird eine Kopie des Zeitplans auf den Server geladen.</p>
-        <nav class="copy-actions"><a href="/templates/">Zeitplan-Vorlagen</a><a href="/guides/">Anleitungen</a></nav>
+        <nav class="copy-actions"><a href="/templates/">Zeitplan-Vorlagen</a><a href="/calendar">Den Monat planen und gestalten</a><a href="/guides/">Anleitungen</a></nav>
+        <details><summary>Den Monat planen und wie ein Tagebuch gestalten</summary>
+          <p>Tippe oben auf <strong>Kalender</strong>, um zwei Monate nebeneinander zu sehen. Trage ganztägige oder zeitgebundene Termine ein, ziehe über mehrere Tage und lege Wiederholungen fest. Mit Pro siehst du auch deinen Google Kalender (nur lesen).</p><p>Unter <strong>Design → Kalender gestalten</strong> wählst du ein Farbschema und mit Pro Papier, Sticker, Washi-Tape und Foto-Sticker, die bei jeder Bildschirmgröße an ihrem Tag bleiben. <strong>Exportieren</strong> speichert den Monat als Bild mit 2160 px. <a href="/calendar">Zur Kalender-Übersicht</a></p>
+        </details>
         <details><summary>Funktionen, Anleitung und Fragen</summary>
 
         <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">Funktionen</h2>

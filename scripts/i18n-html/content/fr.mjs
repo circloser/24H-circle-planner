@@ -4,7 +4,7 @@ export default {
   ogLocale: 'fr_FR',
   title: '24Houring · Planificateur circulaire 24 heures (journée en forme d\'horloge)',
   description:
-    'Un planificateur circulaire de journée sur 24 heures, gratuit — voyez toute votre journée d\'un coup d\'œil, comme une horloge. Modifiez les blocs par glisser-déposer, basculez entre les vues 12/24 heures, et enregistrez ou partagez le plan en image. Sans inscription, directement dans le navigateur, et utilisable hors ligne.',
+    'Un planificateur circulaire de journée sur 24 heures, gratuit — voyez toute votre journée d\'un coup d\'œil, comme une horloge. Modifiez les blocs par glisser-déposer, basculez entre les vues 12/24 heures, et enregistrez ou partagez le plan en image. Sans inscription, directement dans le navigateur, et utilisable hors ligne. Avec un calendrier mensuel (plans sur plusieurs jours et récurrents) à décorer comme un agenda papier : stickers, masking tape, papier et photos.',
   ogTitle: '24Houring · Planificateur circulaire 24 heures',
   ogDescription:
     'Un planificateur circulaire de journée sur 24 heures, gratuit, à modifier, enregistrer et partager.',
@@ -14,9 +14,10 @@ export default {
   ogImageAlt: '24Houring — emploi du temps circulaire sur 24 heures',
   alternateName: 'Planificateur circulaire 24 heures',
   webAppDescription:
-    'Un planificateur de journée gratuit, sans inscription, qui représente votre journée de 24 heures comme une horloge et fonctionne hors ligne. Modifiez les blocs par glisser-déposer, basculez entre les vues 12/24 heures, et enregistrez ou partagez en image.',
+    'Un planificateur de journée gratuit, sans inscription, qui représente votre journée de 24 heures comme une horloge et fonctionne hors ligne. Modifiez les blocs par glisser-déposer, basculez entre les vues 12/24 heures, et enregistrez ou partagez en image. Il propose aussi un calendrier mensuel (plans sur plusieurs jours et récurrents, import Google Agenda) et la décoration du calendrier avec papier, stickers, masking tape et stickers photo.',
   faq: [
     { q: 'Qu\'est-ce que 24Houring ?', a: '24Houring est un planificateur web gratuit pour organiser une journée sur un cercle. Commencez sans inscription. Les modifications sont enregistrées dans le navigateur de cet appareil ; une connexion avec Pro synchronise les données prises en charge avec le serveur. La création d’un lien de partage envoie une copie du planning au serveur.' },
+    { q: 'Y a-t-il un calendrier que je peux décorer ?', a: 'Oui. « Calendrier » en haut affiche deux mois côte à côte avec des plans sur la journée, à heure fixe, sur plusieurs jours ou récurrents (gratuit). Design → Décorer le calendrier propose des thèmes de couleurs (gratuit) ainsi que papier, plus de 300 stickers, masking tape et stickers photo (Pro) ; le mois s’enregistre en image de 2160 px.' },
     { q: '24Houring est-il gratuit ?', a: 'La modification, les modèles et les exports sont gratuits sans inscription. La formule gratuite comprend trois emplacements de sauvegarde et un accès au journal dans une fenêtre de 30 jours. Pro propose la synchronisation de compte, des emplacements illimités, les anciennes entrées du journal, des rapports et la suppression des publicités. Vérifiez les prix et conditions actuels dans la fenêtre de mise à niveau avant de payer.' },
     { q: 'Puis-je passer à une vue 12 heures (horloge) ?', a: 'Oui. Un bouton en haut permet de basculer entre les vues 24 heures, Jour (06–18) et Nuit (18–06), et chaque vue reste synchronisée avec la même journée.' },
     { q: 'Puis-je enregistrer ou partager mon emploi du temps ?', a: 'Oui. Exportez en PNG, PDF ou JSON, ou partagez directement l\'image de l\'emploi du temps sur Instagram et ailleurs. La sauvegarde et la restauration complètes sont également prises en charge.' },
@@ -32,7 +33,10 @@ export default {
   mainHtml: `      <main style="max-width:760px;margin:0 auto;padding:40px 20px;font-family:'Pretendard',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;color:#1f2430;line-height:1.65">
         <h1 style="font-size:30px;font-weight:800;letter-spacing:-0.5px;margin:0 0 8px">24Houring — toute votre journée en un coup d'œil, un planificateur circulaire de 24 heures</h1>
         <p class="copy-lead">24Houring est un planificateur web gratuit pour organiser une journée sur un cercle. Commencez sans inscription. Les modifications sont enregistrées dans le navigateur de cet appareil ; une connexion avec Pro synchronise les données prises en charge avec le serveur. La création d’un lien de partage envoie une copie du planning au serveur.</p>
-        <nav class="copy-actions"><a href="/templates/">Modèles de journée</a><a href="/guides/">Guides pratiques</a></nav>
+        <nav class="copy-actions"><a href="/templates/">Modèles de journée</a><a href="/calendar">Planifier et décorer le mois</a><a href="/guides/">Guides pratiques</a></nav>
+        <details><summary>Planifier le mois et le décorer comme un agenda</summary>
+          <p>Touchez <strong>Calendrier</strong> en haut pour voir deux mois côte à côte. Ajoutez des plans sur la journée ou à heure fixe, faites glisser sur plusieurs dates et définissez des répétitions. Avec Pro, votre Google Agenda s’affiche aussi en lecture seule.</p><p>Dans <strong>Design → Décorer le calendrier</strong>, choisissez un thème de couleurs puis, avec Pro, papier, stickers, masking tape et stickers photo, qui restent sur leur jour à toute taille d’écran. <strong>Exporter</strong> enregistre le mois en image de 2160 px. <a href="/calendar">Voir la présentation du calendrier</a></p>
+        </details>
         <details><summary>Fonctions, mode d’emploi et questions</summary>
 
         <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">Fonctionnalités</h2>

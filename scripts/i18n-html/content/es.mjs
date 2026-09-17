@@ -4,7 +4,7 @@ export default {
   ogLocale: 'es_ES',
   title: '24Houring · planificador circular de 24 horas (tu día como un reloj)',
   description:
-    'Un planificador de día circular de 24 horas, gratis — mira tu día entero de un vistazo, como un reloj. Edita bloques arrastrando, cambia entre vista de 12/24 horas y guarda o comparte tu plan como imagen. Sin registro, directo en el navegador y sin conexión.',
+    'Un planificador de día circular de 24 horas, gratis — mira tu día entero de un vistazo, como un reloj. Edita bloques arrastrando, cambia entre vista de 12/24 horas y guarda o comparte tu plan como imagen. Sin registro, directo en el navegador y sin conexión. Incluye un calendario mensual (planes de varios días y repetidos) que puedes decorar como una agenda de papel con stickers, cinta washi, papel y fotos.',
   ogTitle: '24Houring · planificador circular de 24 horas',
   ogDescription:
     'Un planificador de día circular de 24 horas, gratis, para editar, guardar y compartir.',
@@ -14,9 +14,10 @@ export default {
   ogImageAlt: '24Houring — horario circular de 24 horas',
   alternateName: 'Planificador circular de 24 horas',
   webAppDescription:
-    'Un planificador de día gratuito, sin registro, que muestra tu día de 24 horas como un reloj y funciona sin conexión. Edita bloques arrastrando, cambia entre vista de 12/24 horas y guarda o comparte como imagen.',
+    'Un planificador de día gratuito, sin registro, que muestra tu día de 24 horas como un reloj y funciona sin conexión. Edita bloques arrastrando, cambia entre vista de 12/24 horas y guarda o comparte como imagen. También ofrece un calendario mensual (planes de varios días y repetidos, importación de Google Calendar) y decoración del calendario con papel, stickers, cinta washi y stickers de foto.',
   faq: [
     { q: '¿Qué es 24Houring?', a: '24Houring es un planificador web gratuito para organizar un día en un círculo. Empieza sin registrarte. Los cambios se guardan en el navegador de este dispositivo; al iniciar sesión con Pro, los datos compatibles se sincronizan con el servidor. Crear un enlace compartido sube una copia del horario al servidor.' },
+    { q: '¿Hay un calendario que pueda decorar?', a: 'Sí. «Calendario» arriba muestra dos meses lado a lado con planes de todo el día, con hora, de varios días y repetidos (gratis). Diseño → Decorar calendario ofrece temas de color (gratis) y papel, más de 300 stickers, cinta washi y stickers de foto (Pro); el mes se guarda como imagen de 2160 px.' },
     { q: '¿Es gratis 24Houring?', a: 'La edición, las plantillas y la exportación son gratuitas sin registro. El uso gratuito incluye tres espacios de guardado y acceso al diario en un periodo de 30 días. Pro ofrece sincronización de cuenta, espacios ilimitados, acceso a entradas antiguas, informes y eliminación de anuncios. Consulta los precios y condiciones actuales en la pantalla de mejora antes de pagar.' },
     { q: '¿Puedo cambiar a una vista de reloj de 12 horas?', a: 'Sí. Un botón en la parte superior alterna entre las vistas de 24 horas, día (06–18) y noche (18–06), y cada vista permanece sincronizada con el mismo día.' },
     { q: '¿Puedo guardar o compartir mi horario?', a: 'Sí. Exporta como PNG, PDF o JSON, o comparte la imagen del horario directamente en Instagram y otras redes. También se admiten la copia de seguridad y la restauración completas.' },
@@ -32,7 +33,10 @@ export default {
   mainHtml: `      <main style="max-width:760px;margin:0 auto;padding:40px 20px;font-family:'Pretendard',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;color:#1f2430;line-height:1.65">
         <h1 style="font-size:30px;font-weight:800;letter-spacing:-0.5px;margin:0 0 8px">24Houring — todo tu día de un vistazo, un planificador circular de 24 horas</h1>
         <p class="copy-lead">24Houring es un planificador web gratuito para organizar un día en un círculo. Empieza sin registrarte. Los cambios se guardan en el navegador de este dispositivo; al iniciar sesión con Pro, los datos compatibles se sincronizan con el servidor. Crear un enlace compartido sube una copia del horario al servidor.</p>
-        <nav class="copy-actions"><a href="/templates/">Plantillas de horarios</a><a href="/guides/">Guías prácticas</a></nav>
+        <nav class="copy-actions"><a href="/templates/">Plantillas de horarios</a><a href="/calendar">Planificar y decorar el mes</a><a href="/guides/">Guías prácticas</a></nav>
+        <details><summary>Planificar el mes y decorarlo como una agenda</summary>
+          <p>Toca <strong>Calendario</strong> arriba para ver dos meses lado a lado. Añade planes de todo el día o con hora, arrastra sobre varias fechas y define repeticiones. Con Pro también ves tu Google Calendar (solo lectura).</p><p>En <strong>Diseño → Decorar calendario</strong> elige un tema de color y, con Pro, papel, stickers, cinta washi y stickers de foto, que se quedan en su día con cualquier tamaño de pantalla. <strong>Exportar</strong> guarda el mes como imagen de 2160 px. <a href="/calendar">Ver la presentación del calendario</a></p>
+        </details>
         <details><summary>Funciones, uso y preguntas</summary>
 
         <h2 style="font-size:20px;font-weight:700;margin:24px 0 8px">Funciones</h2>

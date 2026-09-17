@@ -24,25 +24,29 @@ interface Feature {
 const FEATURES_KO: Feature[] = [
   { emoji: '⏰', title: '24시간 원형 시간표', desc: '원을 클릭해 시간대를 나누고, 경계를 드래그해 시간을 조절하며, +/−로 칸을 추가·병합합니다.' },
   { emoji: '🕛', title: '12시간 시계 보기', desc: '상단 토글로 24시간 → 낮(06–18) → 밤(18–06)을 전환합니다. 같은 하루와 연동됩니다.' },
+  { emoji: '📅', title: '월간 캘린더', desc: '상단 ‘캘린더’로 두 달을 나란히 봅니다. 날짜를 끌어 여러 날 일정을 만들고, 반복 일정을 넣고, 구글 캘린더를 불러와 함께 볼 수 있습니다(Pro).' },
+  { emoji: '🎀', title: '다꾸 · 캘린더 꾸미기', desc: '디자인 → 캘린더 꾸미기에서 속지, 스티커 300여 종, 마스킹 테이프, 사진 스티커로 달력을 꾸미고 이미지로 저장·공유합니다(Pro, 테마는 무료).' },
   { emoji: '🗂️', title: '프리셋 · 여러 날짜', desc: '라이프스타일 프리셋으로 시작하고, 여러 날짜(멀티데이)를 만들며, 내 시간표로 저장·불러옵니다.' },
   { emoji: '💾', title: '내보내기 · 백업', desc: 'PNG·PDF·JSON으로 내보내고, 전체 데이터를 백업·복원합니다.' },
   { emoji: '📤', title: '공유', desc: '시간표를 이미지로 만들어 인스타그램·카카오톡 등으로 바로 공유합니다.' },
   { emoji: '📝', title: '메모', desc: '포스트잇 메모, 테두리(시각 연동) 메모, 그리고 전체 메모 목록을 제공합니다.' },
   { emoji: '🧰', title: '시계 도구', desc: '좌측 하단에서 시계·타이머·알람·캘린더·날씨를 띄울 수 있습니다.' },
   { emoji: '📏', title: '시간선', desc: '현재 시간선의 색·두께를 바꾸고, 세계 여러 도시의 시간선을 추가합니다.' },
-  { emoji: '🌐', title: '어디서나, 무료', desc: '7개 언어, 오프라인 동작, 홈 화면에 설치 가능. 회원가입 없이 무료로 씁니다.' },
+  { emoji: '🌐', title: '어디서나, 무료', desc: '8개 언어, 오프라인 동작, 홈 화면에 설치 가능. 회원가입 없이 무료로 씁니다.' },
 ];
 
 const FEATURES_EN: Feature[] = [
   { emoji: '⏰', title: '24-hour circular timetable', desc: 'Click the ring to split time blocks, drag boundaries to adjust, and use +/− to add or merge.' },
   { emoji: '🕛', title: '12-hour clock views', desc: 'Toggle 24h → Day (06–18) → Night (18–06) up top; every view edits the same day.' },
+  { emoji: '📅', title: 'Monthly calendar', desc: 'Tap “Calendar” up top to see two months side by side. Drag across days for multi-day plans, add repeating plans, and bring in your Google Calendar (Pro).' },
+  { emoji: '🎀', title: 'Diary-style decorating', desc: 'Design → Decorate calendar: paper textures, 300+ stickers, masking tape and photo stickers, then save or share the month as an image (Pro; themes are free).' },
   { emoji: '🗂️', title: 'Presets & multi-day', desc: 'Start from lifestyle presets, build multiple days, and save/load your own schedules.' },
   { emoji: '💾', title: 'Export & backup', desc: 'Export to PNG, PDF and JSON; back up and restore all your data.' },
   { emoji: '📤', title: 'Share', desc: 'Turn your timetable into an image and share it to Instagram, KakaoTalk and more.' },
   { emoji: '📝', title: 'Memos', desc: 'Post-it notes, rim memos pinned to a time, and a full memo archive.' },
   { emoji: '🧰', title: 'Clock tools', desc: 'Pop out a clock, timer, alarm, calendar and weather from the bottom-left.' },
   { emoji: '📏', title: 'Time lines', desc: 'Recolour/resize the current-time line and add world-clock lines for other cities.' },
-  { emoji: '🌐', title: 'Everywhere, free', desc: '7 languages, offline support, installable to your home screen — free, no sign-up.' },
+  { emoji: '🌐', title: 'Everywhere, free', desc: '8 languages, offline support, installable to your home screen — free, no sign-up.' },
 ];
 
 export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
@@ -63,8 +67,8 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
 
         <p className="text-sm text-muted-foreground">
           {ko
-            ? '하루 24시간을 원형 시계처럼 그리는 무료 시간표 플래너입니다. 드래그로 편집하고, 저장·내보내기·공유까지 한곳에서.'
-            : 'A free day planner that draws your 24 hours as a clock. Edit by dragging, then save, export and share — all in one place.'}
+            ? '하루 24시간을 원형 시계처럼 그리는 무료 시간표 플래너입니다. 드래그로 편집하고, 월간 캘린더와 다꾸(캘린더 꾸미기)까지 — 저장·내보내기·공유를 한곳에서.'
+            : 'A free day planner that draws your 24 hours as a clock — plus a monthly calendar you can decorate. Edit by dragging, then save, export and share, all in one place.'}
         </p>
 
         {/* Manual — features */}
@@ -90,8 +94,8 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
           </h3>
           <ol className="ml-4 list-decimal text-xs leading-relaxed text-foreground">
             {(ko
-              ? ['프리셋을 고르거나 빈 하루에서 시작합니다.', '원을 클릭해 시간대를 나누고 이름·색·아이콘을 지정한 뒤, 경계를 드래그해 시간을 맞춥니다.', '내보내기 또는 공유로 시간표를 저장합니다.']
-              : ['Pick a preset or start from an empty day.', 'Click the ring to split blocks, set a name/color/icon, then drag boundaries to fit your times.', 'Save your timetable via export or share.']
+              ? ['프리셋을 고르거나 빈 하루에서 시작합니다.', '원을 클릭해 시간대를 나누고 이름·색·아이콘을 지정한 뒤, 경계를 드래그해 시간을 맞춥니다.', '상단 ‘캘린더’에서 한 달 일정을 적고, 디자인 → 캘린더 꾸미기로 달력을 꾸밉니다.', '내보내기 또는 공유로 시간표·캘린더를 저장합니다.']
+              : ['Pick a preset or start from an empty day.', 'Click the ring to split blocks, set a name/color/icon, then drag boundaries to fit your times.', 'Open “Calendar” up top for the month, and decorate it from Design → Decorate calendar.', 'Save your timetable or calendar via export or share.']
             ).map((s, i) => (
               <li key={i} className="mt-0.5">{s}</li>
             ))}

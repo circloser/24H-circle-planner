@@ -51,6 +51,14 @@ function anchorRect(name: string): Rect | null {
   return { top: r.top, left: r.left, width: r.width, height: r.height };
 }
 
+/** The header's calendar button. */
+function calendarRect(): Rect | null {
+  const el = document.querySelector('[data-calendar-toggle]');
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  return { top: r.top, left: r.left, width: r.width, height: r.height };
+}
+
 interface SliceSnap { id: string; label: string; startTime: string; endTime: string }
 interface Baseline { slices: SliceSnap[]; rim: string | null; diary: string | null; view: string }
 
@@ -83,6 +91,7 @@ function TutorialSession({ open, onClose, onFinish }: TutorialOverlayProps) {
     { name: 'tutorial.n4', body: 'tutorial.s4', target: rimRect },
     { name: 'tutorial.n5', body: 'tutorial.s5', target: () => anchorRect('diarySave') ?? anchorRect('diary') },
     { name: 'tutorial.n6', body: 'tutorial.s6', target: () => anchorRect('view') },
+    { name: 'tutorial.n7', body: 'tutorial.s7', target: calendarRect },
   ];
   const last = step === steps.length - 1;
 
@@ -119,6 +128,7 @@ function TutorialSession({ open, onClose, onFinish }: TutorialOverlayProps) {
         case 3: return readLs(RIM_KEY) !== b.rim; // rim memo
         case 4: return readLs(DIARY_KEY) !== b.diary; // diary saved
         case 5: return chartView !== b.view; // view switched
+        case 6: return chartView === 'calendar'; // opened the calendar
         default: return false;
       }
     };
