@@ -1,5 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
-import { Check, ImagePlus, Lock, Minus, Palette, Plus, RotateCcw, RotateCw, Sparkles, Trash2 } from 'lucide-react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import {
+  Check, ChevronDown, ChevronUp, GripHorizontal, ImagePlus, Lock, Minus, Palette, Plus, RotateCcw, RotateCw, Sparkles, Trash2,
+} from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuRadioGroup, DropdownMenuRadioItem,
   DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger,
@@ -9,7 +12,7 @@ import { useTranslation } from '@/hooks/usePreferences';
 import { useAuth } from '@/hooks/useAuth';
 import { useDecor } from '@/hooks/useDecor';
 import { requestUpgrade } from '@/lib/pro';
-import { STICKER_GROUPS, TINTS, stickerGlyph, type StickerGroup } from '@/lib/decor';
+import { STICKER_GROUPS, TINTS, stickerGlyph, type StickerGroupId } from '@/lib/decor';
 import {
   CALENDAR_PAPERS, MAX_ITEMS, SCALE_MAX, SCALE_MIN, TAPE_COLORS, TAPE_DEFAULT, TAPE_MAX, TAPE_MIN, TAPE_PATTERNS,
   newItemId, tapeBackground, type CalendarPaper, type LayerItem, type TapePattern,
@@ -32,11 +35,17 @@ export type DecorTool = 'sticker' | 'tape' | 'photo';
 export type Armed = Omit<LayerItem, 'id' | 'x' | 'y'>;
 export interface Picked { month: string; id: string }
 
-const GROUP_LABEL: Record<StickerGroup['id'], TKey> = {
+const GROUP_LABEL: Record<StickerGroupId, TKey> = {
   mood: 'decor.groupMood',
   weather: 'decor.groupWeather',
   life: 'decor.groupLife',
+  hobby: 'decor.groupHobby',
+  food: 'decor.groupFood',
+  animal: 'decor.groupAnimal',
+  nature: 'decor.groupNature',
   moment: 'decor.groupMoment',
+  symbol: 'decor.groupSymbol',
+  travel: 'decor.groupTravel',
 };
 const TOOL_LABEL: Record<DecorTool, TKey> = { sticker: 'decor.stickers', tape: 'decor.tape', photo: 'decor.photo' };
 const PAPER_LABEL: Record<CalendarPaper, TKey> = {
@@ -51,31 +60,43 @@ const TOOLS: readonly DecorTool[] = ['sticker', 'tape', 'photo'];
 const usePro = () => useAuth().plan === 'pro';
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 
-/** The sticker picker, grouped. `picked` is shown pressed. */
+/** The sticker picker: a row of category tabs, then that category's stickers.
+ *  `picked` is shown pressed. */
 function Picker({ picked, onPick }: { picked?: string | null; onPick: (id: string) => void }) {
   const { t } = useTranslation();
+  const [group, setGroup] = useState<StickerGroupId>('mood');
+  const items = STICKER_GROUPS.find((g) => g.id === group)?.items ?? [];
   return (
-    <div className="flex flex-col gap-1" data-sticker-picker>
-      {STICKER_GROUPS.map((g) => (
-        <div key={g.id} className="flex flex-wrap items-center gap-0.5">
-          <span className="w-10 shrink-0 text-[10px] text-muted-foreground">{t(GROUP_LABEL[g.id])}</span>
-          {g.items.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              data-sticker={s.id}
-              aria-pressed={picked === s.id}
-              aria-label={s.id}
-              onClick={() => onPick(s.id)}
-              className={`grid h-7 w-7 place-items-center rounded-md text-base leading-none transition-colors hover:bg-accent/15 ${
-                picked === s.id ? 'bg-primary/15 ring-2 ring-primary' : ''
-              }`}
-            >
-              {s.glyph}
-            </button>
-          ))}
-        </div>
-      ))}
+    <div className="flex flex-col gap-1.5" data-sticker-picker>
+      <div className="flex flex-wrap gap-0.5">
+        {STICKER_GROUPS.map((g) => (
+          <button key={g.id} type="button" data-sticker-group={g.id} aria-pressed={group === g.id}
+            onClick={() => setGroup(g.id)}
+            className={`flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] transition-colors ${
+              group === g.id ? 'border-primary bg-primary/10 text-foreground' : 'border-transparent text-muted-foreground hover:bg-accent/10'
+            }`}>
+            <span className="text-sm leading-none" aria-hidden>{g.items[0]?.glyph}</span>
+            {t(GROUP_LABEL[g.id])}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(2rem,1fr))] gap-0.5">
+        {items.map((st) => (
+          <button
+            key={st.id}
+            type="button"
+            data-sticker={st.id}
+            aria-pressed={picked === st.id}
+            aria-label={st.id}
+            onClick={() => onPick(st.id)}
+            className={`grid h-8 place-items-center rounded-md text-lg leading-none transition-colors hover:bg-accent/15 ${
+              picked === st.id ? 'bg-primary/15 ring-2 ring-primary' : ''
+            }`}
+          >
+            {st.glyph}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -154,7 +175,32 @@ export function DecorMenu({ theme, onTheme, paper, onPaper, tool, onTool }: {
 
 const iconBtn = 'grid h-7 w-7 place-items-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent/10 disabled:opacity-40';
 
-/** The decorating tray: pick what to place, and adjust whatever is selected. */
+/** Where the floating panel was left — a per-viewer convenience, nothing more. */
+const PANEL_POS_KEY = 'cal-decor-panel-pos';
+type Pos = { x: number; y: number };
+function readPanelPos(): Pos | null {
+  try {
+    const p = JSON.parse(localStorage.getItem(PANEL_POS_KEY) ?? 'null') as Pos | null;
+    return p && Number.isFinite(p.x) && Number.isFinite(p.y) ? p : null;
+  } catch {
+    return null;
+  }
+}
+function savePanelPos(p: Pos) {
+  try { localStorage.setItem(PANEL_POS_KEY, JSON.stringify(p)); } catch { /* storage unavailable */ }
+}
+/** Keep the panel inside the window, with at least its title bar showing. */
+function fitPanel(p: Pos, w: number): Pos {
+  const x = Math.min(Math.max(8, p.x), Math.max(8, window.innerWidth - w - 8));
+  const y = Math.min(Math.max(8, p.y), Math.max(8, window.innerHeight - 48));
+  return { x, y };
+}
+
+/**
+ * The decorating panel: a window floating over the calendar (so the calendar
+ * keeps its size), moved by its title bar and folded to just that bar when it
+ * is in the way. Pick what to place, and adjust whatever is selected.
+ */
 export function DecorTray({ tool, onTool, armed, onArm, selected, onDone }: {
   tool: DecorTool;
   onTool: (tool: DecorTool) => void;
@@ -195,8 +241,76 @@ export function DecorTray({ tool, onTool, armed, onArm, selected, onDone }: {
 
   const patch = (p: Partial<LayerItem>) => { if (selected && sel) updateItem(selected.month, sel.id, p); };
 
-  return (
-    <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-2" data-decor-tray={tool}>
+  const panel = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<Pos | null>(readPanelPos);
+  const [folded, setFolded] = useState(false);
+
+  // First placement (top right on a wide screen, the bottom on a phone), and
+  // back inside the window whenever the window changes size.
+  useLayoutEffect(() => {
+    const fit = () => {
+      const el = panel.current;
+      if (!el) return;
+      const w = el.offsetWidth;
+      setPos((p) => {
+        const want = p ?? (window.innerWidth < 640
+          ? { x: 8, y: window.innerHeight - el.offsetHeight - 8 }
+          : { x: window.innerWidth - w - 16, y: 120 });
+        const next = fitPanel(want, w);
+        return p && p.x === next.x && p.y === next.y ? p : next;
+      });
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, []);
+
+  const grab = (e: React.PointerEvent) => {
+    if (e.button !== 0 || !pos || (e.target as HTMLElement).closest('button')) return;
+    e.preventDefault();
+    const ox = e.clientX - pos.x;
+    const oy = e.clientY - pos.y;
+    let last = pos;
+    const move = (ev: PointerEvent) => {
+      last = fitPanel({ x: ev.clientX - ox, y: ev.clientY - oy }, panel.current?.offsetWidth ?? 0);
+      setPos(last);
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+      savePanelPos(last);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+  };
+
+  return createPortal(
+    <div
+      ref={panel}
+      data-decor-tray={tool}
+      data-folded={folded || undefined}
+      className="fixed z-[45] flex w-[min(380px,calc(100vw-16px))] flex-col overflow-hidden rounded-xl border border-border bg-surface text-foreground shadow-2xl"
+      style={{ left: pos?.x ?? 0, top: pos?.y ?? 0, visibility: pos ? undefined : 'hidden' }}
+    >
+      <div data-decor-drag onPointerDown={grab}
+        className="flex cursor-move touch-none select-none items-center gap-1.5 border-b border-border bg-muted/40 px-2 py-1.5">
+        <GripHorizontal className="h-4 w-4 text-muted-foreground" aria-hidden />
+        <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden />
+        <span className="flex-1 text-xs font-semibold">{t('decor.menu')}</span>
+        <button type="button" data-decor-fold aria-pressed={folded} onClick={() => setFolded((v) => !v)}
+          aria-label={t(folded ? 'decor.unfold' : 'decor.fold')} title={t(folded ? 'decor.unfold' : 'decor.fold')}
+          className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-accent/15">
+          {folded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+        </button>
+        <Button size="sm" onClick={onDone} data-decor-done className="h-7 gap-1 bg-primary px-2 text-xs text-primary-foreground">
+          <Check className="h-3.5 w-3.5" />
+          {t('decor.done')}
+        </Button>
+      </div>
+      {!folded && (
+      <div className="flex max-h-[min(60vh,460px)] flex-col gap-2 overflow-y-auto p-2">
       <div className="flex flex-wrap items-center gap-1">
         {TOOLS.map((k) => (
           <button key={k} type="button" data-decor-tab={k} aria-pressed={tool === k}
@@ -207,14 +321,9 @@ export function DecorTray({ tool, onTool, armed, onArm, selected, onDone }: {
             {t(TOOL_LABEL[k])}
           </button>
         ))}
-        {/* On a phone the hint takes its own line under the tabs. */}
-        <span className="order-last basis-full px-1 text-[11px] text-muted-foreground sm:order-none sm:min-w-0 sm:flex-1 sm:basis-auto" data-decor-hint>
+        <span className="basis-full px-1 text-[11px] text-muted-foreground" data-decor-hint>
           {armed ? t('decor.armedHint') : t('decor.layerHint')}
         </span>
-        <Button size="sm" onClick={onDone} data-decor-done className="ml-auto h-7 gap-1 bg-primary px-2 text-xs text-primary-foreground">
-          <Check className="h-3.5 w-3.5" />
-          {t('decor.done')}
-        </Button>
       </div>
 
       {tool === 'sticker' && (
@@ -288,7 +397,10 @@ export function DecorTray({ tool, onTool, armed, onArm, selected, onDone }: {
           </button>
         </div>
       )}
-    </div>
+      </div>
+      )}
+    </div>,
+    document.body,
   );
 }
 

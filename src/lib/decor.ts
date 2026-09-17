@@ -7,48 +7,35 @@
  * stored data does not depend on how an emoji happens to be encoded.
  */
 
+export type StickerGroupId =
+  'mood' | 'weather' | 'life' | 'hobby' | 'food' | 'animal' | 'nature' | 'moment' | 'symbol' | 'travel';
+
 export interface StickerGroup {
-  id: 'mood' | 'weather' | 'life' | 'moment';
+  id: StickerGroupId;
   items: ReadonlyArray<{ id: string; glyph: string }>;
 }
 
-export const STICKER_GROUPS: readonly StickerGroup[] = [
-  {
-    id: 'mood',
-    items: [
-      { id: 'smile', glyph: '😊' }, { id: 'laugh', glyph: '😆' }, { id: 'love', glyph: '🥰' },
-      { id: 'party', glyph: '🥳' }, { id: 'calm', glyph: '😌' }, { id: 'tired', glyph: '😴' },
-      { id: 'sad', glyph: '😢' }, { id: 'angry', glyph: '😤' }, { id: 'sick', glyph: '🤒' },
-    ],
-  },
-  {
-    id: 'weather',
-    items: [
-      { id: 'sun', glyph: '☀️' }, { id: 'partly', glyph: '⛅' }, { id: 'cloud', glyph: '☁️' },
-      { id: 'rain', glyph: '🌧️' }, { id: 'storm', glyph: '⛈️' }, { id: 'snow', glyph: '❄️' },
-      { id: 'rainbow', glyph: '🌈' },
-    ],
-  },
-  {
-    id: 'life',
-    items: [
-      { id: 'run', glyph: '🏃' }, { id: 'yoga', glyph: '🧘' }, { id: 'book', glyph: '📚' },
-      { id: 'study', glyph: '✏️' }, { id: 'work', glyph: '💼' }, { id: 'coffee', glyph: '☕' },
-      { id: 'meal', glyph: '🍽️' }, { id: 'cake', glyph: '🍰' }, { id: 'movie', glyph: '🎬' },
-      { id: 'music', glyph: '🎧' }, { id: 'game', glyph: '🎮' }, { id: 'travel', glyph: '✈️' },
-      { id: 'hospital', glyph: '🏥' }, { id: 'shopping', glyph: '🛍️' },
-    ],
-  },
-  {
-    id: 'moment',
-    items: [
-      { id: 'birthday', glyph: '🎂' }, { id: 'gift', glyph: '🎁' }, { id: 'flower', glyph: '💐' },
-      { id: 'heart', glyph: '❤️' }, { id: 'star', glyph: '⭐' }, { id: 'sparkle', glyph: '✨' },
-      { id: 'done', glyph: '✅' }, { id: 'pin', glyph: '📌' }, { id: 'fire', glyph: '🔥' },
-      { id: 'clover', glyph: '🍀' },
-    ],
-  },
+/** `id:glyph` pairs, one group per line — compact, and easy to extend. */
+const SOURCE: ReadonlyArray<[StickerGroupId, string]> = [
+  ['mood', 'smile:😊 laugh:😆 love:🥰 party:🥳 calm:😌 tired:😴 sad:😢 angry:😤 sick:🤒 wink:😉 cool:😎 think:🤔 shy:😳 yum:😋 starstruck:🤩 hug:🤗 cry:😭 scream:😱 sweat:😅 sleepy:😪 nerd:🤓 halo:😇 devil:😈 meh:😐 eyeroll:🙄 kiss:😘 ghost:👻 catlove:😻 mindblown:🤯'],
+  ['weather', 'sun:☀️ partly:⛅ cloud:☁️ rain:🌧️ storm:⛈️ snow:❄️ rainbow:🌈 moon:🌙 glow:🌟 fog:🌫️ wind:🌬️ tornado:🌪️ umbrella:☂️ thermo:🌡️ snowman:⛄ sunrise:🌅 lightning:⚡ droplet:💧 fullmoon:🌕 comet:☄️'],
+  ['life', 'run:🏃 yoga:🧘 book:📚 study:✏️ work:💼 coffee:☕ meal:🍽️ cake:🍰 movie:🎬 music:🎧 game:🎮 travel:✈️ hospital:🏥 shopping:🛍️ bed:🛌 bath:🛁 laundry:🧺 clean:🧹 cook:🍳 phone:📱 laptop:💻 mail:✉️ bank:🏦 car:🚗 bus:🚌 train:🚆 bike:🚲 pill:💊 tooth:🦷 haircut:💇 calendar:📅 pray:🙏 memo:📝 money:💰 cart:🛒 baby:👶 school:🏫 office:🏢 home:🏠'],
+  ['hobby', 'swim:🏊 soccer:⚽ basketball:🏀 baseball:⚾ tennis:🎾 golf:⛳ gym:🏋️ dance:💃 paint:🎨 camera:📷 piano:🎹 guitar:🎸 bowling:🎳 ski:⛷️ fishing:🎣 knit:🧶 puzzle:🧩 dice:🎲 ticket:🎟️ theater:🎭 mic:🎤 drum:🥁 plant:🪴 hike:🥾 tent:⛺'],
+  ['food', 'apple:🍎 strawberry:🍓 peach:🍑 grapes:🍇 watermelon:🍉 lemon:🍋 banana:🍌 cherry:🍒 avocado:🥑 carrot:🥕 corn:🌽 bread:🍞 croissant:🥐 pancake:🥞 egg:🥚 burger:🍔 pizza:🍕 fries:🍟 hotdog:🌭 taco:🌮 ramen:🍜 sushi:🍣 rice:🍚 bento:🍱 dumpling:🥟 curry:🍛 chicken:🍗 salad:🥗 icecream:🍦 donut:🍩 cookie:🍪 choco:🍫 candy:🍬 pudding:🍮 cupcake:🧁 tea:🍵 boba:🧋 juice:🧃 beer:🍺 wine:🍷 cocktail:🍹'],
+  ['animal', 'cat:🐱 dog:🐶 rabbit:🐰 bear:🐻 panda:🐼 fox:🦊 koala:🐨 tiger:🐯 lion:🦁 pig:🐷 frog:🐸 monkey:🐵 chick:🐥 penguin:🐧 owl:🦉 duck:🦆 unicorn:🦄 horse:🐴 cow:🐮 hamster:🐹 mouse:🐭 whale:🐳 dolphin:🐬 fish:🐟 octopus:🐙 turtle:🐢 snail:🐌 bee:🐝 ladybug:🐞 butterfly:🦋 dino:🦕 paw:🐾 hedgehog:🦔 sloth:🦥 otter:🦦'],
+  ['nature', 'tulip:🌷 rose:🌹 sunflower:🌻 blossom:🌸 hibiscus:🌺 daisy:🌼 seedling:🌱 tree:🌳 palm:🌴 cactus:🌵 maple:🍁 leaf:🍃 fallen:🍂 mushroom:🍄 herb:🌿 clover4:☘️ shell:🐚 wave:🌊 mountain:⛰️ volcano:🌋 earth:🌏 xmas:🎄 pumpkin:🎃 rock:🪨 wood:🪵'],
+  ['moment', 'birthday:🎂 gift:🎁 flower:💐 heart:❤️ star:⭐ sparkle:✨ done:✅ pin:📌 fire:🔥 clover:🍀 balloon:🎈 confetti:🎊 popper:🎉 ribbon:🎀 trophy:🏆 medal:🥇 crown:👑 ring:💍 diamond:💎 champagne:🍾 fireworks:🎆 sparkler:🎇 lantern:🏮 letter:💌 grad:🎓 wedding:💒 candle:🕯️ bell:🔔 kissmark:💋 rocket:🚀 hundred:💯'],
+  ['symbol', 'orangeheart:🧡 yellowheart:💛 greenheart:💚 blueheart:💙 purpleheart:💜 blackheart:🖤 whiteheart:🤍 brownheart:🤎 sparkleheart:💖 twohearts:💕 brokenheart:💔 check:✔️ cross:❌ question:❓ exclaim:❗ warning:⚠️ no:🚫 note:🎵 notes:🎶 zzz:💤 anger:💢 bulb:💡 target:🎯 flag:🚩 clip:📎 bookmark:🔖 key:🔑 lock:🔒 alarm:⏰ hourglass:⏳ speech:💬 thought:💭 point:👉 thumbsup:👍 clap:👏 muscle:💪 okhand:👌 peace:✌️ hello:👋'],
+  ['travel', 'suitcase:🧳 map:🗺️ beach:🏖️ island:🏝️ camping:🏕️ ferris:🎡 coaster:🎢 castle:🏰 tower:🗼 liberty:🗽 hotel:🏨 taxi:🚕 bullet:🚄 ship:🚢 sailboat:⛵ compass:🧭 globe:🌍 carousel:🎠 fountain:⛲ takeoff:🛫 landing:🛬 fuji:🗻'],
 ];
+
+export const STICKER_GROUPS: readonly StickerGroup[] = SOURCE.map(([id, body]) => ({
+  id,
+  items: body.split(' ').map((pair) => {
+    const at = pair.indexOf(':');
+    return { id: pair.slice(0, at), glyph: pair.slice(at + 1) };
+  }),
+}));
 
 const GLYPH = new Map(STICKER_GROUPS.flatMap((g) => g.items.map((s) => [s.id, s.glyph] as const)));
 

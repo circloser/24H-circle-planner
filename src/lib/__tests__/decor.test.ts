@@ -10,6 +10,13 @@ describe('diary decorating data', () => {
     expect(stickerGlyph('nope')).toBeNull();
   });
 
+  it('offers a wide choice, and keeps every id the first version stored', () => {
+    expect(STICKER_GROUPS.flatMap((g) => g.items).length).toBeGreaterThanOrEqual(200);
+    for (const id of ['smile', 'sick', 'sun', 'rainbow', 'run', 'shopping', 'birthday', 'clover']) {
+      expect(stickerGlyph(id)).toBeTruthy();
+    }
+  });
+
   it('reads a stored day and drops anything it does not know', () => {
     expect(cleanDecor({
       version: 1,

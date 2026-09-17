@@ -101,6 +101,18 @@ export async function run() {
     await page.mouse.click(b.x + b.width * fx, b.y + b.height * fy);
     await wait(300);
   };
+  /** Drag the floating panel over the right-hand month, clear of the days
+   *  the checks tap on the left. */
+  const park = async () => {
+    const bar = await page.locator('[data-decor-drag]').boundingBox();
+    const right = await page.locator('[data-calendar-month]').nth(1).boundingBox();
+    if (!bar || !right) return;
+    await page.mouse.move(bar.x + 20, bar.y + bar.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(right.x + 40, right.y + 80, { steps: 5 });
+    await page.mouse.up();
+    await wait(150);
+  };
   const stored = () => page.evaluate((k) => JSON.parse(localStorage.getItem(k) ?? 'null'), LAYER_KEY);
 
   try {
@@ -158,9 +170,36 @@ export async function run() {
     // 4. Pro: place a sticker anywhere.
     me = { ...me, plan: 'pro' };
     await openCalendar();
+    const before = await leftMonth().evaluate((e) => { const r = e.getBoundingClientRect(); return [r.x, r.y, r.width, r.height].map(Math.round).join(); });
     await tool('sticker');
-    pass('a Pro account opens the decorating tray', (await count('[data-decor-tray="sticker"]')) === 1);
+    pass('a Pro account opens the decorating panel', (await count('[data-decor-tray="sticker"]')) === 1);
+    const after = await leftMonth().evaluate((e) => { const r = e.getBoundingClientRect(); return [r.x, r.y, r.width, r.height].map(Math.round).join(); });
+    pass('…floating over the calendar, which keeps its size and place', before === after, `${before} → ${after}`);
+    pass('…as a window of its own', (await page.locator('[data-decor-tray]').evaluate((e) => getComputedStyle(e).position)) === 'fixed');
+    const p0 = await page.locator('[data-decor-tray]').boundingBox();
+    const bar = await page.locator('[data-decor-drag]').boundingBox();
+    await page.mouse.move(bar.x + 20, bar.y + bar.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(bar.x - 80, bar.y + bar.height / 2 + 60, { steps: 6 });
+    await page.mouse.up();
+    await wait(200);
+    const p1 = await page.locator('[data-decor-tray]').boundingBox();
+    pass('the panel moves by its title bar', Math.abs(p1.x - (p0.x - 100)) < 3 && Math.abs(p1.y - (p0.y + 60)) < 3,
+      JSON.stringify({ from: [p0.x, p0.y], to: [p1.x, p1.y] }));
+    await page.locator('[data-decor-fold]').click();
+    await wait(150);
+    const foldedH = (await page.locator('[data-decor-tray]').boundingBox()).height;
+    pass('…and folds down to its title bar', foldedH < 60 && (await count('[data-sticker-picker]')) === 0, String(foldedH));
+    await page.locator('[data-decor-fold]').click();
+    await wait(150);
+    const groups = await count('[data-sticker-group]');
+    pass('stickers come in categories', groups === 10, String(groups));
+    await page.locator('[data-sticker-group="animal"]').click();
+    await wait(100);
+    const animals = await count('[data-decor-tray] [data-sticker]');
+    pass('…showing one category at a time', animals >= 30 && (await count('[data-decor-tray] [data-sticker="panda"]')) === 1, String(animals));
     pass('the layer takes the pointer while decorating', (await count('[data-decor-layer][data-decorating]')) === 2);
+    await page.locator('[data-sticker-group="moment"]').click();
     await page.locator('[data-decor-tray] [data-sticker="star"]').click();
     await wait(150);
     await tapCell(day(3), 0.3, 0.7);
@@ -198,6 +237,7 @@ export async function run() {
 
     // 6. Drag it to another day.
     if ((await count('[data-decor-tray]')) === 0) await tool('sticker');
+    await park();
     const box = await page.locator(`[data-item-id="${starId}"]`).boundingBox();
     const to = await cell(day(12)).boundingBox();
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
@@ -286,6 +326,7 @@ export async function run() {
 
     // 13. Peeling off.
     await tool('photo');
+    await park();
     await page.locator(photo).click();
     await wait(200);
     await page.locator('[data-item-delete]').click();
