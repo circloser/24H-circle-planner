@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { dismissAfterVisible } from '@/lib/toast-dismiss';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from '@/hooks/usePreferences';
-import { collectSyncData, applySyncData, dataFingerprint, changedSyncKeys, mergeSyncData, LIVE_APPLY_KEYS, PREFS_KEY, PREFS_SYNC_EVENT, VIEW_KEY, VIEW_SYNC_EVENT, type SyncEnvelope } from '@/lib/sync/syncData';
+import { collectSyncData, applySyncData, dataFingerprint, changedSyncKeys, mergeSyncData, LIVE_APPLY_KEYS, PREFS_KEY, PREFS_SYNC_EVENT, SYNC_BASE_KEY, VIEW_KEY, VIEW_SYNC_EVENT, type SyncEnvelope } from '@/lib/sync/syncData';
 import { CLOCKTOOLS_KEY, GOALSWIDGET_KEY, NEWS_WINDOWS_KEY, CLOCKTOOLS_SYNC_EVENT, GOALS_WIDGET_SYNC_EVENT, NEWS_SYNC_EVENT } from '@/lib/sync/widgetSync';
 import { TAMA_KEY, TAMA_SYNC_EVENT } from '@/lib/sync/tamaSync';
 import { pullRemote, pushRemote, deviceLabel } from '@/lib/sync/syncClient';
@@ -29,7 +29,7 @@ const APPLIED_KEY = '24h-circle-planner.sync-applied';
 // Last-synced snapshot (the common ancestor for 3-way merge). Kept so a
 // conflict merges per-key against what BOTH sides last agreed on, instead of
 // discarding a whole side (the cross-device data-loss fix).
-const BASE_KEY = '24h-circle-planner.sync-base';
+const BASE_KEY = SYNC_BASE_KEY;
 
 function loadBase(): Record<string, string> {
   try {

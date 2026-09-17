@@ -1,8 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, GripVertical, Link, Palette, Pencil, Plus, X } from 'lucide-react';
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { CalendarDays, ChevronLeft, ChevronRight, GripVertical, Link, Pencil, Plus, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
@@ -14,10 +11,10 @@ import {
 } from '@/lib/calendar-events';
 import { useIcalFeeds } from '@/hooks/useIcalFeed';
 import { IcalConnect } from './IcalConnect';
-import { DayDecorEditor, StickerButton, StickerTray } from './Decor';
+import { DayDecorEditor, DecorLayer, DecorMenu, DecorTray, type Armed, type DecorTool, type Picked } from './Decor';
 import { useDecor } from '@/hooks/useDecor';
 import { useAuth } from '@/hooks/useAuth';
-import { stickerGlyph } from '@/lib/decor';
+import { monthKey, paperOf } from '@/lib/decor-layer';
 import { COLOR_THEMES } from '@/data/color-themes';
 import { chipInk, shownColor, themeAccent } from '@/lib/calendar-theme';
 import { MONTH_ROWS, addDays, dayGap, monthCells, monthPair, partsOf, shiftMonth, thisMonth, todayKey, type YearMonth } from '@/lib/calendar-grid';
@@ -154,9 +151,13 @@ interface MonthProps {
   onOpen: (start: string, days: number) => void;
   onDragStart: (d: Drag) => void;
   onDragOver: (key: string) => void;
-  /** Set while a sticker is armed: a tap on a day stamps it there. */
-  stamping: boolean;
-  onStamp: (day: string) => void;
+  /** The decoration layer: taking the pointer (decorating), what is waiting
+   *  to be placed, and what is selected. */
+  decorating: boolean;
+  armed: Armed | null;
+  picked: Picked | null;
+  onPick: (p: Picked | null) => void;
+  onPlaced: (p: Picked) => void;
 }
 
 /** How many chip lines fit in one day cell right now — remeasured whenever the
@@ -182,15 +183,12 @@ function useChipRoom(grid: React.RefObject<HTMLDivElement | null>, lineH: number
 const PHONE_ROW_H = 72;
 
 /** One month: name, weekday header and six rows of days filling the height. */
-function Month({ at, imported, drag, onOpen, onDragStart: startDrag, onDragOver, stamping, onStamp }: MonthProps) {
+function Month({ at, imported, drag, onOpen, onDragStart, onDragOver, decorating, armed, picked, onPick, onPlaced }: MonthProps) {
   const isMobile = useIsMobile();
   const { t, lang } = useTranslation();
   const { events } = useEvents();
   const { decor } = useDecor();
   const accent = themeAccent(useContext(LookContext));
-  // With a sticker armed, pressing a day (or a plan on it) stamps instead of
-  // starting a drag.
-  const onDragStart = (d: Drag) => (stamping ? onStamp(d.from) : startDrag(d));
   const [peek, setPeek] = useState<string | null>(null);
   const today = todayKey();
   const label = new Date(at.y, at.m, 1).toLocaleDateString(lang, { year: 'numeric', month: 'long' });
@@ -218,15 +216,20 @@ function Month({ at, imported, drag, onOpen, onDragStart: startDrag, onDragOver,
   /** The day a carried plan would land on. */
   const dropOn = drag?.kind === 'move' ? drag.over : null;
 
+  const month = monthKey(at.y, at.m);
+
   return (
     <section className={`flex min-w-0 flex-col ${isMobile ? 'shrink-0' : 'min-h-0 flex-1'}`}
-      data-calendar-month={`${at.y}-${String(at.m + 1).padStart(2, '0')}`}>
+      data-calendar-month={month}>
       <h3 className="mb-0.5 text-center text-xs font-semibold text-foreground">{label}</h3>
       <div className="grid grid-cols-7">
         {weekdays.map((w, i) => (
           <div key={`${w}${i}`} className={`py-0.5 text-center text-[10px] font-medium ${weekdayTone(i)}`}>{w}</div>
         ))}
       </div>
+      {/* The decoration layer sits exactly over the grid, and measures itself
+          by it — so whatever is placed there keeps its spot over the days. */}
+      <div className={`relative ${isMobile ? '' : 'flex min-h-0 flex-1 flex-col'}`}>
       <div ref={gridRef}
         style={isMobile ? { gridTemplateRows: `repeat(${MONTH_ROWS}, ${PHONE_ROW_H}px)` } : undefined}
         className={`grid grid-cols-7 overflow-hidden rounded-lg border border-border bg-surface ${
@@ -258,7 +261,6 @@ function Month({ at, imported, drag, onOpen, onDragStart: startDrag, onDragOver,
             </span>
           );
           const deco = decor[cell.key];
-          const stickers = deco?.s ?? [];
           return (
             <div
               key={cell.key}
@@ -282,9 +284,7 @@ function Month({ at, imported, drag, onOpen, onDragStart: startDrag, onDragOver,
                   // the plans on top keep their contrast in either theme.
                   ...(deco?.t ? { backgroundColor: `color-mix(in srgb, ${deco.t} 55%, var(--cell-bg))` } : {}),
                 } as React.CSSProperties}
-                className={`flex h-full w-full min-h-0 select-none flex-col gap-px overflow-hidden bg-[var(--cell-bg)] p-0.5 text-left transition-colors hover:bg-accent/10 ${
-                  stamping ? 'cursor-copy' : ''
-                }`}
+                className="flex h-full w-full min-h-0 select-none flex-col gap-px overflow-hidden bg-[var(--cell-bg)] p-0.5 text-left transition-colors hover:bg-accent/10"
               >
                 {number}
                 {/* The neighbouring month's plans stay readable but step back. */}
@@ -305,12 +305,6 @@ function Month({ at, imported, drag, onOpen, onDragStart: startDrag, onDragOver,
                   )}
                 </span>
               </button>
-              {stickers.length > 0 && (
-                // Stamped stickers ride the top-right corner, clear of the date.
-                <span className="pointer-events-none absolute right-0.5 top-0 flex text-[10px] leading-4 sm:text-sm sm:leading-5" data-cell-stickers aria-hidden>
-                  {stickers.slice(0, isMobile ? 1 : 3).map((id, n) => <span key={`${id}-${n}`}>{stickerGlyph(id)}</span>)}
-                </span>
-              )}
               {/* Hovering a crowded day opens the full list from the cell's middle. */}
               {expanded && (
                 <div
@@ -332,6 +326,8 @@ function Month({ at, imported, drag, onOpen, onDragStart: startDrag, onDragOver,
           );
         })}
       </div>
+      <DecorLayer month={month} active={decorating} armed={armed} selected={picked} onSelect={onPick} onPlaced={onPlaced} />
+      </div>
     </section>
   );
 }
@@ -348,11 +344,17 @@ export function CalendarView() {
   const { prefs, setPreference } = usePreferences();
   const theme = COLOR_THEMES.some((th) => th.id === prefs.colorTheme) ? prefs.colorTheme : null;
   const isPro = useAuth().plan === 'pro';
-  const { addSticker } = useDecor();
-  const [trayOpen, setTrayOpen] = useState(false);
-  const [armed, setArmed] = useState<string | null>(null);
-  // Only a Pro account can stamp; a lapsed one simply stops.
-  const stamping = isPro && !!armed;
+  const paper = paperOf(prefs.calendarPaper);
+  const { layer } = useDecor();
+  /** The open decorating tool (the tray), what waits to be placed, and the
+   *  item selected on the layer. */
+  const [tool, setTool] = useState<DecorTool | null>(null);
+  const [armed, setArmed] = useState<Armed | null>(null);
+  const [chosen, setChosen] = useState<Picked | null>(null);
+  // Only a Pro account decorates; a lapsed one simply stops.
+  const decorating = isPro && tool !== null;
+  const chosenItem = chosen ? layer[chosen.month]?.find((i) => i.id === chosen.id) : undefined;
+  const stopDecorating = () => { setTool(null); setArmed(null); setChosen(null); };
   const { events, addEvent, updateEvent, moveEvent, skipOccurrence, endSeriesBefore, removeEvent, orderDay } = useEvents();
   const [at, setAt] = useState<YearMonth>(() => thisMonth());
   const [picked, setPicked] = useState<{ start: string; days: number } | null>(null);
@@ -521,7 +523,8 @@ export function CalendarView() {
 
   return (
     <LookContext.Provider value={theme}>
-    <div className="flex min-h-0 w-full flex-1 flex-col gap-1" data-calendar-view data-cal-look={theme ?? ''}>
+    <div className="flex min-h-0 w-full flex-1 flex-col gap-1" data-calendar-view data-cal-look={theme ?? ''}
+      data-paper={paper === 'none' ? undefined : paper}>
       <div className="flex flex-wrap items-center justify-center gap-2">
         <button type="button" aria-label={t('calendar.prev')} title={t('calendar.prev')} data-cal-prev
           onClick={() => setAt((m) => shiftMonth(m, -1))} className={navBtn}>
@@ -545,38 +548,25 @@ export function CalendarView() {
           {t('ical.button')}
           {feeds.calendars.length > 1 && <span className="tabular-nums">{feeds.calendars.length}</span>}
         </button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button type="button" data-cal-theme title={t('calendar.theme')}
-              className={`flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-xs transition-colors hover:bg-accent/10 ${
-                theme ? 'border-primary text-foreground' : 'border-border text-muted-foreground'
-              }`}>
-              <Palette className="h-3.5 w-3.5" />
-              {t('calendar.theme')}
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuRadioGroup value={theme ?? ''} onValueChange={(v) => setPreference('colorTheme', v || null)}>
-              <DropdownMenuRadioItem value="" data-cal-theme-option="">{t('calendar.themeDefault')}</DropdownMenuRadioItem>
-              {COLOR_THEMES.map((th) => (
-                <DropdownMenuRadioItem key={th.id} value={th.id} data-cal-theme-option={th.id} className="gap-2">
-                  <span className="flex gap-0.5">
-                    {th.colors.slice(1, 5).map((c) => <span key={c} className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: c }} />)}
-                  </span>
-                  {lang === 'ko' ? th.ko : th.en}
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <StickerButton open={trayOpen} armed={!!armed} onToggle={() => {
-          setTrayOpen((v) => !v);
-          setArmed(null);
-        }} />
+        <DecorMenu
+          theme={theme}
+          onTheme={(id) => setPreference('colorTheme', id)}
+          paper={paper}
+          onPaper={(v) => setPreference('calendarPaper', v)}
+          tool={decorating ? tool : null}
+          onTool={(k) => { setTool(k); setArmed(null); }}
+        />
       </div>
 
-      {trayOpen && isPro && (
-        <StickerTray armed={armed} onArm={setArmed} onClose={() => { setTrayOpen(false); setArmed(null); }} />
+      {decorating && tool && (
+        <DecorTray
+          tool={tool}
+          onTool={setTool}
+          armed={armed}
+          onArm={setArmed}
+          selected={chosen && chosenItem ? { month: chosen.month, item: chosenItem } : null}
+          onDone={stopDecorating}
+        />
       )}
 
       <div className={`flex min-h-0 flex-1 gap-3 ${isMobile ? 'flex-col overflow-y-auto' : 'flex-row'}`}>
@@ -589,8 +579,12 @@ export function CalendarView() {
             onOpen={openDay}
             onDragStart={setDrag}
             onDragOver={(key) => setDrag((d) => (d ? { ...d, over: key } : d))}
-            stamping={stamping}
-            onStamp={(day) => { if (armed) addSticker(day, armed); }}
+            decorating={decorating}
+            armed={armed}
+            picked={chosen}
+            onPick={setChosen}
+            // A photo is one picture: once placed it is no longer waiting.
+            onPlaced={(p) => { setChosen(p); if (armed?.k === 'photo') setArmed(null); }}
           />
         ))}
       </div>

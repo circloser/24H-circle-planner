@@ -117,6 +117,8 @@ export interface Preferences {
    *  timetable takes a theme once, at the moment it is applied; the calendar
    *  keeps wearing it — plans are shown in its colours. */
   colorTheme: string | null;
+  /** Pro: the calendar's paper texture (a CALENDAR_PAPERS id). */
+  calendarPaper: string;
   /** Browser notification when the day crosses into the next slice of the
    *  active timetable (needs per-device Notification permission too). */
   sliceAlarms: boolean;
@@ -178,6 +180,7 @@ const DEFAULT_PREFS: Preferences = {
   chartView: 'full',
   chartLayout: 'center',
   colorTheme: null,
+  calendarPaper: 'none',
   sliceAlarms: false,
   pushAlarms: false,
   snapMinutes: 5,

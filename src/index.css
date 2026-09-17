@@ -57,6 +57,11 @@
   /* Calendar: days of the neighbouring months sit on a darker ground. On a
      dark surface the same small shift is invisible, so dark goes further. */
   --cal-outside:   color-mix(in srgb, hsl(var(--surface)) 86%, #000);
+  /* Calendar paper textures (see the end of this file). */
+  --paper-ink:     rgba(30, 60, 110, 0.10);
+  --paper-dot:     rgba(30, 60, 110, 0.22);
+  --paper-kraft:   rgba(190, 145, 85, 0.22);
+  --paper-fleck:   rgba(110, 70, 25, 0.22);
   --surface-glass: 220 20% 98%;
   --text-primary:  220 25% 10%;
   --text-muted:    220 15% 45%;
@@ -106,6 +111,10 @@
     --background:    220 25% 8%;
     --surface:       220 22% 13%;
     --cal-outside:   color-mix(in srgb, hsl(var(--surface)) 45%, #000);
+    --paper-ink:     rgba(255, 255, 255, 0.07);
+    --paper-dot:     rgba(255, 255, 255, 0.16);
+    --paper-kraft:   rgba(150, 110, 60, 0.20);
+    --paper-fleck:   rgba(255, 230, 190, 0.10);
     --surface-glass: 220 22% 15%;
     --text-primary:  220 15% 92%;
     --text-muted:    220 14% 70%;
@@ -118,6 +127,10 @@
   --background:    220 25% 8%;
   --surface:       220 22% 13%;
   --cal-outside:   color-mix(in srgb, hsl(var(--surface)) 45%, #000);
+  --paper-ink:     rgba(255, 255, 255, 0.07);
+  --paper-dot:     rgba(255, 255, 255, 0.16);
+  --paper-kraft:   rgba(150, 110, 60, 0.20);
+  --paper-fleck:   rgba(255, 230, 190, 0.10);
   --surface-glass: 220 22% 15%;
   --text-primary:  220 15% 92%;
   /* Brighter muted tone on the dark background — the old 55% grey failed contrast
@@ -597,4 +610,33 @@ svg text {
   .glass-hub-disc {
     fill: hsl(var(--surface-glass) / 0.92);
   }
+}
+
+/* ─── Calendar paper (다꾸, Pro) ───────────────────────────────────────────
+   Drawn on each day cell as a background IMAGE, so the cell's own ground (the
+   darker neighbouring-month days, a highlighter tint, the hover colour) still
+   shows through underneath. The ink follows the theme. */
+[data-paper] [data-day] {
+  background-position: 0 0;
+}
+[data-paper="grid"] [data-day] {
+  background-image:
+    linear-gradient(var(--paper-ink) 1px, transparent 1px),
+    linear-gradient(90deg, var(--paper-ink) 1px, transparent 1px);
+  background-size: 10px 10px;
+}
+[data-paper="lined"] [data-day] {
+  background-image: repeating-linear-gradient(transparent 0 13px, var(--paper-ink) 13px 14px);
+}
+[data-paper="dot"] [data-day] {
+  background-image: radial-gradient(var(--paper-dot) 1px, transparent 1.4px);
+  background-size: 10px 10px;
+}
+[data-paper="kraft"] [data-day] {
+  background-image:
+    radial-gradient(var(--paper-fleck) 0.8px, transparent 1.3px),
+    radial-gradient(var(--paper-fleck) 0.6px, transparent 1.1px),
+    linear-gradient(var(--paper-kraft), var(--paper-kraft));
+  background-size: 7px 7px, 11px 11px, 100% 100%;
+  background-position: 0 0, 3px 5px, 0 0;
 }

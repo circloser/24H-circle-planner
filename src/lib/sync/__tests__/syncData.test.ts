@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SYNC_KEYS, PREFS_KEY, VIEW_KEY, LIVE_APPLY_KEYS, dataFingerprint, canonicalValue, changedSyncKeys, mergeSyncData } from '../syncData';
+import { SYNC_KEYS, SYNC_BASE_KEY, PREFS_KEY, VIEW_KEY, LIVE_APPLY_KEYS, collectSyncData, dataFingerprint, canonicalValue, changedSyncKeys, isRelayKey, mergeSyncData } from '../syncData';
 
 const K = (s: string) => `24h-circle-planner.${s}`;
 
@@ -212,5 +212,42 @@ describe('mergeSyncData (3-way, per-key)', () => {
     const server = { [K('days')]: 'D0', [K('memos')]: 'M9' };
     const { merged } = mergeSyncData(base, local, server, false);
     expect(fp(merged)).toBe(fp(server));
+  });
+});
+
+describe('keys from a newer version of the app', () => {
+  // A later release adds a synced store this build has never heard of. An
+  // older tab uploading must not delete it from the cloud.
+  const FUTURE = '24h-circle-planner.some-future-store';
+
+  it('are recognised as relayed, never as our own', () => {
+    expect(isRelayKey(FUTURE)).toBe(true);
+    expect(isRelayKey(K('days'))).toBe(false);
+    expect(isRelayKey('someone-else.key')).toBe(false);
+  });
+
+  it('survive a merge, with the cloud copy winning', () => {
+    const base = { [K('days')]: 'a', [FUTURE]: 'v1' };
+    const local = { [K('days')]: 'b', [FUTURE]: 'v1' };
+    const server = { [K('days')]: 'a', [FUTURE]: 'v2' };
+    expect(mergeSyncData(base, local, server, false).merged[FUTURE]).toBe('v2');
+  });
+
+  it('are restored from our copy when the cloud has lost them', () => {
+    const merged = mergeSyncData({}, { [FUTURE]: 'kept' }, {}, true).merged;
+    expect(merged[FUTURE]).toBe('kept');
+  });
+
+  it('ride along on every upload, taken from the last agreed snapshot', () => {
+    localStorage.clear();
+    localStorage.setItem(SYNC_BASE_KEY, JSON.stringify({ [K('days')]: 'x', [FUTURE]: 'from-newer' }));
+    localStorage.setItem(K('days'), 'mine');
+    const data = collectSyncData();
+    expect(data[FUTURE]).toBe('from-newer');
+    expect(data[K('days')]).toBe('mine');
+    // Only keys that came from the cloud are relayed — never device-local ones.
+    localStorage.setItem('24h-circle-planner.ical-cache', 'local only');
+    expect(collectSyncData()['24h-circle-planner.ical-cache']).toBeUndefined();
+    localStorage.clear();
   });
 });

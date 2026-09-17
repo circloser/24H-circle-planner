@@ -71,6 +71,9 @@ export const SYNC_KEYS: readonly string[] = [
   // Diary decorating (stickers + highlighter per day) — user-authored, so kept
   // if an older cloud blob predates the key.
   'decor',
+  // The free decoration layer (stickers, tape, photo stickers per month) — the
+  // same kind of user-authored store. Photo PIXELS stay on the device.
+  'decor-layer',
   'prefs',
   'view',
 ].map((k) => PREFIX + k)
@@ -95,6 +98,7 @@ const KEEP_IF_ABSENT = new Set<string>([
   PREFIX + 'events',
   PREFIX + 'ical',
   PREFIX + 'decor',
+  PREFIX + 'decor-layer',
 ]);
 
 /** The synced preferences key — applied live (no reload) when it alone changes. */
@@ -159,10 +163,38 @@ export function parseWire(raw: unknown): WireEnvelope | null {
   }
 }
 
-/** Snapshot the synced content keys currently in localStorage. Widget positions
- *  are stored centre-relative already, so every value ships verbatim. */
+// ─── Keys from newer versions of the app ─────────────────────────────────────
+//
+// Every release that adds a synced store adds a key an older build has never
+// heard of. If a build pushed only the keys it knows, it would silently DELETE
+// that newer data from the cloud the moment an older tab — or a phone that has
+// not reloaded yet — uploaded. So keys the cloud carries that this build does
+// not know are relayed: taken from the last snapshot both sides agreed on (the
+// sync base, which the engine rewrites on every successful sync) and sent back
+// untouched. This build never edits them.
+
+/** The last agreed cloud snapshot (written by the sync engine). */
+export const SYNC_BASE_KEY = PREFIX + 'sync-base';
+const KNOWN_KEYS = new Set(SYNC_KEYS);
+/** A synced key from a newer build: ours by prefix, but not one we know. */
+export const isRelayKey = (key: string): boolean => key.startsWith('24h-') && !KNOWN_KEYS.has(key);
+
+function relayedFromBase(): Record<string, string> {
+  try {
+    const o = JSON.parse(localStorage.getItem(SYNC_BASE_KEY) ?? '{}') as Record<string, unknown>;
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(o ?? {})) if (isRelayKey(k) && typeof v === 'string') out[k] = v;
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+/** Snapshot the synced content keys currently in localStorage, plus any keys
+ *  from a newer build that this one relays. Widget positions are stored
+ *  centre-relative already, so every value ships verbatim. */
 export function collectSyncData(): Record<string, string> {
-  const data: Record<string, string> = {};
+  const data: Record<string, string> = relayedFromBase();
   for (const key of SYNC_KEYS) {
     const v = localStorage.getItem(key);
     if (v !== null) data[key] = v;
@@ -283,6 +315,11 @@ export function mergeSyncData(
       conflicts.push(key); // both moved differently → genuine conflict
       take(preferServerOnConflict ? s : l, key);
     }
+  }
+  // Keys from a newer build: this one only relays them, so the cloud's copy
+  // wins, and ours stands in only when the cloud has lost it.
+  for (const key of new Set([...Object.keys(server), ...Object.keys(local)])) {
+    if (isRelayKey(key)) take(server[key] ?? local[key], key);
   }
   return { merged, conflicts };
 }
