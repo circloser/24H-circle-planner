@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 
 const PREFS_KEY = '24h-circle-planner.prefs';
@@ -21,6 +21,12 @@ async function readSecondsHand(): Promise<boolean> {
 const savedWith = (showSecondsHand: boolean) =>
   localStorage.setItem(PREFS_KEY, JSON.stringify({ version: 1, prefs: { language: 'ko', showSecondsHand } }));
 
+// Each test re-imports the preferences module (its load-time defaults are
+// what is under test), and the first import compiles every language
+// dictionary. Pay that once, up front, with a budget of its own: inside a
+// test's 5 s it timed out on a busy full run, and the unfinished render then
+// left a second probe on the page for the next test to trip over.
+beforeAll(async () => { await import('../usePreferences'); }, 60_000);
 beforeEach(() => { vi.resetModules(); localStorage.clear(); });
 afterEach(() => { cleanup(); });
 
