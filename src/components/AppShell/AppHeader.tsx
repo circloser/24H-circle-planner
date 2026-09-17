@@ -1,11 +1,12 @@
 import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target, Lock, CalendarClock, CreditCard, Tags, Scale, CalendarRange, Sun, Moon, GraduationCap, Wand2, BellRing, UserPlus, LayoutGrid, LayoutPanelLeft, PictureInPicture2, Mail } from 'lucide-react';
-import { useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -22,7 +23,7 @@ import { openBillingPortal } from '@/lib/sync/billing';
 import { canPromoteApp, PLAY_STORE_URL } from '@/lib/twa';
 import { gaActive, gaChoice, onGaChange, setGaChoice } from '@/lib/ga';
 import { requestCalendar } from '@/lib/calendar-requests';
-import { CalendarDecorSubmenu } from '@/components/Calendar/Decor';
+import { CalendarDecorMenuItems, CalendarLookDialog, type CalendarLook } from '@/components/Calendar/Decor';
 
 /** Whether usage statistics go to Google Analytics on this device: the
  *  visitor's own choice, or what the page decided for their region. */
@@ -114,6 +115,7 @@ export function AppHeader({
   const gaOn = useGaOn();
   const { prefs, setPreference } = usePreferences();
   const calendarMode = prefs.chartView === 'calendar';
+  const [calLook, setCalLook] = useState<CalendarLook | null>(null);
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
   const { user, plan, billingEnabled, admin, login, logout, loading: authLoading } = useAuth();
@@ -240,48 +242,57 @@ export function AppHeader({
                 <ChevronDown className="ml-1 hidden h-4 w-4 sm:inline" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[12rem]">
+            <DropdownMenuContent align="end" data-design-menu
+              className="max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-[12rem] overflow-y-auto">
               {/* Guided decorate flow — top of the Design menu. */}
               <DropdownMenuItem onClick={onOpenMagician} className="gap-2 font-semibold text-primary">
                 <Wand2 className="h-4 w-4" />
                 {t('magician.open')}
               </DropdownMenuItem>
-              {calendarMode && <CalendarDecorSubmenu />}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onOpenPresets} className="gap-2">
-                <Sparkles className="h-4 w-4" />
-                {t('header.presets')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onOpenPalette} className="gap-2">
-                <Tags className="h-4 w-4" />
-                {t('palette.title')}
-              </DropdownMenuItem>
+              <DropdownMenuGroup data-design-group="timetable">
+                <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">{t('design.timetableGroup')}</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => onOpenSettings('layout')} className="gap-2">
+                  <LayoutPanelLeft className="h-4 w-4" />
+                  {t('settings.layout')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onOpenPresets} className="gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  {t('header.presets')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onOpenSettings('theme')} className="gap-2">
+                  <Palette className="h-4 w-4" />
+                  {t('settings.colorTheme')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onOpenSettings('font')} className="gap-2">
+                  <Type className="h-4 w-4" />
+                  {t('settings.font')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onOpenSettings('icons')} className="gap-2">
+                  <Smile className="h-4 w-4" />
+                  {t('settings.icons')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onOpenSettings('timeline')} className="gap-2">
+                  <Ruler className="h-4 w-4" />
+                  {t('settings.timeline')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onOpenPalette} className="gap-2">
+                  <Tags className="h-4 w-4" />
+                  {t('palette.title')}
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => onOpenSettings('layout')} className="gap-2">
-                <LayoutPanelLeft className="h-4 w-4" />
-                {t('settings.layout')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onOpenSettings('font')} className="gap-2">
-                <Type className="h-4 w-4" />
-                {t('settings.font')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onOpenSettings('icons')} className="gap-2">
-                <Smile className="h-4 w-4" />
-                {t('settings.icons')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onOpenSettings('timeline')} className="gap-2">
-                <Ruler className="h-4 w-4" />
-                {t('settings.timeline')}
-              </DropdownMenuItem>
+              <CalendarDecorMenuItems onLook={(look) => {
+                // The paper shows on the calendar: go there to see it.
+                if (look === 'paper' && !calendarMode) setPreference('chartView', 'calendar');
+                setCalLook(look);
+              }} />
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onOpenSettings('background')} className="gap-2">
                 <ImageIcon className="h-4 w-4" />
                 {t('settings.background')}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onOpenSettings('theme')} className="gap-2">
-                <Palette className="h-4 w-4" />
-                {t('settings.colorTheme')}
-              </DropdownMenuItem>
-              {/* Light/dark sits with the colour theme it switches between. */}
+              {/* Light/dark sits with the background it switches. */}
               <DropdownMenuItem
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 className="gap-2"
@@ -290,7 +301,6 @@ export function AppHeader({
                 {t(theme === 'dark' ? 'theme.lightMode' : 'theme.darkMode')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              {/* What's on the screen and how it's laid out — design, not setup. */}
               <DropdownMenuItem onClick={() => onOpenSettings('widgets')} className="gap-2">
                 <LayoutGrid className="h-4 w-4" />
                 {t('settings.widgets')}
@@ -497,6 +507,7 @@ export function AppHeader({
           </DropdownMenu>
         </div>
       </div>
+      <CalendarLookDialog look={calLook} onClose={() => setCalLook(null)} />
     </header>
   );
 }

@@ -80,18 +80,24 @@ export async function run() {
     await page.keyboard.press('Escape');
     await wait(350);
   };
-  /** 디자인 → 캘린더 꾸미기. */
+  /** The 디자인 menu (its 캘린더 꾸미기 group). */
   const menu = async () => {
     await page.locator('button[aria-label="디자인"]').click();
     await wait(300);
-    await page.locator('[data-decor-menu]').click();
-    await wait(300);
   };
+  /** Close every open dialog. */
+  const closeAll = async () => {
+    for (let i = 0; i < 4 && (await count('[role="dialog"]')) > 0; i++) {
+      await page.keyboard.press('Escape');
+      await wait(250);
+    }
+  };
+  /** 디자인 → 캘린더 꾸미기 → 테마/속지: pick in the popup. Leaves it open. */
   const subPick = async (sub, option) => {
     await menu();
     await page.locator(`[data-decor-sub="${sub}"]`).click();
-    await wait(300);
-    await page.locator(option).click();
+    await wait(400);
+    await page.locator(`[data-cal-look-dialog="${sub}"] ${option}`).click();
     await wait(400);
   };
   const tool = async (k) => {
@@ -151,18 +157,22 @@ export async function run() {
       .evaluateAll((els) => els.map((e) => e.getAttribute('data-decor-sub') ?? e.getAttribute('data-decor-tool')));
     pass('the 꾸미기 menu holds theme, paper and the three tools', JSON.stringify(entries) === '["theme","paper","sticker","tape","photo"]', JSON.stringify(entries));
     pass('the separate theme and sticker buttons are gone', (await count('[data-cal-theme], [data-sticker-tray-toggle]')) === 0);
-    pass('…and the calendar toolbar has no decorate or Google buttons',
-      (await count('[data-calendar-view] [data-decor-menu], [data-calendar-view] [data-ical-open]')) === 0);
-    await page.keyboard.press('Escape');
-    await page.keyboard.press('Escape');
+    const designGroups = await page.locator('[data-design-menu] [role="group"] > div:first-child, [data-design-menu] [data-decor-menu]')
+      .evaluateAll((els) => els.map((e) => e.textContent.trim()));
+    pass('디자인 is grouped: 시간표 꾸미기, then 캘린더 꾸미기', JSON.stringify(designGroups) === '["시간표 꾸미기","캘린더 꾸미기"]', JSON.stringify(designGroups));
+    const timetableItems = await page.locator('[data-design-group="timetable"] [role="menuitem"]').allInnerTexts();
+    pass('…시간표 꾸미기 lists layout, presets, theme, font, icons, time lines, palette',
+      JSON.stringify(timetableItems.map((x) => x.trim())) === JSON.stringify(['레이아웃', '프리셋', '색상 테마', '폰트', '아이콘', '시간선', '타임 팔레트']),
+      JSON.stringify(timetableItems));
+    pass('the calendar toolbar has no Google button, and a 꾸미기 toggle',
+      (await count('[data-calendar-view] [data-ical-open]')) === 0 && (await page.locator('[data-decor-toggle]').innerText()).includes('꾸미기'));
     await page.keyboard.press('Escape');
     await wait(250);
-    // Only while the calendar is showing.
+    // The calendar group is there in the timetable too.
     await page.locator('[data-calendar-toggle]').click();
     await wait(500);
-    await page.locator('button[aria-label="디자인"]').click();
-    await wait(300);
-    pass('in the timetable, 디자인 has no 캘린더 꾸미기', (await count('[data-decor-menu]')) === 0);
+    await menu();
+    pass('in the timetable, 디자인 still lists 캘린더 꾸미기', (await count('[data-decor-tool]')) === 3);
     await page.keyboard.press('Escape');
     await wait(250);
     // ⚙ → 구글 캘린더 연결 from the timetable: the calendar comes up with the dialog open.
@@ -177,15 +187,21 @@ export async function run() {
 
     // 2. A free account: the theme is free, everything else offers Pro.
     await subPick('theme', '[data-cal-theme-option="pastel"]');
-    pass('a free account can change the theme', (await page.locator('[data-calendar-view]').getAttribute('data-cal-look')) === 'pastel');
+    pass('테마 opens a popup, and a free account can change the theme', (await count('[data-cal-look-dialog="theme"]')) === 1
+      && (await page.locator('[data-calendar-view]').getAttribute('data-cal-look')) === 'pastel');
+    await closeAll();
+    await page.locator('[data-decor-toggle]').click();
+    await wait(400);
+    pass('a free account’s 꾸미기 offers Pro', (await count('[data-decor-addbar]')) === 0 && (await count('[role="dialog"]')) === 1);
+    await closeAll();
     await tool('sticker');
     pass('a free account gets no decorating tray', (await count('[data-decor-tray]')) === 0);
     pass('…and is offered Pro instead', (await count('[role="dialog"]')) === 1);
     await closeDialog();
     await subPick('paper', '[data-paper-option="grid"]');
     pass('a free account cannot change the paper', (await page.locator('[data-calendar-view]').getAttribute('data-paper')) === null
-      && (await count('[role="dialog"]')) === 1);
-    await closeDialog();
+      && (await count('[role="dialog"]')) === 2);
+    await closeAll();
     await cell(day(10)).click();
     await wait(400);
     pass('the day editor shows 다꾸 as a Pro feature', (await count('[data-decor-locked]')) === 1 && (await count('[data-decor-editor]')) === 0);
@@ -204,7 +220,22 @@ export async function run() {
     me = { ...me, plan: 'pro' };
     await openCalendar();
     const before = await leftMonth().evaluate((e) => { const r = e.getBoundingClientRect(); return [r.x, r.y, r.width, r.height].map(Math.round).join(); });
-    await tool('sticker');
+    // 꾸미기 ⇄ 일정 편집.
+    await page.locator('[data-decor-toggle]').click();
+    await wait(300);
+    pass('꾸미기 turns decorating on: the button reads 일정 편집 and three add buttons appear',
+      (await page.locator('[data-decor-toggle]').innerText()).includes('일정 편집')
+      && JSON.stringify(await page.locator('[data-decor-add]').evaluateAll((els) => els.map((e) => e.getAttribute('data-decor-add')))) === '["sticker","tape","photo"]'
+      && (await count('[data-decor-layer][data-decorating]')) === 2 && (await count('[data-decor-tray]')) === 0);
+    await page.locator('[data-decor-toggle]').click();
+    await wait(300);
+    pass('일정 편집 turns it off again: the add buttons go',
+      (await count('[data-decor-add]')) === 0 && (await count('[data-decor-layer][data-decorating]')) === 0
+      && (await page.locator('[data-decor-toggle]').innerText()).includes('꾸미기'));
+    await page.locator('[data-decor-toggle]').click();
+    await wait(200);
+    await page.locator('[data-decor-add="sticker"]').click();
+    await wait(400);
     pass('a Pro account opens the decorating panel', (await count('[data-decor-tray="sticker"]')) === 1);
     const after = await leftMonth().evaluate((e) => { const r = e.getBoundingClientRect(); return [r.x, r.y, r.width, r.height].map(Math.round).join(); });
     pass('…floating over the calendar, which keeps its size and place', before === after, `${before} → ${after}`);
@@ -282,7 +313,7 @@ export async function run() {
       JSON.stringify(await spotIn(page, `[data-item-id="${starId}"]`, day(12))));
 
     // 7. Masking tape.
-    await page.locator('[data-decor-tab="tape"]').click();
+    await page.locator('[data-decor-add="tape"]').click();
     await page.locator('[data-tape-pattern="dot"]').click();
     await wait(150);
     await tapCell(day(4), 0.5, 0.3);
@@ -300,7 +331,7 @@ export async function run() {
     pass('…and takes a new colour and pattern', tapes.length === 1 && tapes[0].c === '#bbf7d0' && tapes[0].p === 'dot', JSON.stringify(tapes));
 
     // 8. A photo sticker.
-    await page.locator('[data-decor-tab="photo"]').click();
+    await page.locator('[data-decor-add="photo"]').click();
     await page.locator('[data-decor-photo-input]').setInputFiles({ name: 'me.png', mimeType: 'image/png', buffer: PNG });
     await page.waitForSelector('[data-decor-tray] [data-photo-frame]', { timeout: 5000 }).catch(() => {});
     await wait(300);
@@ -316,6 +347,7 @@ export async function run() {
 
     // 9. Paper.
     await subPick('paper', '[data-paper-option="grid"]');
+    await closeAll();
     pass('a Pro account chooses the paper', (await page.locator('[data-calendar-view]').getAttribute('data-paper')) === 'grid');
     const texture = await cell(day(10)).evaluate((e) => getComputedStyle(e).backgroundImage);
     pass('…which is drawn on the days', texture.includes('linear-gradient'), texture.slice(0, 60));
@@ -372,9 +404,9 @@ export async function run() {
     pass('…and the masking tape', probe.tapePx.join() !== probe.surface.join(), JSON.stringify({ tape: probe.tapePx, surface: probe.surface }));
 
     // 10. Done: the calendar works as usual again.
-    await page.locator('[data-decor-done]').click();
+    await page.locator('[data-decor-toggle]').click();
     await wait(300);
-    pass('완료 closes the tray and frees the calendar', (await count('[data-decor-tray], [data-decor-layer][data-decorating]')) === 0);
+    pass('일정 편집 closes the panel and frees the calendar', (await count('[data-decor-tray], [data-decor-layer][data-decorating], [data-decor-add]')) === 0);
     await cell(day(10)).click();
     await wait(400);
     pass('a tap opens the day again', (await count('[data-event-input]')) === 1);
@@ -390,6 +422,7 @@ export async function run() {
 
     // 11. The theme recolours plans and accents today.
     await subPick('theme', '[data-cal-theme-option="pastel"]');
+    await closeAll();
     const redAfter = await rgbOf(page, `[data-day="${now}"] [data-event][data-all-day]`);
     pass('a theme shows the plan in its own red', !!redAfter && redAfter.bg.join() === '252,165,165', JSON.stringify(redAfter?.bg));
     pass('…with dark ink on the light colour', !!redAfter && redAfter.ink.join() === '31,41,55', JSON.stringify(redAfter?.ink));
@@ -410,13 +443,18 @@ export async function run() {
 
     // 13. Peeling off.
     await tool('photo');
-    await park();
-    await page.locator(photo).click();
+    pass('디자인 → 사진 스티커 opens decorating with that panel', (await count('[data-decor-tray="photo"]')) === 1 && (await count('[data-decor-add]')) === 3);
+    await page.locator('[data-decor-close]').click();
     await wait(200);
+    pass('closing the panel keeps decorating on', (await count('[data-decor-tray]')) === 0 && (await count('[data-decor-add]')) === 3);
+    await page.locator(photo).click();
+    await wait(300);
+    pass('while decorating, a placed item can be picked to edit', (await count('[data-decor-tray="selected"] [data-item-delete]')) === 1);
+    await park();
     await page.locator('[data-item-delete]').click();
     await wait(300);
     pass('a selected item can be peeled off', (await count(photo)) === 0 && (await count('[data-decor-layer] [data-decor-item]')) === 4);
-    await page.locator('[data-decor-done]').click();
+    await page.locator('[data-decor-toggle]').click();
     await wait(200);
 
     // 14. No longer Pro: what is there stays visible, but it cannot be changed.

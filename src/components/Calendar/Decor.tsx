@@ -1,12 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  Check, ChevronDown, ChevronUp, GripHorizontal, ImagePlus, Lock, Minus, Palette, Plus, RotateCcw, RotateCw, Sparkles, Trash2,
+  ChevronDown, ChevronUp, GripHorizontal, ImagePlus, Lock, Minus, Palette, Plus, RotateCcw, RotateCw, Sparkles, Trash2, X,
 } from 'lucide-react';
-import {
-  DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem,
-  DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger,
-} from '@/components/ui/dropdown-menu';
+import { TOOLS, TOOL_ICON, type DecorTool } from './decor-tools';
+import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
 import { useAuth } from '@/hooks/useAuth';
@@ -32,7 +31,7 @@ import type { TKey } from '@/i18n/translations';
  * always SHOWN; only changing it needs Pro.
  */
 
-export type DecorTool = 'sticker' | 'tape' | 'photo';
+export type { DecorTool } from './decor-tools';
 /** An item waiting to be placed: everything but where. */
 export type Armed = Omit<LayerItem, 'id' | 'x' | 'y'>;
 export interface Picked { month: string; id: string }
@@ -57,7 +56,7 @@ const PAPER_LABEL: Record<CalendarPaper, TKey> = {
   dot: 'decor.paperDot',
   kraft: 'decor.paperKraft',
 };
-const TOOLS: readonly DecorTool[] = ['sticker', 'tape', 'photo'];
+
 
 const usePro = () => useAuth().plan === 'pro';
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
@@ -103,71 +102,98 @@ function Picker({ picked, onPick }: { picked?: string | null; onPick: (id: strin
   );
 }
 
+export type CalendarLook = 'theme' | 'paper';
+
 /**
- * 디자인 → 캘린더 꾸미기: the colour theme (free), the paper (Pro) and the
- * three decorating tools (Pro), which open the floating panel on the calendar.
+ * 디자인 → 캘린더 꾸미기: 테마 and 속지 open a popup (onLook), and the three
+ * tools open the calendar in decorating mode with that tool's panel.
  */
-export function CalendarDecorSubmenu() {
-  const { t, lang } = useTranslation();
+export function CalendarDecorMenuItems({ onLook }: { onLook: (look: CalendarLook) => void }) {
+  const { t } = useTranslation();
   const pro = usePro();
-  const { prefs, setPreference } = usePreferences();
-  const theme = COLOR_THEMES.some((th) => th.id === prefs.colorTheme) ? prefs.colorTheme : null;
-  const paper = paperOf(prefs.calendarPaper);
   const lock = !pro && <Lock className="ml-auto h-3 w-3 text-muted-foreground" aria-hidden />;
   return (
-    <DropdownMenuSub>
-      <DropdownMenuSubTrigger data-decor-menu className="gap-2">
-        <Sparkles className="h-4 w-4" />
-        {t('decor.calendarMenu')}
-      </DropdownMenuSubTrigger>
-      <DropdownMenuSubContent className="min-w-[11rem]" data-decor-menu-content>
-        {/* Everything one level down: a third level of menus would open back
-            over this one at the screen's edge. */}
-        <DropdownMenuLabel data-decor-sub="theme" className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-          <Palette className="h-3.5 w-3.5" />
-          {t('calendar.theme')}
-        </DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={theme ?? ''} onValueChange={(v) => setPreference('colorTheme', v || null)}>
-          <DropdownMenuRadioItem value="" data-cal-theme-option="">{t('calendar.themeDefault')}</DropdownMenuRadioItem>
-          {COLOR_THEMES.map((th) => (
-            <DropdownMenuRadioItem key={th.id} value={th.id} data-cal-theme-option={th.id} className="gap-2">
-              <span className="flex gap-0.5">
-                {th.colors.slice(1, 5).map((c) => <span key={c} className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: c }} />)}
-              </span>
-              {lang === 'ko' ? th.ko : th.en}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel data-decor-sub="paper" className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-          <span className="h-3.5 w-3.5 rounded-sm border border-current opacity-70" aria-hidden />
-          {t('decor.paper')}
-          {lock}
-        </DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={paper}
-          onValueChange={(v) => {
-            if (!pro) return requestUpgrade('decor');
-            setPreference('calendarPaper', v);
-            track('paper_set', { paper: v });
-          }}>
-          {CALENDAR_PAPERS.map((p) => (
-            <DropdownMenuRadioItem key={p} value={p} data-paper-option={p}>{t(PAPER_LABEL[p])}</DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-        <DropdownMenuSeparator />
-        {TOOLS.map((k) => (
+    <DropdownMenuGroup data-decor-menu-content>
+      <DropdownMenuLabel data-decor-menu className="text-xs font-medium text-muted-foreground">{t('decor.calendarMenu')}</DropdownMenuLabel>
+      <DropdownMenuItem data-decor-sub="theme" className="gap-2" onSelect={() => onLook('theme')}>
+        <Palette className="h-4 w-4" />
+        {t('calendar.theme')}
+      </DropdownMenuItem>
+      <DropdownMenuItem data-decor-sub="paper" className="gap-2" onSelect={() => onLook('paper')}>
+        <span className="grid h-4 w-4 place-items-center" aria-hidden><span className="h-3 w-3 rounded-sm border border-current opacity-70" /></span>
+        {t('decor.paper')}
+        {lock}
+      </DropdownMenuItem>
+      {TOOLS.map((k) => {
+        const Icon = TOOL_ICON[k];
+        return (
           <DropdownMenuItem key={k} data-decor-tool={k} className="gap-2"
             onSelect={() => {
               if (!pro) return requestUpgrade('decor');
               requestCalendar({ kind: 'decor', tool: k });
               track('decor_tool', { tool: k });
             }}>
+            <Icon className="h-4 w-4" />
             {t(TOOL_LABEL[k])}
             {lock}
           </DropdownMenuItem>
-        ))}
-      </DropdownMenuSubContent>
-    </DropdownMenuSub>
+        );
+      })}
+    </DropdownMenuGroup>
+  );
+}
+
+/** The popup for 캘린더 꾸미기 → 테마 / 속지. */
+export function CalendarLookDialog({ look, onClose }: { look: CalendarLook | null; onClose: () => void }) {
+  const { t, lang } = useTranslation();
+  const pro = usePro();
+  const { prefs, setPreference } = usePreferences();
+  const theme = COLOR_THEMES.some((th) => th.id === prefs.colorTheme) ? prefs.colorTheme : null;
+  const paper = paperOf(prefs.calendarPaper);
+  const option = (on: boolean) =>
+    `flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors ${
+      on ? 'border-primary bg-primary/10 text-foreground' : 'border-border text-foreground hover:bg-accent/10'
+    }`;
+  return (
+    <Dialog open={look !== null} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-xs" data-cal-look-dialog={look ?? ''}>
+        <DialogHeader>
+          <DialogTitle>{t('decor.calendarMenu')} · {look === 'paper' ? t('decor.paper') : t('calendar.theme')}</DialogTitle>
+        </DialogHeader>
+        {look === 'theme' && (
+          <div className="flex flex-col gap-1.5">
+            <button type="button" data-cal-theme-option="" aria-pressed={!theme} className={option(!theme)}
+              onClick={() => setPreference('colorTheme', null)}>
+              {t('calendar.themeDefault')}
+            </button>
+            {COLOR_THEMES.map((th) => (
+              <button key={th.id} type="button" data-cal-theme-option={th.id} aria-pressed={theme === th.id}
+                className={option(theme === th.id)} onClick={() => setPreference('colorTheme', th.id)}>
+                <span className="flex gap-0.5">
+                  {th.colors.slice(1, 5).map((c) => <span key={c} className="h-3 w-3 rounded-full" style={{ backgroundColor: c }} />)}
+                </span>
+                {lang === 'ko' ? th.ko : th.en}
+              </button>
+            ))}
+          </div>
+        )}
+        {look === 'paper' && (
+          <div className="flex flex-col gap-1.5">
+            {CALENDAR_PAPERS.map((p) => (
+              <button key={p} type="button" data-paper-option={p} aria-pressed={paper === p} className={option(paper === p)}
+                onClick={() => {
+                  if (!pro) return requestUpgrade('decor');
+                  setPreference('calendarPaper', p);
+                  track('paper_set', { paper: p });
+                }}>
+                <span className="flex-1">{t(PAPER_LABEL[p])}</span>
+                {!pro && p !== 'none' && <Lock className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />}
+              </button>
+            ))}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -199,14 +225,15 @@ function fitPanel(p: Pos, w: number): Pos {
  * keeps its size), moved by its title bar and folded to just that bar when it
  * is in the way. Pick what to place, and adjust whatever is selected.
  */
-export function DecorTray({ tool, onTool, armed, onArm, selected, onDone }: {
-  tool: DecorTool;
-  onTool: (tool: DecorTool) => void;
+export function DecorTray({ tool, armed, onArm, selected, onClose }: {
+  /** The add tool whose picker is open, if any. */
+  tool: DecorTool | null;
   armed: Armed | null;
   onArm: (a: Armed | null) => void;
   /** The item picked on the layer, with its month. */
   selected: { month: string; item: LayerItem } | null;
-  onDone: () => void;
+  /** Close the panel (decorating mode itself stays on). */
+  onClose: () => void;
 }) {
   const { t } = useTranslation();
   const { layer, updateItem, removeItem } = useDecor();
@@ -287,7 +314,7 @@ export function DecorTray({ tool, onTool, armed, onArm, selected, onDone }: {
   return createPortal(
     <div
       ref={panel}
-      data-decor-tray={tool}
+      data-decor-tray={tool ?? 'selected'}
       data-folded={folded || undefined}
       className="fixed z-[45] flex w-[min(380px,calc(100vw-16px))] flex-col overflow-hidden rounded-xl border border-border bg-surface text-foreground shadow-2xl"
       style={{ left: pos?.x ?? 0, top: pos?.y ?? 0, visibility: pos ? undefined : 'hidden' }}
@@ -296,33 +323,24 @@ export function DecorTray({ tool, onTool, armed, onArm, selected, onDone }: {
         className="flex cursor-move touch-none select-none items-center gap-1.5 border-b border-border bg-muted/40 px-2 py-1.5">
         <GripHorizontal className="h-4 w-4 text-muted-foreground" aria-hidden />
         <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden />
-        <span className="flex-1 text-xs font-semibold">{t('decor.menu')}</span>
+        <span className="flex-1 text-xs font-semibold">{tool ? t(TOOL_LABEL[tool]) : t('decor.selectedTitle')}</span>
         <button type="button" data-decor-fold aria-pressed={folded} onClick={() => setFolded((v) => !v)}
           aria-label={t(folded ? 'decor.unfold' : 'decor.fold')} title={t(folded ? 'decor.unfold' : 'decor.fold')}
           className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-accent/15">
           {folded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
         </button>
-        <Button size="sm" onClick={onDone} data-decor-done className="h-7 gap-1 bg-primary px-2 text-xs text-primary-foreground">
-          <Check className="h-3.5 w-3.5" />
-          {t('decor.done')}
-        </Button>
+        <button type="button" data-decor-close onClick={onClose} aria-label={t('common.close')} title={t('common.close')}
+          className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-accent/15">
+          <X className="h-4 w-4" />
+        </button>
       </div>
       {!folded && (
       <div className="flex max-h-[min(60vh,460px)] flex-col gap-2 overflow-y-auto p-2">
-      <div className="flex flex-wrap items-center gap-1">
-        {TOOLS.map((k) => (
-          <button key={k} type="button" data-decor-tab={k} aria-pressed={tool === k}
-            onClick={() => { onTool(k); onArm(null); }}
-            className={`rounded-md border px-2 py-1 text-xs transition-colors ${
-              tool === k ? 'border-primary bg-primary/10 text-foreground' : 'border-border text-muted-foreground hover:bg-accent/10'
-            }`}>
-            {t(TOOL_LABEL[k])}
-          </button>
-        ))}
-        <span className="basis-full px-1 text-[11px] text-muted-foreground" data-decor-hint>
+      {tool && (
+        <span className="px-1 text-[11px] text-muted-foreground" data-decor-hint>
           {armed ? t('decor.armedHint') : t('decor.layerHint')}
         </span>
-      </div>
+      )}
 
       {tool === 'sticker' && (
         <Picker picked={armed?.k === 'sticker' ? armed.g : null}
@@ -366,7 +384,7 @@ export function DecorTray({ tool, onTool, armed, onArm, selected, onDone }: {
       )}
 
       {sel && (
-        <div className="flex flex-wrap items-center gap-1 border-t border-border pt-2" data-decor-selected={sel.k}>
+        <div className={`flex flex-wrap items-center gap-1 ${tool ? 'border-t border-border pt-2' : ''}`} data-decor-selected={sel.k}>
           <span className="mr-1 text-[11px] text-muted-foreground">{t('decor.size')}</span>
           <button type="button" className={iconBtn} data-item-smaller aria-label={t('decor.smaller')}
             disabled={sel.s <= SCALE_MIN} onClick={() => patch({ s: sel.s - 0.25 })}><Minus className="h-3.5 w-3.5" /></button>

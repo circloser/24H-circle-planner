@@ -99,7 +99,7 @@ export async function run() {
     pass('“캘린더에서 꾸미기 시작” opens the calendar with the sticker panel',
       (await count('[data-decor-tray="sticker"]')) === 1 && (await count('[role="dialog"][aria-label="디자인 매지션"]')) === 0
       && (await page.locator('[data-calendar-view]').getAttribute('data-paper')) === 'kraft');
-    await page.locator('[data-decor-done]').click();
+    await page.locator('[data-decor-toggle]').click();
     await page.locator('[data-calendar-toggle]').click();
     await wait(500);
 

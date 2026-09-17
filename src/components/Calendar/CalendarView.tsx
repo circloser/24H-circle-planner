@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, GripVertical, Pencil, Plus, X } from 'lucide-react';
+import { CalendarDays, CalendarCheck, ChevronLeft, ChevronRight, GripVertical, Lock, Pencil, Plus, Sparkles, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
@@ -12,6 +12,7 @@ import {
 import { useIcalFeeds } from '@/hooks/useIcalFeed';
 import { IcalConnect } from './IcalConnect';
 import { DayDecorEditor, DecorLayer, DecorTray, type Armed, type DecorTool, type Picked } from './Decor';
+import { TOOLS, TOOL_ICON } from './decor-tools';
 import { requestUpgrade } from '@/lib/pro';
 import { CALENDAR_REQUEST_EVENT, takeCalendarRequest } from '@/lib/calendar-requests';
 import { useDecor } from '@/hooks/useDecor';
@@ -43,6 +44,8 @@ const TYPE = 'text-[9px] leading-[13px] sm:text-[11px] sm:leading-[17px]';
 const CLIP = 'overflow-hidden whitespace-nowrap text-clip sm:text-ellipsis';
 /** The day number above the chips, plus the cell's own padding. */
 const HEAD_H = 20;
+
+const TOOL_ADD_LABEL: Record<DecorTool, TKey> = { sticker: 'decor.stickers', tape: 'decor.tapeShort', photo: 'decor.photoShort' };
 
 const REPEAT_LABEL: Record<Repeat, TKey> = {
   none: 'calendar.repeatNone',
@@ -360,13 +363,25 @@ export function CalendarView() {
   const { layer, decor } = useDecor();
   /** The open decorating tool (the tray), what waits to be placed, and the
    *  item selected on the layer. */
+  const [decorOn, setDecorOn] = useState(false);
   const [tool, setTool] = useState<DecorTool | null>(null);
   const [armed, setArmed] = useState<Armed | null>(null);
   const [chosen, setChosen] = useState<Picked | null>(null);
   // Only a Pro account decorates; a lapsed one simply stops.
-  const decorating = isPro && tool !== null;
+  const decorating = isPro && decorOn;
   const chosenItem = chosen ? layer[chosen.month]?.find((i) => i.id === chosen.id) : undefined;
-  const stopDecorating = () => { setTool(null); setArmed(null); setChosen(null); };
+  const closeTray = () => { setTool(null); setArmed(null); setChosen(null); };
+  /** 꾸미기 ⇄ 일정 편집. */
+  const toggleDecorating = () => {
+    if (!isPro) return requestUpgrade('decor');
+    if (decorOn) closeTray();
+    setDecorOn((v) => !v);
+  };
+  const pickTool = (k: DecorTool) => {
+    setArmed(null);
+    setTool((cur) => (cur === k ? null : k));
+    if (tool !== k) track('decor_tool', { tool: k });
+  };
   useEffect(() => { trackOnce('calendar_open'); }, []);
   const rootRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState(false);
@@ -399,7 +414,7 @@ export function CalendarView() {
       if (!req) return;
       if (req.kind === 'ical') setConnecting(true);
       else if (!isPro) requestUpgrade('decor');
-      else { setTool(req.tool); setArmed(null); }
+      else { setDecorOn(true); setTool(req.tool); setArmed(null); }
     };
     take();
     window.addEventListener(CALENDAR_REQUEST_EVENT, take);
@@ -636,16 +651,43 @@ export function CalendarView() {
           onClick={() => setAt((m) => shiftMonth(m, 1))} className={navBtn}>
           <ChevronRight className="h-4 w-4" />
         </button>
+        {/* 꾸미기 ⇄ 일정 편집: decorating edits what is placed on the calendar,
+            and brings up the three things that can be added. */}
+        <button type="button" data-decor-toggle aria-pressed={decorating} onClick={toggleDecorating}
+          title={decorating ? t('decor.toggleEdit') : t('decor.menu')}
+          className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
+            decorating ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/90' : 'border-border text-foreground hover:bg-accent/10'
+          }`}>
+          {decorating ? <CalendarCheck className="h-3.5 w-3.5" /> : <Sparkles className="h-3.5 w-3.5" />}
+          {decorating ? t('decor.toggleEdit') : t('decor.menu')}
+          {!isPro && <Lock className="h-3 w-3 opacity-60" aria-hidden />}
+        </button>
+        {decorating && (
+          <span className="flex items-center gap-1" data-decor-addbar>
+            {TOOLS.map((k) => {
+              const Icon = TOOL_ICON[k];
+              return (
+                <button key={k} type="button" data-decor-add={k} aria-pressed={tool === k} onClick={() => pickTool(k)}
+                  className={`flex items-center gap-1 rounded-md border px-2 py-1.5 text-xs transition-colors ${
+                    tool === k ? 'border-primary bg-primary/10 text-foreground' : 'border-border text-muted-foreground hover:bg-accent/10'
+                  }`}>
+                  <Plus className="h-3 w-3" />
+                  <Icon className="h-3.5 w-3.5" />
+                  {t(TOOL_ADD_LABEL[k])}
+                </button>
+              );
+            })}
+          </span>
+        )}
       </div>
 
-      {decorating && tool && (
+      {decorating && (tool || chosenItem) && (
         <DecorTray
           tool={tool}
-          onTool={setTool}
           armed={armed}
           onArm={setArmed}
           selected={chosen && chosenItem ? { month: chosen.month, item: chosenItem } : null}
-          onDone={stopDecorating}
+          onClose={closeTray}
         />
       )}
 

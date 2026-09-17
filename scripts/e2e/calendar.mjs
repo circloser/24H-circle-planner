@@ -157,12 +157,12 @@ export async function run() {
     // A colour theme tints them in its own colour.
     await page.locator('button[aria-label="디자인"]').click();
     await wait(250);
-    await page.locator('[data-decor-menu]').click();
-    await wait(250);
     await page.locator('[data-decor-sub="theme"]').click();
-    await wait(250);
-    await page.locator('[data-cal-theme-option="forest"]').click();
     await wait(400);
+    await page.locator('[data-cal-look-dialog] [data-cal-theme-option="forest"]').click();
+    await wait(400);
+    await page.keyboard.press('Escape');
+    await wait(300);
     await page.mouse.move(2, 2);
     await wait(250);
     const themed = await grounds();
@@ -170,11 +170,11 @@ export async function run() {
       JSON.stringify({ before: lit?.tone, after: themed }));
     await page.locator('button[aria-label="디자인"]').click();
     await wait(250);
-    await page.locator('[data-decor-menu]').click();
-    await wait(250);
     await page.locator('[data-decor-sub="theme"]').click();
-    await wait(250);
-    await page.locator('[data-cal-theme-option=""]').click();
+    await wait(400);
+    await page.locator('[data-cal-look-dialog] [data-cal-theme-option=""]').click();
+    await wait(300);
+    await page.keyboard.press('Escape');
     await wait(300);
 
     // Five weeks: a month that needs a sixth hands its last days to the next
