@@ -84,7 +84,7 @@ export async function run() {
     });
     pass('it fills the window', fit.w >= fit.vw - 60 && fit.h >= fit.vh * 0.55, JSON.stringify(fit));
     const rows = await page.$$eval('[data-calendar-month]', (els) => els.map((e) => e.querySelectorAll('[data-day]').length));
-    pass('each month is a full six-week grid', JSON.stringify(rows) === '[42,42]', JSON.stringify(rows));
+    pass('each month is a full five-week grid', JSON.stringify(rows) === '[35,35]', JSON.stringify(rows));
 
     // 3. Sunday red, Saturday blue (computed colours are oklch → paint to read).
     const today = await page.evaluate(() => {
@@ -132,18 +132,70 @@ export async function run() {
         const [r, gr, b] = g.getImageData(0, 0, 1, 1).data;
         return Math.round(0.2126 * r + 0.7152 * gr + 0.0722 * b);
       };
-      return { inside: light(inside), outside: light(outside) };
+      const rgb = (el) => {
+        g.clearRect(0, 0, 1, 1);
+        g.fillStyle = getComputedStyle(el).backgroundColor;
+        g.fillRect(0, 0, 1, 1);
+        return [...g.getImageData(0, 0, 1, 1).data].slice(0, 3).join();
+      };
+      return { inside: light(inside), outside: light(outside), tone: rgb(outside) };
     });
     // Move the pointer off the grid so no cell is showing its hover colour.
     await page.mouse.move(2, 2);
     await wait(250);
     const lit = await grounds();
     pass('neighbouring-month days are darker (light theme)', !!lit && lit.outside < lit.inside - 12, JSON.stringify(lit));
+    pass('…but lighter than a plain grey step', !!lit && lit.outside > lit.inside - 40, JSON.stringify(lit));
+    const [tr, , tb] = (lit?.tone ?? '0,0,0').split(',').map(Number);
+    pass("…tinted with the calendar's colour (indigo by default)", tb > tr + 4, lit?.tone);
     await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
     await wait(300);
     const dim = await grounds();
     pass('…and clearly darker in the dark theme too', !!dim && dim.outside < dim.inside - 10, JSON.stringify(dim));
     await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
+    await wait(300);
+    // A colour theme tints them in its own colour.
+    await page.locator('[data-decor-menu]').click();
+    await wait(250);
+    await page.locator('[data-decor-sub="theme"]').click();
+    await wait(250);
+    await page.locator('[data-cal-theme-option="forest"]').click();
+    await wait(400);
+    await page.mouse.move(2, 2);
+    await wait(250);
+    const themed = await grounds();
+    pass('a colour theme retints the neighbouring days', !!themed && themed.tone !== lit?.tone && themed.outside < themed.inside - 8,
+      JSON.stringify({ before: lit?.tone, after: themed }));
+    await page.locator('[data-decor-menu]').click();
+    await wait(250);
+    await page.locator('[data-decor-sub="theme"]').click();
+    await wait(250);
+    await page.locator('[data-cal-theme-option=""]').click();
+    await wait(300);
+
+    // Five weeks: a month that needs a sixth hands its last days to the next
+    // month's first row. Step forward to such a month (one comes within a year).
+    let carried = null;
+    for (let i = 0; i < 12 && !carried; i++) {
+      carried = await page.evaluate(() => {
+        const [a, b] = document.querySelectorAll('[data-calendar-month]');
+        const [y, m] = a.getAttribute('data-calendar-month').split('-').map(Number);
+        const days = new Date(y, m, 0).getDate();
+        const own = a.querySelectorAll('[data-day]:not([data-outside])').length;
+        if (own === days) return null;
+        const missing = Array.from({ length: days - own }, (_, k) => `${y}-${String(m).padStart(2, '0')}-${String(own + k + 1).padStart(2, '0')}`);
+        const head = [...b.querySelectorAll('[data-day]')].slice(0, 7).map((c) => c.getAttribute('data-day'));
+        const labels = [...b.querySelectorAll('[data-carried]')].map((c) => c.querySelector('span')?.textContent);
+        return { month: `${y}-${m}`, missing, inNextHead: missing.every((k) => head.includes(k)), labels };
+      });
+      if (!carried) {
+        await page.locator('[data-cal-next]').click();
+        await wait(250);
+      }
+    }
+    pass("a sixth week's days open the next month instead", !!carried && carried.missing.length > 0 && carried.inNextHead
+      && carried.labels.length === carried.missing.length && carried.labels.every((l) => l.includes('/')), JSON.stringify(carried));
+    await page.locator('[data-cal-today]').click();
     await wait(300);
 
     // 4. All-day vs timed.
@@ -280,7 +332,14 @@ export async function run() {
     // 8. A crowded day shows +n, and the peek opens from the cell's middle.
     await addPlan(today, '장보기');
     await addPlan(today, '운동');
-    pass('a crowded day shows a "+n" line', (await cell(today).locator('text=/^\\+\\d/').count()) === 1);
+    // Five-week rows are tall: keep adding until the day overflows its cell.
+    let total = 5;
+    for (const extra of ['독서', '빨래', '통화', '산책', '정리', '메모']) {
+      if ((await cell(today).locator('text=/^\\+\\d/').count()) > 0) break;
+      await addPlan(today, extra);
+      total += 1;
+    }
+    pass('a crowded day shows a "+n" line', (await cell(today).locator('text=/^\\+\\d/').count()) === 1, `${total} plans`);
 
     // A full day's list just grows: no scroll box of its own.
     await cell(today).click();
@@ -309,7 +368,7 @@ export async function run() {
       const pr = p.getBoundingClientRect();
       return { chips: p.querySelectorAll('[data-event]').length, dy: Math.round((pr.top + pr.height / 2) - (cr.top + cr.height / 2)) };
     }, today);
-    pass('hovering lifts the whole list', !!peek && peek.chips === 5, JSON.stringify(peek));
+    pass('hovering lifts the whole list', !!peek && peek.chips === total, JSON.stringify(peek));
     pass('…growing from the middle of the cell, not the bottom', !!peek && Math.abs(peek.dy) <= 8, JSON.stringify(peek));
 
     // …and a plan can be carried straight out of the open peek.
@@ -323,7 +382,7 @@ export async function run() {
     };
     const moved = week[0];
     const peeked = await peekDrag('운동', moved);
-    pass('the peek lists every plan of the day', peeked.length === 5, JSON.stringify(peeked));
+    pass('the peek lists every plan of the day', peeked.length === total, JSON.stringify(peeked));
     // The cell only ever draws three chips, so read the store for the real move.
     const after = await page.evaluate((k) => JSON.parse(localStorage.getItem(k)).events, EVENTS_KEY);
     const has = (key) => (after[key] ?? []).some((e) => e.text === '운동');

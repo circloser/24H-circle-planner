@@ -225,12 +225,12 @@ export async function run() {
       const months = [...document.querySelectorAll('[data-calendar-month]')];
       return months.map((m) => {
         const cells = [...m.querySelectorAll('[data-day]')];
-        return [0, 1, 2, 3, 4, 5].map((r) => Math.round(cells[r * 7].getBoundingClientRect().height));
+        return [0, 1, 2, 3, 4].map((r) => Math.round(cells[r * 7].getBoundingClientRect().height));
       });
     });
     const flat = rows.flat();
     pass('every week of both months is the same height',
-      flat.length === 12 && flat.every((h) => h === flat[0]) && flat[0] >= 48,
+      flat.length === 10 && flat.every((h) => h === flat[0]) && flat[0] >= 48,
       JSON.stringify(rows));
     // Phone type: small, and a long title is cut rather than elided. Needs a
     // plan on screen to measure, so one with a long title is put on today.

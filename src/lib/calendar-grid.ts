@@ -70,13 +70,15 @@ export interface DayCell {
   inMonth: boolean;
 }
 
-/** Cells per row, and rows per month — always six, like Google's month view, so
- *  the grid keeps one height and the layout never jumps between months. */
+/** Cells per row, and rows per month — always five, so the grid keeps one
+ *  height and every week gets a taller row. A month that needs a sixth week
+ *  (it starts late in the week) hands its last days to the next month: they
+ *  open that month's grid, exactly as a paper planner carries them over. */
 export const WEEK_DAYS = 7;
-export const MONTH_ROWS = 6;
+export const MONTH_ROWS = 5;
 
 /**
- * One month as six weeks starting Sunday. The leading and trailing cells carry
+ * One month as five weeks starting Sunday. The leading and trailing cells carry
  * the neighbouring months' days (marked `inMonth: false`) rather than blanks,
  * so every square is a real date the user can drop a plan on.
  */
@@ -91,4 +93,20 @@ export function monthCells(y: number, m: number): DayCell[] {
       inMonth: d.getMonth() === m && d.getFullYear() === y,
     };
   });
+}
+
+/** The month after `y`/`m`. */
+export const nextMonthOf = (y: number, m: number): { y: number; m: number } =>
+  (m === 11 ? { y: y + 1, m: 0 } : { y, m: m + 1 });
+
+/**
+ * Which month's grid a day is drawn in, and at which cell: its own month —
+ * unless it falls past the fifth week, when the next month's first row shows it.
+ */
+export function homeOf(key: string): { y: number; m: number; index: number } {
+  const { y, m } = partsOf(key);
+  const own = monthCells(y, m).findIndex((c) => c.key === key);
+  if (own >= 0) return { y, m, index: own };
+  const next = nextMonthOf(y, m);
+  return { ...next, index: monthCells(next.y, next.m).findIndex((c) => c.key === key) };
 }

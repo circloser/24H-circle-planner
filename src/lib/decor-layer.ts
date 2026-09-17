@@ -8,7 +8,7 @@
  * or a window being resized.
  */
 import { stickerGlyph, isSticker, TINTS } from './decor';
-import { MONTH_ROWS, monthCells, partsOf } from './calendar-grid';
+import { MONTH_ROWS, addDays, dayGap, homeOf, monthCells, nextMonthOf } from './calendar-grid';
 
 export type ItemKind = 'sticker' | 'tape' | 'photo';
 
@@ -88,17 +88,44 @@ export function cleanItem(raw: unknown): LayerItem | null {
   return null;
 }
 
+/**
+ * Version 1 measured heights against a six-week grid; version 2 against the
+ * five-week one. A v1 item keeps its week and its place within that week: in
+ * the same month for the first five weeks, and in the next month's grid for
+ * the sixth (whose days that grid now shows).
+ */
+export function fromSixWeeks(month: string, item: LayerItem): { month: string; item: LayerItem } {
+  const [yy, mm] = month.split('-').map(Number);
+  const rows = item.y * 6;
+  const row = Math.min(5, Math.floor(rows));
+  const within = rows - row;
+  if (row < MONTH_ROWS) return { month, item: { ...item, y: (row + within) / MONTH_ROWS } };
+  const week = addDays(monthCells(yy, mm - 1)[0].key, 7 * row);
+  const next = nextMonthOf(yy, mm - 1);
+  const at = dayGap(monthCells(next.y, next.m)[0].key, week) / 7;
+  return { month: monthKey(next.y, next.m), item: { ...item, y: clamp((at + within) / MONTH_ROWS, 0, 1) } };
+}
+
+export const LAYER_VERSION = 2;
+
 export function cleanLayer(raw: unknown): LayerByMonth | null {
   const p = raw as { version?: unknown; months?: unknown } | null;
-  if (!p || p.version !== 1 || !p.months || typeof p.months !== 'object') return null;
-  const out: LayerByMonth = {};
+  if (!p || (p.version !== 1 && p.version !== LAYER_VERSION) || !p.months || typeof p.months !== 'object') return null;
+  const sixWeeks = p.version === 1;
+  const buckets: Record<string, LayerItem[]> = {};
   for (const [key, list] of Object.entries(p.months as Record<string, unknown>)) {
     if (!MONTH_RE.test(key) || !Array.isArray(list)) continue;
+    for (const raw of list) {
+      const item = cleanItem(raw);
+      if (!item) continue;
+      const home = sixWeeks ? fromSixWeeks(key, item) : { month: key, item };
+      (buckets[home.month] ??= []).push(home.item);
+    }
+  }
+  const out: LayerByMonth = {};
+  for (const [key, list] of Object.entries(buckets)) {
     const seen = new Set<string>();
-    const items = list
-      .map(cleanItem)
-      .filter((i): i is LayerItem => !!i && !seen.has(i.id) && !!seen.add(i.id))
-      .slice(0, MAX_ITEMS);
+    const items = list.filter((i) => !seen.has(i.id) && !!seen.add(i.id)).slice(0, MAX_ITEMS);
     if (items.length) out[key] = items;
   }
   return out;
@@ -119,10 +146,9 @@ export function withMonth(all: LayerByMonth, key: string, fn: (items: LayerItem[
  * at the same spot: the top-right of that day's cell.
  */
 export function dayCorner(dayKey: string): { month: string; x: number; y: number } {
-  const { y, m } = partsOf(dayKey);
-  const at = monthCells(y, m).findIndex((c) => c.key === dayKey);
-  const col = at % 7;
-  const row = Math.floor(at / 7);
+  const { y, m, index } = homeOf(dayKey);
+  const col = index % 7;
+  const row = Math.floor(index / 7);
   return { month: monthKey(y, m), x: (col + 0.8) / 7, y: (row + 0.18) / MONTH_ROWS };
 }
 

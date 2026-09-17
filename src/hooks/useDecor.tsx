@@ -2,7 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo } from 'react';
 import { usePersistedState, type PersistedCodec } from './usePersistedState';
 import { cleanDecor, isTint, withDay, type DayDecor, type DecorByDate, type Tint } from '@/lib/decor';
-import { MAX_ITEMS, cleanItem, cleanLayer, migrateDayStickers, withMonth, type LayerByMonth, type LayerItem } from '@/lib/decor-layer';
+import { LAYER_VERSION, MAX_ITEMS, cleanItem, cleanLayer, migrateDayStickers, withMonth, type LayerByMonth, type LayerItem } from '@/lib/decor-layer';
 import { deletePhoto } from '@/lib/calendar-photos';
 
 /**
@@ -22,7 +22,7 @@ export const decorCodec: PersistedCodec<DecorByDate> = {
 
 export const layerCodec: PersistedCodec<LayerByMonth> = {
   decode: (parsed) => cleanLayer(parsed),
-  encode: (months) => ({ version: 1, months }),
+  encode: (months) => ({ version: LAYER_VERSION, months }),
   fallback: () => ({}),
 };
 

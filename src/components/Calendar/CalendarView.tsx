@@ -17,10 +17,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { monthKey, paperOf } from '@/lib/decor-layer';
 import { COLOR_THEMES } from '@/data/color-themes';
 import { chipInk, shownColor, themeAccent } from '@/lib/calendar-theme';
-import { MONTH_ROWS, addDays, dayGap, monthCells, monthPair, partsOf, shiftMonth, thisMonth, todayKey, type YearMonth } from '@/lib/calendar-grid';
+import { MONTH_ROWS, WEEK_DAYS, addDays, homeOf, dayGap, monthCells, monthPair, partsOf, shiftMonth, thisMonth, todayKey, type YearMonth } from '@/lib/calendar-grid';
 
-/** Cells in one six-week month grid. */
-const MONTH_CELLS = 42;
+/** Cells in one month grid. */
+const MONTH_CELLS = WEEK_DAYS * MONTH_ROWS;
 import type { TKey } from '@/i18n/translations';
 
 /** Fallback before the grid has been measured; the real number comes from how
@@ -54,7 +54,7 @@ function cellLines(i: number, lit: boolean): string {
   const line = 'hsl(var(--border))';
   const parts: string[] = [];
   if (i % 7 !== 6) parts.push(`inset -1px 0 0 ${line}`);
-  if (i < 35) parts.push(`inset 0 -1px 0 ${line}`);
+  if (i < MONTH_CELLS - 7) parts.push(`inset 0 -1px 0 ${line}`);
   if (lit) parts.push('inset 0 0 0 2px hsl(var(--primary))');
   return parts.join(', ');
 }
@@ -233,7 +233,7 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver, decorating
       <div ref={gridRef}
         style={isMobile ? { gridTemplateRows: `repeat(${MONTH_ROWS}, ${PHONE_ROW_H}px)` } : undefined}
         className={`grid grid-cols-7 overflow-hidden rounded-lg border border-border bg-surface ${
-          isMobile ? '' : 'min-h-0 flex-1 grid-rows-6'
+          isMobile ? '' : 'min-h-0 flex-1 grid-rows-5'
         }`}>
         {cells.map((cell, i) => {
           const list = byDay[cell.key] ?? [];
@@ -248,16 +248,19 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver, decorating
             hidden = list.length - shown.filter(Boolean).length;
           }
           const expanded = peek === cell.key && hidden > 0 && !drag;
+          // The last days of a month that needed a sixth week are drawn only
+          // here, at the head of this month: they carry their month's number.
+          const carried = !cell.inMonth && i < WEEK_DAYS && homeOf(cell.key).m === at.m;
           const number = (
             <span
               className={`mx-auto grid h-4 min-w-[18px] place-items-center rounded-full px-1 text-[10px] ${
                 cell.key === today
                   ? `font-bold ${accent ? '' : 'bg-primary text-primary-foreground'}`
-                  : `${weekdayTone(i % 7)} ${cell.inMonth ? '' : 'opacity-40'}`
+                  : `${weekdayTone(i % 7)} ${cell.inMonth ? '' : carried ? 'opacity-80' : 'opacity-40'}`
               }`}
               style={cell.key === today && accent ? { backgroundColor: accent, color: chipInk(accent) } : undefined}
             >
-              {cell.day}
+              {carried ? `${partsOf(cell.key).m + 1}/${cell.day}` : cell.day}
             </span>
           );
           const deco = decor[cell.key];
@@ -277,6 +280,7 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver, decorating
                 // Keyboard activation only: a mouse click is handled by the drag.
                 onClick={(e) => { if (e.detail === 0) onOpen(cell.key, 1); }}
                 data-outside={cell.inMonth ? undefined : ''}
+                data-carried={carried || undefined}
                 style={{
                   '--cell-bg': cell.inMonth ? 'hsl(var(--surface))' : OUTSIDE_BG,
                   boxShadow: cellLines(i, inPaint(cell.key) || cell.key === dropOn),
@@ -343,6 +347,8 @@ export function CalendarView() {
   const isMobile = useIsMobile();
   const { prefs, setPreference } = usePreferences();
   const theme = COLOR_THEMES.some((th) => th.id === prefs.colorTheme) ? prefs.colorTheme : null;
+  /** The theme's colour, which also tints the neighbouring months' days. */
+  const tint = themeAccent(theme) ?? 'hsl(var(--primary))';
   const isPro = useAuth().plan === 'pro';
   const paper = paperOf(prefs.calendarPaper);
   const { layer } = useDecor();
@@ -524,7 +530,8 @@ export function CalendarView() {
   return (
     <LookContext.Provider value={theme}>
     <div className="flex min-h-0 w-full flex-1 flex-col gap-1" data-calendar-view data-cal-look={theme ?? ''}
-      data-paper={paper === 'none' ? undefined : paper}>
+      data-paper={paper === 'none' ? undefined : paper}
+      style={{ '--cal-tint': tint } as React.CSSProperties}>
       <div className="flex flex-wrap items-center justify-center gap-2">
         <button type="button" aria-label={t('calendar.prev')} title={t('calendar.prev')} data-cal-prev
           onClick={() => setAt((m) => shiftMonth(m, -1))} className={navBtn}>

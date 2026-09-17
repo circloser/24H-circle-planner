@@ -54,9 +54,11 @@
      background: hsl(var(--background) / 0.5) */
   --background:    220 20% 97%;
   --surface:       0 0% 100%;
-  /* Calendar: days of the neighbouring months sit on a darker ground. On a
+  /* Calendar: days of the neighbouring months sit on a darker ground, tinted
+     with the calendar's theme colour (see [data-calendar-view] at the end). On a
      dark surface the same small shift is invisible, so dark goes further. */
-  --cal-outside:   color-mix(in srgb, hsl(var(--surface)) 86%, #000);
+  --cal-outside-base: color-mix(in srgb, hsl(var(--surface)) 95%, #000);
+  --cal-outside-tint: 10%;
   /* Calendar paper textures (see the end of this file). */
   --paper-ink:     rgba(30, 60, 110, 0.10);
   --paper-dot:     rgba(30, 60, 110, 0.22);
@@ -110,7 +112,8 @@
     color-scheme: dark;
     --background:    220 25% 8%;
     --surface:       220 22% 13%;
-    --cal-outside:   color-mix(in srgb, hsl(var(--surface)) 45%, #000);
+    --cal-outside-base: color-mix(in srgb, hsl(var(--surface)) 50%, #000);
+    --cal-outside-tint: 5%;
     --paper-ink:     rgba(255, 255, 255, 0.07);
     --paper-dot:     rgba(255, 255, 255, 0.16);
     --paper-kraft:   rgba(150, 110, 60, 0.20);
@@ -126,7 +129,8 @@
 [data-theme="dark"] {
   --background:    220 25% 8%;
   --surface:       220 22% 13%;
-  --cal-outside:   color-mix(in srgb, hsl(var(--surface)) 45%, #000);
+  --cal-outside-base: color-mix(in srgb, hsl(var(--surface)) 50%, #000);
+  --cal-outside-tint: 5%;
   --paper-ink:     rgba(255, 255, 255, 0.07);
   --paper-dot:     rgba(255, 255, 255, 0.16);
   --paper-kraft:   rgba(150, 110, 60, 0.20);
@@ -639,4 +643,10 @@ svg text {
     linear-gradient(var(--paper-kraft), var(--paper-kraft));
   background-size: 7px 7px, 11px 11px, 100% 100%;
   background-position: 0 0, 3px 5px, 0 0;
+}
+
+/* The neighbouring months' ground: the darkened surface, tinted with the
+   theme colour the calendar sets as --cal-tint. */
+[data-calendar-view] {
+  --cal-outside: color-mix(in srgb, var(--cal-tint, hsl(var(--primary))) var(--cal-outside-tint), var(--cal-outside-base));
 }

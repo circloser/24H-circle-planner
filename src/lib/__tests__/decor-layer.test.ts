@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
-  MAX_ITEMS, SCALE_MAX, TAPE_DEFAULT, cleanItem, cleanLayer, dayCorner, migrateDayStickers, monthKey, paperOf, withMonth,
+  LAYER_VERSION, MAX_ITEMS, SCALE_MAX, TAPE_DEFAULT, cleanItem, cleanLayer, dayCorner, migrateDayStickers, monthKey, paperOf, withMonth,
 } from '../decor-layer';
-import { monthCells } from '../calendar-grid';
+import { MONTH_ROWS, homeOf, monthCells } from '../calendar-grid';
 import { SYNC_KEYS } from '../sync/syncData';
 
 describe('the free decoration layer', () => {
   it('reads stored items and drops or clamps anything untrusted', () => {
     expect(cleanLayer({
-      version: 1,
+      version: LAYER_VERSION,
       months: {
         '2026-09': [
           { id: 'a', k: 'sticker', g: 'sun', x: 1.4, y: -1, s: 99, r: -30 },
@@ -27,7 +27,26 @@ describe('the free decoration layer', () => {
         { id: 'c', k: 'tape', p: 'solid', c: '#fef08a', w: TAPE_DEFAULT, x: 0.2, y: 0.3, s: 1, r: 0 },
       ],
     });
-    expect(cleanLayer({ version: 2, months: {} })).toBeNull();
+    expect(cleanLayer({ version: 3, months: {} })).toBeNull();
+  });
+
+  it('moves items measured on the six-week grid onto the five-week one', () => {
+    const at = (y: number) => ({ id: `i${y}`, k: 'sticker', g: 'sun', x: 0.4, y, s: 1, r: 0 });
+    const moved = cleanLayer({
+      version: 1,
+      months: {
+        // Week 2 of six, a quarter down → week 2 of five, a quarter down.
+        '2026-09': [at(1.25 / 6), at(5.5 / 6)],
+        // August 2026 needs six weeks; its sixth (Aug 30 – Sep 5) is the first
+        // row of September's grid now.
+        '2026-08': [at(5.5 / 6)],
+      },
+    });
+    expect(moved?.['2026-09']?.map((i) => [i.id, +i.y.toFixed(4)])).toEqual([[`i${1.25 / 6}`, +(1.25 / 5).toFixed(4)], [`i${5.5 / 6}`, 0.1]]);
+    // September's sixth week (Oct 4 – 10) is the second row of October's grid.
+    expect(moved?.['2026-10']?.map((i) => +i.y.toFixed(4))).toEqual([0.3]);
+    expect(moved?.['2026-08']).toBeUndefined();
+    expect(moved?.['2026-09']?.[0].x).toBe(0.4);
   });
 
   it('keeps a photo sticker by the id of its picture', () => {
@@ -43,12 +62,12 @@ describe('the free decoration layer', () => {
   });
 
   it('puts a day\'s old stickers over the top-right of that day', () => {
-    // 2026-09-17 is a Thursday; the six-week grid starts on Sunday 2026-08-30.
+    // 2026-09-17 is a Thursday; the grid starts on Sunday 2026-08-30.
     const at = monthCells(2026, 8).findIndex((c) => c.key === '2026-09-17');
     const corner = dayCorner('2026-09-17');
     expect(corner.month).toBe('2026-09');
     expect(Math.floor(corner.x * 7)).toBe(at % 7);
-    expect(Math.floor(corner.y * 6)).toBe(Math.floor(at / 7));
+    expect(Math.floor(corner.y * MONTH_ROWS)).toBe(Math.floor(at / 7));
 
     const moved = migrateDayStickers({ '2026-09-17': { s: ['sun', 'heart', 'nope'] }, '2026-10-01': { s: [] } });
     expect(Object.keys(moved)).toEqual(['2026-09']);
@@ -56,8 +75,17 @@ describe('the free decoration layer', () => {
     // Every moved sticker still sits inside the same day's cell.
     for (const i of moved['2026-09']) {
       expect(Math.floor(i.x * 7)).toBe(at % 7);
-      expect(Math.floor(i.y * 6)).toBe(Math.floor(at / 7));
+      expect(Math.floor(i.y * MONTH_ROWS)).toBe(Math.floor(at / 7));
     }
+  });
+
+  it("puts a carried-over day's stickers in the next month, over that day", () => {
+    // 2026-08-31 does not fit in August's five weeks: September's grid shows it.
+    const corner = dayCorner('2026-08-31');
+    expect(corner.month).toBe('2026-09');
+    const home = homeOf('2026-08-31');
+    expect(Math.floor(corner.x * 7)).toBe(home.index % 7);
+    expect(Math.floor(corner.y * MONTH_ROWS)).toBe(Math.floor(home.index / 7));
   });
 
   it('names months and papers safely', () => {
