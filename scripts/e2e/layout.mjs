@@ -87,12 +87,12 @@ export async function run() {
     pass('"시간표 보이기" brings the chart back to the centre',
       Math.abs(c.cx - W / 2) <= 16 && (await saved()) === 'center', `cx=${c.cx}`);
 
-    // 2. The magician ends on the layout step; the clock it placed steps aside.
+    // 2. The magician's layout step (second to last); the clock it placed steps aside.
     await openDesign('디자인 매지션');
     const mag = page.locator('[role="dialog"][aria-label="디자인 매지션"]');
     const counter = async () => (await mag.locator('span.tabular-nums').innerText()).trim();
     const total = Number((await counter()).split('/')[1]);
-    for (let i = 1; i < total; i++) {
+    for (let i = 1; i < total && (await mag.locator('h3').innerText()).trim() !== '시간표 배치'; i++) {
       if ((await mag.locator('h3').innerText()).trim() === '시계 표시') {
         await mag.locator('button:has-text("켜기")').first().click();
         await wait(300);
@@ -100,8 +100,8 @@ export async function run() {
       await mag.locator('button:has-text("다음")').click();
       await wait(180);
     }
-    pass('the magician’s last step is the layout choice',
-      (await mag.locator('h3').innerText()).trim() === '시간표 배치' && (await counter()) === `${total}/${total}`, await counter());
+    pass('the magician’s layout choice comes just before the last (calendar) step',
+      (await mag.locator('h3').innerText()).trim() === '시간표 배치' && (await counter()) === `${total - 1}/${total}`, await counter());
     const before = await clockPos();
     pass('the magician’s clock starts in the left margin', !!before && before.x < -W / 2 + 60, JSON.stringify(before));
 
@@ -116,7 +116,14 @@ export async function run() {
       return el ? Math.round(el.getBoundingClientRect().left) : null;
     });
     pass('…on screen too, clear of the chart', clockLeft !== null && clockLeft >= c.right, `clock left=${clockLeft} chart right=${c.right}`);
+    // On to the last step (the calendar), then finish: the timetable comes back.
+    await mag.locator('button:has-text("다음")').click();
+    await wait(500);
+    pass('the last step shows the calendar', (await page.locator('[data-calendar-view]').count()) === 1);
     await mag.locator('button:has-text("완성")').click();
+    await wait(500);
+    pass('finishing the magician returns to the timetable',
+      (await page.locator('[data-calendar-view]').count()) === 0 && (await page.locator('svg[data-circle-timeline]').count()) >= 1);
     await wait(500);
     // Finishing offers the tutorial next, as a modal over everything: decline it.
     const askTutorial = page.locator('[role="dialog"][aria-modal="true"]').filter({ hasText: '튜토리얼을 진행할까요?' });

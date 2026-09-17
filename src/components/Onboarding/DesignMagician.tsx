@@ -22,6 +22,7 @@ import { requestUpgrade } from '@/lib/pro';
 import { requestCalendar } from '@/lib/calendar-requests';
 import { CALENDAR_PAPERS, paperOf, type CalendarPaper } from '@/lib/decor-layer';
 import { track } from '@/lib/track';
+import { timetableView } from '@/lib/last-view';
 
 const PAPER_KEY: Record<CalendarPaper, TKey> = {
   none: 'decor.paperNone', grid: 'decor.paperGrid', lined: 'decor.paperLined', dot: 'decor.paperDot', kraft: 'decor.paperKraft',
@@ -125,7 +126,6 @@ function DesignMagicianSession({ open, onClose, onFinish }: DesignMagicianProps)
     return () => window.removeEventListener('resize', fit);
   }, [open, step]);
 
-  if (!open) return null;
 
   const swatch = (from: string, via: string, to: string) => `linear-gradient(135deg, ${from}, ${via}, ${to})`;
 
@@ -329,13 +329,14 @@ function DesignMagicianSession({ open, onClose, onFinish }: DesignMagicianProps)
       });
     })() },
     { title: t('magician.stepNews'), body: onOff(prefs.newsOpen, (v) => setPreference('newsOpen', v)) },
-    // ── Layout — the last choice, made with everything else already on screen.
-    // Widgets the magician put in the margins step aside if the chart moves
-    // onto their side.
-    // ── Calendar decorating (다꾸) — the colour theme above already dresses
-    // the calendar; paper and stickers are Pro. "Go decorate" ends the
-    // magician and opens the sticker panel on the calendar.
+    // ── Layout — made with everything else already on screen. Widgets the
+    // magician put in the margins step aside if the chart moves onto their side.
+    { title: t('magician.stepLayout'), body: <ChartLayoutPicker compact value={chartLayout} onChange={switchLayout} /> },
+    // ── Calendar decorating (다꾸) — the last step, shown on the calendar
+    // itself. The colour theme above already dresses it; paper and stickers
+    // are Pro. "Go decorate" ends the magician on the sticker panel.
     {
+      id: 'calDecor',
       title: t('magician.stepCalDecor'),
       body: (
         <div className="flex flex-col gap-2" data-magician-caldecor>
@@ -370,12 +371,34 @@ function DesignMagicianSession({ open, onClose, onFinish }: DesignMagicianProps)
         </div>
       ),
     },
-    { title: t('magician.stepLayout'), body: <ChartLayoutPicker compact value={chartLayout} onChange={switchLayout} /> },
   ];
+
+  // The 캘린더 꾸미기 step shows the calendar; going back to the layout step
+  // (which is about the timetable) — or finishing, since the timetable
+  // tutorial may follow — brings the timetable view back.
+  const onCalendarStep = (steps[step] as { id?: string }).id === 'calDecor';
+  const switchedToCalendar = useRef(false);
+  useEffect(() => {
+    if (onCalendarStep) {
+      if (prefs.chartView !== 'calendar') {
+        switchedToCalendar.current = true;
+        setPreference('chartView', 'calendar');
+      }
+    } else if (switchedToCalendar.current) {
+      switchedToCalendar.current = false;
+      if (prefs.chartView === 'calendar') setPreference('chartView', timetableView());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onCalendarStep]);
 
   const last = step === steps.length - 1;
   const go = (d: number) => setStep(Math.min(steps.length - 1, Math.max(0, step + d)));
-  const finish = () => { onClose(); onFinish?.(); };
+  const finish = () => {
+    if (switchedToCalendar.current && prefs.chartView === 'calendar') setPreference('chartView', timetableView());
+    switchedToCalendar.current = false;
+    onClose();
+    onFinish?.();
+  };
 
   return createPortal(
     <div

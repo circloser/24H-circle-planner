@@ -73,7 +73,17 @@ export async function run() {
     const found = await goToStep('캘린더 꾸미기');
     pass('the magician has a 캘린더 꾸미기 step', found);
     const counter = (await mag.locator('span.tabular-nums').innerText()).trim().split('/').map(Number);
-    pass('…right before the final layout step', counter[0] === counter[1] - 1, counter.join('/'));
+    pass('…as the last step, after the layout step', counter[0] === counter[1], counter.join('/'));
+    await wait(500);
+    pass('…and it brings up the calendar by itself', (await count('[data-calendar-view]')) === 1);
+    await mag.locator('button:has(svg.lucide-chevron-left)').first().click();
+    await wait(600);
+    pass('going back to the layout step (12) brings the timetable back',
+      (await mag.locator('h3').innerText()).trim() === '시간표 배치'
+      && (await count('[data-calendar-view]')) === 0 && (await count('svg[data-circle-timeline]')) >= 1);
+    await mag.locator('button:has-text("다음")').click();
+    await wait(600);
+    pass('…and forward again shows the calendar', (await count('[data-calendar-view]')) === 1);
     await mag.locator('[data-magician-paper="grid"]').click();
     await wait(400);
     pass('a free account is offered Pro for the paper', (await count('[role="dialog"]:not([aria-label="디자인 매지션"])')) >= 1
@@ -85,7 +95,8 @@ export async function run() {
 
     me = { user: { id: 'u1', email: 'me@example.com', provider: 'google' }, plan: 'pro', admin: false };
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
+    // Closed on the calendar step: the calendar is what comes back.
+    await page.waitForSelector('[data-calendar-view]', { timeout: 15000 });
     await wait(800);
     await openMagician();
     await goToStep('캘린더 꾸미기');
