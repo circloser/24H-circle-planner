@@ -47,12 +47,13 @@ const WIDGET_LABEL_ATTRS = {
  * re-inked white with a black outline (and the ticks white) so they stay
  * legible on any wallpaper without a backdrop disc behind the ring.
  */
-export async function buildWidgetPngBase64(svg: SVGSVGElement): Promise<string | null> {
+export async function buildWidgetPngBase64(svg: SVGSVGElement, viewBox?: string): Promise<string | null> {
   try {
     const blob = await exportPng(svg, {
       size: 1080,
       transparent: true,
       watermark: false,
+      viewBox,
       stripSelectors: ['[data-hub-title]'],
       restyle: [
         { selector: '[data-hour-label="cardinal"]', attrs: { ...WIDGET_LABEL_ATTRS, 'stroke-width': '5' } },

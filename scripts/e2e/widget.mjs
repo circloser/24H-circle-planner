@@ -10,6 +10,33 @@ import { makeReporter, launchPage, serveDist, seedBasicData, wait, isMain, runSt
 
 const TOKEN = 'e2eWidgetToken0123456789';
 
+/** The narrowest empty (fully transparent) border of a base64 PNG, in px. */
+async function emptyBorder(page, b64) {
+  return page.evaluate(async (data) => {
+    const img = new Image();
+    img.src = `data:image/png;base64,${data}`;
+    await img.decode();
+    const c = document.createElement('canvas');
+    c.width = img.width; c.height = img.height;
+    const g = c.getContext('2d');
+    g.drawImage(img, 0, 0);
+    const d = g.getImageData(0, 0, c.width, c.height).data;
+    let minX = c.width, minY = c.height, maxX = -1, maxY = -1;
+    for (let y = 0; y < c.height; y++) {
+      for (let x = 0; x < c.width; x++) {
+        if (d[(y * c.width + x) * 4 + 3] > 8) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+    if (maxX < 0) return null; // nothing drawn at all
+    return Math.min(minX, minY, c.width - 1 - maxX, c.height - 1 - maxY);
+  }, b64);
+}
+
 export async function run() {
   const { pass, allOk } = makeReporter('widget');
   const { base, close } = await serveDist();
@@ -93,6 +120,10 @@ export async function run() {
     pass('ring band is painted', px.band[3] > 200, `alpha=${px.band[3]}`);
     pass('no backdrop disc outside the rim', px.gap[3] === 0, `alpha=${px.gap[3]}`);
     pass('hour numbers are white with a black outline', px.white > 5 && px.black > 5, `white=${px.white} black=${px.black}`);
+    // The ring and its numbers fill the image: no wide empty margin for the
+    // launcher to show around the widget. (Before the crop: 23px here.)
+    const borderBig = await emptyBorder(page, png);
+    pass('the image is cropped to the ring and its numbers', borderBig !== null && borderBig <= 8, `border=${borderBig}px`);
 
     // 3. A preference change (ring size, via the cross-device sync path) republishes.
     const before = puts.length;
@@ -106,6 +137,9 @@ export async function run() {
     pass('republishes after an edit', puts.length > before, `before=${before} after=${puts.length}`);
     const second = puts[puts.length - 1];
     pass('new image reflects the smaller ring', second.body.meta.outerR < first.body.meta.outerR, `${first.body.meta.outerR} → ${second.body.meta.outerR}`);
+    // A smaller ring is drawn larger rather than left floating. (Before: 60px+.)
+    const borderSmall = await emptyBorder(page, second.body.png);
+    pass('a smaller ring still fills the image', borderSmall !== null && borderSmall <= 8, `border=${borderSmall}px`);
 
     // 4. Dialog: linked state + unlink → DELETE + token cleared.
     await page.locator('button[aria-label="설정"]').first().click();

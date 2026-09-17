@@ -10,6 +10,7 @@ import {
   readWidgetToken,
   svgToPx,
   widgetMeta,
+  widgetView,
 } from '../publish';
 import { viewSpec } from '@/lib/chart-view';
 
@@ -102,13 +103,25 @@ describe('widgetMeta', () => {
     expect(m.cy).toBeCloseTo(WIDGET_PNG_SIZE / 2, 5);
   });
 
-  it('scales radii by the viewBox→pixel factor, not the bare 1080/1000', () => {
+  it('crops to the ring and its hour numbers, and scales radii to that crop', () => {
+    const view = widgetView(ring);
+    // outerR 460 + 56 of hour numbers either side of the centre.
+    expect(view).toEqual({ x: -16, y: -16, size: 1032 });
     const m = widgetMeta(viewSpec('full'), '#EF4444', false, 'en', ring);
-    const k = WIDGET_PNG_SIZE / 1072;
+    const k = WIDGET_PNG_SIZE / 1032;
     expect(m.innerR).toBeCloseTo(100 * k, 1);
     expect(m.outerR).toBeCloseTo(460 * k, 1);
     // A point on the rim at 3 o'clock lands where svgToPx says it does.
-    expect(m.cx + m.outerR).toBeCloseTo(svgToPx(500 + 460), 1);
+    expect(m.cx + m.outerR).toBeCloseTo(svgToPx(500 + 460, view), 1);
+  });
+
+  it('draws a smaller ring larger, and never crops past the chart itself', () => {
+    const small = { ...ring, innerR: 200, outerR: 400 };
+    expect(widgetView(small).size).toBe(912);
+    // The rim of a small ring reaches as far out in the image as a big one's.
+    const rimShare = (r: typeof ring) => widgetMeta(viewSpec('full'), '#000', false, 'en', r).outerR / WIDGET_PNG_SIZE;
+    expect(rimShare(small)).toBeGreaterThan(0.43);
+    expect(widgetView({ ...ring, outerR: 490 }).size).toBe(1072);
   });
 
   it('carries the view window so 12h views place (or hide) the hand', () => {
@@ -129,6 +142,6 @@ describe('widgetMeta', () => {
   it('follows the adjustable ring radii', () => {
     const small = widgetMeta(viewSpec('full'), '#EF4444', false, 'en', { ...ring, innerR: 200, outerR: 400 });
     expect(small.outerR).toBeLessThan(widgetMeta(viewSpec('full'), '#EF4444', false, 'en', ring).outerR);
-    expect(small.innerR).toBeCloseTo(200 * (WIDGET_PNG_SIZE / 1072), 1);
+    expect(small.innerR).toBeCloseTo(200 * (WIDGET_PNG_SIZE / 912), 1);
   });
 });

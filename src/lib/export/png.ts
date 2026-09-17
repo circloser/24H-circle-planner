@@ -26,6 +26,10 @@ export interface PngExportOptions {
    *  e.g. white hour numbers with a dark outline for a render that lands on an
    *  unknown wallpaper. Applied after inlineComputedPaint, so they win. */
   restyle?: Array<{ selector: string; attrs: Record<string, string> }>;
+  /** Render only this part of the chart (an SVG viewBox string). The home-screen
+   *  widget uses it to crop to the ring and its hour numbers, so the ring fills
+   *  the widget instead of floating in a margin. */
+  viewBox?: string;
 }
 
 /**
@@ -40,10 +44,11 @@ export async function exportPng(
   sourceSvg: SVGSVGElement,
   opts: PngExportOptions,
 ): Promise<Blob> {
-  const { size, transparent, qrUrl, watermark = true, stripSelectors = [], haloDisc, restyle = [] } = opts;
+  const { size, transparent, qrUrl, watermark = true, stripSelectors = [], haloDisc, restyle = [], viewBox } = opts;
 
   // 1. Deep-clone the SVG
   const clone = sourceSvg.cloneNode(true) as SVGSVGElement;
+  if (viewBox) clone.setAttribute('viewBox', viewBox);
 
   // 1a. Inline computed fill/stroke (class-styled elements like the hub disc and
   // ring backdrop would otherwise default to black in the serialized image).

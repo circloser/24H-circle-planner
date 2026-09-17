@@ -22,12 +22,38 @@ export const WIDGET_TOKEN_KEY = '24h-circle-planner.widget-token';
  *  starts/stops without a reload. */
 export const WIDGET_TOKEN_EVENT = '24h:widget-token';
 
-/** Rendered image side (px) and the chart's viewBox, for the SVG→pixel map. */
+/** Rendered image side (px). */
 export const WIDGET_PNG_SIZE = 1080;
-const VB_MARGIN = 36;
-const VB_SIZE = 1072;
-/** SVG user unit → pixel in the 1080 render (the viewBox is -36..1036). */
-export const svgToPx = (u: number): number => ((u + VB_MARGIN) / VB_SIZE) * WIDGET_PNG_SIZE;
+/** How far past the rim the drawing reaches, in SVG units: the cardinal hour
+ *  numbers sit at outerR + 32 with a 30px face and a 5px outline (measured
+ *  ≈54 on the real render; 56 leaves a hair of room for anti-aliasing). */
+const LABEL_REACH = 56;
+/** The chart's own viewBox is -36..1036 — never crop wider than that. */
+const VIEW_HALF_MAX = 536;
+
+/**
+ * The square of the chart the widget image shows: the ring and its hour
+ * numbers, and nothing more. A smaller ring is simply drawn larger, so the
+ * ring always fills the widget instead of floating in an empty margin. The
+ * image and the geometry sent with it must use the SAME crop, or the natively
+ * drawn hand drifts off the ring.
+ */
+export interface WidgetView {
+  x: number;
+  y: number;
+  size: number;
+}
+
+export function widgetView(ring: RingGeom = RING): WidgetView {
+  const half = Math.min(VIEW_HALF_MAX, ring.outerR + LABEL_REACH);
+  return { x: ring.cx - half, y: ring.cy - half, size: half * 2 };
+}
+
+export const viewBoxOf = (v: WidgetView): string => `${v.x} ${v.y} ${v.size} ${v.size}`;
+
+/** SVG user unit (x axis) → pixel in the widget image. */
+export const svgToPx = (u: number, view: WidgetView = widgetView()): number =>
+  ((u - view.x) / view.size) * WIDGET_PNG_SIZE;
 
 const TOKEN_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 const TOKEN_LEN = 22; // 62^22 ≈ 2^131
@@ -136,11 +162,12 @@ export interface WidgetMeta {
 }
 
 export function widgetMeta(spec: ViewSpec, handColor: string, dark: boolean, lang: string, ring: RingGeom = RING): WidgetMeta {
-  const scale = WIDGET_PNG_SIZE / VB_SIZE;
+  const view = widgetView(ring);
+  const scale = WIDGET_PNG_SIZE / view.size;
   return {
     v: 1,
-    cx: round(svgToPx(ring.cx)),
-    cy: round(svgToPx(ring.cy)),
+    cx: round((ring.cx - view.x) * scale),
+    cy: round((ring.cy - view.y) * scale),
     innerR: round(ring.innerR * scale),
     outerR: round(ring.outerR * scale),
     startMin: spec.startMin,
@@ -169,7 +196,8 @@ export function isDarkTheme(): boolean {
 export async function publishWidget(svg: SVGSVGElement, token: string, meta: WidgetMeta): Promise<boolean> {
   try {
     const { buildWidgetPngBase64 } = await import('@/lib/export/ogImage');
-    const png = await buildWidgetPngBase64(svg);
+    // Cropped exactly as `meta` was computed (both read the live ring).
+    const png = await buildWidgetPngBase64(svg, viewBoxOf(widgetView()));
     if (!png) return false;
     const res = await fetch(`/api/widget/${token}`, {
       method: 'PUT',
