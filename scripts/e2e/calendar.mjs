@@ -251,6 +251,24 @@ export async function run() {
     await addPlan(today, '장보기');
     await addPlan(today, '운동');
     pass('a crowded day shows a "+n" line', (await cell(today).locator('text=/^\\+\\d/').count()) === 1);
+
+    // A full day's list just grows: no scroll box of its own.
+    await cell(today).click();
+    await wait(350);
+    const list = await page.evaluate(() => {
+      const ul = document.querySelector('[role="dialog"] [data-day-list]');
+      if (!ul) return null;
+      return {
+        rows: ul.querySelectorAll('[data-event-row]').length,
+        overflowY: getComputedStyle(ul).overflowY,
+        scrolls: ul.scrollHeight > ul.clientHeight + 1,
+      };
+    });
+    pass('a full day list grows instead of scrolling inside itself',
+      !!list && list.rows >= 5 && list.overflowY === 'visible' && !list.scrolls,
+      JSON.stringify(list));
+    await page.keyboard.press('Escape');
+    await wait(350);
     await cell(today).hover();
     await wait(400);
     const peek = await page.evaluate((key) => {

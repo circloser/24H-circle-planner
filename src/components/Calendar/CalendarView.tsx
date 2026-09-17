@@ -518,7 +518,9 @@ export function CalendarView() {
             <DialogTitle>{pickedLabel}</DialogTitle>
           </DialogHeader>
 
-          <ul className="flex max-h-[32vh] flex-col gap-1 overflow-y-auto">
+          {/* The list simply grows with the day — no scroll box of its own. The
+              dialog itself scrolls if a very full day outgrows the screen. */}
+          <ul className="flex flex-col gap-1" data-day-list>
             {dayList.length === 0 && <li className="py-2 text-center text-sm text-muted-foreground">{t('calendar.none')}</li>}
             {dayList.map((ev, i) => {
               const rowKey = `${ev.from}-${ev.id}`;
