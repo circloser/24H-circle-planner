@@ -14,13 +14,15 @@ import {
 import { SaveIndicator } from '@/components/SaveIndicator/SaveIndicator';
 import { ChartViewToggle } from '@/components/ChartViewToggle/ChartViewToggle';
 import { CalendarToggle } from '@/components/ChartViewToggle/CalendarToggle';
-import { useTranslation } from '@/hooks/usePreferences';
+import { usePreferences, useTranslation } from '@/hooks/usePreferences';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/hooks/useAuth';
 import { useSyncStatus } from '@/hooks/useSync';
 import { openBillingPortal } from '@/lib/sync/billing';
 import { canPromoteApp, PLAY_STORE_URL } from '@/lib/twa';
 import { gaActive, gaChoice, onGaChange, setGaChoice } from '@/lib/ga';
+import { requestCalendar } from '@/lib/calendar-requests';
+import { CalendarDecorSubmenu } from '@/components/Calendar/Decor';
 
 /** Whether usage statistics go to Google Analytics on this device: the
  *  visitor's own choice, or what the page decided for their region. */
@@ -110,6 +112,8 @@ export function AppHeader({
   onOpenWidgetConnect,
 }: AppHeaderProps) {
   const gaOn = useGaOn();
+  const { prefs, setPreference } = usePreferences();
+  const calendarMode = prefs.chartView === 'calendar';
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
   const { user, plan, billingEnabled, admin, login, logout, loading: authLoading } = useAuth();
@@ -242,6 +246,7 @@ export function AppHeader({
                 <Wand2 className="h-4 w-4" />
                 {t('magician.open')}
               </DropdownMenuItem>
+              {calendarMode && <CalendarDecorSubmenu />}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={onOpenPresets} className="gap-2">
                 <Sparkles className="h-4 w-4" />
@@ -414,6 +419,18 @@ export function AppHeader({
               <DropdownMenuItem onClick={() => onOpenSettings('alarms')} className="gap-2">
                 <BellRing className="h-4 w-4" />
                 {t('settings.alarms')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                data-ical-open
+                className="gap-2"
+                onClick={() => {
+                  // The connection lives with the calendar: go there first.
+                  if (!calendarMode) setPreference('chartView', 'calendar');
+                  requestCalendar({ kind: 'ical' });
+                }}
+              >
+                <CalendarRange className="h-4 w-4" />
+                {t('ical.menu')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onOpenMarketing} className="gap-2">
                 <Mail className="h-4 w-4" />

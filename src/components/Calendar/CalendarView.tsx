@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, GripVertical, Link, Pencil, Plus, X } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, GripVertical, Pencil, Plus, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
@@ -11,7 +11,9 @@ import {
 } from '@/lib/calendar-events';
 import { useIcalFeeds } from '@/hooks/useIcalFeed';
 import { IcalConnect } from './IcalConnect';
-import { DayDecorEditor, DecorLayer, DecorMenu, DecorTray, type Armed, type DecorTool, type Picked } from './Decor';
+import { DayDecorEditor, DecorLayer, DecorTray, type Armed, type DecorTool, type Picked } from './Decor';
+import { requestUpgrade } from '@/lib/pro';
+import { CALENDAR_REQUEST_EVENT, takeCalendarRequest } from '@/lib/calendar-requests';
 import { useDecor } from '@/hooks/useDecor';
 import { useAuth } from '@/hooks/useAuth';
 import { monthKey, paperOf } from '@/lib/decor-layer';
@@ -349,7 +351,7 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver, decorating
 export function CalendarView() {
   const { t, lang } = useTranslation();
   const isMobile = useIsMobile();
-  const { prefs, setPreference } = usePreferences();
+  const { prefs } = usePreferences();
   const theme = COLOR_THEMES.some((th) => th.id === prefs.colorTheme) ? prefs.colorTheme : null;
   /** The theme's colour, which also tints the neighbouring months' days. */
   const tint = themeAccent(theme) ?? 'hsl(var(--primary))';
@@ -389,6 +391,20 @@ export function CalendarView() {
   const [left, right] = monthPair(at);
   const feeds = useIcalFeeds();
   const [connecting, setConnecting] = useState(false);
+  // Requests from the header menus (⚙ → 구글 캘린더, 디자인 → 캘린더 꾸미기),
+  // including one made just before the calendar came on screen.
+  useEffect(() => {
+    const take = () => {
+      const req = takeCalendarRequest();
+      if (!req) return;
+      if (req.kind === 'ical') setConnecting(true);
+      else if (!isPro) requestUpgrade('decor');
+      else { setTool(req.tool); setArmed(null); }
+    };
+    take();
+    window.addEventListener(CALENDAR_REQUEST_EVENT, take);
+    return () => window.removeEventListener(CALENDAR_REQUEST_EVENT, take);
+  }, [isPro]);
   // Only the two months on screen are expanded — the six-week grids overshoot
   // the months themselves, so the window runs from the first cell to the last.
   const importedDays = feeds.days;
@@ -620,23 +636,6 @@ export function CalendarView() {
           onClick={() => setAt((m) => shiftMonth(m, 1))} className={navBtn}>
           <ChevronRight className="h-4 w-4" />
         </button>
-        <button type="button" data-ical-open onClick={() => setConnecting(true)}
-          aria-label={t('ical.title')} title={t('ical.title')}
-          className={`flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-xs transition-colors hover:bg-accent/10 ${
-            feeds.calendars.length ? 'border-primary text-foreground' : 'border-border text-muted-foreground'
-          }`}>
-          <Link className="h-3.5 w-3.5" />
-          {t('ical.button')}
-          {feeds.calendars.length > 1 && <span className="tabular-nums">{feeds.calendars.length}</span>}
-        </button>
-        <DecorMenu
-          theme={theme}
-          onTheme={(id) => setPreference('colorTheme', id)}
-          paper={paper}
-          onPaper={(v) => { setPreference('calendarPaper', v); track('paper_set', { paper: v }); }}
-          tool={decorating ? tool : null}
-          onTool={(k) => { setTool(k); setArmed(null); track('decor_tool', { tool: k }); }}
-        />
       </div>
 
       {decorating && tool && (

@@ -80,7 +80,10 @@ export async function run() {
     await page.keyboard.press('Escape');
     await wait(350);
   };
+  /** 디자인 → 캘린더 꾸미기. */
   const menu = async () => {
+    await page.locator('button[aria-label="디자인"]').click();
+    await wait(300);
     await page.locator('[data-decor-menu]').click();
     await wait(300);
   };
@@ -148,8 +151,29 @@ export async function run() {
       .evaluateAll((els) => els.map((e) => e.getAttribute('data-decor-sub') ?? e.getAttribute('data-decor-tool')));
     pass('the 꾸미기 menu holds theme, paper and the three tools', JSON.stringify(entries) === '["theme","paper","sticker","tape","photo"]', JSON.stringify(entries));
     pass('the separate theme and sticker buttons are gone', (await count('[data-cal-theme], [data-sticker-tray-toggle]')) === 0);
+    pass('…and the calendar toolbar has no decorate or Google buttons',
+      (await count('[data-calendar-view] [data-decor-menu], [data-calendar-view] [data-ical-open]')) === 0);
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
     await page.keyboard.press('Escape');
     await wait(250);
+    // Only while the calendar is showing.
+    await page.locator('[data-calendar-toggle]').click();
+    await wait(500);
+    await page.locator('button[aria-label="디자인"]').click();
+    await wait(300);
+    pass('in the timetable, 디자인 has no 캘린더 꾸미기', (await count('[data-decor-menu]')) === 0);
+    await page.keyboard.press('Escape');
+    await wait(250);
+    // ⚙ → 구글 캘린더 연결 from the timetable: the calendar comes up with the dialog open.
+    await page.locator('button[aria-label="설정"]').click();
+    await wait(300);
+    await page.locator('[data-ical-open]').click();
+    await page.waitForSelector('[data-calendar-view]', { timeout: 15000 });
+    await wait(700);
+    const icalTitle = await page.locator('[role="dialog"]').first().innerText().catch(() => '');
+    pass('⚙ → 구글 캘린더 opens the calendar and its connect dialog', icalTitle.includes('구글 캘린더'), icalTitle.slice(0, 30));
+    await closeDialog();
 
     // 2. A free account: the theme is free, everything else offers Pro.
     await subPick('theme', '[data-cal-theme-option="pastel"]');

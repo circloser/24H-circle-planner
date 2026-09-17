@@ -4,18 +4,19 @@ import {
   Check, ChevronDown, ChevronUp, GripHorizontal, ImagePlus, Lock, Minus, Palette, Plus, RotateCcw, RotateCw, Sparkles, Trash2,
 } from 'lucide-react';
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuRadioGroup, DropdownMenuRadioItem,
-  DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger,
+  DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem,
+  DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { useTranslation } from '@/hooks/usePreferences';
+import { usePreferences, useTranslation } from '@/hooks/usePreferences';
 import { useAuth } from '@/hooks/useAuth';
 import { useDecor } from '@/hooks/useDecor';
 import { requestUpgrade } from '@/lib/pro';
 import { track } from '@/lib/track';
+import { requestCalendar } from '@/lib/calendar-requests';
 import { STICKER_GROUPS, TINTS, stickerGlyph, type StickerGroupId } from '@/lib/decor';
 import {
-  CALENDAR_PAPERS, MAX_ITEMS, SCALE_MAX, SCALE_MIN, TAPE_COLORS, TAPE_DEFAULT, TAPE_MAX, TAPE_MIN, TAPE_PATTERNS,
+  CALENDAR_PAPERS, MAX_ITEMS, paperOf, SCALE_MAX, SCALE_MIN, TAPE_COLORS, TAPE_DEFAULT, TAPE_MAX, TAPE_MIN, TAPE_PATTERNS,
   newItemId, tapeBackground, type CalendarPaper, type LayerItem, type TapePattern,
 } from '@/lib/decor-layer';
 import { loadPhoto, newPhotoId, savePhoto, shrinkPhoto } from '@/lib/calendar-photos';
@@ -102,75 +103,71 @@ function Picker({ picked, onPick }: { picked?: string | null; onPick: (id: strin
   );
 }
 
-/** The toolbar's 꾸미기 menu. */
-export function DecorMenu({ theme, onTheme, paper, onPaper, tool, onTool }: {
-  theme: string | null;
-  onTheme: (id: string | null) => void;
-  paper: CalendarPaper;
-  onPaper: (p: CalendarPaper) => void;
-  tool: DecorTool | null;
-  onTool: (tool: DecorTool) => void;
-}) {
+/**
+ * 디자인 → 캘린더 꾸미기: the colour theme (free), the paper (Pro) and the
+ * three decorating tools (Pro), which open the floating panel on the calendar.
+ */
+export function CalendarDecorSubmenu() {
   const { t, lang } = useTranslation();
   const pro = usePro();
+  const { prefs, setPreference } = usePreferences();
+  const theme = COLOR_THEMES.some((th) => th.id === prefs.colorTheme) ? prefs.colorTheme : null;
+  const paper = paperOf(prefs.calendarPaper);
   const lock = !pro && <Lock className="ml-auto h-3 w-3 text-muted-foreground" aria-hidden />;
-  const lit = !!theme || paper !== 'none' || !!tool;
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button type="button" data-decor-menu title={t('decor.menu')}
-          className={`flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-xs transition-colors hover:bg-accent/10 ${
-            lit ? 'border-primary text-foreground' : 'border-border text-muted-foreground'
-          }`}>
-          <Sparkles className="h-3.5 w-3.5" />
-          {t('decor.menu')}
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[11rem]" data-decor-menu-content>
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger data-decor-sub="theme" className="gap-2">
-            <Palette className="h-3.5 w-3.5" />
-            {t('calendar.theme')}
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            <DropdownMenuRadioGroup value={theme ?? ''} onValueChange={(v) => onTheme(v || null)}>
-              <DropdownMenuRadioItem value="" data-cal-theme-option="">{t('calendar.themeDefault')}</DropdownMenuRadioItem>
-              {COLOR_THEMES.map((th) => (
-                <DropdownMenuRadioItem key={th.id} value={th.id} data-cal-theme-option={th.id} className="gap-2">
-                  <span className="flex gap-0.5">
-                    {th.colors.slice(1, 5).map((c) => <span key={c} className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: c }} />)}
-                  </span>
-                  {lang === 'ko' ? th.ko : th.en}
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger data-decor-sub="paper" className="gap-2">
-            <span className="h-3.5 w-3.5 rounded-sm border border-current opacity-70" aria-hidden />
-            {t('decor.paper')}
-            {lock}
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            <DropdownMenuRadioGroup value={paper}
-              onValueChange={(v) => (pro ? onPaper(v as CalendarPaper) : requestUpgrade('decor'))}>
-              {CALENDAR_PAPERS.map((p) => (
-                <DropdownMenuRadioItem key={p} value={p} data-paper-option={p}>{t(PAPER_LABEL[p])}</DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
+    <DropdownMenuSub>
+      <DropdownMenuSubTrigger data-decor-menu className="gap-2">
+        <Sparkles className="h-4 w-4" />
+        {t('decor.calendarMenu')}
+      </DropdownMenuSubTrigger>
+      <DropdownMenuSubContent className="min-w-[11rem]" data-decor-menu-content>
+        {/* Everything one level down: a third level of menus would open back
+            over this one at the screen's edge. */}
+        <DropdownMenuLabel data-decor-sub="theme" className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+          <Palette className="h-3.5 w-3.5" />
+          {t('calendar.theme')}
+        </DropdownMenuLabel>
+        <DropdownMenuRadioGroup value={theme ?? ''} onValueChange={(v) => setPreference('colorTheme', v || null)}>
+          <DropdownMenuRadioItem value="" data-cal-theme-option="">{t('calendar.themeDefault')}</DropdownMenuRadioItem>
+          {COLOR_THEMES.map((th) => (
+            <DropdownMenuRadioItem key={th.id} value={th.id} data-cal-theme-option={th.id} className="gap-2">
+              <span className="flex gap-0.5">
+                {th.colors.slice(1, 5).map((c) => <span key={c} className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: c }} />)}
+              </span>
+              {lang === 'ko' ? th.ko : th.en}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel data-decor-sub="paper" className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+          <span className="h-3.5 w-3.5 rounded-sm border border-current opacity-70" aria-hidden />
+          {t('decor.paper')}
+          {lock}
+        </DropdownMenuLabel>
+        <DropdownMenuRadioGroup value={paper}
+          onValueChange={(v) => {
+            if (!pro) return requestUpgrade('decor');
+            setPreference('calendarPaper', v);
+            track('paper_set', { paper: v });
+          }}>
+          {CALENDAR_PAPERS.map((p) => (
+            <DropdownMenuRadioItem key={p} value={p} data-paper-option={p}>{t(PAPER_LABEL[p])}</DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
         {TOOLS.map((k) => (
           <DropdownMenuItem key={k} data-decor-tool={k} className="gap-2"
-            onSelect={() => (pro ? onTool(k) : requestUpgrade('decor'))}>
+            onSelect={() => {
+              if (!pro) return requestUpgrade('decor');
+              requestCalendar({ kind: 'decor', tool: k });
+              track('decor_tool', { tool: k });
+            }}>
             {t(TOOL_LABEL[k])}
             {lock}
           </DropdownMenuItem>
         ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </DropdownMenuSubContent>
+    </DropdownMenuSub>
   );
 }
 

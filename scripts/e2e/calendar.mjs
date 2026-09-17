@@ -155,6 +155,8 @@ export async function run() {
     await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
     await wait(300);
     // A colour theme tints them in its own colour.
+    await page.locator('button[aria-label="디자인"]').click();
+    await wait(250);
     await page.locator('[data-decor-menu]').click();
     await wait(250);
     await page.locator('[data-decor-sub="theme"]').click();
@@ -166,6 +168,8 @@ export async function run() {
     const themed = await grounds();
     pass('a colour theme retints the neighbouring days', !!themed && themed.tone !== lit?.tone && themed.outside < themed.inside - 8,
       JSON.stringify({ before: lit?.tone, after: themed }));
+    await page.locator('button[aria-label="디자인"]').click();
+    await wait(250);
     await page.locator('[data-decor-menu]').click();
     await wait(250);
     await page.locator('[data-decor-sub="theme"]').click();

@@ -66,6 +66,8 @@ export async function run() {
   const cell = (key) => page.locator(`[data-day="${key}"]`).first();
   const chips = (key) => cell(key).locator('[data-event]').allInnerTexts();
   const openDialog = async () => {
+    await page.locator('button[aria-label="설정"]').click();
+    await page.waitForTimeout(300);
     await page.locator('[data-ical-open]').click();
     await wait(400);
   };
