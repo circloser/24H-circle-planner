@@ -46,3 +46,11 @@ Approval remains Google's decision. The next review request cannot be submitted 
 - Cloudflare static asset 404 handling: https://developers.cloudflare.com/workers/static-assets/routing/static-site-generation/
 - Polar webhook retries: https://polar.sh/docs/integrate/webhooks/delivery
 - Polar subscription cancellation: https://polar.sh/docs/features/subscriptions/manage
+
+## Update — 2026-09-17: Google Analytics is back in the app, region-gated
+
+- The app loads GA4 from `src/lib/ga.ts` (no static loader in any HTML, so the publishing check still holds).
+- `/api/geo` answers whether the visitor's country (Cloudflare `cf.country`) is in the EEA, the UK or Switzerland; there, GA stays off until the visitor turns on ⚙ → “사용 통계 보내기”. Unknown countries count as requiring consent.
+- Consent Mode defaults deny all advertising storage and signals everywhere; Google signals and ad personalization are off; page locations drop fragments and non-campaign query values.
+- Reading pages (guides, blog, templates) still load no Google scripts, and no ad code runs anywhere.
+- When AdSense is enabled with a certified CMP, route the GA decision in the EEA/UK/CH through that CMP instead of the ⚙ toggle.

@@ -297,6 +297,7 @@ export const ko = {
   'homewidget.unlinked': '연결을 해제하고 서버의 위젯 이미지를 지웠어요.',
   'homewidget.privacy': '위젯 이미지는 이 폰만 아는 주소로 서버에 저장되며, 연결을 해제하면 바로 삭제됩니다.',
   'marketing.menu': '메일링 리스트',
+  'analytics.gaMenu': '사용 통계 보내기 (Google Analytics)',
   'marketing.title': '새 소식을 이메일로 받아볼까요?',
   'marketing.body': '24Houring의 새 기능과 이벤트 소식을 이메일로 받아볼 수 있어요. 선택 사항이며, 가입하지 않아도 모든 기능을 그대로 쓸 수 있어요.',
   'marketing.signInBody': '메일링 리스트는 로그인한 Google 계정의 이메일로 보내드려요. 먼저 로그인해 주세요. 로그인하면 이 창이 다시 열려요.',

@@ -1,9 +1,7 @@
 /**
- * GA4 event tracking — thin, safe wrapper over the gtag loaded in index.html.
- *
- * gtag only exists on the deployed http(s) site (index.html skips local dev and
- * the offline single-file build), so `track` must be a silent no-op everywhere
- * else — never throw, never block the action being measured.
+ * Event tracking — one call feeds both Google Analytics (ga.ts: live site only,
+ * region- and choice-gated) and our own anonymous counts (below). It must never
+ * throw or block the action being measured.
  *
  * Event vocabulary (keep this list the source of truth; params are flat strings):
  *  - login_start                        — Google sign-in begun
@@ -26,8 +24,8 @@
  */
 
 import { MAX_METRICS_PER_POST, metricName } from './metrics-events';
+import { gaEvent } from './ga';
 
-type Gtag = (command: 'event', eventName: string, params?: Record<string, string | number | boolean>) => void;
 type Params = Record<string, string | number | boolean>;
 
 // ─── First-party counts ──────────────────────────────────────────────────────
@@ -86,8 +84,7 @@ function count(event: string, params?: Params): void {
 
 export function track(event: string, params?: Params): void {
   try {
-    const g = (window as unknown as { gtag?: Gtag }).gtag;
-    if (typeof g === 'function') g('event', event, params);
+    gaEvent(event, params);
     count(event, params);
   } catch {
     // analytics must never break the app

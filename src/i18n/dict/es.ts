@@ -293,6 +293,7 @@ export const es: Record<TKey, string> = {
   'homewidget.unlinked': 'Desvinculado y eliminada la imagen del widget del servidor.',
   'homewidget.privacy': 'La imagen del widget se guarda en el servidor bajo una dirección que solo conoce este teléfono y se borra al desvincular.',
   'marketing.menu': 'Lista de correo',
+  'analytics.gaMenu': 'Enviar estadísticas de uso (Google Analytics)',
   'marketing.title': '¿Quieres recibir novedades por correo?',
   'marketing.body': 'Recibe por correo novedades sobre funciones y eventos de 24Houring. Es opcional y todas las funciones siguen igual sin suscribirte.',
   'marketing.signInBody': 'La lista de correo se envía al correo de la cuenta de Google con la que inicies sesión, así que inicia sesión primero. Esta ventana se volverá a abrir después.',

@@ -293,6 +293,7 @@ export const fr: Record<TKey, string> = {
   'homewidget.unlinked': 'Dissocié et image du widget supprimée du serveur.',
   'homewidget.privacy': 'L’image du widget est stockée sur le serveur à une adresse connue de ce téléphone seulement, et supprimée dès la dissociation.',
   'marketing.menu': 'Liste de diffusion',
+  'analytics.gaMenu': 'Envoyer des statistiques d’usage (Google Analytics)',
   'marketing.title': 'Recevoir les actualités par e-mail ?',
   'marketing.body': 'Recevez par e-mail les nouveautés et événements de 24Houring. C’est facultatif, et toutes les fonctions restent identiques sans abonnement.',
   'marketing.signInBody': 'La liste de diffusion est envoyée à l’adresse du compte Google avec lequel vous vous connectez : connectez-vous d’abord. Cette fenêtre se rouvrira ensuite.',

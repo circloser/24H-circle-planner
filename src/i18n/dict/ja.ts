@@ -293,6 +293,7 @@ export const ja: Record<TKey, string> = {
   'homewidget.unlinked': '接続を解除し、サーバー上のウィジェット画像を削除しました。',
   'homewidget.privacy': 'ウィジェット画像はこの端末だけが知るアドレスでサーバーに保存され、解除するとすぐ削除されます。',
   'marketing.menu': 'メーリングリスト',
+  'analytics.gaMenu': '利用統計を送信 (Google Analytics)',
   'marketing.title': '新着情報をメールで受け取りますか？',
   'marketing.body': '24Houringの新機能やイベントのお知らせをメールで受け取れます。任意のため、登録しなくてもすべての機能はそのまま使えます。',
   'marketing.signInBody': 'メーリングリストはログインしたGoogleアカウントのメールアドレスに送ります。先にログインしてください。ログイン後にこの画面がもう一度開きます。',

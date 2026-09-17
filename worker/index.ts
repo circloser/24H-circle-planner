@@ -13,6 +13,7 @@ import { handleShareCreate, handleShareGet, handleShareOg, handleShareView } fro
 import { handleWidgetPut, handleWidgetPng, handleWidgetDelete } from './widget';
 import { handleMarketingRoute } from './marketing';
 import { handleMetrics, metricsSummary, type MetricRow } from './metrics';
+import { handleGeo } from './geo';
 import { handleIcalFetch } from './ical';
 
 export interface Env {
@@ -1214,6 +1215,7 @@ export default {
       if (p === '/api/referral/claim' && m === 'POST') return handleReferralClaim(request, env);
       if (p === '/api/share' && m === 'POST') return handleShareCreate(request, env);
       if (p === '/api/metrics' && m === 'POST') return handleMetrics(request, env);
+      if (p === '/api/geo' && m === 'GET') return handleGeo(request);
       {
         const share = /^\/api\/share\/([A-Za-z0-9]{4,24})(\/og\.png)?$/.exec(p);
         if (share && m === 'GET') {

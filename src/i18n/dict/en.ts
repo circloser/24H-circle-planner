@@ -296,6 +296,7 @@ export const en: Record<TKey, string> = {
   'homewidget.unlinked': 'Unlinked and removed the widget image from the server.',
   'homewidget.privacy': 'The widget image is stored on the server under an address only this phone knows, and is deleted the moment you unlink.',
   'marketing.menu': 'Mailing list',
+  'analytics.gaMenu': 'Send usage statistics (Google Analytics)',
   'marketing.title': 'Get news by email?',
   'marketing.body': 'Get news about new 24Houring features and events by email. It is optional, and every feature works the same without it.',
   'marketing.signInBody': 'The mailing list goes to the email of the Google account you sign in with, so please sign in first. This window reopens after you sign in.',

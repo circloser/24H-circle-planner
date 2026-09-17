@@ -21,6 +21,7 @@ import { RecordsProvider } from './hooks/useRecords.tsx'
 import { SpikeRunner } from './components/SpikeRunner.tsx'
 import { SharedView } from './components/SharedView/SharedView.tsx'
 import { WidgetPage } from './components/WidgetPage/WidgetPage.tsx'
+import { startAnalytics } from './lib/ga'
 
 // Single-file build: inject base64 fonts at runtime so they work on file://.
 // import.meta.env.VITE_SINGLEFILE is statically 'false' in the normal web build,
@@ -45,6 +46,12 @@ const isShareView = /^\/s(\/[A-Za-z0-9]*)?$/.test(window.location.pathname);
 // Compact desktop-widget window (route: /widget) — SPA-fallback served.
 const isWidget = window.location.pathname === '/widget' || window.location.pathname === '/widget/';
 const root = createRoot(document.getElementById('root')!);
+
+// Google Analytics: decided after the first paint (see lib/ga.ts for where it
+// may run). The desktop widget window is left out — it is not a visit.
+if (!isSpike && !isWidget) {
+  setTimeout(() => { void startAnalytics(); }, 0);
+}
 
 // PWA: register the service worker for offline + installability. Production only
 // (https) — skips the Vite dev server (http://localhost) and the file:// build.

@@ -1,8 +1,10 @@
 import { ChevronDown, Settings as SettingsIcon, FolderOpen, Sparkles, Download, Share2, Smartphone, Languages, Type, Smile, Ruler, Image as ImageIcon, Palette, RotateCcw, Link2, BarChart3, BookOpen, List, Save, BookmarkPlus, QrCode as QrCodeIcon, LogIn, LogOut, UserRound, RefreshCw, Cloud, CloudOff, Target, Lock, CalendarClock, CreditCard, Tags, Scale, CalendarRange, Sun, Moon, GraduationCap, Wand2, BellRing, UserPlus, LayoutGrid, LayoutPanelLeft, PictureInPicture2, Mail } from 'lucide-react';
+import { useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -18,6 +20,15 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSyncStatus } from '@/hooks/useSync';
 import { openBillingPortal } from '@/lib/sync/billing';
 import { canPromoteApp, PLAY_STORE_URL } from '@/lib/twa';
+import { gaActive, gaChoice, onGaChange, setGaChoice } from '@/lib/ga';
+
+/** Whether usage statistics go to Google Analytics on this device: the
+ *  visitor's own choice, or what the page decided for their region. */
+const gaSnapshot = () => {
+  const choice = gaChoice();
+  return choice ? choice === 'granted' : gaActive();
+};
+const useGaOn = () => useSyncExternalStore(onGaChange, gaSnapshot, () => false);
 import type { SettingsSection } from '@/components/Settings/SettingsDialog';
 
 export interface AppHeaderProps {
@@ -98,6 +109,7 @@ export function AppHeader({
   onOpenPip,
   onOpenWidgetConnect,
 }: AppHeaderProps) {
+  const gaOn = useGaOn();
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
   const { user, plan, billingEnabled, admin, login, logout, loading: authLoading } = useAuth();
@@ -407,6 +419,14 @@ export function AppHeader({
                 <Mail className="h-4 w-4" />
                 {t('marketing.menu')}
               </DropdownMenuItem>
+              <DropdownMenuCheckboxItem
+                checked={gaOn}
+                onCheckedChange={(v) => setGaChoice(v === true)}
+                onSelect={(e) => e.preventDefault()}
+                data-ga-toggle
+              >
+                {t('analytics.gaMenu')}
+              </DropdownMenuCheckboxItem>
               <DropdownMenuItem onClick={onOpenReferral} className="gap-2">
                 <UserPlus className="h-4 w-4" />
                 {t('referral.menu')}

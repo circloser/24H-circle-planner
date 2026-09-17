@@ -291,6 +291,7 @@ export const zh: Record<TKey, string> = {
   'homewidget.unlinked': '已断开，并从服务器删除了小组件图片。',
   'homewidget.privacy': '小组件图片以只有这部手机知道的地址保存在服务器上，断开后立即删除。',
   'marketing.menu': '邮件订阅',
+  'analytics.gaMenu': '发送使用统计 (Google Analytics)',
   'marketing.title': '通过邮件接收最新消息？',
   'marketing.body': '通过邮件接收 24Houring 新功能和活动消息。这是可选的，不订阅也能照常使用所有功能。',
   'marketing.signInBody': '邮件订阅会发送到你登录的 Google 账号邮箱，请先登录。登录后此窗口会重新打开。',

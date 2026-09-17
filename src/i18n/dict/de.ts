@@ -296,6 +296,7 @@ export const de: Record<TKey, string> = {
   'homewidget.unlinked': 'Getrennt und das Widget-Bild vom Server entfernt.',
   'homewidget.privacy': 'Das Widget-Bild liegt auf dem Server unter einer Adresse, die nur dieses Telefon kennt, und wird beim Trennen sofort gelöscht.',
   'marketing.menu': 'Mailingliste',
+  'analytics.gaMenu': 'Nutzungsstatistik senden (Google Analytics)',
   'marketing.title': 'Neuigkeiten per E-Mail erhalten?',
   'marketing.body': 'Erhalte Neuigkeiten zu neuen Funktionen und Aktionen von 24Houring per E-Mail. Das ist freiwillig, und alle Funktionen bleiben ohne Anmeldung gleich.',
   'marketing.signInBody': 'Die Mailingliste geht an die E-Mail-Adresse deines Google-Kontos. Bitte melde dich zuerst an. Dieses Fenster öffnet sich danach erneut.',
