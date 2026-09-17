@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePersistedState } from './usePersistedState';
-import { calendarName, icalColor, icalDays, parseIcs, type IcalDayEvent } from '@/lib/ical';
+import { calendarName, icalColor, icalDays, parseIcs, trimIcs, type IcalDayEvent } from '@/lib/ical';
 import { addDays, todayKey } from '@/lib/calendar-grid';
 
 /**
@@ -168,8 +168,10 @@ export function useIcalFeeds(): IcalFeeds {
     todo.forEach((id) => inFlight.add(id));
     let live = true;
 
-    // Only six months either side of today are asked for; the server cuts the
-    // rest, so the answer is small enough to keep here and reopen instantly.
+    // The server hands the feed over untouched (cutting it there would cost
+    // more CPU than the free plan allows). It is cut HERE to six months either
+    // side of today before it is kept, so what is stored stays small and the
+    // calendar reopens instantly.
     const today = todayKey();
     const window = { from: addDays(today, -WINDOW_DAYS), to: addDays(today, WINDOW_DAYS) };
 
@@ -183,7 +185,7 @@ export function useIcalFeeds(): IcalFeeds {
           method: 'POST',
           credentials: 'include',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ url: feed.url, ...window }),
+          body: JSON.stringify({ url: feed.url }),
         });
         if (!res.ok) {
           const body = (await res.json().catch(() => ({}))) as { error?: string };
@@ -199,7 +201,7 @@ export function useIcalFeeds(): IcalFeeds {
           }
           return;
         }
-        const ics = await res.text();
+        const ics = trimIcs(await res.text(), window.from, window.to);
         if (!live) return;
         setErrors(without(id));
         setLastError(null);

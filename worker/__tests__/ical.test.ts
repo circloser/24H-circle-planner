@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { feedUrl, feedWindow, handleIcalFetch } from '../ical';
+import { feedUrl, handleIcalFetch } from '../ical';
 import type { Env } from '../index';
 
 const env = {} as Env;
@@ -39,27 +39,6 @@ describe('which addresses are accepted', () => {
   });
 });
 
-describe('the window a feed is cut to', () => {
-  const now = Date.UTC(2026, 8, 17);
-
-  it('uses the one asked for when it is sane', () => {
-    expect(feedWindow('2026-03-17', '2027-03-17', now)).toEqual({ from: '2026-03-17', to: '2027-03-17' });
-  });
-
-  it('falls back to six months either side of today otherwise', () => {
-    // 183 days either side of 2026-09-17.
-    const fallback = { from: '2026-03-18', to: '2027-03-19' };
-    for (const [from, to] of [
-      [undefined, undefined],
-      ['nonsense', '2027-01-01'],
-      ['2027-01-01', '2026-01-01'],   // backwards
-      ['2000-01-01', '2030-01-01'],   // far too wide
-    ]) {
-      expect(feedWindow(from, to, now)).toEqual(fallback);
-    }
-  });
-});
-
 describe('the endpoint', () => {
   it('needs a signed-in Pro account', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
@@ -93,38 +72,48 @@ describe('the endpoint', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it('passes the calendar through when it is one', async () => {
-    const body = 'BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:a\r\nEND:VEVENT\r\nEND:VCALENDAR';
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(body, { status: 200 }));
+  it('hands the feed over exactly as Google sent it', async () => {
+    // Nothing is parsed or cut here — that would cost more CPU than the free
+    // plan allows on a long-lived calendar. The app trims it instead.
+    const old = ['BEGIN:VEVENT', 'UID:old', 'DTSTART;VALUE=DATE:20190105', 'END:VEVENT'];
+    const now = ['BEGIN:VEVENT', 'UID:now', 'DTSTART;VALUE=DATE:20260920', 'END:VEVENT'];
+    const whole = ['BEGIN:VCALENDAR', 'X-WR-CALNAME:mine', ...old, ...now, 'END:VCALENDAR'].join(String.fromCharCode(13, 10));
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(whole, { status: 200, headers: { 'content-type': 'text/calendar; charset=UTF-8' } }),
+    );
     const res = await handleIcalFetch(get(FEED), env, user, true);
     expect(res.status).toBe(200);
-    expect(res.headers.get('content-type')).toContain('text/calendar');
-    // One person's calendar: never cached by anything shared.
-    expect(res.headers.get('cache-control')).toContain('private');
-    expect(await res.text()).toContain('BEGIN:VCALENDAR');
+    expect(await res.text()).toBe(whole);
   });
 
-  it('sends back only the window, not the whole history', async () => {
-    const old = ['BEGIN:VEVENT', 'UID:old', 'SUMMARY:old', 'DTSTART;VALUE=DATE:20190105', 'END:VEVENT'];
-    const now = ['BEGIN:VEVENT', 'UID:now', 'SUMMARY:now', 'DTSTART;VALUE=DATE:20260920', 'END:VEVENT'];
-    const whole = ['BEGIN:VCALENDAR', 'X-WR-CALNAME:mine', ...old, ...now, 'END:VCALENDAR'].join(String.fromCharCode(13, 10));
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(whole, { status: 200 }));
-    const req = new Request('https://24houring.com/api/ical', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ url: FEED, from: '2026-09-01', to: '2026-09-30' }),
-    });
-    const text = await (await handleIcalFetch(req, env, user, true)).text();
-    expect(text).toContain('UID:now');
-    expect(text).not.toContain('UID:old');
-    expect(text).toContain('X-WR-CALNAME:mine');
+  it('labels the answer so the edge compresses it, and keeps it private', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('BEGIN:VCALENDAR', { status: 200, headers: { 'content-type': 'text/calendar' } }),
+    );
+    const res = await handleIcalFetch(get(FEED), env, user, true);
+    expect(res.headers.get('content-type')).toContain('text/plain');
+    // One person's calendar: never cached by anything shared.
+    expect(res.headers.get('cache-control')).toContain('private');
+  });
+
+  it('refuses a feed that declares itself too large', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('BEGIN:VCALENDAR', {
+        status: 200,
+        headers: { 'content-type': 'text/calendar', 'content-length': String(9_000_000) },
+      }),
+    );
+    expect((await handleIcalFetch(get(FEED), env, user, true)).status).toBe(413);
   });
 
   it('tells a reset address apart from a broken feed', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('no', { status: 404 }));
     expect((await handleIcalFetch(get(FEED), env, user, true)).status).toBe(404);
 
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('<html>hi</html>', { status: 200 }));
+    // A page that is not a calendar is told apart by its type, without reading it.
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('<html>hi</html>', { status: 200, headers: { 'content-type': 'text/html' } }),
+    );
     expect((await handleIcalFetch(get(FEED), env, user, true)).status).toBe(422);
 
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('offline'));

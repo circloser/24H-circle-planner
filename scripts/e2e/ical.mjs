@@ -38,6 +38,11 @@ export async function run() {
     'UID:trip@example.com',
     'SUMMARY:구글 출장',
     'END:VEVENT',
+    'BEGIN:VEVENT',
+    'DTSTART;VALUE=DATE:20190105',
+    'UID:ancient@example.com',
+    'SUMMARY:오래전 일정',
+    'END:VEVENT',
     'END:VCALENDAR',
   ].join('\r\n');
   // A second calendar, shown beside the first in its own tone.
@@ -142,6 +147,11 @@ export async function run() {
     await page.keyboard.press('Escape');
     await wait(500);
     pass('the feed is fetched through our worker', asked.includes(FEED_URL));
+    // The feed arrives whole; the device keeps only the months around today.
+    const kept = await page.evaluate(() => localStorage.getItem('24h-circle-planner.ical-cache') ?? '');
+    pass('the device keeps only the months around today, not years of history',
+      kept.includes('meeting@example.com') && !kept.includes('ancient@example.com'),
+      JSON.stringify({ hasCurrent: kept.includes('meeting@example.com'), hasAncient: kept.includes('ancient@example.com') }));
     const mine = dayAfter(0);
     pass('a timed event shows with its time', (await chips(mine)).some((x) => x.includes('14:00') && x.includes('구글 주간 회의')),
       JSON.stringify(await chips(mine)));
@@ -218,12 +228,7 @@ export async function run() {
     pass('…and the other calendar still shows', (await chips(dayAfter(4))).some((x) => x.includes('팀 워크숍')));
 
     pass('the address never appears in a request URL', urlLeaks.length === 0, JSON.stringify(urlLeaks.slice(0, 2)));
-    // Only about six months either side of today are asked for.
-    const spans = windows.filter((w) => w.from && w.to).map((w) => Math.round((Date.parse(w.to) - Date.parse(w.from)) / 86400000));
-    const t0 = keyOf(new Date());
-    pass('each request asks for a window around today, not the whole history',
-      spans.length === windows.length && spans.every((d) => d >= 360 && d <= 370)
-        && windows.every((w) => w.from < t0 && w.to > t0),
+    pass('the server is asked for the address alone', windows.every((w) => w.from === undefined && w.to === undefined),
       JSON.stringify(windows.slice(0, 1)));
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
   } finally {
