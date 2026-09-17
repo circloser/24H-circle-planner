@@ -62,6 +62,10 @@ function cellLines(i: number, lit: boolean): string {
   return parts.join(', ');
 }
 
+/** A day from the neighbouring month sits on a darker ground (index.css
+ *  sets how much darker per theme), so this month's days stand out. */
+const OUTSIDE_BG = 'var(--cal-outside)';
+
 /** The colour theme the calendar wears (a COLOR_THEMES id, or null). */
 const LookContext = createContext<string | null>(null);
 
@@ -270,18 +274,21 @@ function Month({ at, imported, drag, onOpen, onDragStart: startDrag, onDragOver,
                 onPointerDown={(e) => { if (e.button === 0) onDragStart({ kind: 'create', from: cell.key, over: cell.key }); }}
                 // Keyboard activation only: a mouse click is handled by the drag.
                 onClick={(e) => { if (e.detail === 0) onOpen(cell.key, 1); }}
+                data-outside={cell.inMonth ? undefined : ''}
                 style={{
+                  '--cell-bg': cell.inMonth ? 'hsl(var(--surface))' : OUTSIDE_BG,
                   boxShadow: cellLines(i, inPaint(cell.key) || cell.key === dropOn),
-                  // A highlighter tint is mixed into the cell, so the plans on
-                  // top keep their contrast in either theme.
-                  ...(deco?.t ? { backgroundColor: `color-mix(in srgb, ${deco.t} 55%, hsl(var(--surface)))` } : {}),
-                }}
-                className={`flex h-full w-full min-h-0 select-none flex-col gap-px overflow-hidden bg-surface p-0.5 text-left transition-colors hover:bg-accent/10 ${
-                  cell.inMonth ? '' : 'opacity-70'
-                } ${stamping ? 'cursor-copy' : ''}`}
+                  // A highlighter tint is mixed into the cell's own ground, so
+                  // the plans on top keep their contrast in either theme.
+                  ...(deco?.t ? { backgroundColor: `color-mix(in srgb, ${deco.t} 55%, var(--cell-bg))` } : {}),
+                } as React.CSSProperties}
+                className={`flex h-full w-full min-h-0 select-none flex-col gap-px overflow-hidden bg-[var(--cell-bg)] p-0.5 text-left transition-colors hover:bg-accent/10 ${
+                  stamping ? 'cursor-copy' : ''
+                }`}
               >
                 {number}
-                <span className="flex min-h-0 flex-col gap-px">
+                {/* The neighbouring month's plans stay readable but step back. */}
+                <span className={`flex min-h-0 flex-col gap-px ${cell.inMonth ? '' : 'opacity-75'}`}>
                   {shown.map((ev, lane) => (!ev ? (
                     // An empty lane still holds its line, so the bars below it
                     // stay level with the same bars in the next day.

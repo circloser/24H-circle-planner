@@ -116,6 +116,36 @@ export async function run() {
     }, today);
     pass('the day number is centred at the top', place.dx <= 4 && place.dy <= 14, JSON.stringify(place));
 
+    // Days from the neighbouring months sit on a darker ground, in both themes.
+    const grounds = async () => page.evaluate(() => {
+      const month = document.querySelectorAll('[data-calendar-month]')[0];
+      const inside = month.querySelector('[data-day]:not([data-outside])');
+      const outside = month.querySelector('[data-day][data-outside]');
+      if (!inside || !outside) return null;
+      const c = document.createElement('canvas');
+      c.width = c.height = 1;
+      const g = c.getContext('2d');
+      const light = (el) => {
+        g.clearRect(0, 0, 1, 1);
+        g.fillStyle = getComputedStyle(el).backgroundColor;
+        g.fillRect(0, 0, 1, 1);
+        const [r, gr, b] = g.getImageData(0, 0, 1, 1).data;
+        return Math.round(0.2126 * r + 0.7152 * gr + 0.0722 * b);
+      };
+      return { inside: light(inside), outside: light(outside) };
+    });
+    // Move the pointer off the grid so no cell is showing its hover colour.
+    await page.mouse.move(2, 2);
+    await wait(250);
+    const lit = await grounds();
+    pass('neighbouring-month days are darker (light theme)', !!lit && lit.outside < lit.inside - 12, JSON.stringify(lit));
+    await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+    await wait(300);
+    const dim = await grounds();
+    pass('…and clearly darker in the dark theme too', !!dim && dim.outside < dim.inside - 10, JSON.stringify(dim));
+    await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
+    await wait(300);
+
     // 4. All-day vs timed.
     await addPlan(today, '워크숍');
     await addPlan(today, '팀 회의', { time: '09:30' });
