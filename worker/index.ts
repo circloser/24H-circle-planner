@@ -271,7 +271,7 @@ async function handleMe(request: Request, env: Env, ctx?: Waiter): Promise<Respo
   // A session that is being used is a session worth keeping. The cookie is only
   // ever written at login otherwise, and a phone browser routinely shortens the
   // life of a cookie set right after a cross-site redirect (which is exactly
-  // what returning from Google is) - so a quiet phone can find itself signed
+  // what returning from Google is) — so a quiet phone can find itself signed
   // out, and a signed-out device stops syncing. Re-issuing it on use keeps
   // anyone who opens the app signed in.
   const fresh = cookie(SID_COOKIE, sid, Math.floor(SESSION_TTL_MS / 1000));
@@ -495,22 +495,31 @@ interface PolarSubscription {
 /**
  * No auto-renewal model: a free trial must EXPIRE (not convert to a charge) unless
  * the customer actively continues. Setting `cancel_at_period_end` on a trialing
- * subscription schedules it to end at the trial's end with no charge — Polar still
- * emails a heads-up ~3 days before, and the customer can continue (uncancel) or
- * re-subscribe from the portal. Best-effort: needs the `subscriptions:write` scope
- * on the token; on failure the subscription simply keeps Polar's default behaviour.
+ * subscription schedules it to end at the trial's end with no charge. Polar's
+ * default is automatic conversion, so a failure here must make the webhook fail;
+ * returning 2xx would acknowledge the event and silently leave a future charge.
  */
-async function scheduleTrialEnd(env: Env, sub: PolarSubscription): Promise<void> {
-  if (!env.POLAR_ACCESS_TOKEN || !sub.id) return;
+export async function scheduleTrialEnd(env: Env, sub: PolarSubscription): Promise<boolean> {
+  if (!env.POLAR_ACCESS_TOKEN || !sub.id) return false;
   try {
     const res = await fetch(`${polarBase(env)}/subscriptions/${sub.id}`, {
       method: 'PATCH',
       headers: { authorization: `Bearer ${env.POLAR_ACCESS_TOKEN}`, 'content-type': 'application/json' },
       body: JSON.stringify({ cancel_at_period_end: true }),
     });
-    if (!res.ok) console.error('[polar] scheduleTrialEnd failed', res.status, sub.id);
+    if (!res.ok) {
+      console.error(JSON.stringify({ message: 'polar trial cancellation scheduling failed', status: res.status, subscriptionId: sub.id }));
+      return false;
+    }
+    const updated = (await res.json()) as { cancel_at_period_end?: unknown };
+    if (updated.cancel_at_period_end !== true) {
+      console.error(JSON.stringify({ message: 'polar trial cancellation was not confirmed', subscriptionId: sub.id }));
+      return false;
+    }
+    return true;
   } catch (e) {
-    console.error('[polar] scheduleTrialEnd error', e instanceof Error ? e.message : e);
+    console.error(JSON.stringify({ message: 'polar trial cancellation scheduling errored', error: e instanceof Error ? e.message : String(e), subscriptionId: sub.id }));
+    return false;
   }
 }
 
@@ -561,7 +570,11 @@ async function handleWebhook(request: Request, env: Env, ctx?: Waiter): Promise<
     // No auto-renewal: schedule trialing subs to end at trial's end (no charge)
     // unless already scheduled. Idempotent — once cancel_at_period_end is set, skip.
     if (event.data.status === 'trialing' && !event.data.cancel_at_period_end) {
-      await scheduleTrialEnd(env, event.data);
+      if (!(await scheduleTrialEnd(env, event.data))) {
+        // Non-2xx tells Polar to retry the webhook. Do not acknowledge a trial
+        // whose automatic cancellation has not been confirmed by Polar.
+        return json({ error: 'trial_cancellation_not_scheduled' }, 503);
+      }
     }
   }
   return json({ received: true });
