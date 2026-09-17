@@ -12,6 +12,7 @@ import { useTranslation } from '@/hooks/usePreferences';
 import { useAuth } from '@/hooks/useAuth';
 import { useDecor } from '@/hooks/useDecor';
 import { requestUpgrade } from '@/lib/pro';
+import { track } from '@/lib/track';
 import { STICKER_GROUPS, TINTS, stickerGlyph, type StickerGroupId } from '@/lib/decor';
 import {
   CALENDAR_PAPERS, MAX_ITEMS, SCALE_MAX, SCALE_MIN, TAPE_COLORS, TAPE_DEFAULT, TAPE_MAX, TAPE_MIN, TAPE_PATTERNS,
@@ -153,7 +154,7 @@ export function DecorMenu({ theme, onTheme, paper, onPaper, tool, onTool }: {
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent>
             <DropdownMenuRadioGroup value={paper}
-              onValueChange={(v) => (pro ? onPaper(v as CalendarPaper) : requestUpgrade())}>
+              onValueChange={(v) => (pro ? onPaper(v as CalendarPaper) : requestUpgrade('decor'))}>
               {CALENDAR_PAPERS.map((p) => (
                 <DropdownMenuRadioItem key={p} value={p} data-paper-option={p}>{t(PAPER_LABEL[p])}</DropdownMenuRadioItem>
               ))}
@@ -163,7 +164,7 @@ export function DecorMenu({ theme, onTheme, paper, onPaper, tool, onTool }: {
         <DropdownMenuSeparator />
         {TOOLS.map((k) => (
           <DropdownMenuItem key={k} data-decor-tool={k} className="gap-2"
-            onSelect={() => (pro ? onTool(k) : requestUpgrade())}>
+            onSelect={() => (pro ? onTool(k) : requestUpgrade('decor'))}>
             {t(TOOL_LABEL[k])}
             {lock}
           </DropdownMenuItem>
@@ -472,7 +473,10 @@ export function DecorLayer({ month, active, armed, selected, onSelect, onPlaced 
     const r = e.currentTarget.getBoundingClientRect();
     const id = newItemId();
     const at = { x: clamp01((e.clientX - r.left) / r.width), y: clamp01((e.clientY - r.top) / r.height) };
-    if (addItem(month, { ...armed, id, ...at } as LayerItem)) onPlaced({ month, id });
+    if (addItem(month, { ...armed, id, ...at } as LayerItem)) {
+      track('decor_place', { kind: armed.k });
+      onPlaced({ month, id });
+    }
   };
 
   const carry = (e: React.PointerEvent, item: LayerItem) => {
@@ -552,7 +556,7 @@ export function DayDecorEditor({ day }: { day: string }) {
       <div className="flex items-center gap-2 rounded-md border border-dashed border-border px-2 py-2" data-decor-locked>
         <Lock className="h-4 w-4 shrink-0 text-primary" />
         <span className="flex-1 text-xs text-muted-foreground">{t('decor.proBody')}</span>
-        <Button size="sm" variant="outline" onClick={requestUpgrade}>{t('billing.upgrade')}</Button>
+        <Button size="sm" variant="outline" onClick={() => requestUpgrade('decor')}>{t('billing.upgrade')}</Button>
       </div>
     );
   }

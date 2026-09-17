@@ -200,7 +200,7 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
                 <button
                   key={key}
                   type="button"
-                  onClick={requestUpgrade}
+                  onClick={() => requestUpgrade('diary')}
                   className="group relative grid aspect-square place-items-center rounded-md p-0.5 opacity-45 transition-opacity hover:opacity-70"
                   title={t('diary.olderPro', { n: String(FREE_DIARY_DAYS) })}
                   aria-label={t('diary.olderPro', { n: String(FREE_DIARY_DAYS) })}

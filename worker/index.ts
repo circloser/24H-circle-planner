@@ -12,6 +12,7 @@ import { legacyRedirectTarget } from './legacy-redirects';
 import { handleShareCreate, handleShareGet, handleShareOg, handleShareView } from './shares';
 import { handleWidgetPut, handleWidgetPng, handleWidgetDelete } from './widget';
 import { handleMarketingRoute } from './marketing';
+import { handleMetrics, metricsSummary, type MetricRow } from './metrics';
 import { handleIcalFetch } from './ical';
 
 export interface Env {
@@ -781,7 +782,10 @@ async function handleAdminStats(request: Request, env: Env): Promise<Response> {
     daily.push({ day: d, signups: sMap.get(d) ?? 0, logins: lMap.get(d) ?? 0 });
   }
 
-  return json({ totals: { users, syncUsers, pushDevices, pushUsers, grants: grantsN, proSubs }, active7d, daily, generatedAt: now });
+  // Feature usage counts are best effort: the rest of the dashboard stands without them.
+  const features: MetricRow[] = await metricsSummary(env.DB, now).catch(() => []);
+
+  return json({ totals: { users, syncUsers, pushDevices, pushUsers, grants: grantsN, proSubs }, active7d, daily, features, generatedAt: now });
 }
 
 // ─── Web Push (Pro closed-tab slice alarms) ──────────────────────────────────
@@ -1209,6 +1213,7 @@ export default {
       if (p === '/api/referral/me' && m === 'GET') return handleReferralMe(request, env);
       if (p === '/api/referral/claim' && m === 'POST') return handleReferralClaim(request, env);
       if (p === '/api/share' && m === 'POST') return handleShareCreate(request, env);
+      if (p === '/api/metrics' && m === 'POST') return handleMetrics(request, env);
       {
         const share = /^\/api\/share\/([A-Za-z0-9]{4,24})(\/og\.png)?$/.exec(p);
         if (share && m === 'GET') {

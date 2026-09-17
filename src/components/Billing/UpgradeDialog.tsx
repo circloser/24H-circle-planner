@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Cloud, Archive, BarChart3, Ban, Check } from 'lucide-react';
 import {
   Dialog,
@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { startCheckout } from '@/lib/sync/billing';
 import { isPlayStoreApp } from '@/lib/twa';
 import { track } from '@/lib/track';
+import { takeUpgradeSource } from '@/lib/pro';
 import { toast } from 'sonner';
 
 interface UpgradeDialogProps {
@@ -118,9 +119,12 @@ function UpgradeDialogSession({ open, onOpenChange }: UpgradeDialogProps) {
   };
 
   // Checkout is available only after a current, valid price has been shown.
+  // Which surface opened the paywall — kept for the checkout that may follow.
+  const from = useRef('direct');
   useEffect(() => {
     if (!open) return;
-    track('upgrade_open');
+    from.current = takeUpgradeSource();
+    track('upgrade_open', { source: from.current });
   }, [open]);
 
   useEffect(() => {
@@ -159,7 +163,7 @@ function UpgradeDialogSession({ open, onOpenChange }: UpgradeDialogProps) {
       return;
     }
     setBusy(true);
-    track('checkout_start');
+    track('checkout_start', { source: from.current });
     startCheckout().catch(() => {
       setBusy(false);
       toast.error(t('billing.checkoutError'));

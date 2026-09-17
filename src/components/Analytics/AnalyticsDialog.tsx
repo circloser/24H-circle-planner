@@ -85,7 +85,7 @@ export function AnalyticsDialog({ open, onOpenChange }: AnalyticsDialogProps) {
             </span>
             <p className="text-sm font-medium text-foreground">{t('analytics.proTitle')}</p>
             <p className="max-w-xs text-xs text-muted-foreground">{t('analytics.proBody')}</p>
-            <Button onClick={requestUpgrade} className="mt-1">{t('billing.upgrade')}</Button>
+            <Button onClick={() => requestUpgrade('stats')} className="mt-1">{t('billing.upgrade')}</Button>
           </div>
         ) : (
           <>

@@ -116,7 +116,16 @@ export async function run() {
   const stored = () => page.evaluate((k) => JSON.parse(localStorage.getItem(k) ?? 'null'), LAYER_KEY);
 
   try {
-    await page.addInitScript(() => localStorage.setItem('24h-circle-planner.sync-consent', '1'));
+    await page.addInitScript(() => {
+      localStorage.setItem('24h-circle-planner.sync-consent', '1');
+      // Count usage on this local server too, so the batches can be checked.
+      localStorage.setItem('24h-metrics-debug', '1');
+    });
+    const counted = [];
+    await page.route('**/api/metrics', async (route) => {
+      try { counted.push(...(JSON.parse(route.request().postData() ?? '{}').e ?? [])); } catch { /* ignore */ }
+      await route.fulfill({ status: 204, body: '' });
+    });
     await page.route('**/api/sync*', (route) => route.fulfill(json({ version: 0, data: {}, updatedAt: 0 })));
     await page.route('**/api/me', (route) => route.fulfill(json(me)));
 
@@ -287,6 +296,46 @@ export async function run() {
     const texture = await cell(day(10)).evaluate((e) => getComputedStyle(e).backgroundImage);
     pass('…which is drawn on the days', texture.includes('linear-gradient'), texture.slice(0, 60));
 
+    // The month as an image: decorations, photo and paper drawn in, saved as a file.
+    const monthOf = await leftMonth().getAttribute('data-calendar-month');
+    await page.locator('[data-cal-image-menu]').click();
+    await wait(250);
+    const [download] = await Promise.all([
+      page.waitForEvent('download', { timeout: 15000 }),
+      page.locator(`[data-cal-image="${monthOf}"]`).click(),
+    ]);
+    pass('the month is saved as an image file', download.suggestedFilename() === `24houring-${monthOf}.png`, download.suggestedFilename());
+    const png = await download.path().then((f) => import('node:fs').then((fs) => fs.readFileSync(f)));
+    const layerNow = (await stored()).months[monthOf] ?? [];
+    const probe = await page.evaluate(async ([b64, items]) => {
+      const img = new Image();
+      img.src = `data:image/png;base64,${b64}`;
+      await img.decode();
+      const c = document.createElement('canvas');
+      c.width = img.width;
+      c.height = img.height;
+      const g = c.getContext('2d');
+      g.drawImage(img, 0, 0);
+      // The image's grid: 40px margins, a 76px title and a 38px weekday row.
+      const grid = { x: 40, y: 154, w: 1000, h: 800 };
+      const at = (x, y) => [...g.getImageData(Math.round(x), Math.round(y), 1, 1).data].slice(0, 3);
+      const photoItem = items.find((i) => i.k === 'photo');
+      const w = 9 * photoItem.s * 10;
+      const cx = grid.x + photoItem.x * grid.w;
+      const cy = grid.y + photoItem.y * grid.h;
+      // The picture sits above the frame's centre (the caption strip is below).
+      const photoPx = at(cx, cy - w * 0.07);
+      const tapeItem = items.find((i) => i.k === 'tape');
+      const tapePx = at(grid.x + tapeItem.x * grid.w, grid.y + tapeItem.y * grid.h);
+      // A carried/neighbouring cell: the first cell when the month does not start on Sunday.
+      const firstCell = at(grid.x + 20, grid.y + 150);
+      const surface = at(grid.x + 3 * 142 + 20, grid.y + 2 * 160 + 150);
+      return { width: img.width, height: img.height, photoPx, tapePx, firstCell, surface };
+    }, [png.toString('base64'), layerNow]);
+    pass('…at 1080 wide', probe.width === 1080 && probe.height > 900, `${probe.width}×${probe.height}`);
+    pass('…with the photo sticker drawn in', probe.photoPx[0] > 180 && probe.photoPx[1] < 90 && probe.photoPx[2] < 90, JSON.stringify(probe.photoPx));
+    pass('…and the masking tape', probe.tapePx.join() !== probe.surface.join(), JSON.stringify({ tape: probe.tapePx, surface: probe.surface }));
+
     // 10. Done: the calendar works as usual again.
     await page.locator('[data-decor-done]').click();
     await wait(300);
@@ -347,6 +396,17 @@ export async function run() {
     await wait(400);
     pass('…and the editor is locked again', (await count('[data-decor-locked]')) === 1);
     await closeDialog();
+
+    // Usage counts: names only, tagged, delivered in batches.
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await page.evaluate(() => Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true }));
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await wait(800);
+    const want = ['app_open', 'calendar_open', 'upgrade_open:decor', 'decor_tool:sticker', 'decor_place:sticker', 'decor_place:tape',
+      'decor_place:photo', 'paper_set:grid', 'cal_image:downloaded'];
+    const missing = want.filter((n) => !counted.includes(n));
+    pass('usage is counted by name only', counted.length > 0 && missing.length === 0 && counted.every((n) => /^[a-z_]+(:[a-z0-9_-]+)?$/.test(n)),
+      JSON.stringify({ missing, sample: [...new Set(counted)].slice(0, 14) }));
 
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
   } finally {

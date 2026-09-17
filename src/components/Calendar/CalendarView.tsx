@@ -1,5 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, GripVertical, Link, Pencil, Plus, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { CalendarDays, ChevronLeft, ChevronRight, GripVertical, ImageDown, Link, Loader2, Pencil, Plus, X } from 'lucide-react';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
@@ -15,6 +19,9 @@ import { DayDecorEditor, DecorLayer, DecorMenu, DecorTray, type Armed, type Deco
 import { useDecor } from '@/hooks/useDecor';
 import { useAuth } from '@/hooks/useAuth';
 import { monthKey, paperOf } from '@/lib/decor-layer';
+import { track, trackOnce } from '@/lib/track';
+import { loadPhoto } from '@/lib/calendar-photos';
+import { shareOrDownload } from '@/lib/share';
 import { COLOR_THEMES } from '@/data/color-themes';
 import { chipInk, shownColor, themeAccent } from '@/lib/calendar-theme';
 import { MONTH_ROWS, WEEK_DAYS, addDays, homeOf, dayGap, monthCells, monthPair, partsOf, shiftMonth, thisMonth, todayKey, type YearMonth } from '@/lib/calendar-grid';
@@ -351,7 +358,7 @@ export function CalendarView() {
   const tint = themeAccent(theme) ?? 'hsl(var(--primary))';
   const isPro = useAuth().plan === 'pro';
   const paper = paperOf(prefs.calendarPaper);
-  const { layer } = useDecor();
+  const { layer, decor } = useDecor();
   /** The open decorating tool (the tray), what waits to be placed, and the
    *  item selected on the layer. */
   const [tool, setTool] = useState<DecorTool | null>(null);
@@ -361,6 +368,9 @@ export function CalendarView() {
   const decorating = isPro && tool !== null;
   const chosenItem = chosen ? layer[chosen.month]?.find((i) => i.id === chosen.id) : undefined;
   const stopDecorating = () => { setTool(null); setArmed(null); setChosen(null); };
+  useEffect(() => { trackOnce('calendar_open'); }, []);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [imaging, setImaging] = useState(false);
   const { events, addEvent, updateEvent, moveEvent, skipOccurrence, endSeriesBefore, removeEvent, orderDay } = useEvents();
   const [at, setAt] = useState<YearMonth>(() => thisMonth());
   const [picked, setPicked] = useState<{ start: string; days: number } | null>(null);
@@ -475,6 +485,7 @@ export function CalendarView() {
     };
     if (!editing) {
       addEvent(picked.start, { ...values, days: picked.days });
+      track('cal_plan_add', { kind: picked.days > 1 ? 'span' : draft.allDay ? 'allday' : 'timed' });
       setDraft((d) => ({ ...d, text: '' }));
       return;
     }
@@ -522,6 +533,78 @@ export function CalendarView() {
     window.addEventListener('pointercancel', done, { once: true });
   };
 
+  const monthLabel = (m: YearMonth) => new Date(m.y, m.m, 1).toLocaleDateString(lang, { year: 'numeric', month: 'long' });
+
+  /** Save or share one month as an image, decorations and all. */
+  const saveImage = async (m: YearMonth) => {
+    const root = rootRef.current;
+    if (!root || imaging) return;
+    setImaging(true);
+    try {
+      const { renderCalendarImage, resolveColors } = await import('@/lib/export/calendarImage');
+      const cells = monthCells(m.y, m.m);
+      const fromImport = feeds.days(cells[0].key, cells[cells.length - 1].key);
+      const byDay: Record<string, DayEvent[]> = {};
+      const tints: Record<string, string> = {};
+      for (const cell of cells) {
+        const mine = dayEvents(events, cell.key);
+        const all = fromImport[cell.key] ? sortDayEvents([...mine, ...fromImport[cell.key]]) : mine;
+        if (all.length) byDay[cell.key] = all;
+        const tone = decor[cell.key]?.t;
+        if (tone) tints[cell.key] = tone;
+      }
+      const items = layer[monthKey(m.y, m.m)] ?? [];
+      const photos: Record<string, HTMLImageElement | null> = {};
+      await Promise.all(items.filter((i) => i.ph).map(async (i) => {
+        const url = await loadPhoto(i.ph!);
+        photos[i.ph!] = url ? await new Promise<HTMLImageElement | null>((done) => {
+          const img = new Image();
+          img.onload = () => done(img);
+          img.onerror = () => done(null);
+          img.src = url;
+        }) : null;
+      }));
+      const colors = resolveColors(root, {
+        background: 'hsl(var(--background))',
+        surface: 'hsl(var(--surface))',
+        outside: 'var(--cal-outside)',
+        border: 'hsl(var(--border))',
+        text: 'hsl(var(--text-primary))',
+        muted: 'hsl(var(--text-muted))',
+        accent: tint,
+        paperInk: 'var(--paper-ink)',
+        paperDot: 'var(--paper-dot)',
+        paperKraft: 'var(--paper-kraft)',
+        paperFleck: 'var(--paper-fleck)',
+      });
+      const label = monthLabel(m);
+      const blob = await renderCalendarImage({
+        title: label,
+        weekdays: Array.from({ length: 7 }, (_, i) => new Date(2024, 0, 7 + i).toLocaleDateString(lang, { weekday: 'short' })),
+        cells,
+        carried: new Set(cells.filter((c, i) => !c.inMonth && i < 7 && homeOf(c.key).m === m.m).map((c) => c.key)),
+        byDay,
+        tints,
+        items,
+        photos,
+        paper,
+        theme,
+        today: todayKey(),
+        colors,
+        moreLabel: (n) => t('calendar.more', { n: String(n) }),
+        footer: '24houring.com',
+      });
+      const outcome = await shareOrDownload(blob, `24houring-${monthKey(m.y, m.m)}.png`, t('calendar.imageShareText', { month: label }));
+      track('cal_image', { outcome });
+      if (outcome === 'downloaded') toast.success(t('calendar.imageSaved'));
+    } catch (err) {
+      if ((err as { name?: string })?.name === 'AbortError') track('cal_image', { outcome: 'cancelled' });
+      else toast.error(t('calendar.imageError'));
+    } finally {
+      setImaging(false);
+    }
+  };
+
   const navBtn = 'grid h-8 w-8 place-items-center rounded-md border border-border transition-colors hover:bg-accent/10';
   const chip = (on: boolean) =>
     `rounded-md border px-2 py-1 text-xs transition-colors ${on ? 'border-primary bg-primary/10 text-foreground' : 'border-border text-muted-foreground hover:bg-accent/10'}`;
@@ -529,7 +612,7 @@ export function CalendarView() {
 
   return (
     <LookContext.Provider value={theme}>
-    <div className="flex min-h-0 w-full flex-1 flex-col gap-1" data-calendar-view data-cal-look={theme ?? ''}
+    <div ref={rootRef} className="flex min-h-0 w-full flex-1 flex-col gap-1" data-calendar-view data-cal-look={theme ?? ''}
       data-paper={paper === 'none' ? undefined : paper}
       style={{ '--cal-tint': tint } as React.CSSProperties}>
       <div className="flex flex-wrap items-center justify-center gap-2">
@@ -555,13 +638,29 @@ export function CalendarView() {
           {t('ical.button')}
           {feeds.calendars.length > 1 && <span className="tabular-nums">{feeds.calendars.length}</span>}
         </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button type="button" data-cal-image-menu disabled={imaging} title={t('calendar.image')}
+              className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent/10 disabled:opacity-60">
+              {imaging ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImageDown className="h-3.5 w-3.5" />}
+              {t('calendar.image')}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {[left, right].map((m) => (
+              <DropdownMenuItem key={`${m.y}-${m.m}`} data-cal-image={monthKey(m.y, m.m)} onSelect={() => void saveImage(m)}>
+                {t('calendar.imageOf', { month: monthLabel(m) })}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
         <DecorMenu
           theme={theme}
           onTheme={(id) => setPreference('colorTheme', id)}
           paper={paper}
-          onPaper={(v) => setPreference('calendarPaper', v)}
+          onPaper={(v) => { setPreference('calendarPaper', v); track('paper_set', { paper: v }); }}
           tool={decorating ? tool : null}
-          onTool={(k) => { setTool(k); setArmed(null); }}
+          onTool={(k) => { setTool(k); setArmed(null); track('decor_tool', { tool: k }); }}
         />
       </div>
 

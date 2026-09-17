@@ -18,7 +18,7 @@ import { useChimes } from '@/hooks/useChimes';
 import { useActivationTracking } from '@/hooks/useActivationTracking';
 import { usePushAlarms } from '@/hooks/usePushAlarms';
 import { useDailyDoneReset } from '@/hooks/useDailyDoneReset';
-import { track } from '@/lib/track';
+import { track, trackOnce } from '@/lib/track';
 import { CircleTimeline } from '@/components/CircleTimeline/CircleTimeline';
 import { ScheduleTable } from '@/components/ScheduleTable/ScheduleTable';
 import { DeviceTransferDialog } from '@/components/DeviceTransferDialog/DeviceTransferDialog';
@@ -147,6 +147,8 @@ function App() {
   // Design magician — a guided decorate-your-app flow. First-timers get it once
   // (5s after the clean first screen); anyone can relaunch it from Design.
   const [magicianOpen, setMagicianOpen] = useState(false);
+  // One count per page load: the denominator for every other usage count.
+  useEffect(() => { trackOnce('app_open'); }, []);
   useEffect(() => {
     if (!firstRunClean) return;
     const id = window.setTimeout(() => {

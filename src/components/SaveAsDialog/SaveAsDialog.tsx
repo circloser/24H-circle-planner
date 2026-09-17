@@ -83,7 +83,7 @@ function SaveAsDialogBody({ currentSchedule, onOpenChange, onSaved }: SaveAsDial
         toast.error(t('saveAs.capacity'));
       } else {
         toast.error(t('saveAs.capacityFree', { n: String(FREE_SLOT_LIMIT) }), {
-          action: { label: t('upgrade.cta'), onClick: requestUpgrade },
+          action: { label: t('upgrade.cta'), onClick: () => requestUpgrade('slots') },
         });
       }
       return;

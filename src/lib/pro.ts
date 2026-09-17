@@ -12,8 +12,19 @@ export const FREE_DIARY_DAYS = 30; // diary history window on the free plan (Pro
 /** Fired to ask the app shell to open the Pro upgrade dialog from anywhere. */
 export const OPEN_UPGRADE_EVENT = '24h:open-upgrade';
 
-/** Ask the app to show the Pro paywall (any gated surface calls this). */
-export function requestUpgrade(): void {
+let source = 'direct';
+/** Where the paywall was last asked for (read once, when it opens). */
+export function takeUpgradeSource(): string {
+  const s = source;
+  source = 'direct';
+  return s;
+}
+
+/** Ask the app to show the Pro paywall (any gated surface calls this).
+ *  `from` names the surface, for the usage counts (a plain lowercase word). */
+export function requestUpgrade(from: unknown = 'other'): void {
+  // Also wired straight to onClick, where `from` is the click event.
+  source = typeof from === 'string' ? from : 'other';
   try {
     window.dispatchEvent(new Event(OPEN_UPGRADE_EVENT));
   } catch {

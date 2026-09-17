@@ -29,7 +29,7 @@ export function AdSlot({ className }: AdSlotProps) {
   return (
     <button
       type="button"
-      onClick={requestUpgrade}
+      onClick={() => requestUpgrade('ads')}
       className={`flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground ${className ?? ''}`}
     >
       <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary" />

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useAuth } from '@/hooks/useAuth';
 import { requestUpgrade } from '@/lib/pro';
+import { track } from '@/lib/track';
 import { MAX_FEEDS, type IcalError, type IcalFeeds } from '@/hooks/useIcalFeed';
 import { E2EE_EVENT, isE2eeEnabled, requestPassphrase } from '@/lib/sync/e2ee';
 import type { TKey } from '@/i18n/translations';
@@ -65,6 +66,7 @@ function IcalBody({ feeds }: { feeds: IcalFeeds }) {
   const submit = () => {
     if (!draft.trim() || feeds.full) return;
     feeds.add(draft);
+    track('ical_connect');
     setDraft('');
   };
 
@@ -76,7 +78,7 @@ function IcalBody({ feeds }: { feeds: IcalFeeds }) {
         </span>
         <p className="text-sm font-medium text-foreground">{t('ical.proTitle')}</p>
         <p className="max-w-xs text-xs text-muted-foreground">{t('ical.proBody')}</p>
-        <Button onClick={requestUpgrade} className="mt-1">{t('billing.upgrade')}</Button>
+        <Button onClick={() => requestUpgrade('ical')} className="mt-1">{t('billing.upgrade')}</Button>
       </div>
     );
   }

@@ -19,7 +19,15 @@ export async function shareChartImage(
 ): Promise<ShareOutcome> {
   const { exportPng } = await import('./export/png');
   const blob = await exportPng(svg, { size: 1080, transparent: false, qrUrl: APP_URL });
-  const filename = `24h-${slug(scheduleName) || 'timetable'}.png`;
+  return shareOrDownload(blob, `24h-${slug(scheduleName) || 'timetable'}.png`, shareText);
+}
+
+/**
+ * Hand a PNG to the native share sheet where the platform can share files
+ * (mobile), otherwise download it. Throws `AbortError` when the user closes the
+ * share sheet.
+ */
+export async function shareOrDownload(blob: Blob, filename: string, shareText: string): Promise<ShareOutcome> {
   const file = new File([blob], filename, { type: 'image/png' });
 
   // Prefer native file sharing when available (mobile).

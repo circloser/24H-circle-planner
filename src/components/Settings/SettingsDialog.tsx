@@ -464,7 +464,7 @@ export function SettingsDialog({ section, onClose, onOpenMagician }: SettingsDia
                     onClick={() => {
                       void (async () => {
                         if (plan !== 'pro') {
-                          requestUpgrade();
+                          requestUpgrade('push');
                           return;
                         }
                         if (!pushSupported() || typeof Notification === 'undefined' || Notification.permission === 'denied') {

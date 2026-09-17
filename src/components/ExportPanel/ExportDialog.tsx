@@ -65,7 +65,7 @@ function WatermarkRow({
   function handleClick() {
     if (!isPro) {
       track('upgrade_open', { source: 'watermark' });
-      requestUpgrade();
+      requestUpgrade('watermark');
       return;
     }
     onChange(!noWatermark);
