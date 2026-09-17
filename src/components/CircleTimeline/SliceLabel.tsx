@@ -9,6 +9,8 @@ import { FULL_SPEC, type ViewSpec } from '@/lib/chart-view';
 import { idealTextColor, DARK_TEXT } from '@/lib/contrast';
 import { useTranslation, useShowIcons } from '@/hooks/usePreferences';
 import { useCoarsePointer } from '@/hooks/useCoarsePointer';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { estLabelWidth, labelLines } from '@/lib/label-fit';
 import { translateLabel } from '@/i18n/content';
 
 interface SliceLabelProps {
@@ -85,15 +87,13 @@ export function SliceLabel({ slice, onEdit, spec = FULL_SPEC, hitOnly = false }:
   // proportional to its minute-width. Shrink the font until the whole name fits
   // that arc — never truncate.
   const LABEL_R = 298;
-  const BASE_FONT = 22;
-  const MIN_FONT = 12;
-  const isCjk = (ch: string) =>
-    /[ᄀ-ᇿ㄰-㆏가-힣぀-ヿ一-鿿]/.test(ch);
-  const estWidth = (text: string, font: number) => {
-    let w = 0;
-    for (const ch of text) w += (isCjk(ch) ? 0.98 : 0.55) * font;
-    return w;
-  };
+  // A phone draws the whole ring about a third of its drawing size, so a font
+  // shrunk to fit a narrow wedge lands at a few real pixels — unreadable. There
+  // names start a little larger, never shrink, and take two lines instead,
+  // spilling over their wedge if they must: legible beats tidy.
+  const isPhone = useIsMobile();
+  const BASE_FONT = isPhone ? 26 : 22;
+  const MIN_FONT = isPhone ? BASE_FONT : 16;
   const arc = (2 * Math.PI * LABEL_R * widthMin) / 1440;
   // Let the text overflow its wedge's arc by 30% before shrinking — the arc is
   // a conservative budget (neighbouring labels rarely both max out, and the
@@ -103,11 +103,20 @@ export function SliceLabel({ slice, onEdit, spec = FULL_SPEC, hitOnly = false }:
   const FIT_TOLERANCE = 1.3;
   let textPx = BASE_FONT;
   if (isInside) {
-    const fullW = estWidth(localized, BASE_FONT);
+    const fullW = estLabelWidth(localized, BASE_FONT);
     const budget = arc * FIT_TOLERANCE;
     if (fullW > budget) textPx = Math.max(MIN_FONT, Math.round((BASE_FONT * budget) / fullW));
   }
   const narrow = isInside && textPx < BASE_FONT;
+  // Wider than its wedge? Take a second line rather than shrink further.
+  const lines = isInside ? labelLines(localized, textPx, arc * FIT_TOLERANCE) : [localized];
+  /** The name, on one or two lines, centred on `y`. */
+  const nameLines = (y: number) => lines.map((line, i) => (
+    <tspan key={i} x={0} y={i === 0 ? y - (lines.length > 1 ? 0.55 * textPx : 0) : undefined}
+      dy={i === 0 ? 0 : 1.1 * textPx}>
+      {line}
+    </tspan>
+  ));
   // "크기가 작아지면 아이콘 숨김": a wedge too narrow for a 38px icon to sit in
   // drops the icon so the NAME owns the whole wedge. Icons return once the wedge
   // is wide again.
@@ -161,7 +170,7 @@ export function SliceLabel({ slice, onEdit, spec = FULL_SPEC, hitOnly = false }:
               fill="transparent"
               style={labelFontSize(textPx)}
             >
-              {localized}
+              {nameLines(textY)}
             </text>
           ) : null}
         </g>
@@ -205,7 +214,7 @@ export function SliceLabel({ slice, onEdit, spec = FULL_SPEC, hitOnly = false }:
             fill={insideFill}
             style={labelFontSize(textPx)}
           >
-            {localized}
+            {nameLines(textY)}
           </text>
         ) : null}
       </g>

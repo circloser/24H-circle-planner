@@ -37,8 +37,12 @@ const MAX_CHIPS = 3;
  *  which is also what lets more plans fit in the same cell. */
 const LINE_H = 18;
 const LINE_H_PHONE = 14;
-/** Chip type: small on a phone, a touch larger from `sm` up. */
+/** Chip type in the month grid: small on a phone, a touch larger from `sm` up
+ *  (a cell only has room for so much). */
 const TYPE = 'text-[9px] leading-[13px] sm:text-[11px] sm:leading-[17px]';
+/** Chip type in a list — the day's editor and the hover peek. There is room, so
+ *  it reads at the app's normal size on every screen. */
+const TYPE_ROW = 'text-sm leading-5';
 /** A long title is simply cut on a phone (no room to spare for "…"), and
  *  elided on wider screens. */
 const CLIP = 'overflow-hidden whitespace-nowrap text-clip sm:text-ellipsis';
@@ -116,7 +120,7 @@ function Chip({ ev, showText = true, inGrid = false }: { ev: DayEvent; showText?
         data-all-day
         data-imported={imported || undefined}
         data-span={ev.length > 1 ? (mid ? 'mid' : 'start') : undefined}
-        className={`block px-1 ${CLIP} ${TYPE} ${imported ? 'text-foreground' : ''} ${ends} ${bleed}`}
+        className={`block px-1 ${CLIP} ${inGrid ? TYPE : TYPE_ROW} ${imported ? 'text-foreground' : ''} ${ends} ${bleed}`}
         // Light theme colours need dark ink; the default ones keep white.
         style={imported ? { boxShadow: outline(color, ev) } : { backgroundColor: color, color: chipInk(color) }}
       >
@@ -126,8 +130,8 @@ function Chip({ ev, showText = true, inGrid = false }: { ev: DayEvent; showText?
   }
   return (
     <span data-event data-imported={imported || undefined}
-      className={`flex items-center gap-1 overflow-hidden px-1 ${TYPE} text-foreground ${bleed}`}>
-      <span className={`h-1.5 w-1.5 shrink-0 rounded-full sm:h-2 sm:w-2 ${imported ? 'border' : ''}`}
+      className={`flex items-center gap-1 overflow-hidden px-1 ${inGrid ? TYPE : TYPE_ROW} text-foreground ${bleed}`}>
+      <span className={`shrink-0 rounded-full ${inGrid ? 'h-1.5 w-1.5 sm:h-2 sm:w-2' : 'h-2 w-2'} ${imported ? 'border' : ''}`}
         style={imported ? { borderColor: color } : { backgroundColor: color }} />
       <span className={`min-w-0 flex-1 ${CLIP}`}>{ev.text}</span>
       {/* In a phone's narrow cell the title wins: the time would squeeze it to
@@ -758,9 +762,9 @@ export function CalendarView() {
                       </button>
                     )}
                     <span className="min-w-0 flex-1"><Chip ev={ev} /></span>
-                    {repeating && <span className="shrink-0 text-[10px] text-muted-foreground">{t(REPEAT_LABEL[ev.repeat ?? 'none'])}</span>}
+                    {repeating && <span className="shrink-0 text-xs text-muted-foreground">{t(REPEAT_LABEL[ev.repeat ?? 'none'])}</span>}
                     {ev.src === 'ical' ? (
-                      <span className="shrink-0 text-[10px] text-muted-foreground" data-row-imported>{t('ical.readOnly')}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground" data-row-imported>{t('ical.readOnly')}</span>
                     ) : (
                       <>
                         <button type="button" aria-label={t('calendar.editPlan')} data-event-edit className={rowBtn} onClick={() => startEdit(ev)}>

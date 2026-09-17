@@ -272,6 +272,42 @@ export async function run() {
         && chipType.allDayClipped && chipType.titleShown && chipType.timeHidden,
       JSON.stringify(chipType));
 
+    // The day's own list has room: it reads at the normal size, not the cell's.
+    const todayKey = await page.evaluate(() => {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    });
+    await page.locator(`[data-calendar-month] [data-day="${todayKey}"]`).first().click();
+    await wait(600);
+    const listType = await page.evaluate(() => {
+      const rows = [...document.querySelectorAll('[data-day-list] [data-event]')];
+      const cell = document.querySelector('[data-calendar-month] [data-event]');
+      return rows.length ? {
+        list: Math.min(...rows.map((r) => parseFloat(getComputedStyle(r).fontSize))),
+        cellSize: cell ? parseFloat(getComputedStyle(cell).fontSize) : null,
+      } : null;
+    });
+    pass('the day list reads at the normal size, bigger than the cell type',
+      !!listType && listType.list >= 13 && listType.list > listType.cellSize, JSON.stringify(listType));
+    await page.keyboard.press('Escape');
+    await wait(300);
+
+    // A long name in the ring keeps its size and takes a second line instead.
+    await page.locator('[data-calendar-toggle]').click();
+    await wait(700);
+    const ring = await page.evaluate(() => {
+      const svg = document.querySelector('svg[data-circle-timeline]');
+      if (!svg) return null;
+      const texts = [...svg.querySelectorAll('[data-label-kind="inside"] text')];
+      const sizes = texts.map((t) => parseFloat(getComputedStyle(t).fontSize));
+      return { sizes, lines: texts.map((t) => t.querySelectorAll('tspan').length) };
+    });
+    pass('ring labels never shrink on a phone (long names wrap instead)',
+      !!ring && ring.sizes.length > 0 && new Set(ring.sizes).size === 1 && ring.sizes[0] >= 26,
+      JSON.stringify(ring));
+    await page.locator('[data-calendar-toggle]').click();
+    await wait(500);
+
     pass('no sideways scroll in calendar mode',
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
 
