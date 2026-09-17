@@ -69,6 +69,7 @@ import { hasSyncConsent } from '@/lib/sync/consent';
 import { UpgradeDialog } from '@/components/Billing/UpgradeDialog';
 import { StatsDialog } from '@/components/Admin/StatsDialog';
 import { OPEN_UPGRADE_EVENT } from '@/lib/pro';
+import { requestCalendarExport } from '@/lib/calendar-export';
 import { OPEN_E2EE_EVENT } from '@/lib/sync/e2ee';
 import { WelcomeOverlay } from '@/components/Onboarding/WelcomeOverlay';
 import { DesignMagician } from '@/components/Onboarding/DesignMagician';
@@ -578,7 +579,8 @@ function App() {
         onOpenPresets={() => setPresetOpen(true)}
         onOpenPalette={() => setPaletteOpen(true)}
         onOpenSettings={setSettingsSection}
-        onOpenExport={() => setExportOpen(true)}
+        // The calendar has its own export: the timetable one needs the chart.
+        onOpenExport={() => (calendarMode ? requestCalendarExport() : setExportOpen(true))}
         onShareImage={shareImage}
         onCopyLink={copyLink}
         onOpenHome={() => setHomeOpen(true)}
@@ -868,7 +870,7 @@ function App() {
       <PlayStoreBanner open={getAppOpen} onClose={closeGetApp} />
 
       {/* T9: Export dialog */}
-      {exportOpen && (
+      {exportOpen && !calendarMode && (
       <ExportDialog
         open={exportOpen}
         onOpenChange={setExportOpen}

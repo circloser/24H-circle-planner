@@ -13,7 +13,9 @@ import { chipInk, shownColor } from '@/lib/calendar-theme';
 import { stickerGlyph } from '@/lib/decor';
 import { TAPE_COLORS, TAPE_DEFAULT, type CalendarPaper, type LayerItem, type TapePattern } from '@/lib/decor-layer';
 
+/** Layout width; the file is drawn at IMAGE_SCALE× this (2160 px). */
 export const IMAGE_W = 1080;
+export const IMAGE_SCALE = 2;
 const PAD = 40;
 const TITLE_H = 76;
 const WEEK_H = 38;
@@ -423,7 +425,7 @@ export function resolveColors(root: HTMLElement, exprs: Record<keyof ImageColors
   return out;
 }
 
-export async function renderCalendarImage(input: CalendarImageInput): Promise<Blob> {
+export async function renderCalendarImage(input: CalendarImageInput, scale = IMAGE_SCALE): Promise<Blob> {
   try {
     await document.fonts?.ready;
   } catch {
@@ -431,10 +433,11 @@ export async function renderCalendarImage(input: CalendarImageInput): Promise<Bl
   }
   const L = imageLayout();
   const canvas = document.createElement('canvas');
-  canvas.width = L.width;
-  canvas.height = L.height;
+  canvas.width = Math.round(L.width * scale);
+  canvas.height = Math.round(L.height * scale);
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('no canvas');
+  ctx.scale(scale, scale);
   drawCalendar(ctx, input);
   return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('no image'))), 'image/png'));
 }

@@ -1,9 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { toast } from 'sonner';
-import { CalendarDays, ChevronLeft, ChevronRight, GripVertical, ImageDown, Link, Loader2, Pencil, Plus, X } from 'lucide-react';
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { CalendarDays, ChevronLeft, ChevronRight, GripVertical, Link, Pencil, Plus, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
@@ -21,7 +17,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { monthKey, paperOf } from '@/lib/decor-layer';
 import { track, trackOnce } from '@/lib/track';
 import { loadPhoto } from '@/lib/calendar-photos';
-import { shareOrDownload } from '@/lib/share';
+import { CALENDAR_EXPORT_EVENT } from '@/lib/calendar-export';
+import { CalendarExportDialog } from './CalendarExport';
 import { COLOR_THEMES } from '@/data/color-themes';
 import { chipInk, shownColor, themeAccent } from '@/lib/calendar-theme';
 import { MONTH_ROWS, WEEK_DAYS, addDays, homeOf, dayGap, monthCells, monthPair, partsOf, shiftMonth, thisMonth, todayKey, type YearMonth } from '@/lib/calendar-grid';
@@ -370,7 +367,13 @@ export function CalendarView() {
   const stopDecorating = () => { setTool(null); setArmed(null); setChosen(null); };
   useEffect(() => { trackOnce('calendar_open'); }, []);
   const rootRef = useRef<HTMLDivElement>(null);
-  const [imaging, setImaging] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  // The header's 내보내기, while the calendar is showing.
+  useEffect(() => {
+    const open = () => setExporting(true);
+    window.addEventListener(CALENDAR_EXPORT_EVENT, open);
+    return () => window.removeEventListener(CALENDAR_EXPORT_EVENT, open);
+  }, []);
   const { events, addEvent, updateEvent, moveEvent, skipOccurrence, endSeriesBefore, removeEvent, orderDay } = useEvents();
   const [at, setAt] = useState<YearMonth>(() => thisMonth());
   const [picked, setPicked] = useState<{ start: string; days: number } | null>(null);
@@ -535,74 +538,62 @@ export function CalendarView() {
 
   const monthLabel = (m: YearMonth) => new Date(m.y, m.m, 1).toLocaleDateString(lang, { year: 'numeric', month: 'long' });
 
-  /** Save or share one month as an image, decorations and all. */
-  const saveImage = async (m: YearMonth) => {
+  /** One month as an image, decorations and all (`scale` 1 = 1080 px wide). */
+  const makeImage = async (m: YearMonth, scale: number): Promise<Blob> => {
     const root = rootRef.current;
-    if (!root || imaging) return;
-    setImaging(true);
-    try {
-      const { renderCalendarImage, resolveColors } = await import('@/lib/export/calendarImage');
-      const cells = monthCells(m.y, m.m);
-      const fromImport = feeds.days(cells[0].key, cells[cells.length - 1].key);
-      const byDay: Record<string, DayEvent[]> = {};
-      const tints: Record<string, string> = {};
-      for (const cell of cells) {
-        const mine = dayEvents(events, cell.key);
-        const all = fromImport[cell.key] ? sortDayEvents([...mine, ...fromImport[cell.key]]) : mine;
-        if (all.length) byDay[cell.key] = all;
-        const tone = decor[cell.key]?.t;
-        if (tone) tints[cell.key] = tone;
-      }
-      const items = layer[monthKey(m.y, m.m)] ?? [];
-      const photos: Record<string, HTMLImageElement | null> = {};
-      await Promise.all(items.filter((i) => i.ph).map(async (i) => {
-        const url = await loadPhoto(i.ph!);
-        photos[i.ph!] = url ? await new Promise<HTMLImageElement | null>((done) => {
-          const img = new Image();
-          img.onload = () => done(img);
-          img.onerror = () => done(null);
-          img.src = url;
-        }) : null;
-      }));
-      const colors = resolveColors(root, {
-        background: 'hsl(var(--background))',
-        surface: 'hsl(var(--surface))',
-        outside: 'var(--cal-outside)',
-        border: 'hsl(var(--border))',
-        text: 'hsl(var(--text-primary))',
-        muted: 'hsl(var(--text-muted))',
-        accent: tint,
-        paperInk: 'var(--paper-ink)',
-        paperDot: 'var(--paper-dot)',
-        paperKraft: 'var(--paper-kraft)',
-        paperFleck: 'var(--paper-fleck)',
-      });
-      const label = monthLabel(m);
-      const blob = await renderCalendarImage({
-        title: label,
-        weekdays: Array.from({ length: 7 }, (_, i) => new Date(2024, 0, 7 + i).toLocaleDateString(lang, { weekday: 'short' })),
-        cells,
-        carried: new Set(cells.filter((c, i) => !c.inMonth && i < 7 && homeOf(c.key).m === m.m).map((c) => c.key)),
-        byDay,
-        tints,
-        items,
-        photos,
-        paper,
-        theme,
-        today: todayKey(),
-        colors,
-        moreLabel: (n) => t('calendar.more', { n: String(n) }),
-        footer: '24houring.com',
-      });
-      const outcome = await shareOrDownload(blob, `24houring-${monthKey(m.y, m.m)}.png`, t('calendar.imageShareText', { month: label }));
-      track('cal_image', { outcome });
-      if (outcome === 'downloaded') toast.success(t('calendar.imageSaved'));
-    } catch (err) {
-      if ((err as { name?: string })?.name === 'AbortError') track('cal_image', { outcome: 'cancelled' });
-      else toast.error(t('calendar.imageError'));
-    } finally {
-      setImaging(false);
+    if (!root) throw new Error('calendar not mounted');
+    const { renderCalendarImage, resolveColors } = await import('@/lib/export/calendarImage');
+    const cells = monthCells(m.y, m.m);
+    const fromImport = feeds.days(cells[0].key, cells[cells.length - 1].key);
+    const byDay: Record<string, DayEvent[]> = {};
+    const tints: Record<string, string> = {};
+    for (const cell of cells) {
+      const mine = dayEvents(events, cell.key);
+      const all = fromImport[cell.key] ? sortDayEvents([...mine, ...fromImport[cell.key]]) : mine;
+      if (all.length) byDay[cell.key] = all;
+      const tone = decor[cell.key]?.t;
+      if (tone) tints[cell.key] = tone;
     }
+    const items = layer[monthKey(m.y, m.m)] ?? [];
+    const photos: Record<string, HTMLImageElement | null> = {};
+    await Promise.all(items.filter((i) => i.ph).map(async (i) => {
+      const url = await loadPhoto(i.ph!);
+      photos[i.ph!] = url ? await new Promise<HTMLImageElement | null>((done) => {
+        const img = new Image();
+        img.onload = () => done(img);
+        img.onerror = () => done(null);
+        img.src = url;
+      }) : null;
+    }));
+    const colors = resolveColors(root, {
+      background: 'hsl(var(--background))',
+      surface: 'hsl(var(--surface))',
+      outside: 'var(--cal-outside)',
+      border: 'hsl(var(--border))',
+      text: 'hsl(var(--text-primary))',
+      muted: 'hsl(var(--text-muted))',
+      accent: tint,
+      paperInk: 'var(--paper-ink)',
+      paperDot: 'var(--paper-dot)',
+      paperKraft: 'var(--paper-kraft)',
+      paperFleck: 'var(--paper-fleck)',
+    });
+    return renderCalendarImage({
+      title: monthLabel(m),
+      weekdays: Array.from({ length: 7 }, (_, i) => new Date(2024, 0, 7 + i).toLocaleDateString(lang, { weekday: 'short' })),
+      cells,
+      carried: new Set(cells.filter((c, i) => !c.inMonth && i < 7 && homeOf(c.key).m === m.m).map((c) => c.key)),
+      byDay,
+      tints,
+      items,
+      photos,
+      paper,
+      theme,
+      today: todayKey(),
+      colors,
+      moreLabel: (n) => t('calendar.more', { n: String(n) }),
+      footer: '24houring.com',
+    }, scale);
   };
 
   const navBtn = 'grid h-8 w-8 place-items-center rounded-md border border-border transition-colors hover:bg-accent/10';
@@ -638,22 +629,6 @@ export function CalendarView() {
           {t('ical.button')}
           {feeds.calendars.length > 1 && <span className="tabular-nums">{feeds.calendars.length}</span>}
         </button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button type="button" data-cal-image-menu disabled={imaging} title={t('calendar.image')}
-              className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent/10 disabled:opacity-60">
-              {imaging ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImageDown className="h-3.5 w-3.5" />}
-              {t('calendar.image')}
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {[left, right].map((m) => (
-              <DropdownMenuItem key={`${m.y}-${m.m}`} data-cal-image={monthKey(m.y, m.m)} onSelect={() => void saveImage(m)}>
-                {t('calendar.imageOf', { month: monthLabel(m) })}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
         <DecorMenu
           theme={theme}
           onTheme={(id) => setPreference('colorTheme', id)}
@@ -703,6 +678,14 @@ export function CalendarView() {
       )}
 
       <IcalConnect feeds={feeds} open={connecting} onOpenChange={setConnecting} />
+      <CalendarExportDialog
+        open={exporting}
+        onOpenChange={setExporting}
+        months={[left, right]}
+        label={monthLabel}
+        keyOf={(m) => monthKey(m.y, m.m)}
+        make={makeImage}
+      />
 
       <Dialog open={picked !== null} onOpenChange={(o) => { if (!o) closeDay(); }}>
         <DialogContent className="max-w-sm">

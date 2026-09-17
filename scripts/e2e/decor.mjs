@@ -296,14 +296,23 @@ export async function run() {
     const texture = await cell(day(10)).evaluate((e) => getComputedStyle(e).backgroundImage);
     pass('…which is drawn on the days', texture.includes('linear-gradient'), texture.slice(0, 60));
 
-    // The month as an image: decorations, photo and paper drawn in, saved as a file.
+    // Export from the header: in the calendar it is the calendar's own export
+    // (the timetable one needs the chart), with the decorations drawn in.
     const monthOf = await leftMonth().getAttribute('data-calendar-month');
-    await page.locator('[data-cal-image-menu]').click();
-    await wait(250);
+    pass('the calendar toolbar has no separate image button', (await count('[data-cal-image-menu]')) === 0);
+    await page.locator('button[aria-label="내보내기"]').first().click();
+    await wait(500);
+    pass('내보내기 opens the calendar export', (await count('[data-cal-export]')) === 1, String(await count('[data-cal-export]')));
+    await page.waitForSelector('[data-cal-export-preview] img', { timeout: 10000 }).catch(() => {});
+    pass('…with a preview of the month', (await count('[data-cal-export-preview] img')) === 1);
+    await page.locator(`[data-cal-export-month="${monthOf}"]`).click();
+    await wait(200);
     const [download] = await Promise.all([
-      page.waitForEvent('download', { timeout: 15000 }),
-      page.locator(`[data-cal-image="${monthOf}"]`).click(),
+      page.waitForEvent('download', { timeout: 20000 }),
+      page.locator('[data-cal-export-save]').click(),
     ]);
+    await wait(300);
+    pass('…which closes once saved', (await count('[data-cal-export]')) === 0);
     pass('the month is saved as an image file', download.suggestedFilename() === `24houring-${monthOf}.png`, download.suggestedFilename());
     const png = await download.path().then((f) => import('node:fs').then((fs) => fs.readFileSync(f)));
     const layerNow = (await stored()).months[monthOf] ?? [];
@@ -316,9 +325,11 @@ export async function run() {
       c.height = img.height;
       const g = c.getContext('2d');
       g.drawImage(img, 0, 0);
-      // The image's grid: 40px margins, a 76px title and a 38px weekday row.
+      // The image's grid (layout units: 40px margins, a 76px title and a 38px
+      // weekday row), drawn at twice the size.
+      const S = img.width / 1080;
       const grid = { x: 40, y: 154, w: 1000, h: 800 };
-      const at = (x, y) => [...g.getImageData(Math.round(x), Math.round(y), 1, 1).data].slice(0, 3);
+      const at = (x, y) => [...g.getImageData(Math.round(x * S), Math.round(y * S), 1, 1).data].slice(0, 3);
       const photoItem = items.find((i) => i.k === 'photo');
       const w = 9 * photoItem.s * 10;
       const cx = grid.x + photoItem.x * grid.w;
@@ -332,7 +343,7 @@ export async function run() {
       const surface = at(grid.x + 3 * 142 + 20, grid.y + 2 * 160 + 150);
       return { width: img.width, height: img.height, photoPx, tapePx, firstCell, surface };
     }, [png.toString('base64'), layerNow]);
-    pass('…at 1080 wide', probe.width === 1080 && probe.height > 900, `${probe.width}×${probe.height}`);
+    pass('…at 2160 wide', probe.width === 2160 && probe.height > 1800, `${probe.width}×${probe.height}`);
     pass('…with the photo sticker drawn in', probe.photoPx[0] > 180 && probe.photoPx[1] < 90 && probe.photoPx[2] < 90, JSON.stringify(probe.photoPx));
     pass('…and the masking tape', probe.tapePx.join() !== probe.surface.join(), JSON.stringify({ tape: probe.tapePx, surface: probe.surface }));
 
