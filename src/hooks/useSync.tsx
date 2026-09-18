@@ -13,7 +13,7 @@ import { hasSyncConsent, grantSyncConsent, SYNC_CONSENT_EVENT } from '@/lib/sync
 
 // 'locked' = the cloud copy is E2EE ciphertext and this device has no key yet;
 // the engine pauses (no push/pull would clobber it) until the passphrase unlocks.
-export type SyncStatus = 'disabled' | 'syncing' | 'synced' | 'offline' | 'error' | 'locked';
+export type SyncStatus = 'disabled' | 'syncing' | 'synced' | 'offline' | 'busy' | 'error' | 'locked';
 
 interface SyncContextValue {
   status: SyncStatus;
@@ -234,6 +234,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         stat('locked');
       } else if (r.kind === 'offline') {
         stat('offline');
+      } else if (r.kind === 'busy') {
+        stat('busy');
       } else if (r.kind === 'unauth') {
         stat('disabled');
       } else {
@@ -272,6 +274,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         stat('locked');
       } else if (r.kind === 'offline') {
         stat('offline');
+      } else if (r.kind === 'busy') {
+        stat('busy');
       } else if (r.kind === 'unauth') {
         stat('disabled');
       } else {
@@ -331,6 +335,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         return;
       }
       if (r.kind === 'offline') return stat('offline');
+      if (r.kind === 'busy') return stat('busy');
       if (r.kind === 'unauth') return stat('disabled');
       if (r.kind === 'error') return stat('error');
 

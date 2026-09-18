@@ -363,6 +363,8 @@ function App() {
     if (!hasLogin && !hasCheckout) return;
     if (hasLogin) {
       if (params.get('login') === 'ok') toast.success(t('auth.welcome'));
+      // The server's database was not answering: not the visitor's fault.
+      else if (params.get('login') === 'busy') toast.error(t('auth.loginBusy'));
       else toast.error(t('auth.loginFailed'));
     }
     if (hasCheckout) {

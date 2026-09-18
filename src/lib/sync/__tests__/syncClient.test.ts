@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { pushRemote } from '../syncClient';
+import { pullRemote, pushRemote } from '../syncClient';
 import { currentKey, currentSalt, encryptData } from '../e2ee';
 import type { SyncEnvelope } from '../syncData';
 
@@ -30,5 +30,27 @@ describe('pushRemote failures', () => {
   it('still reports network failures as offline', async () => {
     vi.mocked(fetch).mockRejectedValue(new TypeError('network unavailable'));
     await expect(pushRemote({ v: 1, modifiedAt: 1, data: {} }, 0, 'PC')).resolves.toEqual({ kind: 'offline' });
+  });
+});
+
+describe('a server whose database is not answering', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    vi.stubGlobal('fetch', vi.fn());
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  const busy = () => new Response(JSON.stringify({ error: 'server_busy', retryAfter: 3600 }), { status: 503 });
+
+  it('is reported as busy, not as a sync error', async () => {
+    vi.mocked(fetch).mockResolvedValue(busy());
+    await expect(pullRemote()).resolves.toEqual({ kind: 'busy' });
+    vi.mocked(fetch).mockResolvedValue(busy());
+    await expect(pushRemote({ v: 1, modifiedAt: 1, data: {} }, 0, 'PC')).resolves.toEqual({ kind: 'busy' });
+  });
+
+  it('while any other failure is still an error', async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response('boom', { status: 500 }));
+    await expect(pullRemote()).resolves.toEqual({ kind: 'error' });
   });
 });

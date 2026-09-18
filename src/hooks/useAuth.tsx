@@ -26,14 +26,39 @@ export interface AuthContextValue extends AuthState {
 
 const SIGNED_OUT: AuthState = { user: null, plan: 'free', billingEnabled: false, admin: false, loading: false };
 
+/** The last session the server confirmed, kept on this device only for the
+ *  case below. */
+const AUTH_CACHE_KEY = '24h-auth-last';
+
+function rememberAuth(state: AuthState): void {
+  try {
+    if (state.user) localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify({ ...state, loading: false }));
+    else localStorage.removeItem(AUTH_CACHE_KEY);
+  } catch { /* storage unavailable */ }
+}
+
+function lastAuth(): AuthState | null {
+  try {
+    const s = JSON.parse(localStorage.getItem(AUTH_CACHE_KEY) ?? 'null') as AuthState | null;
+    return s && s.user ? { ...s, loading: false } : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Read the current session from the Worker. Never throws — any failure (no
- * Worker, offline, non-200) resolves to signed-out. */
+ * Worker, offline, non-200) resolves to signed-out, except one: when the server
+ * says its database is busy (503), the session is still valid, so the last one
+ * it confirmed stands and sync simply reports the server as resting. */
 async function fetchMe(): Promise<AuthState> {
   try {
     const res = await fetch('/api/me', { credentials: 'include', headers: { accept: 'application/json' } });
+    if (res.status === 503) return lastAuth() ?? SIGNED_OUT;
     if (!res.ok) throw new Error(`me ${res.status}`);
     const data = (await res.json()) as { user: AuthUser | null; plan?: 'free' | 'pro'; billing?: boolean; admin?: boolean };
-    return { user: data.user ?? null, plan: data.plan ?? 'free', billingEnabled: Boolean(data.billing), admin: Boolean(data.admin), loading: false };
+    const state = { user: data.user ?? null, plan: data.plan ?? 'free', billingEnabled: Boolean(data.billing), admin: Boolean(data.admin), loading: false } as AuthState;
+    rememberAuth(state);
+    return state;
   } catch {
     return SIGNED_OUT;
   }
@@ -78,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore — clear local state regardless */
     }
+    rememberAuth(SIGNED_OUT);
     setState(SIGNED_OUT);
   }, []);
 

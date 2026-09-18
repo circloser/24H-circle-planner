@@ -359,7 +359,7 @@ export function AppHeader({
                               <RefreshCw className="h-3 w-3 animate-spin" />
                             ) : sync.status === 'locked' ? (
                               <Lock className="h-3 w-3" />
-                            ) : sync.status === 'offline' || sync.status === 'error' ? (
+                            ) : sync.status === 'offline' || sync.status === 'busy' || sync.status === 'error' ? (
                               <CloudOff className="h-3 w-3" />
                             ) : (
                               <Cloud className="h-3 w-3" />
@@ -371,7 +371,9 @@ export function AppHeader({
                                   ? t('sync.locked')
                                   : sync.status === 'offline'
                                     ? t('sync.offline')
-                                    : sync.status === 'error'
+                                    : sync.status === 'busy'
+                                      ? t('sync.busy')
+                                      : sync.status === 'error'
                                       ? t('sync.error')
                                       : t('sync.synced')}
                             </span>

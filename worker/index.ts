@@ -13,6 +13,7 @@ import { handleShareCreate, handleShareGet, handleShareOg, handleShareView } fro
 import { handleWidgetPut, handleWidgetPng, handleWidgetDelete } from './widget';
 import { handleMarketingRoute } from './marketing';
 import { handleMetrics, metricsSummary, type MetricRow } from './metrics';
+import { busyResponse, isDbUnavailable } from './busy';
 import { handleGeo } from './geo';
 import { handleIcalFetch } from './ical';
 
@@ -1174,6 +1175,25 @@ async function handleNews(request: Request, env: Env, ctx?: Waiter): Promise<Res
 
 export default {
   async fetch(request: Request, env: Env, ctx?: Waiter): Promise<Response> {
+    try {
+      return await route(request, env, ctx);
+    } catch (err) {
+      const url = new URL(request.url);
+      if (url.pathname.startsWith('/api/') && isDbUnavailable(err)) {
+        console.error('database unavailable', url.pathname, err instanceof Error ? err.message : err);
+        return busyResponse(url.pathname, request.url, err);
+      }
+      throw err;
+    }
+  },
+
+  /** Minute cron (wrangler.jsonc triggers.crons) → due push alarms. */
+  async scheduled(_controller: unknown, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }): Promise<void> {
+    ctx.waitUntil(runPushCron(env));
+  },
+};
+
+async function route(request: Request, env: Env, ctx?: Waiter): Promise<Response> {
     const url = new URL(request.url);
     const p = url.pathname;
     const m = request.method;
@@ -1261,10 +1281,4 @@ export default {
 
     // Non-API request → serve the SPA (unchanged behaviour).
     return env.ASSETS.fetch(request);
-  },
-
-  /** Minute cron (wrangler.jsonc triggers.crons) → due push alarms. */
-  async scheduled(_controller: unknown, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }): Promise<void> {
-    ctx.waitUntil(runPushCron(env));
-  },
-};
+}
