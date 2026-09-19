@@ -74,6 +74,9 @@ export const SYNC_KEYS: readonly string[] = [
   // The free decoration layer (stickers, tape, photo stickers per month) — the
   // same kind of user-authored store. Photo PIXELS stay on the device.
   'decor-layer',
+  // The life record (roots, moments, plans, the ending note) — user-authored,
+  // kept if an older cloud blob predates it. Its pictures stay on the device.
+  'life',
   'prefs',
   'view',
 ].map((k) => PREFIX + k)
@@ -99,6 +102,7 @@ const KEEP_IF_ABSENT = new Set<string>([
   PREFIX + 'ical',
   PREFIX + 'decor',
   PREFIX + 'decor-layer',
+  PREFIX + 'life',
 ]);
 
 /** The synced preferences key — applied live (no reload) when it alone changes. */

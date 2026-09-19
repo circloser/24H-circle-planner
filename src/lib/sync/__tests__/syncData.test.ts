@@ -183,6 +183,12 @@ describe('mergeSyncData (3-way, per-key)', () => {
     expect(merged[K('clocktools')]).toBe('W0'); // widget preserved, not deleted
   });
 
+  it('carries the life record, and an old cloud blob without it never wipes it', () => {
+    expect(SYNC_KEYS).toContain(K('life'));
+    const life = { [K('life')]: 'L0' };
+    expect(mergeSyncData(life, life, {}, false).merged[K('life')]).toBe('L0');
+  });
+
   it('KEEP_IF_ABSENT: a widget present only on the server is adopted', () => {
     const { merged } = mergeSyncData({}, {}, { [K('goalswidget')]: 'GW1' }, false);
     expect(merged[K('goalswidget')]).toBe('GW1');

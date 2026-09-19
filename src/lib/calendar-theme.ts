@@ -47,8 +47,17 @@ const GREY = 0.18;
  * slot takes the least saturated colour, the others the nearest hue.
  */
 export function themeSlots(colors: readonly string[]): string[] {
+  return matchColors(EVENT_COLORS, colors);
+}
+
+/**
+ * Each of `canon` shown as the closest colour of `colors` — the same matching
+ * as themeSlots, for any set of canonical colours (the life timeline's
+ * categories use it too).
+ */
+export function matchColors(canon: readonly string[], colors: readonly string[]): string[] {
   const pool = colors.map((c) => ({ c, hsl: hsl(c) })).filter((x): x is { c: string; hsl: Hsl } => !!x.hsl);
-  if (!pool.length) return [...EVENT_COLORS];
+  if (!pool.length) return [...canon];
   const left = [...pool];
   const take = (pick: (xs: typeof left) => number) => {
     const from = left.length ? left : pool;
@@ -57,8 +66,8 @@ export function themeSlots(colors: readonly string[]): string[] {
     if (left.length) left.splice(i, 1);
     return chosen.c;
   };
-  return EVENT_COLORS.map((canon) => {
-    const want = hsl(canon)!;
+  return canon.map((c) => {
+    const want = hsl(c)!;
     if (want.s < GREY) {
       return take((xs) => xs.reduce((best, x, i) => (x.hsl.s < xs[best].hsl.s ? i : best), 0));
     }
