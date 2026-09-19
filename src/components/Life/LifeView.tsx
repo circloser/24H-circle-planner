@@ -100,8 +100,8 @@ export function LifeView() {
       <header className="mx-auto w-full max-w-[960px] px-4 pt-4 sm:pt-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">{t('life.title')}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{t('life.subtitle')}</p>
+            <h2 className="life-serif text-3xl font-bold tracking-tight text-foreground">{t('life.title')}</h2>
+            <p className="mt-2 text-[15px] italic text-muted-foreground">{t('life.subtitle')}</p>
           </div>
           {isFullDate(life.profile.birthDate) && (
             <div className="flex flex-wrap items-center gap-2">
@@ -208,7 +208,7 @@ export function LifeView() {
       ) : (
         // A record from a newer app version is shown, never edited here.
         <div className="contents" inert={api.readOnly || undefined}>
-          <Roots api={api} colors={colors} askParents={askParents} onSkip={() => setAskParents(false)}
+          <Roots api={api} askParents={askParents} onSkip={() => setAskParents(false)}
             onAdd={addMember} onOpen={(f) => setMember({ mode: 'edit', f })} />
           <LifeTimeline life={life} items={items} colors={colors} stickyTop={headerH}
             showExamples={life.milestones.length === 0 && only.size === 0}
@@ -301,32 +301,22 @@ function Onboarding({ onStart, onRestore }: { onStart: (birthDate: string, name:
   );
 }
 
-/** One family card. */
-function MemberCard({ f, color, onOpen }: { f: FamilyMember; color: string; onOpen: () => void }) {
+/** One family member, as plain text like the entries on the line. */
+function MemberBlock({ f, onOpen }: { f: FamilyMember; onOpen: () => void }) {
   const { t } = useTranslation();
-  const today = todayKey();
-  const age = f.birthDate && isFullDate(f.birthDate) ? ageAt(f.birthDate, today) : null;
+  const age = f.birthDate && isFullDate(f.birthDate) ? ageAt(f.birthDate, todayKey()) : null;
   return (
     <button type="button" onClick={onOpen} data-life-member={f.relation}
-      className="flex w-full items-start gap-3 overflow-hidden rounded-2xl bg-surface p-4 text-left shadow-[0_4px_16px_rgba(0,0,0,.06)] transition-[transform,box-shadow] duration-150 hover:-translate-y-0.5 hover:shadow-[0_8px_22px_rgba(0,0,0,.09)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      style={{ borderTop: `4px solid ${color}` }}>
-      {f.photo ? (
-        <LifePhoto id={f.photo} className="h-12 w-12 shrink-0 rounded-full" />
-      ) : (
-        <span aria-hidden className="grid h-12 w-12 shrink-0 place-items-center rounded-full text-lg font-bold text-white" style={{ backgroundColor: color }}>
-          {f.name.slice(0, 1)}
+      className="group relative block w-full rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-[900px]:text-center">
+      <span className="block text-[15px] italic leading-[22px] text-muted-foreground">{t(RELATION_LABEL[f.relation])}</span>
+      <span className="life-serif mt-1 block truncate text-[22px] font-bold leading-8 tracking-tight text-foreground decoration-1 underline-offset-[6px] group-hover:underline">{f.name}</span>
+      {f.birthDate && (
+        <span className="mt-1 block text-[15px] text-foreground/75">
+          {formatLifeDate(f.birthDate)}{age ? ` · ${t('life.age', { n: String(age.years) })}` : ''}
         </span>
       )}
-      <span className="min-w-0 flex-1">
-        <span className="block text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: inkOf(color) }}>{t(RELATION_LABEL[f.relation])}</span>
-        <span className="mt-0.5 block truncate text-base font-bold text-foreground">{f.name}</span>
-        {f.birthDate && (
-          <span className="block text-xs text-muted-foreground">
-            {formatLifeDate(f.birthDate)}{age ? ` · ${t('life.age', { n: String(age.years) })}` : ''}
-          </span>
-        )}
-        {f.note && <span className="mt-1 line-clamp-2 block text-sm text-muted-foreground">{f.note}</span>}
-      </span>
+      {f.note && <span className="mt-1 line-clamp-2 block text-[15px] leading-relaxed text-foreground/75">{f.note}</span>}
+      {f.photo && <LifePhoto id={f.photo} className="mt-3 h-16 w-16 rounded-full min-[900px]:mx-auto" />}
     </button>
   );
 }
@@ -335,20 +325,23 @@ function MemberCard({ f, color, onOpen }: { f: FamilyMember; color: string; onOp
 function EmptySlot({ label, onAdd, rel }: { label: string; onAdd: () => void; rel: Relation }) {
   return (
     <button type="button" onClick={onAdd} data-life-slot={rel}
-      className="flex min-h-[84px] w-full items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed border-border text-sm text-muted-foreground transition-colors hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-      <Plus aria-hidden className="h-4 w-4" />
+      className="inline-flex min-h-11 items-center gap-1.5 self-start rounded-lg text-[15px] italic text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-[900px]:self-center">
+      <Plus aria-hidden className="h-4 w-4 not-italic" />
       {label}
     </button>
   );
 }
 
+/** A hollow marker: on the phone's left line, or under a parent on wide screens. */
+const ringClass = (dashed: boolean) =>
+  `h-[26px] w-[26px] rounded-full border-2 bg-background ${dashed ? 'border-dashed border-foreground/40' : 'border-foreground'}`;
+
 /**
- * Roots: the two parents as a pair (their two lines meet and become the
- * life line), then the rest of the family.
+ * Roots: the two parents side by side, each above its own marker, and their
+ * two lines meet to become the life line. The rest of the family follows.
  */
-function Roots({ api, colors, askParents, onSkip, onAdd, onOpen }: {
+function Roots({ api, askParents, onSkip, onAdd, onOpen }: {
   api: LifeApi;
-  colors: Record<LifeCategory, string>;
   askParents: boolean;
   onSkip: () => void;
   onAdd: (r: Relation) => void;
@@ -359,47 +352,65 @@ function Roots({ api, colors, askParents, onSkip, onAdd, onOpen }: {
   const mother = family.find((f) => f.relation === 'mother');
   const father = family.find((f) => f.relation === 'father');
   const others = family.filter((f) => f !== mother && f !== father);
-  const color = colors.family;
+  // Everyone else stands under the parents, shared between the two columns,
+  // so nothing sits across the line where the parents' lines meet.
+  const column = (f: FamilyMember | undefined, rel: 'mother' | 'father', rest: FamilyMember[]) => (
+    <div className="flex flex-col gap-8 min-[900px]:items-center min-[900px]:px-12">
+      <div className="relative flex flex-col min-[900px]:items-center">
+        {/* Phone: this parent's marker on the left line. */}
+        <span aria-hidden className={`absolute -left-9 top-[29px] -translate-x-1/2 min-[900px]:hidden ${ringClass(!f)}`} />
+        {f ? <MemberBlock f={f} onOpen={() => onOpen(f)} />
+          : <EmptySlot rel={rel} label={t(rel === 'mother' ? 'life.addMother' : 'life.addFather')} onAdd={() => onAdd(rel)} />}
+      </div>
+      {rest.map((o) => (
+        <div key={o.id} className="relative hidden w-full max-w-[260px] min-[900px]:block">
+          <MemberBlock f={o} onOpen={() => onOpen(o)} />
+        </div>
+      ))}
+      {/* Wide screens: the parent's marker, level with the other's. */}
+      <span aria-hidden className={`mt-auto hidden min-[900px]:block ${ringClass(!f)}`} />
+    </div>
+  );
   return (
-    <section aria-labelledby="life-roots" className="relative mx-auto mt-8 w-full max-w-[960px]" data-life-roots>
-      <h3 id="life-roots" className="mb-3 ml-16 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground min-[900px]:ml-0 min-[900px]:text-center">
+    <section aria-labelledby="life-roots" className="relative mx-auto mt-10 w-full max-w-[960px]" data-life-roots>
+      {/* Phone: the line runs down past the family to the birth. */}
+      <span aria-hidden className="life-line min-[900px]:hidden" style={{ top: 40 }} />
+      <h3 id="life-roots" className="life-serif ml-16 text-[15px] font-bold tracking-wide text-muted-foreground min-[900px]:ml-0 min-[900px]:text-center">
         {t('life.roots')}
       </h3>
       {askParents && (!mother || !father) && (
-        <div className="mb-4 ml-16 mr-4 flex flex-wrap items-center gap-2 rounded-xl bg-primary/5 px-4 py-3 text-sm min-[900px]:mx-auto min-[900px]:max-w-xl" data-life-ask-parents>
-          <span className="min-w-0 flex-1 font-medium text-foreground">{t('life.onboard.parents')}</span>
-          <Button size="sm" variant="ghost" onClick={onSkip} data-life-skip>{t('life.onboard.skip')}</Button>
+        <div className="mb-6 ml-16 mr-4 flex flex-wrap items-center gap-2 text-[15px] italic text-foreground/80 min-[900px]:mx-auto min-[900px]:justify-center" data-life-ask-parents>
+          <span>{t('life.onboard.parents')}</span>
+          <Button size="sm" variant="ghost" className="not-italic" onClick={onSkip} data-life-skip>{t('life.onboard.skip')}</Button>
         </div>
       )}
-      <div className="grid gap-3 ml-16 mr-4 min-[900px]:mx-0 min-[900px]:grid-cols-2 min-[900px]:gap-x-24">
-        {mother ? <MemberCard f={mother} color={color} onOpen={() => onOpen(mother)} />
-          : <EmptySlot rel="mother" label={t('life.addMother')} onAdd={() => onAdd('mother')} />}
-        {father ? <MemberCard f={father} color={color} onOpen={() => onOpen(father)} />
-          : <EmptySlot rel="father" label={t('life.addFather')} onAdd={() => onAdd('father')} />}
-      </div>
-      <div className="mt-3 ml-16 mr-4 flex flex-wrap items-stretch gap-3 min-[900px]:mx-0 min-[900px]:justify-center">
-        {others.map((f) => (
-          <div key={f.id} className="w-full min-[900px]:w-[280px]">
-            <MemberCard f={f} color={color} onOpen={() => onOpen(f)} />
-          </div>
-        ))}
+      <div className="mb-6 mt-1 ml-16 min-[900px]:ml-0 min-[900px]:text-center">
         <button type="button" onClick={() => onAdd('other')} data-life-add-family
-          className="inline-flex min-h-10 items-center gap-1.5 self-center rounded-full border border-border px-3 text-xs text-muted-foreground hover:bg-accent/10">
-          <Plus aria-hidden className="h-3.5 w-3.5" />
+          className="inline-flex min-h-10 items-center gap-1.5 text-[15px] italic text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+          <Plus aria-hidden className="h-4 w-4 not-italic" />
           {t('life.family.more')}
         </button>
       </div>
-      {/* The parents' two lines meet and become the life line (wide screens);
-          on a phone the line simply starts here. */}
-      <svg aria-hidden viewBox="0 0 100 56" preserveAspectRatio="none" className="mt-2 hidden h-14 w-full min-[900px]:block">
-        <path d="M25 0 C25 34 50 22 50 56 M75 0 C75 34 50 22 50 56" fill="none" stroke="hsl(var(--border))" strokeWidth="3" vectorEffect="non-scaling-stroke" />
+      <div className="ml-16 mr-4 grid gap-8 min-[900px]:mx-0 min-[900px]:grid-cols-2 min-[900px]:gap-0">
+        {column(mother, 'mother', others.filter((_, i) => i % 2 === 0))}
+        {column(father, 'father', others.filter((_, i) => i % 2 === 1))}
+        {/* Phone: the rest of the family after both parents, in order. */}
+        {others.map((o) => (
+          <div key={o.id} className="relative min-[900px]:hidden">
+            <span aria-hidden className={`absolute -left-9 top-[29px] -translate-x-1/2 ${ringClass(false)}`} />
+            <MemberBlock f={o} onOpen={() => onOpen(o)} />
+          </div>
+        ))}
+      </div>
+      {/* The parents' two lines meet and become the life line. */}
+      <svg aria-hidden viewBox="0 0 100 56" preserveAspectRatio="none" className="hidden h-14 w-full min-[900px]:block">
+        <path d="M25 0 C25 34 50 22 50 56 M75 0 C75 34 50 22 50 56" fill="none" stroke="hsl(var(--foreground) / 0.85)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
       </svg>
-      <div aria-hidden className="relative h-6 min-[900px]:hidden"><span className="life-line" /></div>
     </section>
   );
 }
 
-/** Where the line ends: one wide card for the words to leave behind. */
+/** Where the line ends: the words to leave behind. */
 function EndingNote({ api }: { api: LifeApi }) {
   const { t, lang } = useTranslation();
   const note = api.life.endingNote;
@@ -430,13 +441,14 @@ function EndingNote({ api }: { api: LifeApi }) {
   const updated = note?.updatedAt ? new Date(note.updatedAt) : null;
   return (
     <section aria-labelledby="life-ending" className="mx-auto w-full max-w-[960px]" data-life-ending>
-      <div aria-hidden className="relative h-10"><span className="life-line life-line--future" /></div>
+      <div aria-hidden className="relative h-12"><span className="life-line life-line--future" /></div>
+      {/* The line ends here, in a small closed circle. */}
       <div aria-hidden className="relative h-3">
-        <span className="absolute left-[28px] top-0 h-3 w-3 -translate-x-1/2 rounded-full bg-border min-[900px]:left-1/2" />
+        <span className="absolute left-[28px] top-0 h-3 w-3 -translate-x-1/2 rounded-full bg-foreground/60 min-[900px]:left-1/2" />
       </div>
-      <div className="mx-4 mt-6 rounded-2xl bg-surface p-6 shadow-[0_4px_16px_rgba(0,0,0,.06)] min-[900px]:mx-auto min-[900px]:max-w-[640px]">
-        <h3 id="life-ending" className="flex items-center gap-2 text-lg font-bold text-foreground">
-          <Feather aria-hidden className="h-5 w-5 text-primary" />
+      <div className="mx-4 mt-10 min-[900px]:mx-auto min-[900px]:max-w-[640px]">
+        <h3 id="life-ending" className="life-serif flex items-center gap-2 text-2xl font-bold tracking-tight text-foreground min-[900px]:justify-center">
+          <Feather aria-hidden className="h-5 w-5 text-muted-foreground" />
           {t('life.endingNote')}
         </h3>
         <textarea data-life-ending-input value={text} maxLength={MAX_ENDING} aria-labelledby="life-ending"
@@ -448,13 +460,13 @@ function EndingNote({ api }: { api: LifeApi }) {
             pending.current = window.setTimeout(commit, 600);
           }}
           onBlur={commit}
-          className="mt-3 min-h-40 w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm leading-relaxed [field-sizing:content] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+          className="mt-5 min-h-40 w-full resize-y rounded-lg border border-border bg-transparent px-4 py-3 text-[15px] leading-relaxed [field-sizing:content] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
         {updated && (
-          <p className="mt-2 text-xs text-muted-foreground" data-life-ending-updated>
+          <p className="mt-2 text-[13px] italic text-muted-foreground" data-life-ending-updated>
             {t('life.ending.updated', { date: updated.toLocaleDateString(lang) })}
           </p>
         )}
-        <p className="mt-4 flex gap-2 border-t border-border pt-3 text-xs leading-relaxed text-muted-foreground" data-life-ending-legal>
+        <p className="mt-5 flex gap-2 border-t border-border pt-4 text-[13px] leading-relaxed text-muted-foreground" data-life-ending-legal>
           <Scale aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
           {t('life.ending.legal')}
         </p>

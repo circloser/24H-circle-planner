@@ -55,7 +55,7 @@ async function imageInput(life: LifeData, colors: Record<LifeCategory, string>, 
     const when = m.endDate ? `${formatLifeDate(m.date)} – ${formatLifeDate(m.endDate)}` : formatLifeDate(m.date);
     return {
       kind: 'card', side: it.side, tight: it.tight, future: it.future, plan: it.plan, color: colors[m.category],
-      eyebrow: [when, age(m.date), t(CATEGORY_LABEL[m.category])].filter(Boolean).join(' · '),
+      eyebrow: [when, age(m.date), t(CATEGORY_LABEL[m.category]), it.plan ? t('life.planBadge') : ''].filter(Boolean).join(' · '),
       title: m.title, description: m.description, photo: m.photo ? photos[m.photo] : null,
     };
   });
@@ -67,9 +67,13 @@ async function imageInput(life: LifeData, colors: Record<LifeCategory, string>, 
       s.age !== null ? t('life.sumAge', { n: String(s.age) }) : '',
     ].filter(Boolean).join(' · '),
     rootsLabel: t('life.roots'),
-    family: life.family.map((f) => ({
-      label: t(RELATION_LABEL[f.relation]), name: f.name, color: colors.family,
+    family: life.family.map((f, i, all) => ({
+      // The first mother and father take the two parent places, as on the page.
+      slot: (f.relation === 'mother' || f.relation === 'father') && all.findIndex((o) => o.relation === f.relation) === i
+        ? f.relation : 'other',
+      label: t(RELATION_LABEL[f.relation]), name: f.name,
       sub: f.birthDate ? formatLifeDate(f.birthDate) : undefined,
+      note: f.note,
     })),
     rows,
     ending: life.endingNote ? { title: t('life.endingNote'), text: life.endingNote.text, legal: t('life.ending.legal') } : null,

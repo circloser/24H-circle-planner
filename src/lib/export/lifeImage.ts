@@ -11,11 +11,13 @@ import { mix, roundRect } from './calendarImage';
 
 export const LIFE_IMAGE_W = 1080;
 const PAD = 56;
-const GAP = 48; // card edge to the line
-const CARD_W = (LIFE_IMAGE_W - PAD * 2 - GAP * 2) / 2;
+const GAP = 64; // the line to the text beside it
 const CENTER = LIFE_IMAGE_W / 2;
-const CARD_PAD = 24;
+/** Width of an entry's text, on either side of the line. */
+const TEXT_W = CENTER - PAD - GAP;
 const FONT = '"Pretendard", "Pretendard Variable", system-ui, sans-serif';
+/** The page's serif: Georgia for Latin letters, Nanum Myeongjo for Hangul. */
+const SERIF = 'Georgia, "Nanum Myeongjo", "Noto Serif KR", serif';
 /** Browsers refuse canvases past ~32k px a side or ~268M px in all — and
  *  iPhone/iPad Safari past 16.7M px, which a long life reaches quickly. */
 const MAX_SIDE = 32_000;
@@ -46,7 +48,7 @@ export interface LifeImageInput {
   title: string;
   summary: string;
   rootsLabel: string;
-  family: { label: string; name: string; sub?: string; color: string }[];
+  family: { slot: 'mother' | 'father' | 'other'; label: string; name: string; sub?: string; note?: string }[];
   rows: LifeImageRow[];
   ending: { title: string; text: string; legal: string } | null;
   footer: string;
@@ -80,105 +82,110 @@ export function wrapText(ctx: CanvasRenderingContext2D, text: string, width: num
   return out;
 }
 
-const font = (px: number, weight = 400) => `${weight} ${px}px ${FONT}`;
+const font = (px: number, weight = 400, family = FONT, italic = false) => `${italic ? 'italic ' : ''}${weight} ${px}px ${family}`;
 
 interface Block { h: number; draw: (ctx: CanvasRenderingContext2D, y: number) => void }
 
 function layout(ctx: CanvasRenderingContext2D, input: LifeImageInput): Block[] {
   const c = input.colors;
+  const ink = mix(c.text, c.background, 0.85);
+  const faint = mix(c.text, c.background, 0.45);
   const blocks: Block[] = [];
   const line = (x: number, y0: number, y1: number, dashed: boolean) => {
     ctx.save();
-    ctx.strokeStyle = c.border;
-    ctx.lineWidth = 3;
-    ctx.setLineDash(dashed ? [9, 7] : []);
+    ctx.strokeStyle = dashed ? faint : ink;
+    ctx.lineWidth = 2;
+    ctx.setLineDash(dashed ? [7, 7] : []);
     ctx.beginPath();
     ctx.moveTo(x, y0);
     ctx.lineTo(x, y1);
     ctx.stroke();
     ctx.restore();
   };
-  const card = (x: number, y: number, w: number, h: number, color: string, dashed: boolean) => {
+  /** A hollow marker, the page background showing through. */
+  const ring = (x: number, y: number, dashed: boolean) => {
     ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,0.08)';
-    ctx.shadowBlur = 18;
-    ctx.shadowOffsetY = 4;
-    ctx.fillStyle = c.surface;
-    roundRect(ctx, x, y, w, h, [18, 18, 18, 18]);
+    ctx.fillStyle = c.background;
+    ctx.strokeStyle = dashed ? faint : c.text;
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash(dashed ? [4, 4] : []);
+    ctx.beginPath();
+    ctx.arc(x, y, 14, 0, Math.PI * 2);
     ctx.fill();
+    ctx.stroke();
     ctx.restore();
-    ctx.save();
-    roundRect(ctx, x, y, w, h, [18, 18, 18, 18]);
-    ctx.clip();
-    ctx.fillStyle = color;
-    ctx.fillRect(x, y, w, 5);
-    ctx.restore();
-    if (dashed) {
-      ctx.save();
-      ctx.strokeStyle = c.border;
-      ctx.lineWidth = 2;
-      ctx.setLineDash([7, 5]);
-      roundRect(ctx, x, y, w, h, [18, 18, 18, 18]);
-      ctx.stroke();
-      ctx.restore();
-    }
+  };
+  const text = (s: string, x: number, y: number, align: CanvasTextAlign) => {
+    ctx.textAlign = align;
+    ctx.fillText(s, x, y);
+    ctx.textAlign = 'left';
   };
 
   // Title and summary.
   ctx.font = font(22);
   const summary = wrapText(ctx, input.summary, LIFE_IMAGE_W - PAD * 2);
   blocks.push({
-    h: 60 + 58 + summary.length * 32 + 16,
+    h: 64 + 64 + summary.length * 32 + 24,
     draw: (g, y) => {
       g.fillStyle = c.text;
-      g.font = font(44, 800);
-      g.textBaseline = 'top';
-      g.fillText(input.title, PAD, y + 60);
+      g.font = font(46, 700, SERIF);
+      g.fillText(input.title, PAD, y + 64);
       g.fillStyle = c.muted;
-      g.font = font(22);
-      summary.forEach((s, i) => g.fillText(s, PAD, y + 118 + i * 32));
+      g.font = font(22, 400, FONT, true);
+      summary.forEach((s, i) => g.fillText(s, PAD, y + 128 + i * 32));
     },
   });
 
-  // Roots: two to a row, then the two lines that meet at the centre.
+  // Roots: the parents side by side (everyone else beneath them, shared
+  // between the columns), a marker under each, and their two lines meeting.
   if (input.family.length) {
-    const rows = Math.ceil(input.family.length / 2);
-    const fh = 104;
+    const cols: LifeImageInput['family'][] = [[], []];
+    const mother = input.family.find((f) => f.slot === 'mother');
+    const father = input.family.find((f) => f.slot === 'father');
+    if (mother) cols[0].push(mother);
+    if (father) cols[1].push(father);
+    input.family.filter((f) => f.slot === 'other').forEach((f, i) => cols[i % 2].push(f));
+    const memberH = (f: LifeImageInput['family'][number]) => 26 + 8 + 38 + (f.sub ? 30 : 0) + (f.note ? 30 : 0);
+    const colH = cols.map((col) => col.reduce((s, f, i) => s + memberH(f) + (i ? 32 : 0), 0));
+    const body = Math.max(...colH);
+    const xs = [LIFE_IMAGE_W / 4, (LIFE_IMAGE_W * 3) / 4];
     blocks.push({
-      h: 44 + rows * (fh + 16) + 60,
+      h: 56 + body + 40 + 14 + 76,
       draw: (g, y) => {
         g.fillStyle = c.muted;
-        g.font = font(16, 700);
-        g.textAlign = 'center';
-        g.fillText(input.rootsLabel.toUpperCase(), CENTER, y + 16);
-        g.textAlign = 'left';
-        input.family.forEach((f, i) => {
-          const x = i % 2 === 0 ? PAD : PAD + CARD_W + GAP * 2;
-          const top = y + 44 + Math.floor(i / 2) * (fh + 16);
-          card(x, top, CARD_W, fh, f.color, false);
-          g.fillStyle = mix(f.color, c.text, 0.62);
-          g.font = font(15, 700);
-          g.fillText(f.label.toUpperCase(), x + CARD_PAD, top + 22);
-          g.fillStyle = c.text;
-          g.font = font(26, 800);
-          g.fillText(wrapText(g, f.name, CARD_W - CARD_PAD * 2, 1)[0], x + CARD_PAD, top + 42);
-          if (f.sub) {
+        g.font = font(19, 700, SERIF);
+        text(input.rootsLabel, CENTER, y + 10, 'center');
+        cols.forEach((col, ci) => {
+          let cy = y + 56;
+          col.forEach((f) => {
+            const w = LIFE_IMAGE_W / 2 - 80;
             g.fillStyle = c.muted;
-            g.font = font(17);
-            g.fillText(f.sub, x + CARD_PAD, top + 74);
-          }
+            g.font = font(18, 400, FONT, true);
+            text(f.label, xs[ci], cy, 'center');
+            g.fillStyle = c.text;
+            g.font = font(30, 700, SERIF);
+            text(wrapText(g, f.name, w, 1)[0], xs[ci], cy + 34, 'center');
+            let ny = cy + 34 + 38 + 4;
+            g.fillStyle = mix(c.text, c.background, 0.75);
+            g.font = font(18);
+            if (f.sub) { text(f.sub, xs[ci], ny, 'center'); ny += 30; }
+            if (f.note) text(wrapText(g, f.note, w, 1)[0], xs[ci], ny, 'center');
+            cy += memberH(f) + 32;
+          });
         });
-        const from = y + 44 + rows * (fh + 16) - 16;
+        const my = y + 56 + body + 40;
+        const bottom = my + 14 + 76;
         g.save();
-        g.strokeStyle = c.border;
-        g.lineWidth = 3;
-        for (const x of [PAD + CARD_W / 2, LIFE_IMAGE_W - PAD - CARD_W / 2]) {
+        g.strokeStyle = ink;
+        g.lineWidth = 2;
+        for (const x of xs) {
           g.beginPath();
-          g.moveTo(x, from);
-          g.bezierCurveTo(x, from + 44, CENTER, from + 30, CENTER, from + 76);
+          g.moveTo(x, my + 14);
+          g.bezierCurveTo(x, my + 60, CENTER, my + 40, CENTER, bottom);
           g.stroke();
         }
         g.restore();
+        xs.forEach((x, i) => ring(x, my, !(i === 0 ? mother : father)));
       },
     });
   }
@@ -187,116 +194,88 @@ function layout(ctx: CanvasRenderingContext2D, input: LifeImageInput): Block[] {
   for (const row of input.rows) {
     if (row.kind === 'decade') {
       blocks.push({
-        h: 44 + 34,
+        h: 56 + 30,
         draw: (g, y) => {
-          line(CENTER, y, y + 78, row.future);
-          g.font = font(17, 700);
-          const w = g.measureText(row.label).width + 32;
-          g.fillStyle = c.surface;
-          g.strokeStyle = c.border;
-          g.lineWidth = 1.5;
-          g.setLineDash([]);
-          roundRect(g, CENTER - w / 2, y + 44, w, 34, [17, 17, 17, 17]);
-          g.fill();
-          g.stroke();
+          line(CENTER, y, y + 86, row.future);
+          g.font = font(20, 700, SERIF);
+          const w = g.measureText(row.label).width + 20;
+          g.fillStyle = c.background;
+          g.fillRect(CENTER - w / 2, y + 52, w, 32);
           g.fillStyle = c.muted;
-          g.textAlign = 'center';
-          g.fillText(row.label, CENTER, y + 52);
-          g.textAlign = 'left';
+          text(row.label, CENTER, y + 56, 'center');
         },
       });
     } else if (row.kind === 'today') {
       blocks.push({
-        h: 44 + 30,
+        h: 56 + 30,
         draw: (g, y) => {
-          line(CENTER, y, y + 59, false);
-          line(CENTER, y + 59, y + 74, true);
-          g.fillStyle = mix(c.primary, c.surface, 0.18);
+          const cy = y + 56 + 15;
+          line(CENTER, y, cy, false);
+          line(CENTER, cy, y + 86, true);
+          g.fillStyle = c.background;
           g.beginPath();
-          g.arc(CENTER, y + 59, 22, 0, Math.PI * 2);
+          g.arc(CENTER, cy, 17, 0, Math.PI * 2);
           g.fill();
-          g.fillStyle = c.surface;
+          g.strokeStyle = c.primary;
+          g.lineWidth = 2.5;
           g.beginPath();
-          g.arc(CENTER, y + 59, 15, 0, Math.PI * 2);
-          g.fill();
+          g.arc(CENTER, cy, 15, 0, Math.PI * 2);
+          g.stroke();
           g.fillStyle = c.primary;
           g.beginPath();
-          g.arc(CENTER, y + 59, 11, 0, Math.PI * 2);
+          g.arc(CENTER, cy, 8, 0, Math.PI * 2);
           g.fill();
-          g.font = font(20, 700);
-          const w = g.measureText(row.label).width + 28;
-          g.fillStyle = mix(c.primary, c.surface, 0.12);
-          roundRect(g, CENTER + 32, y + 44, w, 32, [16, 16, 16, 16]);
-          g.fill();
-          g.fillStyle = c.primary;
-          g.fillText(row.label, CENTER + 46, y + 50);
+          g.font = font(20, 700, FONT, true);
+          g.fillText(row.label, CENTER + 32, cy - 12);
         },
       });
     } else {
-      const inner = CARD_W - CARD_PAD * 2;
-      ctx.font = font(27, 800);
-      const title = wrapText(ctx, row.title, inner, 3);
-      ctx.font = font(18);
-      const desc = row.description ? wrapText(ctx, row.description, inner, 2) : [];
-      const photoH = row.photo ? Math.round(inner * 9 / 16) : 0;
-      const h = 5 + CARD_PAD + 22 + 10 + title.length * 36 + (desc.length ? 8 + desc.length * 28 : 0) + (photoH ? 14 + photoH : 0) + CARD_PAD;
-      const gap = row.tight ? 28 : 44;
+      ctx.font = font(30, 700, SERIF);
+      const title = wrapText(ctx, row.title, TEXT_W, 3);
+      ctx.font = font(19);
+      const desc = row.description ? wrapText(ctx, row.description, TEXT_W, 4) : [];
+      const photoH = row.photo ? Math.round(TEXT_W * 9 / 16) : 0;
+      const h = 26 + 10 + title.length * 40 + (desc.length ? 14 + desc.length * 30 : 0) + (photoH ? 18 + photoH : 0);
+      const gap = row.tight ? 32 : 56;
       blocks.push({
         h: gap + h,
         draw: (g, y) => {
           line(CENTER, y, y + gap + h, row.future);
           const top = y + gap;
-          const x = row.side === 'left' ? PAD : LIFE_IMAGE_W - PAD - CARD_W;
+          const left = row.side === 'left';
+          const x = left ? CENTER - GAP : CENTER + GAP;
+          const align: CanvasTextAlign = left ? 'right' : 'left';
           g.save();
-          if (row.plan) g.globalAlpha = 0.85;
-          // Pointer toward the line.
-          const px = row.side === 'left' ? x + CARD_W : x;
-          const dir = row.side === 'left' ? 1 : -1;
-          g.fillStyle = c.surface;
-          g.beginPath();
-          g.moveTo(px, top + 22);
-          g.lineTo(px + dir * 12, top + 32);
-          g.lineTo(px, top + 42);
-          g.closePath();
-          g.fill();
-          card(x, top, CARD_W, h, row.color, row.plan);
-          let cy = top + 5 + CARD_PAD;
-          g.fillStyle = mix(row.color, c.text, 0.62);
-          g.font = font(16, 700);
-          g.textBaseline = 'top';
-          g.fillText(wrapText(g, row.eyebrow.toUpperCase(), inner, 1)[0], x + CARD_PAD, cy);
-          cy += 32;
+          if (row.plan) g.globalAlpha = 0.8;
+          g.fillStyle = c.muted;
+          g.font = font(19, 400, FONT, true);
+          text(wrapText(g, row.eyebrow, TEXT_W, 1)[0], x, top, align);
+          let cy = top + 36;
           g.fillStyle = c.text;
-          g.font = font(27, 800);
-          title.forEach((s) => { g.fillText(s, x + CARD_PAD, cy); cy += 36; });
+          g.font = font(30, 700, SERIF);
+          title.forEach((s) => { text(s, x, cy, align); cy += 40; });
           if (desc.length) {
-            cy += 8;
-            g.fillStyle = c.muted;
-            g.font = font(18);
-            desc.forEach((s) => { g.fillText(s, x + CARD_PAD, cy); cy += 28; });
+            cy += 14;
+            g.fillStyle = mix(c.text, c.background, 0.75);
+            g.font = font(19);
+            desc.forEach((s) => { text(s, x, cy, align); cy += 30; });
           }
           if (row.photo && photoH) {
-            cy += 14;
+            cy += 18;
+            const px = left ? x - TEXT_W : x;
             g.save();
-            roundRect(g, x + CARD_PAD, cy, inner, photoH, [12, 12, 12, 12]);
+            roundRect(g, px, cy, TEXT_W, photoH, [12, 12, 12, 12]);
             g.clip();
             const img = row.photo as HTMLImageElement;
-            const iw = img.naturalWidth || inner;
+            const iw = img.naturalWidth || TEXT_W;
             const ih = img.naturalHeight || photoH;
-            const s = Math.max(inner / iw, photoH / ih);
-            g.drawImage(row.photo, x + CARD_PAD + (inner - iw * s) / 2, cy + (photoH - ih * s) / 2, iw * s, ih * s);
+            const s = Math.max(TEXT_W / iw, photoH / ih);
+            g.drawImage(row.photo, px + (TEXT_W - iw * s) / 2, cy + (photoH - ih * s) / 2, iw * s, ih * s);
             g.restore();
           }
           g.restore();
-          // The marker, on top of the line.
-          g.fillStyle = c.surface;
-          g.beginPath();
-          g.arc(CENTER, top + 32, 15, 0, Math.PI * 2);
-          g.fill();
-          g.fillStyle = row.color;
-          g.beginPath();
-          g.arc(CENTER, top + 32, 10, 0, Math.PI * 2);
-          g.fill();
+          // The marker, level with the title.
+          ring(CENTER, top + 36 + 20, row.plan);
         },
       });
     }
@@ -307,50 +286,48 @@ function layout(ctx: CanvasRenderingContext2D, input: LifeImageInput): Block[] {
     const e = input.ending;
     const w = 760;
     ctx.font = font(20);
-    const text = wrapText(ctx, e.text, w - 64, 40);
+    const body = wrapText(ctx, e.text, w, 40);
     ctx.font = font(15);
-    const legal = wrapText(ctx, e.legal, w - 64);
-    const h = 32 + 34 + 16 + text.length * 32 + 24 + legal.length * 22 + 32;
+    const legal = wrapText(ctx, e.legal, w);
+    const h = 44 + 24 + body.length * 32 + 28 + legal.length * 22;
     blocks.push({
-      h: 60 + h,
+      h: 56 + 12 + 48 + h,
       draw: (g, y) => {
-        line(CENTER, y, y + 40, true);
-        g.fillStyle = c.border;
+        line(CENTER, y, y + 56, true);
+        g.fillStyle = faint;
         g.beginPath();
-        g.arc(CENTER, y + 44, 7, 0, Math.PI * 2);
+        g.arc(CENTER, y + 62, 6, 0, Math.PI * 2);
         g.fill();
         const x = CENTER - w / 2;
-        const top = y + 60;
-        card(x, top, w, h, c.primary, false);
+        let cy = y + 56 + 12 + 48;
         g.fillStyle = c.text;
-        g.font = font(28, 800);
-        g.fillText(e.title, x + 32, top + 32);
+        g.font = font(34, 700, SERIF);
+        text(e.title, CENTER, cy, 'center');
+        cy += 44 + 24;
+        g.fillStyle = mix(c.text, c.background, 0.85);
         g.font = font(20);
-        let cy = top + 32 + 50;
-        text.forEach((s) => { g.fillText(s, x + 32, cy); cy += 32; });
+        body.forEach((s) => { g.fillText(s, x, cy); cy += 32; });
         cy += 12;
         g.strokeStyle = c.border;
         g.lineWidth = 1;
         g.beginPath();
-        g.moveTo(x + 32, cy);
-        g.lineTo(x + w - 32, cy);
+        g.moveTo(x, cy);
+        g.lineTo(x + w, cy);
         g.stroke();
-        cy += 12;
+        cy += 16;
         g.fillStyle = c.muted;
         g.font = font(15);
-        legal.forEach((s) => { g.fillText(s, x + 32, cy); cy += 22; });
+        legal.forEach((s) => { g.fillText(s, x, cy); cy += 22; });
       },
     });
   }
 
   blocks.push({
-    h: 88,
+    h: 96,
     draw: (g, y) => {
       g.fillStyle = c.muted;
-      g.font = font(18, 600);
-      g.textAlign = 'center';
-      g.fillText(input.footer, CENTER, y + 44);
-      g.textAlign = 'left';
+      g.font = font(18, 400, SERIF, true);
+      text(input.footer, CENTER, y + 52, 'center');
     },
   });
   return blocks;
@@ -364,7 +341,8 @@ export function lifeImageScale(height: number, want = 2, maxArea = isIos() ? MAX
 
 export async function renderLifeImage(input: LifeImageInput, want = 2): Promise<Blob> {
   try {
-    await document.fonts?.ready;
+    // The serif is only fetched once something uses it: ask for it first.
+    await Promise.all([document.fonts?.load('700 30px "Nanum Myeongjo"'), document.fonts?.ready]);
   } catch {
     // fonts are a nicety
   }

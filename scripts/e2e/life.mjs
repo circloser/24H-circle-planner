@@ -38,7 +38,7 @@ export async function run() {
   const { browser, page, errors, counted } = await setup(base);
   const count = (sel) => page.locator(sel).count();
   const stored = () => page.evaluate((k) => JSON.parse(localStorage.getItem(k) ?? 'null'), LIFE_KEY);
-  const titles = () => page.$$eval('[data-life-moment]', (els) => els.map((e) => e.querySelector('.text-lg')?.textContent ?? ''));
+  const titles = () => page.$$eval('[data-life-moment]', (els) => els.map((e) => e.querySelector('.life-serif')?.textContent ?? ''));
   const openLife = async () => {
     await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForSelector('svg[data-circle-timeline], [data-life-view]', { timeout: 15000 });
@@ -126,8 +126,9 @@ export async function run() {
       dashed: getComputedStyle(e.querySelector('.life-line')).backgroundImage.includes('repeating-linear-gradient'),
     })));
     pass('the line is solid in the past and dashed after today', lines.every((l) => l.future === l.dashed) && lines.some((l) => l.dashed) && lines.some((l) => !l.dashed));
-    const planCard = page.locator('[data-life-moment][data-plan] [data-life-card]');
-    pass('a plan card has a dashed edge', (await planCard.evaluate((el) => getComputedStyle(el).borderTopStyle)) === 'dashed');
+    const planMarker = page.locator('[data-life-moment][data-plan] [data-life-marker]');
+    pass('a plan has a dashed marker', (await planMarker.evaluate((el) => getComputedStyle(el).borderTopStyle)) === 'dashed');
+    pass('a past moment has a solid one', (await page.locator('[data-life-moment]:not([data-plan]) [data-life-marker]').first().evaluate((el) => getComputedStyle(el).borderTopStyle)) === 'solid');
 
     // 6. Desktop: the cards alternate around the centre line.
     const sides = await page.evaluate(() => {

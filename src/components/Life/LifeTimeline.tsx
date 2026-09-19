@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Lightbulb } from 'lucide-react';
 import { useTranslation } from '@/hooks/usePreferences';
 import { loadPhoto } from '@/lib/calendar-photos';
@@ -107,10 +107,17 @@ function Line({ future }: { future: boolean }) {
   return <span aria-hidden className={`life-line ${future ? 'life-line--future' : ''}`} />;
 }
 
-/** A marker on the line and a card to one side of it, with the pointer. */
-function CardRow({ side, color, tight, year, plan, future, faint, children, label, onOpen, row }: {
+/** Which side of the line the entry sits on (wide screens set text toward it). */
+const SideCtx = createContext(false);
+
+/**
+ * A hollow marker on the line and, to one side of it, the entry as plain
+ * text: the date in italics, a serif title, the story, and its photo. No box
+ * around it — spacing and alignment do the work. Wide screens set an entry
+ * on the left flush right, toward the line.
+ */
+function EntryRow({ side, tight, year, plan, future, faint, children, label, onOpen, row }: {
   side: Side;
-  color: string;
   tight: boolean;
   year: number;
   plan: boolean;
@@ -125,49 +132,51 @@ function CardRow({ side, color, tight, year, plan, future, faint, children, labe
   const left = side === 'left';
   const dashed = plan || faint;
   return (
-    <li className={`relative ${tight ? 'pt-6' : 'pt-10'}`} data-year={year} data-future={future || undefined} {...row}>
+    <li className={`relative ${tight ? 'pt-6' : 'pt-12'}`} data-year={year} data-future={future || undefined} {...row}>
       <Line future={future} />
       <div className="life-reveal group relative">
-        <span aria-hidden
-          className="absolute left-[28px] top-5 z-10 h-[18px] w-[18px] -translate-x-1/2 rounded-full border-4 border-surface shadow-[0_1px_4px_rgba(0,0,0,.18)] transition-transform group-hover:scale-110 min-[900px]:left-1/2"
-          style={{ backgroundColor: color }} />
-        <div className={`relative ml-16 mr-4 min-[900px]:mx-0 min-[900px]:w-[calc(50%-48px)] ${left ? '' : 'min-[900px]:ml-auto'} ${
-          faint ? 'opacity-60' : plan ? 'opacity-[.85]' : ''}`}>
-          {/* The pointer: a turned square half hidden under the card. */}
-          <span aria-hidden
-            className={`absolute top-[22px] h-3.5 w-3.5 rotate-45 bg-surface shadow-[0_0_3px_rgba(0,0,0,.12)] -left-[7px] ${
-              left ? 'min-[900px]:left-auto min-[900px]:-right-[7px]' : ''} ${
-              dashed ? `border-dashed border-border border-l-[1.5px] border-b-[1.5px] ${
-                left ? 'min-[900px]:border-l-0 min-[900px]:border-b-0 min-[900px]:border-t-[1.5px] min-[900px]:border-r-[1.5px]' : ''}` : ''}`} />
-          <div data-life-card
-            className={`relative overflow-hidden rounded-2xl bg-surface text-left shadow-[0_4px_16px_rgba(0,0,0,.06)] transition-[transform,box-shadow] duration-150 group-hover:-translate-y-0.5 group-hover:shadow-[0_8px_22px_rgba(0,0,0,.09)] ${
-              dashed ? 'border-[1.5px] border-dashed border-border' : ''}`}>
-            <span aria-hidden className="block h-1" style={{ backgroundColor: color }} />
-            {/* The whole card opens the editor: the title button stretches over it. */}
-            <button type="button" aria-label={label} onClick={onOpen}
-              className="absolute inset-0 z-[1] rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset" />
-            <div className="p-5">{children}</div>
-          </div>
+        <span aria-hidden data-life-marker
+          className={`absolute left-[28px] top-[33px] z-10 h-[26px] w-[26px] -translate-x-1/2 rounded-full border-2 bg-background transition-transform duration-150 group-hover:scale-110 min-[900px]:left-1/2 ${
+            dashed ? 'border-dashed' : ''} ${faint ? 'border-foreground/40' : 'border-foreground'}`} />
+        <div data-life-card
+          className={`relative ml-16 mr-4 min-[900px]:mx-0 min-[900px]:w-[calc(50%-72px)] ${
+            left ? 'min-[900px]:text-right' : 'min-[900px]:ml-auto'} ${faint ? 'opacity-55' : plan ? 'opacity-[.8]' : ''}`}>
+          {/* The whole entry opens the editor: one button stretched over it. */}
+          <button type="button" aria-label={label} onClick={onOpen}
+            className="absolute -inset-2 z-[1] rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+          <SideCtx.Provider value={left}>{children}</SideCtx.Provider>
         </div>
       </div>
     </li>
   );
 }
 
-function Eyebrow({ category, color, text, badge }: { category: LifeCategory; color: string; text: string; badge?: string }) {
+/** The italic line above a title: category icon (colour and shape, so never
+ *  colour alone), date and age, and "plan" when it is one. */
+function DateLine({ category, color, text, badge }: { category: LifeCategory; color: string; text: string; badge?: string }) {
+  const left = useContext(SideCtx);
   const Icon = CATEGORY_ICON[category];
   return (
-    <span className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: inkOf(color) }}>
-      <Icon aria-hidden className="h-3.5 w-3.5 shrink-0" />
+    <span className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] italic leading-[22px] text-muted-foreground ${left ? 'min-[900px]:justify-end' : ''}`}>
+      <Icon aria-hidden className="h-4 w-4 shrink-0 not-italic" style={{ color: inkOf(color) }} />
       <span>{text}</span>
       {badge && (
-        <span className="rounded-full border border-current px-1.5 py-px text-[10px] leading-none tracking-normal normal-case">{badge}</span>
+        <span className="rounded-full border border-current px-2 text-[11px] not-italic leading-[18px] tracking-wide">{badge}</span>
       )}
     </span>
   );
 }
 
-/** Two lines of the description, and a way to read the rest. */
+function Title({ children, faint }: { children: ReactNode; faint?: boolean }) {
+  return (
+    <span className={`life-serif mt-2 block text-[22px] font-bold leading-8 tracking-tight decoration-1 underline-offset-[6px] group-hover:underline min-[900px]:text-2xl ${
+      faint ? 'text-foreground/70' : 'text-foreground'}`}>
+      {children}
+    </span>
+  );
+}
+
+/** Three lines of the story, and a way to read the rest. */
 function Description({ text }: { text: string }) {
   const { t } = useTranslation();
   const ref = useRef<HTMLParagraphElement>(null);
@@ -179,10 +188,10 @@ function Description({ text }: { text: string }) {
   }, [text, open]);
   return (
     <>
-      <p ref={ref} className={`mt-2 whitespace-pre-line text-sm leading-relaxed text-muted-foreground ${open ? '' : 'line-clamp-2'}`}>{text}</p>
+      <p ref={ref} className={`mt-3 whitespace-pre-line text-base leading-relaxed text-foreground/75 ${open ? '' : 'line-clamp-3'}`}>{text}</p>
       {(clamped || open) && (
         <button type="button" onClick={() => setOpen((v) => !v)}
-          className="relative z-[2] mt-1 text-xs font-medium text-foreground/70 underline-offset-2 hover:underline">
+          className="relative z-[2] mt-3 text-[15px] text-primary underline decoration-1 underline-offset-4 hover:decoration-2">
           {t(open ? 'life.less' : 'life.more')}
         </button>
       )}
@@ -240,10 +249,10 @@ export function LifeTimeline({ life, items, colors, showExamples, stickyTop, onO
   for (const it of items) {
     if (it.kind === 'decade') {
       rows.push(
-        <li key={it.key} className="relative pt-10" data-year={it.decade} data-life-decade>
+        <li key={it.key} className="relative pt-12" data-year={it.decade} data-life-decade>
           <Line future={it.future} />
           <div className="relative flex min-[900px]:justify-center">
-            <span className="relative z-10 ml-[28px] -translate-x-1/2 rounded-full border border-border bg-surface px-2 py-0.5 min-[900px]:px-3 text-xs font-semibold tracking-wide text-muted-foreground shadow-sm min-[900px]:ml-0 min-[900px]:translate-x-0">
+            <span className="life-serif relative z-10 ml-[28px] -translate-x-1/2 bg-background px-2 py-1 text-[15px] font-bold tracking-wide text-muted-foreground min-[900px]:ml-0 min-[900px]:translate-x-0">
               {it.decade}s
             </span>
           </div>
@@ -252,13 +261,13 @@ export function LifeTimeline({ life, items, colors, showExamples, stickyTop, onO
     } else if (it.kind === 'today') {
       const age = ageAt(birth, it.date)?.years ?? 0;
       rows.push(
-        <li key={it.key} className="relative pt-10" data-year={Number(it.date.slice(0, 4))} data-life-today>
+        <li key={it.key} className="relative pt-12" data-year={Number(it.date.slice(0, 4))} data-life-today>
           {/* Solid down to the marker, dashed from it on. */}
-          <span aria-hidden className="life-line" style={{ bottom: 'auto', height: 52 }} />
-          <span aria-hidden className="life-line life-line--future" style={{ top: 52 }} />
-          <div className="relative h-6">
-            <span aria-hidden className="life-pulse absolute left-[28px] top-0 z-10 h-6 w-6 -translate-x-1/2 rounded-full border-4 border-surface bg-primary shadow-[0_1px_4px_rgba(0,0,0,.2)] min-[900px]:left-1/2" />
-            <span className="absolute left-[48px] top-0 whitespace-nowrap rounded-full bg-primary/10 px-3 text-sm font-semibold leading-6 text-primary min-[900px]:left-[calc(50%+22px)]">
+          <span aria-hidden className="life-line" style={{ bottom: 'auto', height: 61 }} />
+          <span aria-hidden className="life-line life-line--future" style={{ top: 61 }} />
+          <div className="relative h-[26px]">
+            <span aria-hidden className="life-pulse absolute left-[28px] top-0 z-10 h-[26px] w-[26px] -translate-x-1/2 rounded-full border-[6px] border-background bg-primary ring-2 ring-primary min-[900px]:left-1/2" />
+            <span className="absolute left-[52px] top-0 whitespace-nowrap text-[15px] font-semibold italic leading-[26px] text-primary min-[900px]:left-[calc(50%+28px)]">
               {t('life.todayAge', { n: String(age) })}
             </span>
           </div>
@@ -267,20 +276,20 @@ export function LifeTimeline({ life, items, colors, showExamples, stickyTop, onO
     } else if (it.kind === 'birth') {
       const color = colors.birth;
       rows.push(
-        <CardRow key={it.key} side={it.side} color={color} tight={it.tight} year={birthYear} plan={false} future={false}
+        <EntryRow key={it.key} side={it.side} tight={it.tight} year={birthYear} plan={false} future={false}
           label={`${spokenLifeDate(birth, lang)}, ${t('life.born')}`} onOpen={onOpenBirth}
           row={{ 'data-life-birth': '' }}>
-          <Eyebrow category="birth" color={color} text={formatLifeDate(birth)} />
-          <span className="mt-1.5 block text-lg font-bold leading-snug text-foreground">{t('life.born')}</span>
-          {life.profile.name && <p className="mt-1 text-sm text-muted-foreground">{life.profile.name}</p>}
-        </CardRow>,
+          <DateLine category="birth" color={color} text={formatLifeDate(birth)} />
+          <Title>{t('life.born')}</Title>
+          {life.profile.name && <p className="mt-3 text-[15px] leading-relaxed text-foreground/75">{life.profile.name}</p>}
+        </EntryRow>,
       );
       if (showExamples) {
         rows.push(
-          <li key="examples-hint" className="relative pt-10" data-year={birthYear}>
+          <li key="examples-hint" className="relative pt-12" data-year={birthYear}>
             <Line future={false} />
             <div className="relative flex min-[900px]:justify-center">
-              <span className="relative z-10 ml-16 inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm min-[900px]:ml-0">
+              <span className="relative z-10 ml-16 inline-flex items-center gap-1.5 bg-background px-2 py-1 text-[15px] italic text-muted-foreground min-[900px]:ml-0">
                 <Lightbulb aria-hidden className="h-3.5 w-3.5" />
                 {t('life.empty.hint')}
               </span>
@@ -291,13 +300,13 @@ export function LifeTimeline({ life, items, colors, showExamples, stickyTop, onO
           const date = String(birthYear + ex.age);
           const color = colors[ex.category];
           rows.push(
-            <CardRow key={ex.key} side={(it.side === 'left') === (i % 2 === 0) ? 'right' : 'left'} color={color} tight={false}
+            <EntryRow key={ex.key} side={(it.side === 'left') === (i % 2 === 0) ? 'right' : 'left'} tight={false}
               year={birthYear + ex.age} plan={false} future={false} faint label={t(ex.key)}
               onOpen={() => onAdd({ title: t(ex.key), category: ex.category, date })}
               row={{ 'data-life-example': '' }}>
-              <Eyebrow category={ex.category} color={color} text={`${date} · ${ageText(date)}`} />
-              <span className="mt-1.5 block text-lg font-bold leading-snug text-foreground/70">{t(ex.key)}</span>
-            </CardRow>,
+              <DateLine category={ex.category} color={color} text={`${date} · ${ageText(date)}`} />
+              <Title faint>{t(ex.key)}</Title>
+            </EntryRow>,
           );
         });
       }
@@ -305,15 +314,15 @@ export function LifeTimeline({ life, items, colors, showExamples, stickyTop, onO
       const m = it.m;
       const color = colors[m.category];
       rows.push(
-        <CardRow key={it.key} side={it.side} color={color} tight={it.tight} year={Number(m.date.slice(0, 4))} plan={it.plan} future={it.future}
+        <EntryRow key={it.key} side={it.side} tight={it.tight} year={Number(m.date.slice(0, 4))} plan={it.plan} future={it.future}
           label={`${spokenLifeDate(m.date, lang)}, ${m.title}${it.plan ? `, ${t('life.planBadge')}` : ''}`}
           onOpen={() => onOpenMoment(m)}
           row={{ 'data-life-moment': m.id, ...(it.plan ? { 'data-plan': '' } : {}) }}>
-          <Eyebrow category={m.category} color={color} text={dateText(m)} badge={it.plan ? t('life.planBadge') : undefined} />
-          <span className="mt-1.5 block text-lg font-bold leading-snug text-foreground">{m.title}</span>
+          <DateLine category={m.category} color={color} text={dateText(m)} badge={it.plan ? t('life.planBadge') : undefined} />
+          <Title>{m.title}</Title>
           {m.description && <Description text={m.description} />}
-          {m.photo && <LifePhoto id={m.photo} className="mt-3 aspect-video rounded-lg" />}
-        </CardRow>,
+          {m.photo && <LifePhoto id={m.photo} className="mt-4 aspect-video rounded-lg" />}
+        </EntryRow>,
       );
     }
   }
@@ -323,7 +332,7 @@ export function LifeTimeline({ life, items, colors, showExamples, stickyTop, onO
       {/* The year at the top of the window follows the scroll. */}
       <div className="pointer-events-none sticky z-20 h-0" style={{ top: stickyTop + 8 }} aria-hidden>
         {topYear !== null && (
-          <span data-life-year className="absolute left-[28px] -translate-x-1/2 rounded-full bg-foreground px-2.5 py-0.5 text-xs font-bold tabular-nums text-background shadow min-[900px]:left-1/2">
+          <span data-life-year className="life-serif absolute left-[28px] -translate-x-1/2 rounded-full bg-foreground px-3 py-0.5 text-sm font-bold tabular-nums text-background min-[900px]:left-1/2">
             {topYear}
           </span>
         )}
