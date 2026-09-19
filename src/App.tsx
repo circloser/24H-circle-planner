@@ -620,10 +620,11 @@ function App() {
       {/* Invite a friend → 1 month Pro for the inviter once the friend signs in. */}
       <ReferralDialog open={referralOpen} onOpenChange={setReferralOpen} />
 
-      {!firstSession && <ActivationNudge onSendToPhone={() => setTransferOpen(true)} />}
-      {!firstSession && <EnablePushBanner />}
-      {!firstSession && <GetAppBanner />}
-      {!firstSession && <IosInstallBanner onOpen={() => setHomeOpen(true)} />}
+      {/* The life page shows nothing but the life: these nudges wait for the other views. */}
+      {!firstSession && !lifeMode && <ActivationNudge onSendToPhone={() => setTransferOpen(true)} />}
+      {!firstSession && !lifeMode && <EnablePushBanner />}
+      {!firstSession && !lifeMode && <GetAppBanner />}
+      {!firstSession && !lifeMode && <IosInstallBanner onOpen={() => setHomeOpen(true)} />}
 
       <main
         className={
@@ -803,7 +804,7 @@ function App() {
         )}
       </main>
 
-      <AppFooter />
+      {!lifeMode && <AppFooter />}
 
       <PresetGallery
         open={presetOpen}

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Lightbulb } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { useCoarsePointer } from '@/hooks/useCoarsePointer';
 import { useTranslation } from '@/hooks/usePreferences';
 import { loadPhoto } from '@/lib/calendar-photos';
 import {
@@ -230,20 +231,31 @@ export function LifeTimeline({ life, items, colors, showExamples, stickyTop, onO
     return age ? `${range} · ${age}` : range;
   };
 
-  // Double-click (or a long press on a phone) on the line adds a moment in
-  // that row's year.
-  const press = useRef<{ timer: number; x: number; y: number } | null>(null);
-  const yearAt = (target: EventTarget | null): number | null => {
-    const el = target as Element | null;
-    if (!el || el.closest('button, a, input, textarea, [data-life-card]')) return null;
-    const row = el.closest<HTMLElement>('[data-year]');
-    return row ? Number(row.dataset.year) : null;
-  };
+  // Adding happens on the line itself. With a mouse, a faint circle with a +
+  // follows the pointer along the line and adds a moment in that year; on a
+  // touch screen a tap on the line does the same, and a + waits just below
+  // today's marker so the way in is always in sight.
+  const wrap = useRef<HTMLDivElement>(null);
+  const coarse = useCoarsePointer();
+  const [ghost, setGhost] = useState<{ x: number; y: number; year: number } | null>(null);
   const addAt = (year: number) => onAdd({ date: String(Math.max(year, birthYear)) });
-  const endPress = () => {
-    if (press.current) window.clearTimeout(press.current.timer);
-    press.current = null;
+  /** Where the line runs, in window coordinates. */
+  const lineX = () => {
+    const ol = ref.current!.getBoundingClientRect();
+    return window.matchMedia('(min-width: 900px)').matches ? ol.left + ol.width / 2 : ol.left + 28;
   };
+  /** The year of the row at a height: the last row starting above it. */
+  const yearAtY = (clientY: number): number => {
+    const rows = ref.current?.querySelectorAll<HTMLElement>(':scope > li[data-year]');
+    let year = birthYear;
+    rows?.forEach((r) => { if (r.getBoundingClientRect().top <= clientY) year = Number(r.dataset.year); });
+    return year;
+  };
+  /** Near the line, and not over something of its own (a marker, a label, an entry). */
+  const onLine = (e: React.PointerEvent) =>
+    Math.abs(e.clientX - lineX()) <= 20
+    && !(e.target as Element).closest('[data-life-card], [data-life-marker], [data-life-label], button, a');
+  const tap = useRef<{ x: number; y: number } | null>(null);
 
   const rows: ReactNode[] = [];
   for (const it of items) {
@@ -252,7 +264,7 @@ export function LifeTimeline({ life, items, colors, showExamples, stickyTop, onO
         <li key={it.key} className="relative pt-12" data-year={it.decade} data-life-decade>
           <Line future={it.future} />
           <div className="relative flex min-[900px]:justify-center">
-            <span className="life-serif relative z-10 ml-[28px] -translate-x-1/2 bg-background px-2 py-1 text-[15px] font-bold tracking-wide text-muted-foreground min-[900px]:ml-0 min-[900px]:translate-x-0">
+            <span data-life-label className="life-serif relative z-10 ml-[28px] -translate-x-1/2 bg-background px-2 py-1 text-[15px] font-bold tracking-wide text-muted-foreground min-[900px]:ml-0 min-[900px]:translate-x-0">
               {it.decade}s
             </span>
           </div>
@@ -260,16 +272,23 @@ export function LifeTimeline({ life, items, colors, showExamples, stickyTop, onO
       );
     } else if (it.kind === 'today') {
       const age = ageAt(birth, it.date)?.years ?? 0;
+      const year = Number(it.date.slice(0, 4));
       rows.push(
-        <li key={it.key} className="relative pt-12" data-year={Number(it.date.slice(0, 4))} data-life-today>
+        <li key={it.key} className="relative pt-12" data-year={year} data-life-today>
           {/* Solid down to the marker, dashed from it on. */}
           <span aria-hidden className="life-line" style={{ bottom: 'auto', height: 61 }} />
           <span aria-hidden className="life-line life-line--future" style={{ top: 61 }} />
           <div className="relative h-[26px]">
-            <span aria-hidden className="life-pulse absolute left-[28px] top-0 z-10 h-[26px] w-[26px] -translate-x-1/2 rounded-full border-[6px] border-background bg-primary ring-2 ring-primary min-[900px]:left-1/2" />
-            <span className="absolute left-[52px] top-0 whitespace-nowrap text-[15px] font-semibold italic leading-[26px] text-primary min-[900px]:left-[calc(50%+28px)]">
+            <span aria-hidden data-life-label className="life-pulse absolute left-[28px] top-0 z-10 h-[26px] w-[26px] -translate-x-1/2 rounded-full border-[6px] border-background bg-primary ring-2 ring-primary min-[900px]:left-1/2" />
+            <span data-life-label className="absolute left-[52px] top-0 whitespace-nowrap text-[15px] font-semibold italic leading-[26px] text-primary min-[900px]:left-[calc(50%+28px)]">
               {t('life.todayAge', { n: String(age) })}
             </span>
+            {coarse && (
+              <button type="button" aria-label={t('life.add')} data-life-add-touch onClick={() => addAt(year)}
+                className="absolute left-[28px] top-[42px] z-20 grid h-8 w-8 -translate-x-1/2 place-items-center rounded-full border border-foreground/25 bg-background/80 text-foreground/70 backdrop-blur-sm min-[900px]:left-1/2">
+                <Plus aria-hidden className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </li>,
       );
@@ -285,17 +304,6 @@ export function LifeTimeline({ life, items, colors, showExamples, stickyTop, onO
         </EntryRow>,
       );
       if (showExamples) {
-        rows.push(
-          <li key="examples-hint" className="relative pt-12" data-year={birthYear}>
-            <Line future={false} />
-            <div className="relative flex min-[900px]:justify-center">
-              <span className="relative z-10 ml-16 inline-flex items-center gap-1.5 bg-background px-2 py-1 text-[15px] italic text-muted-foreground min-[900px]:ml-0">
-                <Lightbulb aria-hidden className="h-3.5 w-3.5" />
-                {t('life.empty.hint')}
-              </span>
-            </div>
-          </li>,
-        );
         EXAMPLES.forEach((ex, i) => {
           const date = String(birthYear + ex.age);
           const color = colors[ex.category];
@@ -328,7 +336,28 @@ export function LifeTimeline({ life, items, colors, showExamples, stickyTop, onO
   }
 
   return (
-    <div className="relative">
+    <div ref={wrap} className="relative"
+      onPointerMove={(e) => {
+        if (e.pointerType !== 'mouse' || !wrap.current) return;
+        // Over the circle itself: let it follow, keep its year.
+        if ((e.target as Element).closest('[data-life-ghost]')) return;
+        if (!onLine(e)) { setGhost(null); return; }
+        const box = wrap.current.getBoundingClientRect();
+        setGhost({ x: lineX() - box.left, y: e.clientY - box.top, year: yearAtY(e.clientY) });
+      }}
+      onPointerLeave={() => setGhost(null)}
+      onPointerDown={(e) => { tap.current = e.pointerType === 'touch' && onLine(e) ? { x: e.clientX, y: e.clientY } : null; }}
+      onPointerUp={(e) => {
+        const start = tap.current;
+        tap.current = null;
+        if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) < 10) addAt(yearAtY(e.clientY));
+      }}
+      onPointerCancel={() => { tap.current = null; }}>
+      {/* Keyboard: the same "add a moment", reachable with Tab. */}
+      <button type="button" data-life-add onClick={() => onAdd({})}
+        className="sr-only focus:not-sr-only focus:absolute focus:left-1/2 focus:top-0 focus:z-30 focus:-translate-x-1/2 focus:rounded-full focus:bg-foreground focus:px-4 focus:py-2 focus:text-sm focus:text-background">
+        {t('life.add')}
+      </button>
       {/* The year at the top of the window follows the scroll. */}
       <div className="pointer-events-none sticky z-20 h-0" style={{ top: stickyTop + 8 }} aria-hidden>
         {topYear !== null && (
@@ -337,23 +366,20 @@ export function LifeTimeline({ life, items, colors, showExamples, stickyTop, onO
           </span>
         )}
       </div>
-      <ol ref={ref} aria-label={t('life.timelineLabel')} className="relative mx-auto max-w-[960px] select-none"
-        data-life-timeline
-        onDoubleClick={(e) => { const y = yearAt(e.target); if (y !== null) addAt(y); }}
-        onPointerDown={(e) => {
-          if (e.pointerType !== 'touch') return;
-          const y = yearAt(e.target);
-          if (y === null) return;
-          press.current = { x: e.clientX, y: e.clientY, timer: window.setTimeout(() => { press.current = null; addAt(y); }, 600) };
-        }}
-        onPointerMove={(e) => {
-          const p = press.current;
-          if (p && Math.hypot(e.clientX - p.x, e.clientY - p.y) > 10) endPress();
-        }}
-        onPointerUp={endPress}
-        onPointerCancel={endPress}>
+      <ol ref={ref} aria-label={t('life.timelineLabel')} className="relative mx-auto max-w-[960px] select-none" data-life-timeline>
         {rows}
       </ol>
+      {ghost && (
+        <button type="button" data-life-ghost aria-label={`${ghost.year} · ${t('life.add')}`}
+          onClick={() => addAt(ghost.year)}
+          className="absolute z-30 flex -translate-x-4 -translate-y-1/2 items-center gap-2"
+          style={{ left: ghost.x, top: ghost.y }}>
+          <span className="grid h-8 w-8 place-items-center rounded-full border border-foreground/25 bg-foreground/10 text-foreground/70 backdrop-blur-sm transition-colors hover:bg-foreground/20 hover:text-foreground">
+            <Plus aria-hidden className="h-4 w-4" />
+          </span>
+          <span className="life-serif rounded bg-background/80 px-1 text-sm font-bold text-muted-foreground">{ghost.year}</span>
+        </button>
+      )}
       {/* Reserved for the decorating layer (stickers and tape on the line). */}
       <div data-life-layer aria-hidden className="pointer-events-none absolute inset-0" />
     </div>

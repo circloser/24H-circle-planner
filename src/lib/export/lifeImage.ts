@@ -47,10 +47,9 @@ export type LifeImageRow =
 export interface LifeImageInput {
   title: string;
   summary: string;
-  rootsLabel: string;
   family: { slot: 'mother' | 'father' | 'other'; label: string; name: string; sub?: string; note?: string }[];
   rows: LifeImageRow[];
-  ending: { title: string; text: string; legal: string } | null;
+  ending: { title: string; text: string } | null;
   footer: string;
   colors: LifeImageColors;
 }
@@ -150,13 +149,10 @@ function layout(ctx: CanvasRenderingContext2D, input: LifeImageInput): Block[] {
     const body = Math.max(...colH);
     const xs = [LIFE_IMAGE_W / 4, (LIFE_IMAGE_W * 3) / 4];
     blocks.push({
-      h: 56 + body + 40 + 14 + 76,
+      h: 16 + body + 40 + 14 + 76,
       draw: (g, y) => {
-        g.fillStyle = c.muted;
-        g.font = font(19, 700, SERIF);
-        text(input.rootsLabel, CENTER, y + 10, 'center');
         cols.forEach((col, ci) => {
-          let cy = y + 56;
+          let cy = y + 16;
           col.forEach((f) => {
             const w = LIFE_IMAGE_W / 2 - 80;
             g.fillStyle = c.muted;
@@ -173,7 +169,7 @@ function layout(ctx: CanvasRenderingContext2D, input: LifeImageInput): Block[] {
             cy += memberH(f) + 32;
           });
         });
-        const my = y + 56 + body + 40;
+        const my = y + 16 + body + 40;
         const bottom = my + 14 + 76;
         g.save();
         g.strokeStyle = ink;
@@ -287,9 +283,7 @@ function layout(ctx: CanvasRenderingContext2D, input: LifeImageInput): Block[] {
     const w = 760;
     ctx.font = font(20);
     const body = wrapText(ctx, e.text, w, 40);
-    ctx.font = font(15);
-    const legal = wrapText(ctx, e.legal, w);
-    const h = 44 + 24 + body.length * 32 + 28 + legal.length * 22;
+    const h = 44 + 24 + body.length * 32;
     blocks.push({
       h: 56 + 12 + 48 + h,
       draw: (g, y) => {
@@ -307,17 +301,6 @@ function layout(ctx: CanvasRenderingContext2D, input: LifeImageInput): Block[] {
         g.fillStyle = mix(c.text, c.background, 0.85);
         g.font = font(20);
         body.forEach((s) => { g.fillText(s, x, cy); cy += 32; });
-        cy += 12;
-        g.strokeStyle = c.border;
-        g.lineWidth = 1;
-        g.beginPath();
-        g.moveTo(x, cy);
-        g.lineTo(x + w, cy);
-        g.stroke();
-        cy += 16;
-        g.fillStyle = c.muted;
-        g.font = font(15);
-        legal.forEach((s) => { g.fillText(s, x, cy); cy += 22; });
       },
     });
   }

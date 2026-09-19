@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Download, Feather, ListFilter, Pin, Plus, Scale, ShieldAlert, Sprout, X } from 'lucide-react';
+import { Download, Feather, ListFilter, Pin, Plus, ShieldAlert, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
@@ -12,9 +12,9 @@ import { requestUpgrade } from '@/lib/pro';
 import { todayKey } from '@/lib/calendar-grid';
 import { track, trackOnce } from '@/lib/track';
 import {
-  FREE_LIFE_FAMILY, FREE_LIFE_MILESTONES, MAX_ENDING, MAX_NAME, PICKABLE_CATEGORIES, ageAt, buildTimeline,
-  canAddFamily, canAddMilestone, formatLifeDate, isFullDate, lifeSummary,
-  type FamilyMember, type LifeCategory, type Relation,
+  FREE_LIFE_MILESTONES, MAX_ENDING, MAX_NAME, PICKABLE_CATEGORIES, ageAt, buildTimeline,
+  canAddMilestone, formatLifeDate, isFullDate, lifeSummary,
+  type FamilyMember, type LifeCategory,
 } from '@/lib/life';
 import { dismissBackupBanner, downloadLifeBackup, needsBackupWarning } from '@/lib/life-backup';
 import { LIFE_EXPORT_EVENT } from '@/lib/life-export';
@@ -23,10 +23,14 @@ import { LifePhoto, LifeTimeline } from './LifeTimeline';
 import { FamilyDialog, MilestoneDialog, ProfileDialog, type MemberTarget, type MomentTarget } from './LifeDialogs';
 import { LifeExportDialog } from './LifeExport';
 
+type Parent = 'mother' | 'father';
+
 /**
- * Life — the third view beside the timetable and the calendar: roots at the
- * top, then one line from birth through today into the plans ahead, and the
- * words to leave behind where the line ends.
+ * Life — the third view beside the timetable and the calendar: the parents at
+ * the top, then one line from birth through today into the plans ahead, and
+ * the words to leave behind where the line ends. Nothing else is said on the
+ * page: export lives in the app header, adding happens on the line itself,
+ * and the filter is a round button in the corner.
  */
 export function LifeView() {
   const api = useLife();
@@ -39,16 +43,20 @@ export function LifeView() {
   const colors = categoryColors(theme);
   const today = todayKey();
   useEffect(() => { trackOnce('life_open'); }, []);
+  // The page ends where the life ends: no site footer or reading copy below
+  // it while it shows (the home page keeps both).
+  useEffect(() => {
+    document.documentElement.setAttribute('data-page', 'life');
+    return () => document.documentElement.removeAttribute('data-page');
+  }, []);
 
   const [only, setOnly] = useState<Set<LifeCategory>>(() => new Set());
-  const [filtering, setFiltering] = useState(false);
   const items = useMemo(() => buildTimeline(life, { today, only }), [life, today, only]);
   const summary = lifeSummary(life, today);
 
   const [moment, setMoment] = useState<MomentTarget | null>(null);
   const [member, setMember] = useState<MemberTarget | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [askParents, setAskParents] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [bannerOff, setBannerOff] = useState(false);
   useEffect(() => {
@@ -78,15 +86,8 @@ export function LifeView() {
     }
     setMoment({ mode: 'add', preset });
   };
-  const addMember = (relation: Relation) => {
-    if (!canAddFamily(life, pro)) {
-      toast(t('life.limit.family', { n: String(FREE_LIFE_FAMILY) }));
-      requestUpgrade('life');
-      return;
-    }
-    setMember({ mode: 'add', relation });
-  };
 
+  const hasLine = isFullDate(life.profile.birthDate);
   const warnBackup = !bannerOff && needsBackupWarning({ moments: life.milestones.length, syncing });
   const pinned = life.milestones.filter((m) => m.pinned);
   const jumpTo = (id: string) => {
@@ -96,36 +97,12 @@ export function LifeView() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-[1040px] flex-col pb-16" data-life-view>
+    <div className="mx-auto flex w-full max-w-[1040px] flex-col pb-24" data-life-view>
       <header className="mx-auto w-full max-w-[960px] px-4 pt-4 sm:pt-6">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="life-serif text-3xl font-bold tracking-tight text-foreground">{t('life.title')}</h2>
-            <p className="mt-2 text-[15px] italic text-muted-foreground">{t('life.subtitle')}</p>
-          </div>
-          {isFullDate(life.profile.birthDate) && (
-            <div className="flex flex-wrap items-center gap-2">
-              <Button variant="outline" size="sm" className="min-h-10 gap-1.5" aria-pressed={filtering} data-life-filter-toggle
-                onClick={() => setFiltering((v) => !v)}>
-                <ListFilter aria-hidden className="h-4 w-4" />
-                {t('life.filter')}
-                {only.size > 0 && <span className="rounded-full bg-primary px-1.5 text-[11px] leading-4 text-primary-foreground">{only.size}</span>}
-              </Button>
-              <Button variant="outline" size="sm" className="min-h-10 gap-1.5" data-life-export onClick={() => setExporting(true)}>
-                <Download aria-hidden className="h-4 w-4" />
-                {t('header.export')}
-              </Button>
-              <Button size="sm" className="min-h-10 gap-1.5 bg-primary text-primary-foreground" data-life-add disabled={api.readOnly} onClick={() => addMoment({})}>
-                <Plus aria-hidden className="h-4 w-4" />
-                {t('life.add')}
-              </Button>
-            </div>
-          )}
-        </div>
-
-        {isFullDate(life.profile.birthDate) && (
+        <h2 className="life-serif text-3xl font-bold tracking-tight text-foreground">{t('life.title')}</h2>
+        {hasLine && (
           <>
-            <p className="mt-3 text-sm text-foreground/80" data-life-summary>
+            <p className="mt-2 text-[15px] italic text-muted-foreground" data-life-summary>
               {[
                 t('life.sumRecords', { n: String(summary.records) }),
                 t('life.sumPlans', { n: String(summary.plans) }),
@@ -134,11 +111,11 @@ export function LifeView() {
               ].filter(Boolean).join(' · ')}
             </p>
             {pinned.length > 0 && (
-              <ul className="mt-2 flex flex-wrap gap-1.5" aria-label={t('life.pinnedLabel')}>
+              <ul className="mt-3 flex flex-wrap gap-1.5" aria-label={t('life.pinnedLabel')}>
                 {pinned.map((m) => (
                   <li key={m.id}>
                     <button type="button" onClick={() => jumpTo(m.id)} data-life-pinned
-                      className="inline-flex min-h-8 items-center gap-1 rounded-full border border-border bg-surface px-2.5 text-xs text-foreground hover:bg-accent/10">
+                      className="inline-flex min-h-8 items-center gap-1 rounded-full border border-border px-2.5 text-xs text-foreground hover:bg-accent/10">
                       <Pin aria-hidden className="h-3 w-3" style={{ color: inkOf(colors[m.category]) }} />
                       {m.title}
                       <span className="text-muted-foreground">{m.date.slice(0, 4)}</span>
@@ -147,30 +124,6 @@ export function LifeView() {
                 ))}
               </ul>
             )}
-            {filtering && (
-              <div className="mt-3 flex flex-wrap gap-1.5" role="group" aria-label={t('life.filter')} data-life-filters>
-                <button type="button" aria-pressed={only.size === 0} onClick={() => setOnly(new Set())}
-                  className={chip(only.size === 0)}>
-                  {t('life.filterAll')}
-                </button>
-                {PICKABLE_CATEGORIES.map((c) => {
-                  const Icon = CATEGORY_ICON[c];
-                  const on = only.has(c);
-                  return (
-                    <button key={c} type="button" aria-pressed={on} data-life-filter={c} className={chip(on)}
-                      onClick={() => setOnly((prev) => {
-                        const next = new Set(prev);
-                        if (on) next.delete(c); else next.add(c);
-                        return next;
-                      })}>
-                      <Icon aria-hidden className="h-3.5 w-3.5" style={{ color: inkOf(colors[c]) }} />
-                      {t(CATEGORY_LABEL[c])}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-            <p className="mt-2 hidden text-xs text-muted-foreground sm:block">{t('life.addHint')}</p>
           </>
         )}
 
@@ -199,17 +152,17 @@ export function LifeView() {
         )}
       </header>
 
-      {!isFullDate(life.profile.birthDate) ? (
-        <Onboarding onRestore={() => setExporting(true)} onStart={(birthDate, name) => {
+      {!hasLine ? (
+        <Onboarding onStart={(birthDate, name) => {
           api.setProfile({ birthDate, ...(name ? { name } : {}) });
-          setAskParents(true);
           track('life_add');
         }} />
       ) : (
         // A record from a newer app version is shown, never edited here.
         <div className="contents" inert={api.readOnly || undefined}>
-          <Roots api={api} askParents={askParents} onSkip={() => setAskParents(false)}
-            onAdd={addMember} onOpen={(f) => setMember({ mode: 'edit', f })} />
+          <Parents family={life.family}
+            onAdd={(relation) => setMember({ mode: 'add', relation })}
+            onOpen={(f) => setMember({ mode: 'edit', f })} />
           <LifeTimeline life={life} items={items} colors={colors} stickyTop={headerH}
             showExamples={life.milestones.length === 0 && only.size === 0}
             onOpenMoment={(m) => setMoment({ mode: 'edit', m })}
@@ -217,13 +170,9 @@ export function LifeView() {
             onAdd={addMoment} />
           {/* A restore replaces the note: start its field afresh from it. */}
           <EndingNote key={api.generation} api={api} />
+          <FilterFab only={only} setOnly={setOnly} colors={colors} />
         </div>
       )}
-
-      <footer className="mx-auto mt-12 flex w-full max-w-[720px] flex-col gap-2 px-4 text-xs leading-relaxed text-muted-foreground" data-life-footer>
-        <p>{t('life.footer.storage')}</p>
-        <p>{t('life.footer.legal')}</p>
-      </footer>
 
       <MilestoneDialog target={moment} pro={pro} colors={colors}
         onClose={() => setMoment(null)}
@@ -238,20 +187,9 @@ export function LifeView() {
         onDelete={(id) => { api.removeMilestone(id); setMoment(null); }} />
       <FamilyDialog target={member} pro={pro}
         onClose={() => setMember(null)}
-        onSave={(draft, id, alsoMoment) => {
+        onSave={(draft, id) => {
           if (id) api.updateMember(id, draft);
           else api.addMember(draft);
-          if (alsoMoment && !canAddMilestone(life, pro)) {
-            toast(t('life.limit.moments', { n: String(FREE_LIFE_MILESTONES) }));
-          } else if (alsoMoment) {
-            api.addMilestone(draft.relation === 'spouse'
-              ? { date: alsoMoment.date, title: t('life.family.marriedTitle', { name: draft.name }), category: 'relationship', isPlan: false }
-              : { date: alsoMoment.date, title: t('life.family.childTitle', { name: draft.name }), category: 'family', isPlan: false });
-          }
-          if (draft.relation === 'mother' || draft.relation === 'father') {
-            const has = (r: Relation) => r === draft.relation || life.family.some((f) => f.relation === r);
-            if (has('mother') && has('father')) setAskParents(false);
-          }
           setMember(null);
         }}
         onDelete={(id) => { api.removeMember(id); setMember(null); }} />
@@ -262,24 +200,82 @@ export function LifeView() {
   );
 }
 
-const chip = (on: boolean) =>
-  `inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 text-xs transition-colors ${
-    on ? 'border-primary bg-primary/10 font-medium text-foreground' : 'border-border text-muted-foreground hover:bg-accent/10'}`;
+/**
+ * The filter: a round button in the bottom-right corner. Pressed, the
+ * categories unfold upward from it; any number can be on at once.
+ */
+function FilterFab({ only, setOnly, colors }: {
+  only: Set<LifeCategory>;
+  setOnly: (fn: (prev: Set<LifeCategory>) => Set<LifeCategory>) => void;
+  colors: Record<LifeCategory, string>;
+}) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: PointerEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('pointerdown', away);
+    document.addEventListener('keydown', esc);
+    return () => {
+      document.removeEventListener('pointerdown', away);
+      document.removeEventListener('keydown', esc);
+    };
+  }, [open]);
+  const chip = (on: boolean) =>
+    `life-pop inline-flex min-h-10 items-center gap-2 rounded-full border px-4 text-sm shadow-md transition-colors ${
+      on ? 'border-foreground bg-foreground text-background' : 'border-border bg-surface text-foreground hover:bg-accent/10'}`;
+  return (
+    <div ref={ref} data-life-filter-fab
+      className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom))] right-[calc(1.25rem+env(safe-area-inset-right))] z-40 flex flex-col items-end gap-2">
+      {open && (
+        <div role="group" aria-label={t('life.filter')} data-life-filters className="flex flex-col items-end gap-2">
+          <button type="button" aria-pressed={only.size === 0} onClick={() => setOnly(() => new Set())}
+            className={chip(only.size === 0)}>
+            {t('life.filterAll')}
+          </button>
+          {PICKABLE_CATEGORIES.map((c) => {
+            const Icon = CATEGORY_ICON[c];
+            const on = only.has(c);
+            return (
+              <button key={c} type="button" aria-pressed={on} data-life-filter={c} className={chip(on)}
+                onClick={() => setOnly((prev) => {
+                  const next = new Set(prev);
+                  if (on) next.delete(c); else next.add(c);
+                  return next;
+                })}>
+                <Icon aria-hidden className="h-4 w-4" style={on ? undefined : { color: inkOf(colors[c]) }} />
+                {t(CATEGORY_LABEL[c])}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      <button type="button" aria-expanded={open} aria-label={t('life.filter')} title={t('life.filter')} data-life-filter-toggle
+        onClick={() => setOpen((v) => !v)}
+        className="relative grid h-14 w-14 place-items-center rounded-full bg-foreground text-background shadow-lg transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+        {open ? <X aria-hidden className="h-5 w-5" /> : <ListFilter aria-hidden className="h-5 w-5" />}
+        {only.size > 0 && (
+          <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] font-bold text-primary-foreground">
+            {only.size}
+          </span>
+        )}
+      </button>
+    </div>
+  );
+}
 
 /** First visit: the birthday is all the line needs to appear. */
-function Onboarding({ onStart, onRestore }: { onStart: (birthDate: string, name: string) => void; onRestore: () => void }) {
+function Onboarding({ onStart }: { onStart: (birthDate: string, name: string) => void }) {
   const { t } = useTranslation();
   const [birth, setBirth] = useState('');
   const [name, setName] = useState('');
   return (
     <section className="mx-auto mt-10 w-full max-w-md px-4" data-life-onboarding>
-      <form className="flex flex-col gap-4 rounded-2xl bg-surface p-6 shadow-[0_4px_16px_rgba(0,0,0,.06)]"
+      <form className="flex flex-col gap-4"
         onSubmit={(e) => { e.preventDefault(); if (isFullDate(birth)) onStart(birth, name.trim()); }}>
-        <span aria-hidden className="grid h-11 w-11 place-items-center rounded-full bg-primary/10 text-primary">
-          <Sprout className="h-5 w-5" />
-        </span>
-        <h3 className="text-xl font-bold text-foreground">{t('life.onboard.title')}</h3>
-        <p className="-mt-2 text-sm text-muted-foreground">{t('life.onboard.hint')}</p>
+        <h3 className="life-serif text-2xl font-bold tracking-tight text-foreground">{t('life.onboard.title')}</h3>
         <label className="flex flex-col gap-1.5">
           <span className="text-sm font-medium">{t('life.field.myBirth')}</span>
           <Input type="date" data-life-birth-input value={birth} min="1900-01-01" max={todayKey()} required
@@ -292,16 +288,12 @@ function Onboarding({ onStart, onRestore }: { onStart: (birthDate: string, name:
         <Button type="submit" disabled={!isFullDate(birth)} data-life-start className="bg-primary text-primary-foreground">
           {t('life.onboard.start')}
         </Button>
-        <button type="button" onClick={onRestore} data-life-restore
-          className="-mt-1 self-center text-xs text-muted-foreground underline-offset-2 hover:underline">
-          {t('life.onboard.restore')}
-        </button>
       </form>
     </section>
   );
 }
 
-/** One family member, as plain text like the entries on the line. */
+/** One parent, as plain text like the entries on the line. */
 function MemberBlock({ f, onOpen }: { f: FamilyMember; onOpen: () => void }) {
   const { t } = useTranslation();
   const age = f.birthDate && isFullDate(f.birthDate) ? ageAt(f.birthDate, todayKey()) : null;
@@ -321,8 +313,8 @@ function MemberBlock({ f, onOpen }: { f: FamilyMember; onOpen: () => void }) {
   );
 }
 
-/** An empty parent slot, one tap from being filled. */
-function EmptySlot({ label, onAdd, rel }: { label: string; onAdd: () => void; rel: Relation }) {
+/** An empty parent place, one tap from being filled. */
+function EmptySlot({ label, onAdd, rel }: { label: string; onAdd: () => void; rel: Parent }) {
   return (
     <button type="button" onClick={onAdd} data-life-slot={rel}
       className="inline-flex min-h-11 items-center gap-1.5 self-start rounded-lg text-[15px] italic text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-[900px]:self-center">
@@ -337,70 +329,38 @@ const ringClass = (dashed: boolean) =>
   `h-[26px] w-[26px] rounded-full border-2 bg-background ${dashed ? 'border-dashed border-foreground/40' : 'border-foreground'}`;
 
 /**
- * Roots: the two parents side by side, each above its own marker, and their
- * two lines meet to become the life line. The rest of the family follows.
+ * The parents side by side, each above a marker of their own, and their two
+ * lines meet to become the life line. (Other relatives an older version may
+ * have stored are kept in the record — and in backups — just not shown.)
  */
-function Roots({ api, askParents, onSkip, onAdd, onOpen }: {
-  api: LifeApi;
-  askParents: boolean;
-  onSkip: () => void;
-  onAdd: (r: Relation) => void;
+function Parents({ family, onAdd, onOpen }: {
+  family: FamilyMember[];
+  onAdd: (r: Parent) => void;
   onOpen: (f: FamilyMember) => void;
 }) {
   const { t } = useTranslation();
-  const { family } = api.life;
-  const mother = family.find((f) => f.relation === 'mother');
-  const father = family.find((f) => f.relation === 'father');
-  const others = family.filter((f) => f !== mother && f !== father);
-  // Everyone else stands under the parents, shared between the two columns,
-  // so nothing sits across the line where the parents' lines meet.
-  const column = (f: FamilyMember | undefined, rel: 'mother' | 'father', rest: FamilyMember[]) => (
-    <div className="flex flex-col gap-8 min-[900px]:items-center min-[900px]:px-12">
-      <div className="relative flex flex-col min-[900px]:items-center">
+  const parent = (rel: Parent) => {
+    const f = family.find((m) => m.relation === rel);
+    return (
+      <div className="relative flex flex-col min-[900px]:items-center min-[900px]:px-12">
         {/* Phone: this parent's marker on the left line. */}
         <span aria-hidden className={`absolute -left-9 top-[29px] -translate-x-1/2 min-[900px]:hidden ${ringClass(!f)}`} />
         {f ? <MemberBlock f={f} onOpen={() => onOpen(f)} />
           : <EmptySlot rel={rel} label={t(rel === 'mother' ? 'life.addMother' : 'life.addFather')} onAdd={() => onAdd(rel)} />}
+        {/* Wide screens: the parent's marker, level with the other's. */}
+        <span aria-hidden className={`mt-auto hidden pt-5 min-[900px]:block`}>
+          <span className={`block ${ringClass(!f)}`} />
+        </span>
       </div>
-      {rest.map((o) => (
-        <div key={o.id} className="relative hidden w-full max-w-[260px] min-[900px]:block">
-          <MemberBlock f={o} onOpen={() => onOpen(o)} />
-        </div>
-      ))}
-      {/* Wide screens: the parent's marker, level with the other's. */}
-      <span aria-hidden className={`mt-auto hidden min-[900px]:block ${ringClass(!f)}`} />
-    </div>
-  );
+    );
+  };
   return (
-    <section aria-labelledby="life-roots" className="relative mx-auto mt-10 w-full max-w-[960px]" data-life-roots>
-      {/* Phone: the line runs down past the family to the birth. */}
-      <span aria-hidden className="life-line min-[900px]:hidden" style={{ top: 40 }} />
-      <h3 id="life-roots" className="life-serif ml-16 text-[15px] font-bold tracking-wide text-muted-foreground min-[900px]:ml-0 min-[900px]:text-center">
-        {t('life.roots')}
-      </h3>
-      {askParents && (!mother || !father) && (
-        <div className="mb-6 ml-16 mr-4 flex flex-wrap items-center gap-2 text-[15px] italic text-foreground/80 min-[900px]:mx-auto min-[900px]:justify-center" data-life-ask-parents>
-          <span>{t('life.onboard.parents')}</span>
-          <Button size="sm" variant="ghost" className="not-italic" onClick={onSkip} data-life-skip>{t('life.onboard.skip')}</Button>
-        </div>
-      )}
-      <div className="mb-6 mt-1 ml-16 min-[900px]:ml-0 min-[900px]:text-center">
-        <button type="button" onClick={() => onAdd('other')} data-life-add-family
-          className="inline-flex min-h-10 items-center gap-1.5 text-[15px] italic text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
-          <Plus aria-hidden className="h-4 w-4 not-italic" />
-          {t('life.family.more')}
-        </button>
-      </div>
+    <section aria-label={t('life.roots')} className="relative mx-auto mt-10 w-full max-w-[960px]" data-life-roots>
+      {/* Phone: the line runs down from the first parent to the birth. */}
+      <span aria-hidden className="life-line min-[900px]:hidden" style={{ top: 42 }} />
       <div className="ml-16 mr-4 grid gap-8 min-[900px]:mx-0 min-[900px]:grid-cols-2 min-[900px]:gap-0">
-        {column(mother, 'mother', others.filter((_, i) => i % 2 === 0))}
-        {column(father, 'father', others.filter((_, i) => i % 2 === 1))}
-        {/* Phone: the rest of the family after both parents, in order. */}
-        {others.map((o) => (
-          <div key={o.id} className="relative min-[900px]:hidden">
-            <span aria-hidden className={`absolute -left-9 top-[29px] -translate-x-1/2 ${ringClass(false)}`} />
-            <MemberBlock f={o} onOpen={() => onOpen(o)} />
-          </div>
-        ))}
+        {parent('mother')}
+        {parent('father')}
       </div>
       {/* The parents' two lines meet and become the life line. */}
       <svg aria-hidden viewBox="0 0 100 56" preserveAspectRatio="none" className="hidden h-14 w-full min-[900px]:block">
@@ -452,7 +412,6 @@ function EndingNote({ api }: { api: LifeApi }) {
           {t('life.endingNote')}
         </h3>
         <textarea data-life-ending-input value={text} maxLength={MAX_ENDING} aria-labelledby="life-ending"
-          placeholder={t('life.ending.placeholder')}
           onChange={(e) => {
             setText(e.target.value);
             latest.current = e.target.value;
@@ -466,10 +425,6 @@ function EndingNote({ api }: { api: LifeApi }) {
             {t('life.ending.updated', { date: updated.toLocaleDateString(lang) })}
           </p>
         )}
-        <p className="mt-5 flex gap-2 border-t border-border pt-4 text-[13px] leading-relaxed text-muted-foreground" data-life-ending-legal>
-          <Scale aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
-          {t('life.ending.legal')}
-        </p>
       </div>
     </section>
   );

@@ -60,14 +60,16 @@
   cards). Cards alternate left/right on wide screens; on phones they run to
   the right of a line on the left. Category filters, pinned moments, a
   summary line (records · plans · age · years ahead).
-- **Roots**: parents as a pair whose lines meet the life line; spouse,
-  children, siblings and others too.
-- **Words to leave behind**: an ending note where the line ends — explicitly
-  NOT a legal will.
+- **Parents**: mother and father side by side at the top; their two lines
+  meet to begin the life line.
+- **Adding**: hover the line for a faint + circle that adds a moment in that
+  year (on phones: tap the line, or the + under today).
+- **Words to leave behind**: an ending note where the line ends.
 - **Export**: one tall PNG (2160 px wide) after a privacy check; a JSON
   backup (photos included) that restores on any device.
-- Free: 30 moments, 4 family members, no photos; Pro: unlimited, photos,
-  sync. Limits only stop adding — nothing written is ever removed.
+- Free: 30 moments and the parents, no photos; Pro: unlimited moments,
+  adding photos, sync. Photos stay on the device — never on the server,
+  even with Pro. Limits only stop adding — nothing written is ever removed.
 - Landing page: https://24houring.com/life
 
 ## Key facts (direct answers)
@@ -172,8 +174,8 @@ where `<code>` is base64url(JSON) of:
   tape and photo stickers (Pro). The month can be saved as a 2160-px image.
   Details: https://24houring.com/calendar
 - **Can I make a timeline of my whole life?** Yes — Life mode puts your
-  roots, the moments you have lived, today and your plans on one line, with
-  an ending note (not a legal will). Details: https://24houring.com/life
+  parents, the moments you have lived, today and your plans on one line, with
+  an ending note. Details: https://24houring.com/life
 - **Can I see my Google Calendar there?** Yes, read-only, via a private iCal
   address (Pro, after setting the diary lock).
 - **Can I switch to a 12-hour clock view?** Yes — toggle 24h → Day (06–18) →

@@ -7,7 +7,7 @@ import { useTranslation } from '@/hooks/usePreferences';
 import { requestUpgrade } from '@/lib/pro';
 import { deletePhoto, newPhotoId, savePhoto, shrinkPhoto } from '@/lib/calendar-photos';
 import {
-  DEFAULT_LIFE_EXPECTANCY, MAX_DESCRIPTION, MAX_NAME, MAX_NOTE, MAX_TITLE, PICKABLE_CATEGORIES, RELATIONS,
+  DEFAULT_LIFE_EXPECTANCY, MAX_DESCRIPTION, MAX_NAME, MAX_NOTE, MAX_TITLE, PICKABLE_CATEGORIES,
   dateFrom, isFullDate, partsFrom, sortKey, type DateParts, type FamilyMember, type LifeCategory, type LifeProfile, type Milestone, type Relation,
 } from '@/lib/life';
 import { todayKey } from '@/lib/calendar-grid';
@@ -241,39 +241,31 @@ export type MemberTarget = { mode: 'add'; relation: Relation } | { mode: 'edit';
 export function FamilyDialog({ target, pro, onSave, onDelete, onClose }: {
   target: MemberTarget | null;
   pro: boolean;
-  /** `moment`: also put it on the line (a wedding, a child's birth). */
-  onSave: (draft: MemberDraft, id: string | undefined, moment: { date: string } | null) => void;
+  onSave: (draft: MemberDraft, id: string | undefined) => void;
   onDelete: (id: string) => void;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const [relation, setRelation] = useState<Relation>('mother');
   const [name, setName] = useState('');
   const [birth, setBirth] = useState<DateParts>(partsFrom(null));
   const [note, setNote] = useState('');
   const [photo, setPhoto] = useState<string | undefined>();
-  const [asMoment, setAsMoment] = useState(false);
-  const [momentDate, setMomentDate] = useState<DateParts>(partsFrom(null));
   useEffect(() => {
     if (!target) return;
     const f = target.mode === 'edit' ? target.f : null;
     /* eslint-disable react-hooks/set-state-in-effect */
-    setRelation(f ? f.relation : target.mode === 'add' ? target.relation : 'other');
     setName(f?.name ?? '');
     setBirth(partsFrom(f?.birthDate));
     setNote(f?.note ?? '');
     setPhoto(f?.photo);
-    setAsMoment(false);
-    setMomentDate(partsFrom(null));
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [target]);
 
+  // The place opened decides who this is: the mother's or the father's.
+  const relation: Relation = target ? (target.mode === 'edit' ? target.f.relation : target.relation) : 'mother';
   const born = dateFrom(birth);
   const birthBad = !!birth.y && !born;
-  // A spouse or a child belongs on the line too: the wedding, the birth.
-  const offerMoment = target?.mode === 'add' && (relation === 'spouse' || relation === 'child');
-  const momentAt = dateFrom(momentDate) ?? (relation === 'child' ? born : null);
-  const valid = !!name.trim() && !birthBad && (!offerMoment || !asMoment || momentAt !== null);
+  const valid = !!name.trim() && !birthBad;
   const original = target?.mode === 'edit' ? target.f.photo : undefined;
   const close = () => { discardPhoto(photo, original); onClose(); };
   const save = () => {
@@ -281,7 +273,6 @@ export function FamilyDialog({ target, pro, onSave, onDelete, onClose }: {
     onSave(
       { relation, name: name.trim(), ...(born ? { birthDate: born } : {}), ...(note.trim() ? { note: note.trim() } : {}), ...(photo ? { photo } : {}) },
       target?.mode === 'edit' ? target.f.id : undefined,
-      offerMoment && asMoment && momentAt ? { date: momentAt } : null,
     );
   };
 
@@ -289,17 +280,10 @@ export function FamilyDialog({ target, pro, onSave, onDelete, onClose }: {
     <Dialog open={target !== null} onOpenChange={(o) => { if (!o) close(); }}>
       <DialogContent className="max-h-[92dvh] max-w-md overflow-y-auto" data-life-family-dialog>
         <DialogHeader>
-          <DialogTitle>{t(target?.mode === 'edit' ? 'life.family.editTitle' : 'life.family.addTitle')}</DialogTitle>
+          <DialogTitle>{t(RELATION_LABEL[relation])}</DialogTitle>
           <DialogDescription className="sr-only">{t('life.roots')}</DialogDescription>
         </DialogHeader>
         <form className="flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); save(); }}>
-          <label className="flex flex-col gap-1.5">
-            <span className={fieldLabel}>{t('life.field.relation')}</span>
-            <select data-life-relation value={relation} onChange={(e) => setRelation(e.target.value as Relation)}
-              className="h-10 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              {RELATIONS.map((r) => <option key={r} value={r}>{t(RELATION_LABEL[r])}</option>)}
-            </select>
-          </label>
           <label className="flex flex-col gap-1.5">
             <span className={fieldLabel}>{t('life.field.name')}</span>
             <Input data-life-name-input value={name} maxLength={MAX_NAME} onChange={(e) => setName(e.target.value)} required />
@@ -313,18 +297,6 @@ export function FamilyDialog({ target, pro, onSave, onDelete, onClose }: {
             <span className={fieldLabel}>{t('life.field.photo')}</span>
             <PhotoField value={photo} original={original} pro={pro} onChange={setPhoto} />
           </div>
-          {offerMoment && (
-            <div className="flex flex-col gap-2 rounded-lg bg-muted/40 p-3">
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" data-life-also-moment checked={asMoment} onChange={(e) => setAsMoment(e.target.checked)} className="h-4 w-4" />
-                {t('life.family.alsoMoment')}
-              </label>
-              {asMoment && (
-                <LifeDateInput label={t(relation === 'spouse' ? 'life.family.weddingDate' : 'life.family.momentDate')}
-                  value={momentDate.y ? momentDate : partsFrom(momentAt)} onChange={setMomentDate} idPrefix="life-fam-moment" />
-              )}
-            </div>
-          )}
           <p className="flex gap-2 rounded-lg border border-border px-3 py-2 text-xs leading-relaxed text-muted-foreground" data-life-family-privacy>
             <ShieldCheck aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
             {t('life.family.privacy')}

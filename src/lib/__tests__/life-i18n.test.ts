@@ -6,7 +6,7 @@ const LIFE_KEYS = Object.keys(ko).filter((k) => k === 'nav.life' || k.startsWith
 
 describe('the life page in every language', () => {
   it('has its words', () => {
-    expect(LIFE_KEYS.length).toBeGreaterThan(100);
+    expect(LIFE_KEYS.length).toBeGreaterThan(80);
   });
 
   it.each(LANGUAGES.map((l) => l.code))('%s: every life key is there and not empty', (lang) => {

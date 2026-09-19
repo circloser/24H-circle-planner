@@ -59,6 +59,17 @@ export async function run() {
     await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
     await wait(800);
   };
+  /** Add without a button: the keyboard's way in (Tab reaches it). */
+  const add = async () => {
+    await page.locator('[data-life-add]').focus();
+    await page.keyboard.press('Enter');
+    await wait(300);
+  };
+  const headerExport = async () => {
+    await page.locator('[data-app-header] button[aria-label="내보내기"]').click();
+    await wait(400);
+  };
+  const blurNote = () => page.locator('[data-life-ending-input]').evaluate((el) => el.blur());
   const save = async () => {
     await page.locator('[data-life-save]').click();
     await wait(400);
@@ -83,7 +94,37 @@ export async function run() {
       `decades ${await count('[data-life-decade]')}`);
     pass('today reads as 만 나이', /오늘 · 만 \d+세/.test(await page.locator('[data-life-today]').innerText()));
     pass('an empty line offers three example cards', (await count('[data-life-example]')) === 3);
-    pass('…and asks about the parents', (await count('[data-life-ask-parents]')) === 1);
+    pass('the page body has no add or export buttons', (await count('[data-life-export]')) === 0
+      && (await page.locator('[data-life-add]').evaluate((el) => el.getBoundingClientRect().width)) <= 1);
+    pass('only a mother and a father at the top, no other family', (await count('[data-life-slot="mother"]')) === 1
+      && (await count('[data-life-slot="father"]')) === 1 && (await count('[data-life-add-family]')) === 0);
+    const bodyText = await page.locator('[data-life-view]').innerText();
+    pass('no will wording, no "뿌리", no filler under the page', !/유언|뿌리/.test(bodyText) && (await count('[data-life-footer]')) === 0);
+    pass('the site footer and reading copy stay away here',
+      (await page.locator('#site-copy-wrap').evaluate((el) => getComputedStyle(el).display).catch(() => 'none')) === 'none'
+      && (await page.locator('footer', { hasText: '개인정보처리방침' }).count()) === 0);
+
+    // Hovering the line offers a faint + that adds a moment in that year.
+    const spot = await page.evaluate(() => {
+      const ol = document.querySelector('[data-life-timeline]').getBoundingClientRect();
+      const el = document.querySelector('[data-life-decade][data-year="1990"]');
+      el.scrollIntoView({ block: 'center' });
+      const row = el.getBoundingClientRect();
+      return { x: ol.left + ol.width / 2, y: row.top + 12 };
+    });
+    await page.mouse.move(spot.x + 30, spot.y);
+    await page.mouse.move(spot.x, spot.y, { steps: 4 });
+    await wait(200);
+    pass('hovering the line shows a + circle with its year', (await count('[data-life-ghost]')) === 1
+      && (await page.locator('[data-life-ghost]').innerText()).includes('1990'));
+    await page.locator('[data-life-ghost]').click();
+    await wait(400);
+    pass('…which opens the add form in that year', (await page.locator('#life-date-y').inputValue()) === '1990');
+    await page.keyboard.press('Escape');
+    await wait(300);
+    await page.mouse.move(spot.x + 200, spot.y);
+    await wait(150);
+    pass('…and leaves when the pointer leaves the line', (await count('[data-life-ghost]')) === 0);
 
     // 3. An example card opens the form already filled in.
     await page.locator('[data-life-example] button[aria-label]').first().click();
@@ -96,18 +137,15 @@ export async function run() {
     pass('…which fades in (not left transparent)', firstOpacity === '1', firstOpacity);
 
     // 4. Adding from the header; a future date is a plan by itself.
-    await page.locator('[data-life-add]').click();
-    await wait(300);
+    await add();
     await fillMoment({ title: '첫 직장 입사', y: 2010, m: 5, d: 15, cat: 'career' });
     await save();
-    await page.locator('[data-life-add]').click();
-    await wait(300);
+    await add();
     await fillMoment({ title: '세계 여행', y: 2031, cat: 'travel' });
     const plan = page.locator('[data-life-plan-input]');
     pass('a date after today is ticked as a plan, and locked', (await plan.isChecked()) && (await plan.isDisabled()));
     await save();
-    await page.locator('[data-life-add]').click();
-    await wait(300);
+    await add();
     // A day past the end of a newly picked month is dropped, not hidden.
     await fillMoment({ title: '대학 입학', y: 2004, m: 1, d: 31, cat: 'education' });
     await page.locator('#life-date-m').selectOption('2');
@@ -167,16 +205,22 @@ export async function run() {
     pass('a parent fills the slot', (await count('[data-life-member="mother"]')) === 1 && (await count('[data-life-slot="mother"]')) === 0);
     pass('…and the card is actually visible', (await page.locator('[data-life-member="mother"]').evaluate((el) => getComputedStyle(el).opacity)) === '1');
 
-    // 10. The ending note always carries its legal notice.
-    pass('the ending note carries the legal notice even when empty', (await page.locator('[data-life-ending-legal]').innerText()).includes('유언장이 아닙니다'));
+    // 10. The ending note.
     await page.locator('[data-life-ending-input]').fill('함께해 준 모든 날이 고마웠어요.');
-    await page.locator('[data-life-add]').focus();
+    await blurNote();
     await wait(300);
     pass('the ending note is kept', (await stored()).endingNote?.text === '함께해 준 모든 날이 고마웠어요.');
     pass('…with the day it was last changed', (await count('[data-life-ending-updated]')) === 1);
 
-    // 11. Filters.
+    // 11. Filters: a round button in the bottom-right corner, opening upward.
+    const fab = await page.locator('[data-life-filter-toggle]').boundingBox();
+    const vp = page.viewportSize();
+    pass('the filter is a round button in the bottom-right corner', !!fab && fab.width === fab.height
+      && vp.width - (fab.x + fab.width) < 40 && vp.height - (fab.y + fab.height) < 40);
     await page.locator('[data-life-filter-toggle]').click();
+    await wait(200);
+    const chipsBox = await page.locator('[data-life-filters]').boundingBox();
+    pass('…and its choices unfold above it', !!chipsBox && chipsBox.y + chipsBox.height <= fab.y);
     await page.locator('[data-life-filter="travel"]').click();
     await wait(300);
     pass('a category filter shows only its moments', JSON.stringify(await titles()) === JSON.stringify(['세계 여행']), JSON.stringify(await titles()));
@@ -184,9 +228,9 @@ export async function run() {
     await wait(300);
     pass('"all" brings everything back', (await titles()).length === 3);
 
-    // 12. The long PNG, only after the privacy check.
-    await page.locator('[data-life-export]').click();
-    await wait(500);
+    // 12. The long PNG (from the header's 내보내기), only after the privacy check.
+    await page.keyboard.press('Escape');
+    await headerExport();
     pass('export opens with a preview', (await page.waitForSelector('[data-life-export-preview] img', { timeout: 15000 }).catch(() => null)) !== null);
     pass('saving the image waits for the privacy check', await page.locator('[data-life-export-png]').isDisabled());
     await page.locator('[data-life-export-check]').check();
@@ -196,8 +240,7 @@ export async function run() {
       `${png.suggestedFilename()} ${size.w}×${size.h}`);
 
     // 13. The app header's 내보내기 opens the same export here.
-    await page.locator('[data-app-header] button[aria-label="내보내기"]').click();
-    await wait(400);
+    await headerExport();
     pass('the header export opens the life export', (await count('[data-life-export-dialog]')) === 1);
 
     // 14. JSON backup → a cleared browser → restore.
@@ -210,15 +253,14 @@ export async function run() {
     await page.keyboard.press('Escape');
     await wait(300);
     await page.locator('[data-life-ending-input]').fill('나중에 바꾼 글');
-    await page.locator('[data-life-add]').focus();
-    await page.locator('[data-life-export]').click();
-    await wait(400);
+    await blurNote();
+    await headerExport();
     await page.locator('[data-life-import-input]').setInputFiles(backupPath);
     await wait(400);
     await page.locator('[data-life-import-go]').click();
     await wait(500);
     await page.locator('[data-life-ending-input]').focus();
-    await page.locator('[data-life-add]').focus();
+    await blurNote();
     await wait(300);
     pass('restoring over an edited note shows and keeps the restored one',
       (await page.locator('[data-life-ending-input]').inputValue()) === before.endingNote.text && (await stored()).endingNote.text === before.endingNote.text);
@@ -226,8 +268,7 @@ export async function run() {
     await page.evaluate(() => { localStorage.clear(); localStorage.setItem('24h-circle-planner.onboarded', '1'); });
     await openLife();
     pass('a cleared browser starts over', (await count('[data-life-onboarding]')) === 1);
-    await page.locator('[data-life-restore]').click();
-    await wait(400);
+    await headerExport();
     await page.locator('[data-life-import-input]').setInputFiles(backupPath);
     await wait(400);
     await page.locator('[data-life-import-go]').click();
@@ -245,8 +286,8 @@ export async function run() {
       localStorage.setItem(k, JSON.stringify(life));
     }, LIFE_KEY);
     await openLife();
-    await page.locator('[data-life-add]').click();
-    await wait(500);
+    await add();
+    await wait(200);
     pass('at the free limit, adding opens the Pro offer instead', (await page.getByRole('dialog', { name: 'Pro로 업그레이드' }).count()) === 1
       && (await count('[data-life-moment-dialog]')) === 0);
     await page.keyboard.press('Escape');

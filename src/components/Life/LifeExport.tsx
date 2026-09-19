@@ -66,17 +66,13 @@ async function imageInput(life: LifeData, colors: Record<LifeCategory, string>, 
       t('life.sumPlans', { n: String(s.plans) }),
       s.age !== null ? t('life.sumAge', { n: String(s.age) }) : '',
     ].filter(Boolean).join(' · '),
-    rootsLabel: t('life.roots'),
-    family: life.family.map((f, i, all) => ({
-      // The first mother and father take the two parent places, as on the page.
-      slot: (f.relation === 'mother' || f.relation === 'father') && all.findIndex((o) => o.relation === f.relation) === i
-        ? f.relation : 'other',
-      label: t(RELATION_LABEL[f.relation]), name: f.name,
-      sub: f.birthDate ? formatLifeDate(f.birthDate) : undefined,
-      note: f.note,
-    })),
+    // The parents, as on the page (other relatives are not shown there).
+    family: (['mother', 'father'] as const).flatMap((rel) => {
+      const f = life.family.find((m) => m.relation === rel);
+      return f ? [{ slot: rel, label: t(RELATION_LABEL[rel]), name: f.name, sub: f.birthDate ? formatLifeDate(f.birthDate) : undefined, note: f.note }] : [];
+    }),
     rows,
-    ending: life.endingNote ? { title: t('life.endingNote'), text: life.endingNote.text, legal: t('life.ending.legal') } : null,
+    ending: life.endingNote ? { title: t('life.endingNote'), text: life.endingNote.text } : null,
     footer: '24houring.com',
     colors: resolveColors(root, {
       background: 'hsl(var(--background))',

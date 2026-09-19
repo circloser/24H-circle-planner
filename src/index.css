@@ -692,6 +692,15 @@ svg text {
   100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0); }
 }
 .life-pulse { animation: life-pulse 2.4s ease-out infinite; }
+/* The filter's chips unfold upward from its round button. */
+@keyframes life-pop {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+.life-pop { animation: life-pop 180ms ease-out both; }
+/* The life page ends where the life ends: the home page's reading copy (and
+   the app footer, see App.tsx) stay away while it shows. */
+html[data-page='life'] #site-copy-wrap { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .life-reveal { opacity: 1; transform: none; transition: none; }
   .life-pulse { animation: none; }
