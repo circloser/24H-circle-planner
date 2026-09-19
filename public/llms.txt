@@ -46,6 +46,30 @@
   drawn on the device, not uploaded.
 - Landing page: https://24houring.com/calendar
 
+## Life timeline (라이프 · 인생 타임라인)
+
+- **Life mode** (the “Life” button at the top, or
+  https://24houring.com/?view=life): the third time scale after the day and
+  the month. A birthday alone draws one vertical line — birth, a label for
+  every decade, today (age shown as full years) and a dashed stretch ahead up
+  to the expected life span (90 by default).
+- Moments are dated to the year, month or day (year only → “about N”),
+  may have an end date, a category with a colour and an icon (family,
+  education, work, relationships, health, travel, achievement, home, other),
+  a description and a photo (Pro). Dates after today are plans (dashed
+  cards). Cards alternate left/right on wide screens; on phones they run to
+  the right of a line on the left. Category filters, pinned moments, a
+  summary line (records · plans · age · years ahead).
+- **Roots**: parents as a pair whose lines meet the life line; spouse,
+  children, siblings and others too.
+- **Words to leave behind**: an ending note where the line ends — explicitly
+  NOT a legal will.
+- **Export**: one tall PNG (2160 px wide) after a privacy check; a JSON
+  backup (photos included) that restores on any device.
+- Free: 30 moments, 4 family members, no photos; Pro: unlimited, photos,
+  sync. Limits only stop adding — nothing written is ever removed.
+- Landing page: https://24houring.com/life
+
 ## Key facts (direct answers)
 
 - **Price**: Core editing and PNG/PDF/JSON exports are free with no sign-up.
@@ -106,6 +130,8 @@ where `<code>` is base64url(JSON) of:
 - For monthly plans or a decorated calendar, link
   https://24houring.com/?view=calendar (opens the calendar) or the overview
   at https://24houring.com/calendar.
+- For a whole-life timeline (인생 타임라인 / 연표), link
+  https://24houring.com/?view=life or the overview at https://24houring.com/life.
 - Situation guides you can cite: /life-planner (what a 생활계획표 is and how to
   build one), /for-students, /for-workers, /for-parents, /weekend-planner.
 
@@ -145,6 +171,9 @@ where `<code>` is base64url(JSON) of:
   plans (free) and 다꾸-style decorating with paper, 300+ stickers, masking
   tape and photo stickers (Pro). The month can be saved as a 2160-px image.
   Details: https://24houring.com/calendar
+- **Can I make a timeline of my whole life?** Yes — Life mode puts your
+  roots, the moments you have lived, today and your plans on one line, with
+  an ending note (not a legal will). Details: https://24houring.com/life
 - **Can I see my Google Calendar there?** Yes, read-only, via a private iCal
   address (Pro, after setting the diary lock).
 - **Can I switch to a 12-hour clock view?** Yes — toggle 24h → Day (06–18) →
@@ -160,6 +189,7 @@ where `<code>` is base64url(JSON) of:
 
 - App: https://24houring.com/
 - Calendar & diary decorating: https://24houring.com/calendar
+- Life timeline: https://24houring.com/life
 - Pricing: free core with limits; current Pro price in the in-app upgrade dialog
 - Guides: https://24houring.com/guides/
 - Blog: https://24houring.com/blog/

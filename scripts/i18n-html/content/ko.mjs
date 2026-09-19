@@ -33,7 +33,7 @@ export default {
         <p class="copy-eyebrow">24Houring · 하루를 직접 설계하는 도구</p>
         <h1>생활에 맞는 계획을 만들고,<br>실제 하루에 맞춰 고쳐 보세요.</h1>
         <p class="copy-lead">위의 원형 시간표에서 오늘의 시간을 나눠 보세요. 먼저 움직일 수 없는 일정을 넣고, 중요한 일 한 가지와 예상 밖의 일을 위한 여유를 배치합니다. 회원가입 없이 편집을 시작할 수 있습니다.</p>
-        <nav class="copy-actions" aria-label="계획 자료"><a href="/templates/">상황에 맞는 시간표 고르기</a><a href="/calendar">한 달 계획하고 꾸미기</a><a href="/guides/">계획을 조정하는 방법 읽기</a><a href="/#site-copy" lang="en">English guide</a></nav>
+        <nav class="copy-actions" aria-label="계획 자료"><a href="/templates/">상황에 맞는 시간표 고르기</a><a href="/calendar">한 달 계획하고 꾸미기</a><a href="/life">인생을 한 줄로 정리하기</a><a href="/guides/">계획을 조정하는 방법 읽기</a><a href="/#site-copy" lang="en">English guide</a></nav>
         <div class="copy-grid">
           <article class="copy-card"><h2 style="margin:0 0 10px;font-size:18px">수업 사이에 공부 넣기</h2><p>수업과 이동 시간을 먼저 표시하세요. 공부 블록에는 끝낼 과제를 하나 적고, 예상보다 오래 걸릴 때 옮길 수 있는 여유를 남깁니다.</p><a href="/templates/exam-student">수험생 시간표 고쳐 쓰기</a></article>
           <article class="copy-card"><h2 style="margin:0 0 10px;font-size:18px">퇴근 후 시간을 현실적으로</h2><p>저녁 목표를 넣기 전에 퇴근길과 식사 시간을 포함하세요. 지키기 어려운 긴 계획보다 실제로 쓸 수 있는 작은 시간을 먼저 찾습니다.</p><a href="/templates/office-worker">직장인 시간표 고쳐 쓰기</a></article>
@@ -46,6 +46,9 @@ export default {
         </details>
         <details><summary>한 달 일정과 다꾸(캘린더 꾸미기)</summary>
           <p>상단의 <strong>캘린더</strong>를 누르면 두 달을 나란히 봅니다. 하루 종일·시간 지정 일정을 넣고, 날짜를 끌어 여러 날 일정을 만들고, 반복을 설정하세요. Pro에서는 구글 캘린더 일정도 읽기 전용으로 함께 볼 수 있습니다.</p><p><strong>디자인 → 캘린더 꾸미기</strong>에서 색상 테마를 고르고, Pro에서는 속지·스티커·마스킹 테이프·사진 스티커로 달력을 다꾸할 수 있습니다. 붙인 요소는 화면 크기가 바뀌어도 같은 날짜 위에 머뭅니다. <strong>내보내기</strong>로 한 달을 2160px 이미지로 저장하세요. <a href="/calendar">다꾸 캘린더 안내 보기</a></p>
+        </details>
+        <details><summary>인생을 한 줄로 — 라이프 타임라인</summary>
+          <p>상단의 <strong>라이프</strong>를 누르고 생년월일을 넣으면, 태어난 날부터 오늘을 지나 앞으로의 시간까지 이어지는 선이 10년 단위 연대와 함께 그려집니다. 지나온 사건은 날짜를 아는 만큼(연·월·일)만 적고, 앞으로의 계획은 점선 위에 이어 적으세요. 맨 위에는 부모님이 뿌리로 자리합니다.</p><p>선이 끝나는 곳에는 가족에게 <strong>남기고 싶은 말</strong>을 적습니다(법적 효력이 있는 유언장은 아닙니다). <strong>내보내기</strong>로 전체를 세로로 긴 이미지 한 장으로 저장해 가족 행사에 나누거나, JSON 백업으로 다른 기기에서 그대로 복원할 수 있어요. <a href="/life">인생 타임라인 안내 보기</a></p>
         </details>
         <details><summary>저장·백업과 브라우저 저장의 한계</summary>
           <p>편집 내용은 현재 기기의 브라우저에 저장됩니다. 편집 후 저장 표시를 확인하세요. 저장에 실패했다면 페이지를 닫기 전에 다시 시도하거나 오류 안내에서 긴급 백업을 내려받으세요.</p><p><strong>브라우저 저장은 영구 백업이 아닙니다.</strong> 사이트 데이터를 지우거나, 시크릿 창을 닫거나, 다른 브라우저를 사용하면 이전 일정에 접근하지 못할 수 있습니다. JSON 백업을 내보내 별도 위치에 보관하세요. PNG·PDF는 보기와 인쇄용이며, 편집 가능한 데이터를 복원할 때는 JSON을 사용합니다.</p><p>기본 저장 위치는 현재 브라우저입니다. Pro 계정으로 로그인하면 동기화 대상 데이터를 서버와 동기화하므로 다른 기기에서 사용하기 전에 동기화 상태를 확인하세요. 공유 링크를 만들 때도 공유용 일정 사본이 서버에 저장됩니다. 미리 캐시된 플래너 기능은 오프라인에서도 사용할 수 있지만 로그인·동기화·날씨 등 네트워크 기능에는 연결이 필요합니다.</p>
