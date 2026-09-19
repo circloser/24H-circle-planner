@@ -43,9 +43,9 @@ const TYPE = 'text-[9px] leading-[13px] sm:text-[11px] sm:leading-[17px]';
 /** Chip type in a list — the day's editor and the hover peek. There is room, so
  *  it reads at the app's normal size on every screen. */
 const TYPE_ROW = 'text-sm leading-5';
-/** A long title is simply cut on a phone (no room to spare for "…"), and
- *  elided on wider screens. */
-const CLIP = 'overflow-hidden whitespace-nowrap text-clip sm:text-ellipsis';
+/** A long title is simply cut at the edge — no "…", which would eat the very
+ *  letters a short cell has room for — on every screen. */
+const CLIP = 'overflow-hidden whitespace-nowrap text-clip';
 /** The day number above the chips, plus the cell's own padding. */
 const HEAD_H = 20;
 
