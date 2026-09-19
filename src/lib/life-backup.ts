@@ -31,7 +31,8 @@ const write = (key: string, now: number) => {
   try { localStorage.setItem(key, String(now)); } catch { /* storage unavailable */ }
 };
 
-/** A JSON backup was just saved (the life file or the whole-app one). */
+/** A JSON backup was just saved: the life file, or a whole-app backup
+ *  (Export → full backup, the save indicator's emergency backup). */
 export const markLifeBackup = (now = Date.now()) => write(BACKUP_AT, now);
 export const dismissBackupBanner = (now = Date.now()) => write(BANNER_OFF, now);
 

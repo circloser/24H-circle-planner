@@ -35,6 +35,9 @@ function PhotoField({ value, original, pro, onChange }: {
   const { t } = useTranslation();
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  // A picture still being shrunk when the dialog closes must not be left behind.
+  const alive = useRef(true);
+  useEffect(() => () => { alive.current = false; }, []);
   const replace = (next: string | undefined) => {
     if (value && value !== original) void deletePhoto(value);
     onChange(next);
@@ -44,7 +47,12 @@ function PhotoField({ value, original, pro, onChange }: {
     setBusy(true);
     const url = await shrinkPhoto(file, PHOTO_EDGE);
     const id = newPhotoId();
-    if (url && (await savePhoto(id, url))) replace(id);
+    const saved = !!url && (await savePhoto(id, url));
+    if (!alive.current) {
+      if (saved) void deletePhoto(id);
+      return;
+    }
+    if (saved) replace(id);
     setBusy(false);
   };
   if (!pro && !value) {
@@ -118,6 +126,7 @@ export function MilestoneDialog({ target, pro, colors, onSave, onDelete, onClose
   const [photo, setPhoto] = useState<string | undefined>();
   const [isPlan, setIsPlan] = useState(false);
   const [pinned, setPinned] = useState(false);
+  const [endOpen, setEndOpen] = useState(false);
   // Fill the form each time the dialog opens on something.
   useEffect(() => {
     if (!base) return;
@@ -130,6 +139,7 @@ export function MilestoneDialog({ target, pro, colors, onSave, onDelete, onClose
     setPhoto(base.photo);
     setIsPlan(base.isPlan ?? false);
     setPinned(base.pinned ?? false);
+    setEndOpen(!!base.endDate);
     /* eslint-enable react-hooks/set-state-in-effect */
     // A new target is what matters; `base` is rebuilt every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -168,7 +178,8 @@ export function MilestoneDialog({ target, pro, colors, onSave, onDelete, onClose
               onChange={(e) => setTitle(e.target.value)} required />
           </label>
           <LifeDateInput label={t('life.field.date')} value={date} onChange={setDate} idPrefix="life-date" />
-          <details className="group" open={!!end.y || undefined}>
+          {/* Open or shut by the person — clearing the end year keeps it open. */}
+          <details className="group" open={endOpen} onToggle={(e) => setEndOpen(e.currentTarget.open)}>
             <summary className="cursor-pointer text-sm text-muted-foreground">{t('life.field.endDate')}</summary>
             <div className="mt-2">
               <LifeDateInput label={t('life.field.endDate')} value={end} onChange={setEnd} idPrefix="life-end" />

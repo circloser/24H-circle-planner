@@ -984,4 +984,5 @@ export const zh: Record<TKey, string> = {
   'life.sumRecords': '记录 {n} 个',
   'life.sumRemaining': '剩余计划期约 {n} 年',
   'life.timelineLabel': '人生时间线',
+  'life.newerVersion': '这份人生记录由更新版本的 24Houring 保存，这里只能查看。请刷新页面以更新应用。',
 };

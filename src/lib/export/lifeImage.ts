@@ -16,9 +16,14 @@ const CARD_W = (LIFE_IMAGE_W - PAD * 2 - GAP * 2) / 2;
 const CENTER = LIFE_IMAGE_W / 2;
 const CARD_PAD = 24;
 const FONT = '"Pretendard", "Pretendard Variable", system-ui, sans-serif';
-/** Browsers refuse canvases past ~32k px a side or ~268M px in all. */
+/** Browsers refuse canvases past ~32k px a side or ~268M px in all — and
+ *  iPhone/iPad Safari past 16.7M px, which a long life reaches quickly. */
 const MAX_SIDE = 32_000;
 const MAX_AREA = 240_000_000;
+const MAX_AREA_IOS = 16_000_000;
+
+const isIos = (): boolean => typeof navigator !== 'undefined'
+  && (/iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
 
 export interface LifeImageColors {
   background: string;
@@ -352,8 +357,8 @@ function layout(ctx: CanvasRenderingContext2D, input: LifeImageInput): Block[] {
 }
 
 /** The layout height, and the scale a canvas of that size can be drawn at. */
-export function lifeImageScale(height: number, want = 2): number {
-  const byArea = Math.sqrt(MAX_AREA / (LIFE_IMAGE_W * height));
+export function lifeImageScale(height: number, want = 2, maxArea = isIos() ? MAX_AREA_IOS : MAX_AREA): number {
+  const byArea = Math.sqrt(maxArea / (LIFE_IMAGE_W * height));
   return Math.max(0.25, Math.min(want, MAX_SIDE / height, byArea));
 }
 

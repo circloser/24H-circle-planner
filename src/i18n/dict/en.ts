@@ -989,4 +989,5 @@ export const en: Record<TKey, string> = {
   'life.sumRecords': '{n} records',
   'life.sumRemaining': 'about {n} years ahead',
   'life.timelineLabel': 'Life timeline',
+  'life.newerVersion': 'This life record was saved by a newer version of 24Houring, so it is view-only here. Reload the page to update the app.',
 };

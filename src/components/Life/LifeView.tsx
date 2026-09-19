@@ -115,7 +115,7 @@ export function LifeView() {
                 <Download aria-hidden className="h-4 w-4" />
                 {t('header.export')}
               </Button>
-              <Button size="sm" className="min-h-10 gap-1.5 bg-primary text-primary-foreground" data-life-add onClick={() => addMoment({})}>
+              <Button size="sm" className="min-h-10 gap-1.5 bg-primary text-primary-foreground" data-life-add disabled={api.readOnly} onClick={() => addMoment({})}>
                 <Plus aria-hidden className="h-4 w-4" />
                 {t('life.add')}
               </Button>
@@ -174,6 +174,12 @@ export function LifeView() {
           </>
         )}
 
+        {api.readOnly && (
+          <p role="status" data-life-newer
+            className="mt-4 rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm text-foreground">
+            {t('life.newerVersion')}
+          </p>
+        )}
         {warnBackup && (
           <div role="status" data-life-backup-banner
             className="mt-4 flex items-start gap-3 rounded-xl border border-amber-300/70 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
@@ -200,7 +206,8 @@ export function LifeView() {
           track('life_add');
         }} />
       ) : (
-        <>
+        // A record from a newer app version is shown, never edited here.
+        <div className="contents" inert={api.readOnly || undefined}>
           <Roots api={api} colors={colors} askParents={askParents} onSkip={() => setAskParents(false)}
             onAdd={addMember} onOpen={(f) => setMember({ mode: 'edit', f })} />
           <LifeTimeline life={life} items={items} colors={colors} stickyTop={headerH}
@@ -208,8 +215,9 @@ export function LifeView() {
             onOpenMoment={(m) => setMoment({ mode: 'edit', m })}
             onOpenBirth={() => setProfileOpen(true)}
             onAdd={addMoment} />
-          <EndingNote api={api} />
-        </>
+          {/* A restore replaces the note: start its field afresh from it. */}
+          <EndingNote key={api.generation} api={api} />
+        </div>
       )}
 
       <footer className="mx-auto mt-12 flex w-full max-w-[720px] flex-col gap-2 px-4 text-xs leading-relaxed text-muted-foreground" data-life-footer>
@@ -233,7 +241,9 @@ export function LifeView() {
         onSave={(draft, id, alsoMoment) => {
           if (id) api.updateMember(id, draft);
           else api.addMember(draft);
-          if (alsoMoment && canAddMilestone(life, pro)) {
+          if (alsoMoment && !canAddMilestone(life, pro)) {
+            toast(t('life.limit.moments', { n: String(FREE_LIFE_MILESTONES) }));
+          } else if (alsoMoment) {
             api.addMilestone(draft.relation === 'spouse'
               ? { date: alsoMoment.date, title: t('life.family.marriedTitle', { name: draft.name }), category: 'relationship', isPlan: false }
               : { date: alsoMoment.date, title: t('life.family.childTitle', { name: draft.name }), category: 'family', isPlan: false });
@@ -298,7 +308,7 @@ function MemberCard({ f, color, onOpen }: { f: FamilyMember; color: string; onOp
   const age = f.birthDate && isFullDate(f.birthDate) ? ageAt(f.birthDate, today) : null;
   return (
     <button type="button" onClick={onOpen} data-life-member={f.relation}
-      className="life-reveal flex w-full items-start gap-3 overflow-hidden rounded-2xl bg-surface p-4 text-left shadow-[0_4px_16px_rgba(0,0,0,.06)] transition-[transform,box-shadow] duration-150 hover:-translate-y-0.5 hover:shadow-[0_8px_22px_rgba(0,0,0,.09)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="flex w-full items-start gap-3 overflow-hidden rounded-2xl bg-surface p-4 text-left shadow-[0_4px_16px_rgba(0,0,0,.06)] transition-[transform,box-shadow] duration-150 hover:-translate-y-0.5 hover:shadow-[0_8px_22px_rgba(0,0,0,.09)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       style={{ borderTop: `4px solid ${color}` }}>
       {f.photo ? (
         <LifePhoto id={f.photo} className="h-12 w-12 shrink-0 rounded-full" />
@@ -404,7 +414,19 @@ function EndingNote({ api }: { api: LifeApi }) {
   };
   const commitRef = useRef(commit);
   useEffect(() => { commitRef.current = commit; });
-  useEffect(() => () => commitRef.current(), []);
+  // Leaving the life page, closing the tab or switching away saves what was
+  // typed (setEndingNote writes at once, so no render has to follow).
+  useEffect(() => {
+    const flush = () => commitRef.current();
+    const hidden = () => { if (document.visibilityState === 'hidden') flush(); };
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', hidden);
+    return () => {
+      window.removeEventListener('pagehide', flush);
+      document.removeEventListener('visibilitychange', hidden);
+      flush();
+    };
+  }, []);
   const updated = note?.updatedAt ? new Date(note.updatedAt) : null;
   return (
     <section aria-labelledby="life-ending" className="mx-auto w-full max-w-[960px]" data-life-ending>

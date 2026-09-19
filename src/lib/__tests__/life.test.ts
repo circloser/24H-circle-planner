@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   FREE_LIFE_FAMILY, FREE_LIFE_MILESTONES, LIFE_KEY, ageAt, buildTimeline, canAddFamily, canAddMilestone,
-  decodeLife, emptyLife, encodeLife, isPlanned, lifeDate, lifeFile, lifeSummary, photoIds, precisionOf,
+  decodeLife, emptyLife, encodeLife, isNewerLife, isPlanned, lifeDate, lifeFile, lifeSummary, photoIds, precisionOf,
   readLifeFile, sortMilestones, spokenLifeDate, type LifeData, type Milestone,
 } from '../life';
 
@@ -41,7 +41,11 @@ describe('age', () => {
     expect(ageAt('1985-05-15', '2010-05-15')).toEqual({ years: 25, approx: false });
     expect(ageAt('1985-05-15', '2010-05-14')).toEqual({ years: 24, approx: false });
     expect(ageAt('1985-05-15', '2010-04')).toEqual({ years: 24, approx: false });
-    expect(ageAt('1985-05-15', '2010-05')).toEqual({ years: 25, approx: false });
+  });
+
+  it('is "about" when the birthday may or may not have come', () => {
+    // The birth month without the day: 24 or 25.
+    expect(ageAt('1985-05-15', '2010-05')).toEqual({ years: 25, approx: true });
   });
 
   it('is "about" when only the year is known', () => {
@@ -51,7 +55,7 @@ describe('age', () => {
   it('has none before birth', () => {
     expect(ageAt('1985-05-15', '1985-05-14')).toBeNull();
     expect(ageAt('1985-05-15', '1984')).toBeNull();
-    expect(ageAt('1985-05-15', '1985-05')).toEqual({ years: 0, approx: false });
+    expect(ageAt('1985-05-15', '1985-05')).toEqual({ years: 0, approx: true });
   });
 });
 
@@ -113,7 +117,14 @@ describe('the stored envelope', () => {
     expect(got.endingNote).toBeNull();
   });
 
+  it('keeps titles that pass once passing on every later load', () => {
+    const padded = `${' '.repeat(80)}x`;
+    expect(decodeLife({ version: 1, milestones: [{ id: 'a', date: '2001', title: padded }] })!.milestones).toEqual([]);
+  });
+
   it('refuses an unknown version rather than guessing', () => {
+    expect(isNewerLife({ version: 2 })).toBe(true);
+    expect(isNewerLife({ version: 1 })).toBe(false);
     expect(decodeLife({ version: 2 })).toBeNull();
     expect(decodeLife(null)).toBeNull();
   });

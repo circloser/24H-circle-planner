@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { slug, formatDateYYYYMMDD } from '@/lib/export/_internal';
 import { buildExportPreviewDataUrl } from '@/lib/export/previewSvg';
 import { exportAllData, importAllData } from '@/lib/backup';
+import { markLifeBackup } from '@/lib/life-backup';
 import { exportTableCsv, exportTablePng, buildTableSvg } from '@/lib/export/tableExport';
 import { exportRangePng, exportRangeCsv, type RangeDay } from '@/lib/export/rangeExport';
 import { useDiary, dateKey } from '@/hooks/useDiary';
@@ -457,6 +458,7 @@ function BackupTab({ onOpenChange }: { onOpenChange: (open: boolean) => void }) 
     setExportLoading(true);
     try {
       triggerDownload(exportAllData(), `24h-backup-${formatDateYYYYMMDD()}.json`);
+      markLifeBackup(); // it carries the life record too
       toast.success(t('export.backupDone'));
     } catch (err) {
       toast.error(`${t('export.backupFail')}: ${err instanceof Error ? err.message : String(err)}`);

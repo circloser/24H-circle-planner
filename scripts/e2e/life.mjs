@@ -91,6 +91,9 @@ export async function run() {
     pass('an example opens the add form, filled in', (await page.locator('[data-life-title-input]').inputValue()) === '첫 등교');
     await save();
     pass('…and becomes the first moment', (await count('[data-life-moment]')) === 1 && (await count('[data-life-example]')) === 0);
+    await wait(500);
+    const firstOpacity = await page.locator('[data-life-moment] .life-reveal').first().evaluate((el) => getComputedStyle(el).opacity);
+    pass('…which fades in (not left transparent)', firstOpacity === '1', firstOpacity);
 
     // 4. Adding from the header; a future date is a plan by itself.
     await page.locator('[data-life-add]').click();
@@ -105,7 +108,12 @@ export async function run() {
     await save();
     await page.locator('[data-life-add]').click();
     await wait(300);
-    await fillMoment({ title: '대학 입학', y: 2004, m: 3, cat: 'education' });
+    // A day past the end of a newly picked month is dropped, not hidden.
+    await fillMoment({ title: '대학 입학', y: 2004, m: 1, d: 31, cat: 'education' });
+    await page.locator('#life-date-m').selectOption('2');
+    pass('Jan 31 → February drops the day and keeps Save usable',
+      (await page.locator('#life-date-d').inputValue()) === '' && !(await page.locator('[data-life-save]').isDisabled()));
+    await page.locator('#life-date-m').selectOption('3');
     await save();
     pass('moments sort by date whatever order they were added in',
       JSON.stringify(await titles()) === JSON.stringify(['첫 등교', '대학 입학', '첫 직장 입사', '세계 여행']), JSON.stringify(await titles()));
@@ -156,6 +164,7 @@ export async function run() {
     await page.locator('#life-fam-birth-y').fill('1958');
     await save();
     pass('a parent fills the slot', (await count('[data-life-member="mother"]')) === 1 && (await count('[data-life-slot="mother"]')) === 0);
+    pass('…and the card is actually visible', (await page.locator('[data-life-member="mother"]').evaluate((el) => getComputedStyle(el).opacity)) === '1');
 
     // 10. The ending note always carries its legal notice.
     pass('the ending note carries the legal notice even when empty', (await page.locator('[data-life-ending-legal]').innerText()).includes('유언장이 아닙니다'));
@@ -195,7 +204,23 @@ export async function run() {
     const [backup] = await Promise.all([page.waitForEvent('download'), page.locator('[data-life-export-json]').click()]);
     const backupPath = await backup.path();
     pass('the backup is a life file', /^24houring-life-.*\.json$/.test(backup.suggestedFilename()) && JSON.parse(readFileSync(backupPath, 'utf8')).kind === 'life');
+    // Restoring over a record whose note has changed since: the field shows
+    // the restored note, and leaving it does not write the old one back.
     await page.keyboard.press('Escape');
+    await wait(300);
+    await page.locator('[data-life-ending-input]').fill('나중에 바꾼 글');
+    await page.locator('[data-life-add]').focus();
+    await page.locator('[data-life-export]').click();
+    await wait(400);
+    await page.locator('[data-life-import-input]').setInputFiles(backupPath);
+    await wait(400);
+    await page.locator('[data-life-import-go]').click();
+    await wait(500);
+    await page.locator('[data-life-ending-input]').focus();
+    await page.locator('[data-life-add]').focus();
+    await wait(300);
+    pass('restoring over an edited note shows and keeps the restored one',
+      (await page.locator('[data-life-ending-input]').inputValue()) === before.endingNote.text && (await stored()).endingNote.text === before.endingNote.text);
     await flush();
     await page.evaluate(() => { localStorage.clear(); localStorage.setItem('24h-circle-planner.onboarded', '1'); });
     await openLife();

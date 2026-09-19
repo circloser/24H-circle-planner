@@ -171,7 +171,9 @@ export function ageAt(birth: string, date: string): { years: number; approx: boo
   const b = partsOfLife(birth);
   const p = partsOfLife(date);
   let years = p.y - b.y;
-  const approx = p.m === null;
+  // Only the year, or the birth month without the day: the birthday may or
+  // may not have come yet.
+  const approx = p.m === null || (p.m === b.m && p.d === null);
   if (!approx && (p.m! < b.m! || (p.m === b.m && p.d !== null && p.d < b.d!))) years -= 1;
   return years < 0 ? null : { years, approx };
 }
@@ -189,8 +191,13 @@ export function sortMilestones(list: readonly Milestone[]): Milestone[] {
 
 // ── Stored envelope ──────────────────────────────────────────────────────────
 
-const str = (v: unknown, max: number): string | undefined =>
-  typeof v === 'string' && v.trim() ? v.slice(0, max) : undefined;
+/** Cut to length first, then test for words: so what is kept always passes
+ *  the same test again on the next load. */
+const str = (v: unknown, max: number): string | undefined => {
+  if (typeof v !== 'string') return undefined;
+  const cut = v.slice(0, max);
+  return cut.trim() ? cut : undefined;
+};
 const isId = (v: unknown): v is string => typeof v === 'string' && v.length > 0 && v.length <= 64;
 
 function cleanMilestone(v: unknown): Milestone | null {
@@ -252,6 +259,12 @@ export function migrateLife(parsed: unknown): Record<string, unknown> | null {
   if (!p || typeof p !== 'object') return null;
   if (p['version'] === 1) return p;
   return null;
+}
+
+/** Written by a newer version of the app than this one. */
+export function isNewerLife(parsed: unknown): boolean {
+  const v = (parsed as Record<string, unknown> | null)?.['version'];
+  return typeof v === 'number' && v > 1;
 }
 
 /** Strict decode: anything unknown or broken is dropped, never thrown on. */

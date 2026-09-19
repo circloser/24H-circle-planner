@@ -203,7 +203,9 @@ export function LifeTimeline({ life, items, colors, showExamples, stickyTop, onO
 }) {
   const { t, lang } = useTranslation();
   const ref = useRef<HTMLOListElement>(null);
-  useReveal(ref, items.length + (showExamples ? 1 : 0));
+  // Which rows exist, not how many: adding the first moment swaps the
+  // examples out for it and leaves the count the same.
+  useReveal(ref, `${items.map((i) => i.key).join('|')}${showExamples ? '+ex' : ''}`);
   const topYear = useTopYear(ref, stickyTop + 28);
   const birth = life.profile.birthDate;
   const birthYear = Number(birth.slice(0, 4));

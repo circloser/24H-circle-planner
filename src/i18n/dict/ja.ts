@@ -986,4 +986,5 @@ export const ja: Record<TKey, string> = {
   'life.sumRecords': '記録{n}件',
   'life.sumRemaining': '残りの計画期間 約{n}年',
   'life.timelineLabel': 'ライフのタイムライン',
+  'life.newerVersion': 'このライフの記録は新しいバージョンの24Houringで保存されたため、ここでは閲覧のみできます。ページを再読み込みしてアプリを更新してください。',
 };

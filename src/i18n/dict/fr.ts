@@ -986,4 +986,5 @@ export const fr: Record<TKey, string> = {
   'life.sumRecords': '{n} souvenirs',
   'life.sumRemaining': 'encore environ {n} ans',
   'life.timelineLabel': 'Ligne de vie',
+  'life.newerVersion': 'Ce fil de vie a été enregistré par une version plus récente de 24Houring : il est ici en lecture seule. Rechargez la page pour mettre l’app à jour.',
 };

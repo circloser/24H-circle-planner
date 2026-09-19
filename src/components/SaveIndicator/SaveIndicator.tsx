@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, Loader2, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/hooks/usePreferences';
+import { markLifeBackup } from '@/lib/life-backup';
 import { createPersistenceBackup, getPersistenceStatus, retryPersistence, subscribePersistence } from '@/lib/persistence';
 
 function downloadBackup() {
@@ -11,6 +12,7 @@ function downloadBackup() {
   link.download = `24houring-backup-${new Date().toISOString().slice(0, 10)}.json`;
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+  markLifeBackup(); // the emergency backup carries the life record too
 }
 
 export function SaveIndicator() {

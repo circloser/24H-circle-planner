@@ -986,4 +986,5 @@ export const ru: Record<TKey, string> = {
   'life.sumRecords': 'записей: {n}',
   'life.sumRemaining': 'впереди около {n} г.',
   'life.timelineLabel': 'Линия жизни',
+  'life.newerVersion': 'Эта линия жизни сохранена более новой версией 24Houring, поэтому здесь её можно только просматривать. Перезагрузите страницу, чтобы обновить приложение.',
 };

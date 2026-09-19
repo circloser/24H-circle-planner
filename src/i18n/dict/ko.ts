@@ -990,6 +990,7 @@ export const ko = {
   'life.sumRecords': '기록 {n}개',
   'life.sumRemaining': '남은 계획 기간 약 {n}년',
   'life.timelineLabel': '라이프 타임라인',
+  'life.newerVersion': '새 버전의 24Houring에서 저장한 라이프 기록이에요. 이 화면에서는 보기만 할 수 있어요. 페이지를 새로고침해 앱을 업데이트해 주세요.',
 } as const;
 
 /** Every translation key — derived, never hand-maintained. */
