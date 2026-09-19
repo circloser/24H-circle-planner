@@ -105,7 +105,7 @@ function rand(seed: number) {
   };
 }
 
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: [number, number, number, number]) {
+export function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: [number, number, number, number]) {
   ctx.beginPath();
   ctx.moveTo(x + r[0], y);
   ctx.lineTo(x + w - r[1], y);
@@ -398,15 +398,15 @@ export function drawCalendar(ctx: CanvasRenderingContext2D, input: CalendarImage
 
 /** Resolve CSS colour expressions (vars, color-mix, hsl…) as the page sees
  *  them inside `root`, into rgb()/rgba() a canvas always understands. */
-export function resolveColors(root: HTMLElement, exprs: Record<keyof ImageColors, string>): ImageColors {
+export function resolveColors<K extends string>(root: HTMLElement, exprs: Record<K, string>): Record<K, string> {
   const probe = document.createElement('span');
   probe.style.display = 'none';
   root.appendChild(probe);
   const px = document.createElement('canvas');
   px.width = px.height = 1;
   const g = px.getContext('2d', { willReadFrequently: true });
-  const out = {} as ImageColors;
-  for (const [k, expr] of Object.entries(exprs) as [keyof ImageColors, string][]) {
+  const out = {} as Record<K, string>;
+  for (const [k, expr] of Object.entries(exprs) as [K, string][]) {
     probe.style.backgroundColor = '';
     probe.style.backgroundColor = expr;
     const css = getComputedStyle(probe).backgroundColor;

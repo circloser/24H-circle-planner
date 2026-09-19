@@ -18,6 +18,8 @@ export const METRIC_EVENTS = [
   'widget_connect', 'widget_unlink',
   // Calendar and decorating.
   'calendar_open', 'cal_plan_add', 'ical_connect', 'decor_tool', 'decor_place', 'paper_set', 'cal_image',
+  // Life (the whole-life timeline).
+  'life_open', 'life_add', 'life_image', 'life_backup',
 ] as const;
 
 export type MetricEvent = (typeof METRIC_EVENTS)[number];
@@ -29,7 +31,7 @@ export const MAX_METRICS_PER_POST = 20;
  *  table must stay bounded by (events × tags) rows a day whatever is sent. */
 export const METRIC_TAGS = [
   // Where the Pro offer was opened.
-  'decor', 'ical', 'ads', 'stats', 'diary', 'watermark', 'slots', 'push', 'other', 'direct',
+  'decor', 'ical', 'ads', 'stats', 'diary', 'watermark', 'slots', 'push', 'life', 'other', 'direct',
   // Calendar plans and decorating.
   'span', 'allday', 'timed', 'sticker', 'tape', 'photo', 'none', 'grid', 'lined', 'dot', 'kraft',
   // Outcomes and kinds used by older events.

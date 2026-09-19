@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Cloud, Archive, BarChart3, Ban, Check } from 'lucide-react';
+import { Cloud, Archive, BarChart3, Ban, Check, GitCommitVertical } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -173,6 +173,7 @@ function UpgradeDialogSession({ open, onOpenChange }: UpgradeDialogProps) {
   const features = [
     { icon: Cloud, text: t('upgrade.featSync') },
     { icon: Archive, text: t('upgrade.featArchive') },
+    { icon: GitCommitVertical, text: t('upgrade.featLife') },
     { icon: BarChart3, text: t('upgrade.featStats') },
     { icon: Ban, text: t('upgrade.featNoAds') },
   ];

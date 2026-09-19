@@ -130,6 +130,19 @@ export function lifeDate(y: number | null, m: number | null, d: number | null): 
   return isLifeDate(out) ? out : null;
 }
 
+/** A date as the three fields of a form (month and day may be blank). */
+export interface DateParts { y: string; m: string; d: string }
+
+export const partsFrom = (date: string | undefined | null): DateParts => {
+  if (!date) return { y: '', m: '', d: '' };
+  const p = partsOfLife(date);
+  return { y: String(p.y), m: p.m ? String(p.m) : '', d: p.d ? String(p.d) : '' };
+};
+
+/** The date the fields make, or null while it is not a valid one yet. */
+export const dateFrom = (p: DateParts): string | null =>
+  lifeDate(p.y ? Number(p.y) : null, p.m ? Number(p.m) : null, p.m && p.d ? Number(p.d) : null);
+
 /** '2010.05.15', '2010.05', '2010' — the same in every language. */
 export function formatLifeDate(date: string): string {
   return date.replace(/-/g, '.');

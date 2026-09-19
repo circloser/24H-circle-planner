@@ -48,13 +48,14 @@ export async function deletePhoto(id: string): Promise<void> {
   await run('readwrite', (s) => s.delete(id));
 }
 
-/** Downscale and re-encode as JPEG, so a phone photo becomes a few dozen KB. */
-export function shrinkPhoto(file: Blob): Promise<string | null> {
+/** Downscale and re-encode as JPEG, so a phone photo becomes a few dozen KB.
+ *  `maxEdge`: a card-wide picture (the life timeline) keeps more than a sticker. */
+export function shrinkPhoto(file: Blob, maxEdge = MAX_EDGE): Promise<string | null> {
   return new Promise((resolve) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
-      const scale = Math.min(1, MAX_EDGE / Math.max(img.width, img.height));
+      const scale = Math.min(1, maxEdge / Math.max(img.width, img.height));
       const canvas = document.createElement('canvas');
       canvas.width = Math.max(1, Math.round(img.width * scale));
       canvas.height = Math.max(1, Math.round(img.height * scale));

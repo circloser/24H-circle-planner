@@ -15,6 +15,7 @@ import {
 import { SaveIndicator } from '@/components/SaveIndicator/SaveIndicator';
 import { ChartViewToggle } from '@/components/ChartViewToggle/ChartViewToggle';
 import { CalendarToggle } from '@/components/ChartViewToggle/CalendarToggle';
+import { LifeToggle } from '@/components/ChartViewToggle/LifeToggle';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/hooks/useAuth';
@@ -158,6 +159,7 @@ export function AppHeader({
         <div className="col-span-2 row-start-2 flex items-center justify-center gap-1.5 sm:col-span-1 sm:row-start-auto" data-tour="view">
           <ChartViewToggle />
           <CalendarToggle />
+          <LifeToggle />
         </div>
         <div className="col-start-2 row-start-1 flex min-w-0 shrink items-center justify-end gap-1 sm:col-start-auto sm:row-start-auto sm:gap-2">
           <DropdownMenu>

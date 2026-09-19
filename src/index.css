@@ -650,3 +650,43 @@ svg text {
 [data-calendar-view] {
   --cal-outside: color-mix(in srgb, var(--cal-tint, hsl(var(--primary))) var(--cal-outside-tint), var(--cal-outside-base));
 }
+
+/* ─── Life timeline ────────────────────────────────────────────────────────── */
+/* One line down the page: 28px from the left on a phone, the centre from
+   900px up. Each row draws its own stretch of it, so the past is solid and the
+   stretch after today dashed without measuring anything. */
+.life-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 28px;
+  width: 3px;
+  transform: translateX(-50%);
+  background: hsl(var(--border));
+}
+.life-line--future {
+  background: repeating-linear-gradient(to bottom, hsl(var(--border)) 0 8px, transparent 8px 15px);
+}
+@media (min-width: 900px) {
+  .life-line { left: 50%; }
+}
+/* Cards rise into place as they scroll in (lib: IntersectionObserver). */
+.life-reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 240ms ease-out, transform 240ms ease-out;
+}
+.life-reveal[data-shown] {
+  opacity: 1;
+  transform: none;
+}
+@keyframes life-pulse {
+  0% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.45); }
+  70% { box-shadow: 0 0 0 12px hsl(var(--primary) / 0); }
+  100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0); }
+}
+.life-pulse { animation: life-pulse 2.4s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .life-reveal { opacity: 1; transform: none; transition: none; }
+  .life-pulse { animation: none; }
+}

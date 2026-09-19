@@ -70,6 +70,7 @@ import { UpgradeDialog } from '@/components/Billing/UpgradeDialog';
 import { StatsDialog } from '@/components/Admin/StatsDialog';
 import { OPEN_UPGRADE_EVENT } from '@/lib/pro';
 import { requestCalendarExport } from '@/lib/calendar-export';
+import { requestLifeExport } from '@/lib/life-export';
 import { OPEN_E2EE_EVENT } from '@/lib/sync/e2ee';
 import { WelcomeOverlay } from '@/components/Onboarding/WelcomeOverlay';
 import { DesignMagician } from '@/components/Onboarding/DesignMagician';
@@ -89,6 +90,7 @@ import { ReferralDialog } from '@/components/Referral/ReferralDialog';
 import { DiaryViewSync } from '@/components/DiaryViewSync';
 import { RecordView } from '@/components/Record/RecordView';
 import { CalendarView } from '@/components/Calendar/CalendarView';
+import { LifeView } from '@/components/Life/LifeView';
 import { WeekdayScheduleDialog } from '@/components/Weekday/WeekdayScheduleDialog';
 import { loadWeekdayMap, weekdayName, STORAGE_KEY_WEEKDAY_PROMPTED } from '@/lib/weekday-schedules';
 import { loadSlots } from '@/lib/slots';
@@ -150,11 +152,13 @@ function App() {
   const [magicianOpen, setMagicianOpen] = useState(false);
   // One count per page load: the denominator for every other usage count.
   useEffect(() => { trackOnce('app_open'); }, []);
-  // /?view=calendar (linked from the /calendar page) opens the calendar, once.
+  // /?view=calendar or /?view=life (linked from the /calendar and /life pages)
+  // opens that page, once.
   useEffect(() => {
     const url = new URL(window.location.href);
-    if (url.searchParams.get('view') !== 'calendar') return;
-    setPreference('chartView', 'calendar');
+    const view = url.searchParams.get('view');
+    if (view !== 'calendar' && view !== 'life') return;
+    setPreference('chartView', view);
     url.searchParams.delete('view');
     window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -321,6 +325,9 @@ function App() {
   // Calendar mode is a planner, not the timetable: it takes the whole canvas and
   // every floating widget (and the pet) steps aside for it.
   const calendarMode = chartView === 'calendar';
+  // Life is a page of its own too (a whole-life timeline).
+  const lifeMode = chartView === 'life';
+  const pageMode = calendarMode || lifeMode;
   const { refresh: refreshAuth, user } = useAuth();
   // Back from a Google sign-in that the mailing-list dialog started: reopen it,
   // so the person lands where they were. Never opens it otherwise.
@@ -591,7 +598,7 @@ function App() {
         onOpenPalette={() => setPaletteOpen(true)}
         onOpenSettings={setSettingsSection}
         // The calendar has its own export: the timetable one needs the chart.
-        onOpenExport={() => (calendarMode ? requestCalendarExport() : setExportOpen(true))}
+        onOpenExport={() => (calendarMode ? requestCalendarExport() : lifeMode ? requestLifeExport() : setExportOpen(true))}
         onShareImage={shareImage}
         onCopyLink={copyLink}
         onOpenHome={() => setHomeOpen(true)}
@@ -623,6 +630,9 @@ function App() {
           calendarMode
             // Calendar mode fills the window: no centred column, no chart layout.
             ? 'flex min-h-0 w-full flex-1 flex-col px-2 pb-1 pt-1'
+            : lifeMode
+            // The life page lays out its own column (and scrolls with the window).
+            ? 'flex w-full flex-1 flex-col'
             : isMobile
             ? 'flex-1 container mx-auto flex flex-col items-center gap-6 px-3 pb-12 pt-3'
             : sideLayout
@@ -631,12 +641,12 @@ function App() {
               ? `flex w-full flex-1 items-center py-8 ${layout === 'left' ? 'justify-start' : 'justify-end'}`
               : 'flex-1 container mx-auto py-8 flex items-center justify-center px-4'
         }
-        style={sideLayout && !calendarMode ? { paddingLeft: CHART_SIDE_GAP, paddingRight: CHART_SIDE_GAP } : undefined}
+        style={sideLayout && !pageMode ? { paddingLeft: CHART_SIDE_GAP, paddingRight: CHART_SIDE_GAP } : undefined}
       >
-        {calendarMode ? <CalendarView /> : (
+        {calendarMode ? <CalendarView /> : lifeMode ? <LifeView /> : (
         <>
         {/* Multi-day switcher — pinned at the top in-flow on mobile, floating on desktop. */}
-        {chartView !== 'record' && !calendarMode && layout !== 'hidden' && <DayBar layout={layout} onOpenDiary={() => setDiaryOpen(true)} />}
+        {chartView !== 'record' && !pageMode && layout !== 'hidden' && <DayBar layout={layout} onOpenDiary={() => setDiaryOpen(true)} />}
         <div
           className={sideLayout ? 'flex flex-col gap-4' : 'flex w-full flex-col items-center gap-4'}
           // Side layouts size the column to the current view, so it hugs the edge
@@ -735,7 +745,7 @@ function App() {
         </div>
         )}
           {/* Day's free-form note, shown directly under the timetable. */}
-          {chartView !== 'record' && !calendarMode && layout !== 'hidden' && <DiaryNotePanel />}
+          {chartView !== 'record' && !pageMode && layout !== 'hidden' && <DiaryNotePanel />}
           {/* Hidden layout: one quiet way back to the chart. */}
           {layout === 'hidden' && (
             <button
@@ -752,7 +762,7 @@ function App() {
 
         {/* Mobile: stacked sections below the chart. Editing stays enabled (touch
             + long-press); only the desktop floating overlays are replaced. */}
-        {isMobile && chartView !== 'record' && !calendarMode && (
+        {isMobile && chartView !== 'record' && !pageMode && (
           <>
             <div className="-mt-2 flex flex-col items-center gap-1.5">
               <div className="flex items-center justify-center gap-2">
@@ -881,7 +891,7 @@ function App() {
       <PlayStoreBanner open={getAppOpen} onClose={closeGetApp} />
 
       {/* T9: Export dialog */}
-      {exportOpen && !calendarMode && (
+      {exportOpen && !pageMode && (
       <ExportDialog
         open={exportOpen}
         onOpenChange={setExportOpen}
@@ -971,17 +981,17 @@ function App() {
       <DiaryViewSync />
       {/* prefs.showWidgets = master switch (환경설정 > 위젯): off hides every
           floating widget AND its FAB for a completely clean canvas. */}
-      {!isMobile && !firstRunClean && !calendarMode && prefs.showWidgets && prefs.showMemos && <MemoLayer />}
-      {!isMobile && !firstRunClean && !calendarMode && prefs.showWidgets && <GoalsWidget onSetup={() => setGoalsOpen(true)} />}
-      {!isMobile && !firstRunClean && !calendarMode && prefs.showWidgets && <ClockToolsLayer />}
+      {!isMobile && !firstRunClean && !pageMode && prefs.showWidgets && prefs.showMemos && <MemoLayer />}
+      {!isMobile && !firstRunClean && !pageMode && prefs.showWidgets && <GoalsWidget onSetup={() => setGoalsOpen(true)} />}
+      {!isMobile && !firstRunClean && !pageMode && prefs.showWidgets && <ClockToolsLayer />}
       {/* Keyword news headlines — desktop: the FAB is always shown; its window
           open/closed is a pref (magician-toggleable). Mobile: a bottom section. */}
-      {!isMobile && !firstRunClean && !calendarMode && prefs.showWidgets && <NewsWidget />}
+      {!isMobile && !firstRunClean && !pageMode && prefs.showWidgets && <NewsWidget />}
       {/* Polaroid photo wall — photos live only on this device (IndexedDB). */}
-      {!isMobile && !firstRunClean && !calendarMode && prefs.showWidgets && <PolaroidAlbum />}
+      {!isMobile && !firstRunClean && !pageMode && prefs.showWidgets && <PolaroidAlbum />}
       {/* Background pet — desktop: roams the window from a FAB console. Mobile
           renders it as a section inside <main> instead (see MobileTamaSection). */}
-      {!isMobile && !firstRunClean && !calendarMode && <TamagotchiLayer />}
+      {!isMobile && !firstRunClean && !pageMode && <TamagotchiLayer />}
 
       {/* In-app slice-start popup (bottom-right / bottom, 5s, above everything).
           Fires from useSliceAlarms on a block boundary — shows even without OS

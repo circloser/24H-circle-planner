@@ -6,13 +6,17 @@
  *  - 'night': 18:00 → 06:00, the 18/06 seam at the BOTTOM, midnight at top.
  * Editing stays linked because angle↔time uses the same spec in both directions.
  */
-export type ChartView = 'full' | 'day' | 'night' | 'table' | 'record' | 'calendar';
+export type ChartView = 'full' | 'day' | 'night' | 'table' | 'record' | 'calendar' | 'life';
 
-// The top toggle only cycles the schedule views. 'record' (clock-tools menu)
-// and 'calendar' (a month planner, not a circle window) are separate modes the
-// toggle lists explicitly, so both stay out of this cycle while remaining
-// valid ChartViews.
+// The top toggle only cycles the schedule views. 'record' (clock-tools menu),
+// 'calendar' (a month planner) and 'life' (a whole-life timeline) are separate
+// modes with buttons of their own, so they stay out of this cycle while
+// remaining valid ChartViews.
 export const CHART_VIEWS: ChartView[] = ['full', 'day', 'night', 'table'];
+
+/** The views that are pages of their own rather than the timetable: they fill
+ *  the window, and the floating widgets step aside for them. */
+export const isPageView = (view: ChartView | undefined): boolean => view === 'calendar' || view === 'life';
 
 export interface ViewSpec {
   view: ChartView;
