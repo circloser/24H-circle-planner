@@ -7,6 +7,7 @@ import {
   MAX_LINK_LABEL, daysSinceContact, daysToBirthday, turningAge,
   type Person, type RelationData, type RelationGroup, type RelationLink,
 } from '@/lib/relation';
+import { placesWith } from '@/lib/relation-place';
 import { GROUP_ICON, GROUP_LABEL } from './groups';
 
 /** One line drawn to another person, and what to call it.
@@ -89,6 +90,8 @@ export function RelationPanel({
   const toBirthday = daysToBirthday(person, today);
   const turns = turningAge(person, today);
   const Icon = GROUP_ICON[person.group];
+  // Places on the place map that name this person (lib/relation-place).
+  const together = placesWith(person.id);
   const linked = data.links
     .filter((l) => l.source === person.id || l.target === person.id)
     .map((l) => ({ link: l, other: data.people.find((p) => p.id === (l.source === person.id ? l.target : l.source)) }))
@@ -161,6 +164,12 @@ export function RelationPanel({
             <LinkRow key={other.id} link={link} other={other} onPick={onPick} onUnlink={onUnlink} onLabel={onLabel} />
           ))}
         </ul>
+      )}
+
+      {together.length > 0 && (
+        <p className="text-[13px] text-muted-foreground" data-relation-places>
+          {t('relation.placesWith', { n: String(together.length) })} · {together.slice(0, 4).join(', ')}
+        </p>
       )}
 
       {toBirthday !== null && toBirthday <= 30 && (

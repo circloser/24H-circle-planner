@@ -716,3 +716,12 @@ html[data-page='life'] #site-copy-wrap { display: none; }
 /* Like the life line, the map fills the window: the home page's reading copy
    (and the app footer, see App.tsx) stay away while it shows. */
 html[data-page='relation'] #site-copy-wrap { display: none; }
+
+/* ─── Place map ────────────────────────────────────────────────────────────── */
+/* The scratch map is SVG and the pin map is a canvas; both need the page's own
+   two colours as plain values they can read. */
+[data-place-view] {
+  --place-ink: hsl(var(--foreground));
+  --place-paper: hsl(var(--surface, var(--background)));
+}
+html[data-page='place'] #site-copy-wrap { display: none; }

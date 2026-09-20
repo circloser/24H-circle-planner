@@ -17,6 +17,7 @@ import { ChartViewToggle } from '@/components/ChartViewToggle/ChartViewToggle';
 import { CalendarToggle } from '@/components/ChartViewToggle/CalendarToggle';
 import { LifeToggle } from '@/components/ChartViewToggle/LifeToggle';
 import { RelationToggle } from '@/components/ChartViewToggle/RelationToggle';
+import { PlaceToggle } from '@/components/ChartViewToggle/PlaceToggle';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/hooks/useAuth';
@@ -162,6 +163,7 @@ export function AppHeader({
           <CalendarToggle />
           <LifeToggle />
           <RelationToggle />
+          <PlaceToggle />
         </div>
         <div className="col-start-2 row-start-1 flex min-w-0 shrink items-center justify-end gap-1 sm:col-start-auto sm:row-start-auto sm:gap-2">
           <DropdownMenu>

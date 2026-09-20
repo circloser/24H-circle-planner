@@ -44,6 +44,9 @@ export interface Milestone {
   category: LifeCategory;
   photo?: string;
   pinned?: boolean;
+  /** Where it happened, for the place map (lib/place). A country, and the
+   *  city inside it when one was chosen. */
+  placeRef?: { countryCode: string; cityId?: string };
 }
 
 export interface LifeProfile {
@@ -216,6 +219,12 @@ function cleanMilestone(v: unknown): Milestone | null {
   const category: LifeCategory = typeof cat === 'string' && (PICKABLE_CATEGORIES as readonly string[]).includes(cat)
     ? (cat as LifeCategory) : 'other';
   const description = str(o['description'], MAX_DESCRIPTION);
+  const where = o['placeRef'] as Record<string, unknown> | undefined;
+  const country = where && typeof where['countryCode'] === 'string' && /^[A-Z]{2}$/.test(where['countryCode'])
+    ? where['countryCode'] : null;
+  const city = where && typeof where['cityId'] === 'string' && where['cityId'].length > 0 && where['cityId'].length <= 64
+    ? where['cityId'] : null;
+  const placeRef = country ? { countryCode: country, ...(city ? { cityId: city } : {}) } : null;
   // Fixed field order, optional fields only when present: load → save is stable.
   return {
     id: o['id'], date: o['date'],
@@ -225,6 +234,7 @@ function cleanMilestone(v: unknown): Milestone | null {
     category,
     ...(isId(o['photo']) ? { photo: o['photo'] } : {}),
     ...(o['pinned'] === true ? { pinned: true } : {}),
+    ...(placeRef ? { placeRef } : {}),
   };
 }
 

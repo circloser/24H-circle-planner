@@ -4,6 +4,9 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 
 const source = readFileSync('public/sw.js', 'utf8');
+/** The cache the worker is on now, read from the worker itself rather than
+ *  written down here: bumping the version must not break a test. */
+const CACHE = /const CACHE = '([^']+)'/.exec(source)?.[1] ?? '';
 type FetchEvent = { request: { url: string; method: string; mode: string }; respondWith: (response: Promise<Response>) => void };
 
 function harness() {
@@ -14,7 +17,7 @@ function harness() {
   const cache = { put: vi.fn(async (key: string, response: Response) => { entries.set(key, response); }), addAll: vi.fn().mockResolvedValue(undefined) };
   runInNewContext(source, {
     URL, Response, fetch,
-    caches: { open: vi.fn().mockResolvedValue(cache), match: async (key: string) => entries.get(key)?.clone(), keys: async () => ['24h-cache-v10', '24h-cache-v11'], delete: removeCache },
+    caches: { open: vi.fn().mockResolvedValue(cache), match: async (key: string) => entries.get(key)?.clone(), keys: async () => ['24h-cache-v0', 'an-older-one', CACHE], delete: removeCache },
     self: { location: { origin: 'https://24houring.com' }, addEventListener: (name: string, cb: (event: unknown) => void) => { listeners[name] = cb; }, clients: { claim: vi.fn() } },
   });
   function navigate(path: string, mode = 'navigate') {
@@ -78,11 +81,13 @@ describe('offline app shell navigation isolation', () => {
     expect(await (await h.navigate('/ja/').response)!.text()).toBe('planner');
   });
 
-  it('removes the previously poisoned cache version during activation', async () => {
+  it('throws away every cache but the current one, whatever it is called', async () => {
     const h = harness();
     const waitUntil = vi.fn();
     h.listeners.activate({ waitUntil });
     await waitUntil.mock.calls[0][0];
-    expect(h.removeCache).toHaveBeenCalledExactlyOnceWith('24h-cache-v10');
+    // Every older version goes, including the poisoned one that started this;
+    // the version the worker is on now stays.
+    expect(h.removeCache.mock.calls.flat()).toEqual(['24h-cache-v0', 'an-older-one']);
   });
 });

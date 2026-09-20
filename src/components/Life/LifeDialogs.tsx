@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { ImagePlus, Lock, Trash2, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ImagePlus, Lock, MapPin, Trash2, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,8 +13,65 @@ import {
 import { todayKey } from '@/lib/calendar-grid';
 import type { MemberDraft, MilestoneDraft } from '@/hooks/useLife';
 import { CATEGORY_ICON, CATEGORY_LABEL, RELATION_LABEL, inkOf } from './categories';
+import { loadCities, searchCities, type CityRow } from '@/lib/place-world';
 import { LifeDateInput } from './LifeDateInput';
 import { LifePhoto } from './LifeTimeline';
+
+/**
+ * Where a moment happened. The city list ships with the app, so nothing is
+ * asked of a search service; choosing one here colours that country in on the
+ * place map (lib/life-place).
+ */
+function PlaceField({ value, onChange }: {
+  value: { countryCode: string; cityId?: string } | undefined;
+  onChange: (where: { countryCode: string; cityId?: string } | undefined) => void;
+}) {
+  const { t } = useTranslation();
+  const [rows, setRows] = useState<readonly CityRow[]>([]);
+  const [query, setQuery] = useState('');
+  useEffect(() => {
+    let alive = true;
+    void loadCities().then((c) => { if (alive) setRows(c); });
+    return () => { alive = false; };
+  }, []);
+  const found = useMemo(() => searchCities(rows, query, 5), [rows, query]);
+  const chosen = value?.cityId ? rows.find((c) => c.id === value.cityId) : undefined;
+
+  if (value) {
+    return (
+      <span className="inline-flex w-fit min-h-9 items-center gap-1.5 rounded-full border border-border px-3 text-sm"
+        data-life-place-chosen={value.cityId ?? value.countryCode}>
+        <MapPin aria-hidden className="h-3.5 w-3.5 text-muted-foreground" />
+        {chosen?.name ?? value.countryCode}
+        <button type="button" aria-label={t('common.remove')} data-life-place-clear
+          className="grid h-5 w-5 place-items-center rounded-full text-muted-foreground hover:bg-accent/20"
+          onClick={() => onChange(undefined)}>
+          <X aria-hidden className="h-3 w-3" />
+        </button>
+      </span>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Input value={query} data-life-place-search placeholder={t('place.searchCity')}
+        onChange={(e) => setQuery(e.target.value)} />
+      {found.length > 0 && (
+        <ul className="flex flex-col gap-0.5">
+          {found.map((city) => (
+            <li key={city.id}>
+              <button type="button" data-life-place-option={city.id}
+                className="min-h-9 w-full rounded-md px-2 text-left text-sm hover:bg-accent/20"
+                onClick={() => { onChange({ countryCode: city.code, cityId: city.id }); setQuery(''); }}>
+                {city.name}
+                <span className="ml-1.5 text-muted-foreground">{city.code}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 const textarea = 'w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 const fieldLabel = 'text-sm font-medium text-foreground';
@@ -125,6 +182,7 @@ export function MilestoneDialog({ target, pro, colors, onSave, onDelete, onClose
   const [category, setCategory] = useState<Exclude<LifeCategory, 'birth'>>('other');
   const [description, setDescription] = useState('');
   const [photo, setPhoto] = useState<string | undefined>();
+  const [where, setWhere] = useState<Milestone['placeRef']>(undefined);
   const [pinned, setPinned] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
   // Fill the form each time the dialog opens on something.
@@ -137,6 +195,7 @@ export function MilestoneDialog({ target, pro, colors, onSave, onDelete, onClose
     setCategory(base.category && base.category !== 'birth' ? base.category : 'other');
     setDescription(base.description ?? '');
     setPhoto(base.photo);
+    setWhere(base.placeRef);
     setPinned(base.pinned ?? false);
     setEndOpen(!!base.endDate);
     /* eslint-enable react-hooks/set-state-in-effect */
@@ -159,6 +218,7 @@ export function MilestoneDialog({ target, pro, colors, onSave, onDelete, onClose
       date: when, ...(until ? { endDate: until } : {}), title: title.trim(),
       ...(description.trim() ? { description: description.trim() } : {}),
       category, ...(photo ? { photo } : {}), ...(pinned ? { pinned: true } : {}),
+      ...(where ? { placeRef: where } : {}),
     }, target?.mode === 'edit' ? target.m.id : undefined);
   };
 
@@ -210,6 +270,10 @@ export function MilestoneDialog({ target, pro, colors, onSave, onDelete, onClose
           <div className="flex flex-col gap-1.5">
             <span className={fieldLabel}>{t('life.field.photo')}</span>
             <PhotoField value={photo} original={original} pro={pro} onChange={setPhoto} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className={fieldLabel}>{t('life.field.place')}</span>
+            <PlaceField value={where} onChange={setWhere} />
           </div>
           <div className="flex flex-col gap-2">
             {/* Nothing to tick: a date still to come is already a plan. */}

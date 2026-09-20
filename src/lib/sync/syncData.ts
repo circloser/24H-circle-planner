@@ -85,6 +85,10 @@ export const SYNC_KEYS: readonly string[] = [
   // byte-stable on load → save, so syncing it is loop-safe. Faces stay on the
   // device, like every other picture here.
   'relation',
+  // The place map (countries coloured in, cities, pins). User-authored, kept
+  // if an older cloud blob predates it, byte-stable on load → save. The
+  // photographs pinned to a place stay on the device, like every other.
+  'place',
   'prefs',
   'view',
 ].map((k) => PREFIX + k)
@@ -113,6 +117,7 @@ const KEEP_IF_ABSENT = new Set<string>([
   PREFIX + 'life',
   PREFIX + 'life-decor',
   PREFIX + 'relation',
+  PREFIX + 'place',
 ]);
 
 /** The synced preferences key — applied live (no reload) when it alone changes. */

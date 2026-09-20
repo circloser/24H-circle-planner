@@ -74,6 +74,7 @@ import { OPEN_UPGRADE_EVENT } from '@/lib/pro';
 import { requestCalendarExport } from '@/lib/calendar-export';
 import { requestLifeExport } from '@/lib/life-export';
 import { requestRelationExport } from '@/lib/relation-export';
+import { requestPlaceExport } from '@/lib/place-export';
 import { OPEN_E2EE_EVENT } from '@/lib/sync/e2ee';
 import { WelcomeOverlay } from '@/components/Onboarding/WelcomeOverlay';
 import { DesignMagician } from '@/components/Onboarding/DesignMagician';
@@ -95,6 +96,7 @@ import { RecordView } from '@/components/Record/RecordView';
 import { CalendarView } from '@/components/Calendar/CalendarView';
 import { LifeView } from '@/components/Life/LifeView';
 import { RelationView } from '@/components/Relation/RelationView';
+import { PlaceView } from '@/components/Place/PlaceView';
 import { WeekdayScheduleDialog } from '@/components/Weekday/WeekdayScheduleDialog';
 import { loadWeekdayMap, weekdayName, STORAGE_KEY_WEEKDAY_PROMPTED } from '@/lib/weekday-schedules';
 import { loadSlots } from '@/lib/slots';
@@ -168,12 +170,12 @@ function App() {
     lastView.current = next;
     if (opensView(prev, next)) openViewAt(next);
   }, [prefs.chartView]);
-  // /?view=calendar, /?view=life or /?view=relation (linked from the pages of
-  // those names) opens that page, once.
+  // /?view=calendar, /?view=life, /?view=relation or /?view=place (linked
+  // from the pages of those names) opens that page, once.
   useEffect(() => {
     const url = new URL(window.location.href);
     const view = url.searchParams.get('view');
-    if (view !== 'calendar' && view !== 'life' && view !== 'relation') return;
+    if (view !== 'calendar' && view !== 'life' && view !== 'relation' && view !== 'place') return;
     setPreference('chartView', view);
     url.searchParams.delete('view');
     window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
@@ -344,7 +346,8 @@ function App() {
   // Life is a page of its own too (a whole-life timeline).
   const lifeMode = chartView === 'life';
   const relationMode = chartView === 'relation';
-  const pageMode = calendarMode || lifeMode || relationMode;
+  const placeMode = chartView === 'place';
+  const pageMode = calendarMode || lifeMode || relationMode || placeMode;
   const { refresh: refreshAuth, user } = useAuth();
   // Back from a Google sign-in that the mailing-list dialog started: reopen it,
   // so the person lands where they were. Never opens it otherwise.
@@ -618,7 +621,8 @@ function App() {
         onOpenExport={() => (calendarMode ? requestCalendarExport()
           : lifeMode ? requestLifeExport()
             : relationMode ? requestRelationExport()
-              : setExportOpen(true))}
+              : placeMode ? requestPlaceExport()
+                : setExportOpen(true))}
         onShareImage={shareImage}
         onCopyLink={copyLink}
         onOpenHome={() => setHomeOpen(true)}
@@ -642,9 +646,9 @@ function App() {
 
       {/* The life page shows nothing but the life: these nudges wait for the other views. */}
       {!firstSession && !pageMode && <ActivationNudge onSendToPhone={() => setTransferOpen(true)} />}
-      {!firstSession && !lifeMode && !relationMode && <EnablePushBanner />}
-      {!firstSession && !lifeMode && !relationMode && <GetAppBanner />}
-      {!firstSession && !lifeMode && !relationMode && <IosInstallBanner onOpen={() => setHomeOpen(true)} />}
+      {!firstSession && !lifeMode && !relationMode && !placeMode && <EnablePushBanner />}
+      {!firstSession && !lifeMode && !relationMode && !placeMode && <GetAppBanner />}
+      {!firstSession && !lifeMode && !relationMode && !placeMode && <IosInstallBanner onOpen={() => setHomeOpen(true)} />}
 
       <main
         className={
@@ -654,8 +658,8 @@ function App() {
             : lifeMode
             // The life page lays out its own column (and scrolls with the window).
             ? 'flex w-full flex-1 flex-col'
-            : relationMode
-            // The relation map fills the window, like the calendar.
+            : relationMode || placeMode
+            // The relation and place maps fill the window, like the calendar.
             ? 'flex min-h-0 w-full flex-1 flex-col'
             : isMobile
             ? 'flex-1 container mx-auto flex flex-col items-center gap-6 px-3 pb-12 pt-3'
@@ -667,7 +671,8 @@ function App() {
         }
         style={sideLayout && !pageMode ? { paddingLeft: CHART_SIDE_GAP, paddingRight: CHART_SIDE_GAP } : undefined}
       >
-        {calendarMode ? <CalendarView /> : lifeMode ? <LifeView /> : relationMode ? <RelationView /> : (
+        {calendarMode ? <CalendarView /> : lifeMode ? <LifeView /> : relationMode ? <RelationView />
+          : placeMode ? <PlaceView /> : (
         <>
         {/* Multi-day switcher — pinned at the top in-flow on mobile, floating on desktop. */}
         {chartView !== 'record' && !pageMode && layout !== 'hidden' && <DayBar layout={layout} onOpenDiary={() => setDiaryOpen(true)} />}
@@ -827,7 +832,7 @@ function App() {
         )}
       </main>
 
-      {!lifeMode && !relationMode && <AppFooter />}
+      {!lifeMode && !relationMode && !placeMode && <AppFooter />}
 
       <PresetGallery
         open={presetOpen}
