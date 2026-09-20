@@ -595,8 +595,13 @@ async function handleWebhook(request: Request, env: Env, ctx?: Waiter): Promise<
       }
     }
   }
-  // A one-time purchase: the 자서전 product (worker/memoir.ts).
-  if (event.type === 'order.paid') await creditMemoirOrder(env, event.data, ctx);
+  // A one-time purchase: the 자서전 product (worker/memoir.ts). Polar names
+  // the moment differently across its versions, so any order that says it is
+  // paid counts — grantMemoirCredit makes repeats harmless.
+  const t = event.type ?? '';
+  if (t === 'order.paid' || ((t === 'order.created' || t === 'order.updated') && event.data?.status === 'paid')) {
+    await creditMemoirOrder(env, event.data, ctx);
+  }
   return json({ received: true });
 }
 
@@ -604,6 +609,10 @@ async function handleWebhook(request: Request, env: Env, ctx?: Waiter): Promise<
 
 interface PolarOrder {
   id?: string;
+  status?: string;
+  /** The checkout this order came from — the key both the webhook and the
+   *  buyer's own return use, so one purchase is never counted twice. */
+  checkout_id?: string;
   product_id?: string;
   product?: { id?: string };
   customer?: { external_id?: string | null };
@@ -648,7 +657,9 @@ async function handleMemoirCheckout(request: Request, env: Env): Promise<Respons
   const origin = new URL(request.url).origin;
   const body: Record<string, unknown> = {
     products: [env.POLAR_MEMOIR_PRODUCT_ID],
-    success_url: `${origin}/?view=life&memoir=paid`,
+    // The checkout id comes back with the buyer, so the purchase can be
+    // claimed even if the webhook never arrives (see handleMemoirClaim).
+    success_url: `${origin}/?view=life&memoir=paid&checkout_id={CHECKOUT_ID}`,
     external_customer_id: user.id,
     metadata: { user_id: user.id, kind: MEMOIR_KIND },
   };
@@ -717,9 +728,53 @@ async function creditMemoirOrder(env: Env, order: PolarOrder | undefined, ctx?: 
     console.error(`[memoir] a paid order with nobody to credit: ${order.id}`);
     return;
   }
-  if (await grantMemoirCredit(env.DB, userId, order.id)) {
+  if (await grantMemoirCredit(env.DB, userId, order.checkout_id || order.id)) {
     ctx?.waitUntil(notifyAdmins(env, '📖 자서전 결제', '자서전 한 편이 결제되었습니다.'));
   }
+}
+
+/**
+ * POST /api/life/memoir/claim — the buyer's own receipt.
+ *
+ * A webhook that is switched off, or delayed, would otherwise mean money taken
+ * and nothing given. So the buyer comes back from Polar carrying the checkout
+ * id, and we ask Polar directly whether it succeeded. Both this and the webhook
+ * count the credit against the same checkout id, so one purchase is one memoir
+ * however many times either arrives.
+ */
+async function handleMemoirClaim(request: Request, env: Env, ctx?: Waiter): Promise<Response> {
+  if (!memoirEnabled(env) || !env.DB || !env.POLAR_ACCESS_TOKEN) return json({ error: 'memoir_unconfigured' }, 503);
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'unauthorized' }, 401);
+  let body: { checkoutId?: unknown };
+  try {
+    body = (await request.json()) as typeof body;
+  } catch {
+    return json({ error: 'bad_json' }, 400);
+  }
+  const id = String(body.checkoutId ?? '').trim();
+  if (!id || !/^[A-Za-z0-9_-]{8,64}$/.test(id)) return json({ error: 'bad_checkout' }, 400);
+
+  const res = await fetch(`${polarBase(env)}/checkouts/${id}`, {
+    headers: { authorization: `Bearer ${env.POLAR_ACCESS_TOKEN}`, accept: 'application/json' },
+  });
+  if (!res.ok) return json({ error: 'checkout_unknown', status: res.status }, 502);
+  const co = (await res.json()) as {
+    status?: string;
+    product_id?: string;
+    customer_external_id?: string | null;
+    metadata?: Record<string, unknown>;
+  };
+  // Only a checkout that succeeded, for this product, belonging to this account.
+  const meta = co.metadata?.['user_id'];
+  const owner = typeof meta === 'string' && meta ? meta : co.customer_external_id || '';
+  if (co.status !== 'succeeded' || co.product_id !== env.POLAR_MEMOIR_PRODUCT_ID || owner !== user.id) {
+    return json({ error: 'not_paid' }, 409);
+  }
+  if (await grantMemoirCredit(env.DB, user.id, id)) {
+    ctx?.waitUntil(notifyAdmins(env, '📖 자서전 결제', '자서전 한 편이 결제되었습니다.'));
+  }
+  return json({ ok: true, credits: await memoirCredits(env.DB, user.id) });
 }
 
 // ─── Coupons (self-serve Pro codes) ──────────────────────────────────────────
@@ -1462,6 +1517,7 @@ async function route(request: Request, env: Env, ctx?: Waiter): Promise<Response
       if (p === '/api/life/memoir' && m === 'GET') return handleMemoirState(request, env);
       if (p === '/api/life/memoir' && m === 'POST') return handleMemoirWrite(request, env, ctx);
       if (p === '/api/life/memoir/checkout' && m === 'POST') return handleMemoirCheckout(request, env);
+      if (p === '/api/life/memoir/claim' && m === 'POST') return handleMemoirClaim(request, env, ctx);
       if (p === '/api/geo' && m === 'GET') return handleGeo(request);
       {
         const share = /^\/api\/share\/([A-Za-z0-9]{4,24})(\/og\.png)?$/.exec(p);

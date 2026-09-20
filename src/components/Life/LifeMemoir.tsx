@@ -7,7 +7,7 @@ import { useTranslation } from '@/hooks/usePreferences';
 import { useAuth } from '@/hooks/useAuth';
 import { track } from '@/lib/track';
 import {
-  MemoirError, buildMemoirRequest, canWriteMemoir, downloadMemoir, fetchMemoirState,
+  MemoirError, buildMemoirRequest, canWriteMemoir, claimMemoir, downloadMemoir, fetchMemoirState,
   formatMemoirPrice, memoirBlocks, startMemoirCheckout, writeMemoir, type MemoirState,
 } from '@/lib/life-memoir';
 import type { LifeApi } from '@/hooks/useLife';
@@ -54,15 +54,20 @@ export function LifeMemoir({ api, lang }: { api: LifeApi; lang: string }) {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('memoir') !== 'paid') return;
+    // Polar puts the checkout id in the address it sends the buyer back to.
+    const checkout = params.get('checkout_id') ?? '';
     params.delete('memoir');
+    params.delete('checkout_id');
     const qs = params.toString();
     window.history.replaceState({}, '', window.location.pathname + (qs ? `?${qs}` : '') + window.location.hash);
     track('memoir_paid');
-    void fetchMemoirState().then((s) => {
-      setState(s);
-      setOpen(true);
-      toast.success(t('life.memoir.paid'));
-    });
+    void (checkout ? claimMemoir(checkout) : Promise.resolve())
+      .then(fetchMemoirState)
+      .then((s) => {
+        setState(s);
+        setOpen(true);
+        toast.success(t('life.memoir.paid'));
+      });
   }, [t]);
 
   const write = async () => {

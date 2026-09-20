@@ -51,11 +51,18 @@ async function setup(base, opts = {}) {
       body: '## 첫 장\n나는 1985년에 태어났다.\n\n자랐다.\n\n## 끝 장\n여기까지.',
     });
   });
-  // Registered after, so it wins the longer path.
+  // Registered after, so they win the longer paths.
   await page.route('**/api/life/memoir/checkout', async (route) => {
     checkouts.push(1);
-    memoir.credits += 1; // as the webhook would, a moment later
-    await route.fulfill(json({ url: `${base}/?view=life&memoir=paid` }));
+    // Polar interpolates the checkout id into the address it returns to.
+    await route.fulfill(json({ url: `${base}/?view=life&memoir=paid&checkout_id=co_test1234` }));
+  });
+  // The buyer's own receipt, for when the webhook is off or late.
+  const claims = [];
+  await page.route('**/api/life/memoir/claim', async (route) => {
+    claims.push(JSON.parse(route.request().postData() ?? '{}').checkoutId);
+    memoir.credits += 1;
+    await route.fulfill(json({ ok: true, credits: memoir.credits }));
   });
   // The account this page sees; the decorating step turns Pro on.
   const me = { user: { id: 'u1', email: 'me@example.com', provider: 'google' }, plan: 'free', admin: false };
@@ -63,7 +70,7 @@ async function setup(base, opts = {}) {
   await page.goto(`${base}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
   await seedBasicData(page);
-  return { browser, page, errors, counted, me, memoir, memoirCalls, checkouts };
+  return { browser, page, errors, counted, me, memoir, memoirCalls, checkouts, claims };
 }
 
 const pngSize = (buf) => ({ w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) });
@@ -71,7 +78,7 @@ const pngSize = (buf) => ({ w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) });
 export async function run() {
   const { pass, allOk } = makeReporter('life');
   const { base, close } = await serveDist();
-  const { browser, page, errors, counted, me, memoir, memoirCalls, checkouts } = await setup(base);
+  const { browser, page, errors, counted, me, memoir, memoirCalls, checkouts, claims } = await setup(base);
   const count = (sel) => page.locator(sel).count();
   const stored = () => page.evaluate((k) => JSON.parse(localStorage.getItem(k) ?? 'null'), LIFE_KEY);
   const titles = () => page.$$eval('[data-life-moment]', (els) => els.map((e) => e.querySelector('.life-serif')?.textContent ?? ''));
@@ -477,8 +484,11 @@ export async function run() {
     await wait(600);
     pass('with nothing paid for, it goes to the till and not to the writer',
       checkouts.length === 1 && memoirCalls.length === 0, `${checkouts.length} / ${memoirCalls.length}`);
-    pass('…and the form is open and waiting on the way back', (await count('[data-life-memoir-dialog]')) === 1);
-    pass('…with the address tidied up again', !page.url().includes('memoir='), page.url());
+    pass('…and the purchase is claimed on the way back, webhook or no webhook',
+      claims.length === 1 && claims[0] === 'co_test1234', JSON.stringify(claims));
+    pass('…and the form is open and waiting', (await count('[data-life-memoir-dialog]')) === 1);
+    pass('…with the address tidied up again',
+      !page.url().includes('memoir=') && !page.url().includes('checkout_id'), page.url());
     await page.locator('[data-life-memoir-wish]').fill('담담하게');
     await page.locator('[data-life-memoir-go]').click();
     await wait(1600);

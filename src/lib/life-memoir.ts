@@ -172,6 +172,25 @@ export async function startMemoirCheckout(): Promise<void> {
 }
 
 /**
+ * The buyer's own receipt: hand the server the checkout the buyer came back
+ * with, so the purchase counts even if the webhook was switched off or is
+ * late. Counting it twice is not possible — both paths key on the same
+ * checkout. Never throws: the webhook is still the ordinary way.
+ */
+export async function claimMemoir(checkoutId: string): Promise<void> {
+  try {
+    await fetch('/api/life/memoir/claim', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ checkoutId }),
+    });
+  } catch {
+    // the webhook will have done it, or the next visit will ask again
+  }
+}
+
+/**
  * Write the memoir. `onText` is called with everything written so far, so the
  * page can show it arriving; the finished text is returned.
  */
