@@ -251,10 +251,11 @@ export function LifeTimeline({ life, items, colors, showExamples, stickyTop, onO
     rows?.forEach((r) => { if (r.getBoundingClientRect().top <= clientY) year = Number(r.dataset.year); });
     return year;
   };
-  /** Near the line, and not over something of its own (a marker, a label, an entry). */
+  /** Near the line, and not over an entry's own text or a button. Markers and
+   *  labels do NOT hide it: the circle should glide the whole way down. */
   const onLine = (e: React.PointerEvent) =>
-    Math.abs(e.clientX - lineX()) <= 20
-    && !(e.target as Element).closest('[data-life-card], [data-life-marker], [data-life-label], button, a');
+    Math.abs(e.clientX - lineX()) <= 28
+    && !(e.target as Element).closest('[data-life-card], button, a');
   const tap = useRef<{ x: number; y: number } | null>(null);
 
   const rows: ReactNode[] = [];
@@ -370,14 +371,11 @@ export function LifeTimeline({ life, items, colors, showExamples, stickyTop, onO
         {rows}
       </ol>
       {ghost && (
-        <button type="button" data-life-ghost aria-label={`${ghost.year} · ${t('life.add')}`}
+        <button type="button" data-life-ghost aria-label={t('life.add')} title={t('life.add')}
           onClick={() => addAt(ghost.year)}
-          className="absolute z-30 flex -translate-x-4 -translate-y-1/2 items-center gap-2"
+          className="absolute z-30 grid h-8 w-8 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-foreground/25 bg-foreground/10 text-foreground/70 backdrop-blur-sm transition-colors hover:bg-foreground/20 hover:text-foreground"
           style={{ left: ghost.x, top: ghost.y }}>
-          <span className="grid h-8 w-8 place-items-center rounded-full border border-foreground/25 bg-foreground/10 text-foreground/70 backdrop-blur-sm transition-colors hover:bg-foreground/20 hover:text-foreground">
-            <Plus aria-hidden className="h-4 w-4" />
-          </span>
-          <span className="life-serif rounded bg-background/80 px-1 text-sm font-bold text-muted-foreground">{ghost.year}</span>
+          <Plus aria-hidden className="h-4 w-4" />
         </button>
       )}
       {/* Reserved for the decorating layer (stickers and tape on the line). */}

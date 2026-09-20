@@ -924,7 +924,6 @@ export const ko = {
   'life.export.importGo': '불러오기',
   'life.export.imported': '라이프 기록을 불러왔어요',
   'life.export.importError': '라이프 백업 파일을 읽지 못했어요',
-  'life.family.privacy': '가족의 이름·생년월일은 본인 기기에 저장됩니다. Pro 동기화를 켜면 서버에도 저장되니 가족의 동의를 받아 주세요.',
   'life.field.birth': '생년월일 (선택)',
   'life.field.category': '분류',
   'life.field.date': '날짜',
@@ -966,7 +965,6 @@ export const ko = {
   'life.sumAge': '만 {n}세',
   'life.sumPlans': '계획 {n}개',
   'life.sumRecords': '기록 {n}개',
-  'life.sumRemaining': '남은 계획 기간 약 {n}년',
   'life.timelineLabel': '라이프 타임라인',
   'life.newerVersion': '새 버전의 24Houring에서 저장한 라이프 기록이에요. 이 화면에서는 보기만 할 수 있어요. 페이지를 새로고침해 앱을 업데이트해 주세요.',
 } as const;

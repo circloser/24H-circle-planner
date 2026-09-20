@@ -918,7 +918,6 @@ export const zh: Record<TKey, string> = {
   'life.export.importGo': '恢复',
   'life.export.imported': '已恢复人生记录',
   'life.export.importError': '无法读取这个人生备份文件',
-  'life.family.privacy': '家人的姓名和生日保存在你的设备上。开启 Pro 同步后也会保存到服务器，请先征得家人同意。',
   'life.field.birth': '出生日期（可选）',
   'life.field.category': '分类',
   'life.field.date': '日期',
@@ -960,7 +959,6 @@ export const zh: Record<TKey, string> = {
   'life.sumAge': '{n}周岁',
   'life.sumPlans': '计划 {n} 个',
   'life.sumRecords': '记录 {n} 个',
-  'life.sumRemaining': '剩余计划期约 {n} 年',
   'life.timelineLabel': '人生时间线',
   'life.newerVersion': '这份人生记录由更新版本的 24Houring 保存，这里只能查看。请刷新页面以更新应用。',
 };

@@ -98,7 +98,7 @@ export function LifeView() {
 
   return (
     <div className="mx-auto flex w-full max-w-[1040px] flex-col pb-24" data-life-view>
-      <header className="mx-auto w-full max-w-[960px] px-4 pt-4 sm:pt-6">
+      <header className="mx-auto w-full max-w-[960px] px-4 pt-4 text-center sm:pt-6">
         <h2 className="life-serif text-3xl font-bold tracking-tight text-foreground">{t('life.title')}</h2>
         {hasLine && (
           <>
@@ -107,11 +107,10 @@ export function LifeView() {
                 t('life.sumRecords', { n: String(summary.records) }),
                 t('life.sumPlans', { n: String(summary.plans) }),
                 summary.age !== null ? t('life.sumAge', { n: String(summary.age) }) : null,
-                summary.remaining !== null ? t('life.sumRemaining', { n: String(summary.remaining) }) : null,
               ].filter(Boolean).join(' · ')}
             </p>
             {pinned.length > 0 && (
-              <ul className="mt-3 flex flex-wrap gap-1.5" aria-label={t('life.pinnedLabel')}>
+              <ul className="mt-3 flex flex-wrap justify-center gap-1.5" aria-label={t('life.pinnedLabel')}>
                 {pinned.map((m) => (
                   <li key={m.id}>
                     <button type="button" onClick={() => jumpTo(m.id)} data-life-pinned
@@ -129,13 +128,13 @@ export function LifeView() {
 
         {api.readOnly && (
           <p role="status" data-life-newer
-            className="mt-4 rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm text-foreground">
+            className="mt-4 rounded-xl border border-border bg-muted/40 px-4 py-3 text-left text-sm text-foreground">
             {t('life.newerVersion')}
           </p>
         )}
         {warnBackup && (
           <div role="status" data-life-backup-banner
-            className="mt-4 flex items-start gap-3 rounded-xl border border-amber-300/70 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
+            className="mt-4 flex items-start gap-3 rounded-xl border border-amber-300/70 bg-amber-50 px-4 py-3 text-left text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
             <ShieldAlert aria-hidden className="mt-0.5 h-5 w-5 shrink-0" />
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2">
               <p className="min-w-0 flex-[1_1_16rem]">{t('life.backup.banner')}</p>
@@ -406,8 +405,8 @@ function EndingNote({ api }: { api: LifeApi }) {
       <div aria-hidden className="relative h-3">
         <span className="absolute left-[28px] top-0 h-3 w-3 -translate-x-1/2 rounded-full bg-foreground/60 min-[900px]:left-1/2" />
       </div>
-      <div className="mx-4 mt-10 min-[900px]:mx-auto min-[900px]:max-w-[640px]">
-        <h3 id="life-ending" className="life-serif flex items-center gap-2 text-2xl font-bold tracking-tight text-foreground min-[900px]:justify-center">
+      <div className="mx-4 mt-10 max-w-[640px] min-[900px]:mx-auto">
+        <h3 id="life-ending" className="life-serif flex items-center justify-center gap-2 text-2xl font-bold tracking-tight text-foreground">
           <Feather aria-hidden className="h-5 w-5 text-muted-foreground" />
           {t('life.endingNote')}
         </h3>
@@ -421,7 +420,7 @@ function EndingNote({ api }: { api: LifeApi }) {
           onBlur={commit}
           className="mt-5 min-h-40 w-full resize-y rounded-lg border border-border bg-transparent px-4 py-3 text-[15px] leading-relaxed [field-sizing:content] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
         {updated && (
-          <p className="mt-2 text-[13px] italic text-muted-foreground" data-life-ending-updated>
+          <p className="mt-2 text-center text-[13px] italic text-muted-foreground" data-life-ending-updated>
             {t('life.ending.updated', { date: updated.toLocaleDateString(lang) })}
           </p>
         )}

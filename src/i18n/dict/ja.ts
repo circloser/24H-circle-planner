@@ -920,7 +920,6 @@ export const ja: Record<TKey, string> = {
   'life.export.importGo': '復元する',
   'life.export.imported': 'ライフの記録を復元しました',
   'life.export.importError': 'ライフのバックアップファイルを読み込めませんでした',
-  'life.family.privacy': '家族の名前・生年月日はあなたの端末に保存されます。Pro同期をオンにするとサーバーにも保存されるため、家族の同意を得てください。',
   'life.field.birth': '生年月日（任意）',
   'life.field.category': '分類',
   'life.field.date': '日付',
@@ -962,7 +961,6 @@ export const ja: Record<TKey, string> = {
   'life.sumAge': '満{n}歳',
   'life.sumPlans': '計画{n}件',
   'life.sumRecords': '記録{n}件',
-  'life.sumRemaining': '残りの計画期間 約{n}年',
   'life.timelineLabel': 'ライフのタイムライン',
   'life.newerVersion': 'このライフの記録は新しいバージョンの24Houringで保存されたため、ここでは閲覧のみできます。ページを再読み込みしてアプリを更新してください。',
 };

@@ -115,8 +115,15 @@ export async function run() {
     await page.mouse.move(spot.x + 30, spot.y);
     await page.mouse.move(spot.x, spot.y, { steps: 4 });
     await wait(200);
-    pass('hovering the line shows a + circle with its year', (await count('[data-life-ghost]')) === 1
-      && (await page.locator('[data-life-ghost]').innerText()).includes('1990'));
+    pass('hovering the line shows a bare + circle', (await count('[data-life-ghost]')) === 1
+      && (await page.locator('[data-life-ghost]').innerText()).trim() === '');
+    // It glides the whole way down, markers and labels included.
+    const marker = await page.locator('[data-life-birth] [data-life-marker]').boundingBox();
+    await page.mouse.move(spot.x, marker.y + marker.height / 2, { steps: 6 });
+    await wait(150);
+    pass('…that stays as it passes a marker', (await count('[data-life-ghost]')) === 1);
+    await page.mouse.move(spot.x, spot.y, { steps: 4 });
+    await wait(150);
     await page.locator('[data-life-ghost]').click();
     await wait(400);
     pass('…which opens the add form in that year', (await page.locator('#life-date-y').inputValue()) === '1990');
@@ -198,7 +205,6 @@ export async function run() {
     // 9. Roots: a parent, with the note about other people's details.
     await page.locator('[data-life-slot="mother"]').click();
     await wait(300);
-    pass('the family form says where family details are kept', (await count('[data-life-family-privacy]')) === 1);
     await page.locator('[data-life-name-input]').fill('이정숙');
     await page.locator('#life-fam-birth-y').fill('1958');
     await save();

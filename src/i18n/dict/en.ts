@@ -923,7 +923,6 @@ export const en: Record<TKey, string> = {
   'life.export.importGo': 'Restore',
   'life.export.imported': 'Life record restored',
   'life.export.importError': "Couldn't read that life backup file",
-  'life.family.privacy': 'Family names and birthdays are stored on your device. With Pro sync on they are also stored on our server, so please ask your family first.',
   'life.field.birth': 'Birthday (optional)',
   'life.field.category': 'Category',
   'life.field.date': 'Date',
@@ -965,7 +964,6 @@ export const en: Record<TKey, string> = {
   'life.sumAge': 'age {n}',
   'life.sumPlans': '{n} plans',
   'life.sumRecords': '{n} records',
-  'life.sumRemaining': 'about {n} years ahead',
   'life.timelineLabel': 'Life timeline',
   'life.newerVersion': 'This life record was saved by a newer version of 24Houring, so it is view-only here. Reload the page to update the app.',
 };

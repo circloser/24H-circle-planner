@@ -59,7 +59,9 @@ export function ChartViewToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="min-h-11 gap-1.5 px-2 sm:px-3" data-view-toggle aria-label={t('view.select')} title={t('view.select')}>
+        {/* The timetable IS what is showing here, so it reads as chosen —
+            like the calendar and life buttons beside it. */}
+        <Button variant="default" size="sm" className="min-h-11 gap-1.5 px-2 sm:px-3" data-view-toggle aria-pressed aria-label={t('view.select')} title={t('view.select')}>
           {face}
         </Button>
       </DropdownMenuTrigger>

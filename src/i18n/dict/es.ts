@@ -922,7 +922,6 @@ export const es: Record<TKey, string> = {
   'life.export.importGo': 'Restaurar',
   'life.export.imported': 'Línea de vida restaurada',
   'life.export.importError': 'No se pudo leer ese archivo de copia',
-  'life.family.privacy': 'Los nombres y fechas de nacimiento de tu familia se guardan en tu dispositivo. Con la sincronización Pro también se guardan en nuestro servidor, así que pide antes su consentimiento.',
   'life.field.birth': 'Fecha de nacimiento (opcional)',
   'life.field.category': 'Categoría',
   'life.field.date': 'Fecha',
@@ -964,7 +963,6 @@ export const es: Record<TKey, string> = {
   'life.sumAge': '{n} años',
   'life.sumPlans': '{n} planes',
   'life.sumRecords': '{n} recuerdos',
-  'life.sumRemaining': 'unos {n} años por delante',
   'life.timelineLabel': 'Línea de vida',
   'life.newerVersion': 'Esta línea de vida se guardó con una versión más reciente de 24Houring, así que aquí solo se puede ver. Recarga la página para actualizar la app.',
 };

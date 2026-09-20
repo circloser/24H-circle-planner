@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ImagePlus, Lock, ShieldCheck, Trash2, X } from 'lucide-react';
+import { ImagePlus, Lock, Trash2, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -297,10 +297,6 @@ export function FamilyDialog({ target, pro, onSave, onDelete, onClose }: {
             <span className={fieldLabel}>{t('life.field.photo')}</span>
             <PhotoField value={photo} original={original} pro={pro} onChange={setPhoto} />
           </div>
-          <p className="flex gap-2 rounded-lg border border-border px-3 py-2 text-xs leading-relaxed text-muted-foreground" data-life-family-privacy>
-            <ShieldCheck aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
-            {t('life.family.privacy')}
-          </p>
           <div className="flex flex-wrap items-center justify-end gap-2">
             {target?.mode === 'edit' && <DeleteButton onDelete={() => onDelete(target.f.id)} />}
             <Button type="button" variant="outline" onClick={close}>{t('common.cancel')}</Button>

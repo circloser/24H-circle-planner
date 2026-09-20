@@ -920,7 +920,6 @@ export const ru: Record<TKey, string> = {
   'life.export.importGo': 'Восстановить',
   'life.export.imported': 'Линия жизни восстановлена',
   'life.export.importError': 'Не удалось прочитать файл копии',
-  'life.family.privacy': 'Имена и даты рождения родных хранятся на вашем устройстве. При включённой синхронизации Pro они сохраняются и на нашем сервере — пожалуйста, получите согласие родных.',
   'life.field.birth': 'Дата рождения (необязательно)',
   'life.field.category': 'Категория',
   'life.field.date': 'Дата',
@@ -962,7 +961,6 @@ export const ru: Record<TKey, string> = {
   'life.sumAge': 'полных лет: {n}',
   'life.sumPlans': 'планов: {n}',
   'life.sumRecords': 'записей: {n}',
-  'life.sumRemaining': 'впереди около {n} г.',
   'life.timelineLabel': 'Линия жизни',
   'life.newerVersion': 'Эта линия жизни сохранена более новой версией 24Houring, поэтому здесь её можно только просматривать. Перезагрузите страницу, чтобы обновить приложение.',
 };
