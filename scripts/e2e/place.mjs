@@ -141,6 +141,12 @@ export async function run() {
     }));
     pass('the site footer stays away here',
       (await page.locator('footer', { hasText: '개인정보처리방침' }).count()) === 0);
+    pass('the two views sit in the middle at the top', await page.evaluate(() => {
+      const tabs = document.querySelector('[data-place-view] [role="tablist"]').getBoundingClientRect();
+      const view = document.querySelector('[data-place-view]').getBoundingClientRect();
+      // Centred on the map, and at the top of it.
+      return Math.abs((tabs.x + tabs.width / 2) - (view.x + view.width / 2)) < 2 && tabs.y - view.y < 24;
+    }));
 
     // 2. The whole world, drawn with nothing fetched from anyone.
     pass('every country on earth is drawn', (await count('[data-place-country]')) > 150,
@@ -260,6 +266,37 @@ export async function run() {
       (await count(`[data-place-pin="${withPin.pins[0].id}"]`)) === 1
       && (await count(`[data-place-list-item="${withPin.pins[0].id}"]`)) === 1);
 
+    // 6a. The shortcut rail: whatever has been starred, and where I live.
+    pass('nothing is starred, so there is no rail to start with',
+      (await count('[data-place-rail]')) === 0);
+    await page.locator(`[data-place-list-item="${withPin.pins[0].id}"]`).focus();
+    await page.keyboard.press('Enter');
+    await wait(400);
+    await page.locator('[data-place-pin-star]').click();
+    await wait(500);
+    pass('starring a pin puts it on the rail',
+      (await stored()).pins[0].star === true
+      && (await count(`[data-place-shortcut="${withPin.pins[0].id}"]`)) === 1,
+      JSON.stringify((await stored()).pins[0]));
+    pass('…in the corner a thumb reaches', await page.evaluate(() => {
+      const rail = document.querySelector('[data-place-rail]').getBoundingClientRect();
+      const view = document.querySelector('[data-place-view]').getBoundingClientRect();
+      return view.right - rail.right < 40 && view.bottom - rail.bottom < 60;
+    }));
+    await page.locator('[data-place-panel-close]').click();
+    await wait(300);
+    await page.locator('[data-place-zoom-out]').click();
+    await wait(300);
+    const wide = Number(await page.locator('[data-place-pins]').getAttribute('data-place-zoom'));
+    await page.locator(`[data-place-shortcut="${withPin.pins[0].id}"]`).click();
+    await wait(600);
+    pass('…and pressing one goes there, close in',
+      Number(await page.locator('[data-place-pins]').getAttribute('data-place-zoom')) > wide
+      && (await page.locator('[data-place-panel]').getAttribute('data-pin')) === withPin.pins[0].id,
+      `${wide} → ${await page.locator('[data-place-pins]').getAttribute('data-place-zoom')}`);
+    await page.locator('[data-place-panel-close]').click();
+    await wait(300);
+
     // 6b. The same pins are on the globe, and open there without leaving it.
     await page.locator('[data-place-tab="world"]').click();
     await wait(700);
@@ -296,8 +333,9 @@ export async function run() {
     // 8. The free limit stops adding, and hides nothing.
     await seed({
       version: 1,
+      home: { countryCode: 'KR', cityId: 'KR-seoul' },
       countries: [{ code: 'KR' }],
-      cities: [],
+      cities: [{ id: 'KR-seoul', name: '서울', countryCode: 'KR', lat: 37.57, lng: 127 }],
       pins: Array.from({ length: 50 }, (_, i) => ({
         id: `pin_x${i}`, name: `곳 ${i}`, category: 'other', lat: 37 + i * 0.01, lng: 127, createdAt: '',
       })),
@@ -308,6 +346,8 @@ export async function run() {
     await page.locator('[data-place-tab="pins"]').click();
     await wait(700);
     pass('all fifty pins are in the list', (await count('[data-place-list-item]')) === 50);
+    pass('where I live is a shortcut by itself, and fifty pins add no others',
+      (await count('[data-place-shortcut="home"]')) === 1 && (await count('[data-place-shortcut]')) === 1);
     await page.locator('[data-place-add]').click();
     await wait(800);
     pass('at the limit, adding offers Pro instead',

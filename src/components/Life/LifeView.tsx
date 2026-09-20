@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Download, Feather, ListFilter, Pin, Plus, ShieldAlert, X } from 'lucide-react';
+import { Download, Feather, ListFilter, Pin, Plus, ShieldAlert, Smile, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
@@ -39,7 +39,7 @@ type Parent = 'mother' | 'father';
  * the top, then one line from birth through today into the plans ahead, and
  * the words to leave behind where the line ends. Nothing else is said on the
  * page: export lives in the app header, adding happens on the line itself,
- * and the filter is a round button in the corner.
+ * and the corner holds two round buttons — decorate, then filter.
  */
 export function LifeView() {
   const api = useLife();
@@ -231,7 +231,14 @@ export function LifeView() {
           {/* A restore replaces the note: start its field afresh from it. */}
           <EndingNote key={api.generation} api={api} />
           <LifeMemoir api={api} lang={lang} />
-          <FilterFab only={only} setOnly={setOnly} colors={colors} />
+          <FilterFab only={only} setOnly={setOnly} colors={colors}
+            decorating={decorating}
+            onDecor={() => {
+              if (decorating) return closeDecor();
+              if (!pro) return requestUpgrade('life');
+              setDecorTool('sticker');
+              track('decor_tool', { tool: 'sticker' });
+            }} />
         </div>
       )}
 
@@ -283,13 +290,18 @@ export function LifeView() {
 }
 
 /**
- * The filter: a round button in the bottom-right corner. Pressed, the
- * categories unfold upward from it; any number can be on at once.
+ * The corner: decorate on the left, filter on the right.
+ *
+ * The filter is the loud one — it changes what the page shows — so it keeps
+ * the solid circle, and decorating sits beside it in outline. Pressed, the
+ * categories unfold upward from the filter; any number can be on at once.
  */
-function FilterFab({ only, setOnly, colors }: {
+function FilterFab({ only, setOnly, colors, decorating, onDecor }: {
   only: Set<LifeCategory>;
   setOnly: (fn: (prev: Set<LifeCategory>) => Set<LifeCategory>) => void;
   colors: Record<LifeCategory, string>;
+  decorating: boolean;
+  onDecor: () => void;
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -310,7 +322,14 @@ function FilterFab({ only, setOnly, colors }: {
       on ? 'border-foreground bg-foreground text-background' : 'border-border bg-surface text-foreground hover:bg-accent/10'}`;
   return (
     <div ref={ref} data-life-filter-fab
-      className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom))] right-[calc(1.25rem+env(safe-area-inset-right))] z-40 flex flex-col items-end gap-2">
+      className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom))] right-[calc(1.25rem+env(safe-area-inset-right))] z-40 flex items-end gap-2.5">
+      <button type="button" aria-pressed={decorating} data-life-decor-fab
+        aria-label={t('decor.lifeMenu')} title={t('decor.lifeMenu')} onClick={onDecor}
+        className={`grid h-14 w-14 place-items-center rounded-full border shadow-lg transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+          decorating ? 'border-foreground bg-foreground text-background' : 'border-border bg-surface text-foreground'}`}>
+        {decorating ? <X aria-hidden className="h-5 w-5" /> : <Smile aria-hidden className="h-5 w-5" />}
+      </button>
+      <div className="flex flex-col items-end gap-2">
       {open && (
         <div role="group" aria-label={t('life.filter')} data-life-filters className="flex flex-col items-end gap-2">
           <button type="button" aria-pressed={only.size === 0} onClick={() => setOnly(() => new Set())}
@@ -344,6 +363,7 @@ function FilterFab({ only, setOnly, colors }: {
           </span>
         )}
       </button>
+      </div>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import {
 import {
   LABEL_ZOOM, MAX_ZOOM, ME_R, MIN_ZOOM, initialsOf, layoutRelation, nodeAt, polarOf, xyOf, type Placed,
 } from '@/lib/relation-layout';
+import { atRest, bowOf, sagOf, springAt, stepSpring, type Spring } from '@/lib/relation-spring';
 
 /** A press this long puts someone down where they are, or picks them up again. */
 const HOLD_MS = 550;
@@ -40,6 +41,26 @@ function inkOf(el: HTMLElement): string {
 }
 
 /**
+ * The paper a circle is filled with, so no line shows through a face.
+ *
+ * The box itself usually has no background of its own — it inherits one — and
+ * a canvas asked for that gets "rgba(0, 0, 0, 0)", which fills with nothing
+ * at all. So the page is walked upward until something opaque is found, and
+ * white (or the stated paper) is the last resort.
+ */
+function paperOf(el: HTMLElement): string {
+  const stated = getComputedStyle(el).getPropertyValue('--relation-paper').trim();
+  if (stated) return stated;
+  let at: HTMLElement | null = el;
+  while (at) {
+    const c = getComputedStyle(at).backgroundColor;
+    if (c && !/^(transparent|rgba\(0, 0, 0, 0\))$/.test(c)) return c;
+    at = at.parentElement;
+  }
+  return '#ffffff';
+}
+
+/**
  * The map itself.
  *
  * Everything is drawn by hand on a canvas: hollow circles, one-pixel lines,
@@ -54,7 +75,19 @@ export function RelationCanvas({
   const canvas = useRef<HTMLCanvasElement>(null);
   const [view, setView] = useState<View>({ scale: 1, tx: 0, ty: 0 });
   const [size, setSize] = useState({ w: 0, h: 0 });
-  const [drag, setDrag] = useState<{ id: string; a: number; r: number } | null>(null);
+  // Who is being dragged, and where the finger is. The position they are
+  // actually drawn at lags behind it — see the spring below.
+  const [drag, setDrag] = useState<{ id: string; x: number; y: number } | null>(null);
+  /** The lagging position, in layout units, and how fast it is going. */
+  const held = useRef<Spring | null>(null);
+  /** Who is in the air, and where they are heading. Refs, not state: they are
+   *  read and written a frame at a time, and a render each way would be a
+   *  render too many. */
+  const dragging = useRef<string | null>(null);
+  const target = useRef<{ x: number; y: number } | null>(null);
+  /** Set while a let-go node is on its way back to its own place. */
+  const homing = useRef(false);
+  const lastFrame = useRef(0);
   const [photos, setPhotos] = useState<ReadonlyMap<string, HTMLImageElement>>(() => new Map());
   const asked = useRef(new Set<string>());
   // When the current arrival began. Refs, not state: the clock is read while
@@ -130,6 +163,7 @@ export function RelationCanvas({
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, size.w, size.h);
     const ink = inkOf(host);
+    const paper = paperOf(host);
     const zoom = fit * view.scale;
     // Positions shrink to fit the box; the circles themselves only shrink so
     // far, or a crowded map would be a spray of dots too small to aim at.
@@ -169,22 +203,45 @@ export function RelationCanvas({
     }
 
     const at = new Map(layout.nodes.map((n) => [n.person.id, n]));
-    const live = (n: Placed) => (drag && drag.id === n.person.id ? { a: drag.a, d: drag.r } : n);
+    // Where a node is drawn: its own place, or the spring's, while it is in
+    // the air or on its way back.
+    const moving = held.current;
+    const live = (n: Placed): { x: number; y: number } => (
+      moving && dragging.current === n.person.id ? { x: moving.x, y: moving.y } : xyOf(n)
+    );
+
+    /**
+     * A line between two places, bowed while it is being stretched. Its
+     * resting length is how far apart the two of them sit when nobody is
+     * pulling, so only the line to whoever is in the air ever bends.
+     */
+    const thread = (
+      ax: number, ay: number, bx: number, by: number, rest: number,
+    ) => {
+      const a = toScreen(ax, ay);
+      const b = toScreen(bx, by);
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      const sag = sagOf(Math.hypot(bx - ax, by - ay), rest);
+      if (sag === 0) {
+        ctx.lineTo(b.x, b.y);
+      } else {
+        const c = bowOf(a.x, a.y, b.x, b.y, sag * zoom);
+        ctx.quadraticCurveTo(c.x, c.y, b.x, b.y);
+      }
+      ctx.stroke();
+    };
 
     // Me to each person.
     const middle = toScreen(0, 0);
     for (const n of layout.nodes) {
       const grow = arrival(n.person.id);
       if (grow.line <= 0) continue;
-      const p = xyOf(live(n));
-      const end = toScreen(p.x * grow.line, p.y * grow.line);
-      ctx.beginPath();
-      ctx.moveTo(middle.x, middle.y);
-      ctx.lineTo(end.x, end.y);
+      const p = live(n);
       ctx.strokeStyle = ink;
       ctx.globalAlpha = 0.4 * alpha(n.person) * (selected ? (selected === n.person.id ? 1 : 0.25) : 1);
       ctx.setLineDash([]);
-      ctx.stroke();
+      thread(0, 0, p.x * grow.line, p.y * grow.line, n.d);
     }
 
     // Person to person, dashed.
@@ -193,15 +250,14 @@ export function RelationCanvas({
       const a = at.get(link.source);
       const b = at.get(link.target);
       if (!a || !b) continue;
-      const pa = toScreen(xyOf(live(a)).x, xyOf(live(a)).y);
-      const pb = toScreen(xyOf(live(b)).x, xyOf(live(b)).y);
-      ctx.beginPath();
-      ctx.moveTo(pa.x, pa.y);
-      ctx.lineTo(pb.x, pb.y);
+      const pa = live(a);
+      const pb = live(b);
+      const home = xyOf(a);
+      const away = xyOf(b);
       ctx.strokeStyle = ink;
       const lit = !selected || selected === link.source || selected === link.target;
       ctx.globalAlpha = 0.25 * (lit ? 1 : 0.25);
-      ctx.stroke();
+      thread(pa.x, pa.y, pb.x, pb.y, Math.hypot(away.x - home.x, away.y - home.y));
     }
     ctx.setLineDash([]);
 
@@ -232,7 +288,7 @@ export function RelationCanvas({
     // Me, in the middle, always.
     ctx.beginPath();
     ctx.arc(middle.x, middle.y, ME_R * dots, 0, Math.PI * 2);
-    ctx.fillStyle = getComputedStyle(host).backgroundColor || '#ffffff';
+    ctx.fillStyle = paper;
     ctx.globalAlpha = 1;
     ctx.fill();
     ctx.lineWidth = 2;
@@ -246,9 +302,12 @@ export function RelationCanvas({
     for (const n of layout.nodes) {
       const grow = arrival(n.person.id);
       if (grow.node <= 0) continue;
-      const p = xyOf(live(n));
+      const p = live(n);
       const c = toScreen(p.x, p.y);
-      const r = Math.max(4, n.r * dots);
+      // Picked up, someone is drawn a little larger, the way a card lifts off
+      // a table.
+      const lift = dragging.current === n.person.id ? 1.15 : 1;
+      const r = Math.max(4, n.r * dots) * lift;
       const a = alpha(n.person) * dim(n.person.id) * grow.node;
       // A birthday within the month gets a thin ring outside the circle.
       if (hasBirthdaySoon(n.person, today)) {
@@ -260,10 +319,12 @@ export function RelationCanvas({
         ctx.stroke();
         ctx.lineWidth = 1.5;
       }
+      // Filled solid, whatever the person's own fading: a line crossing a
+      // face is what makes a crowded map unreadable.
       ctx.beginPath();
       ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
-      ctx.fillStyle = getComputedStyle(host).backgroundColor || '#ffffff';
-      ctx.globalAlpha = a;
+      ctx.fillStyle = paper;
+      ctx.globalAlpha = 1;
       ctx.fill();
       ctx.strokeStyle = colors[n.person.group];
       ctx.lineWidth = selected === n.person.id || linking === n.person.id ? 2.5 : 1.5;
@@ -281,21 +342,45 @@ export function RelationCanvas({
       }
     }
     ctx.globalAlpha = 1;
-  }, [size, view, fit, layout, data, colors, today, selected, drag, appearing, linking, meLabel, toScreen, photos]);
+  }, [size, view, fit, layout, data, colors, today, selected, appearing, linking, meLabel, toScreen, photos]);
 
-  // Draw when something changed, and keep drawing while people are arriving.
+  /**
+   * Draw when something changed, and keep drawing while anything is moving —
+   * people arriving, or someone in the air on the end of a spring.
+   *
+   * The spring is stepped here rather than in the pointer handler, so it
+   * settles at the screen's own pace and carries on after the finger has gone.
+   */
   useEffect(() => {
     let frame = 0;
-    const run = () => {
-      paint();
+    const run = (now: number) => {
       const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
-      const done = !appearing.length || reduced
-        || (born.current > 0 && performance.now() - born.current > appearing.length * FADE_MS + DRAW_MS + FADE_MS);
-      if (!done) frame = requestAnimationFrame(run);
+      const dt = lastFrame.current ? (now - lastFrame.current) / 1000 : 0;
+      lastFrame.current = now;
+
+      const to = target.current;
+      const spring = held.current;
+      if (spring && to) {
+        held.current = reduced ? { ...spring, x: to.x, y: to.y, vx: 0, vy: 0 } : stepSpring(spring, to.x, to.y, dt);
+        // Home at last: the node goes back to being drawn where it belongs.
+        if (homing.current && atRest(held.current, to.x, to.y)) {
+          held.current = null;
+          target.current = null;
+          homing.current = false;
+          dragging.current = null;
+        }
+      }
+
+      paint();
+      const arrivals = born.current > 0 && !reduced
+        && performance.now() - born.current <= appearing.length * FADE_MS + DRAW_MS + FADE_MS;
+      const moving = held.current !== null;
+      if ((appearing.length && arrivals) || moving) frame = requestAnimationFrame(run);
+      else lastFrame.current = 0;
     };
-    run();
+    frame = requestAnimationFrame(run);
     return () => cancelAnimationFrame(frame);
-  }, [paint, appearing]);
+  }, [paint, appearing, drag]);
 
   // ── pointer ──────────────────────────────────────────────────────────────
   const gesture = useRef<{
@@ -338,8 +423,20 @@ export function RelationCanvas({
     if (!g.moved) return;
     if (g.node) {
       const at = pointOf(e);
+      // The finger may go anywhere; the person it is pulling stays within
+      // reach of the map.
       const polar = polarOf(at.x, at.y);
-      setDrag({ id: g.node.person.id, a: polar.a, r: Math.min(polar.d, layout.extent * 1.6) });
+      const reach = Math.min(polar.d, layout.extent * 1.6);
+      const to = xyOf({ a: polar.a, d: reach });
+      if (dragging.current !== g.node.person.id) {
+        const from = xyOf(g.node);
+        dragging.current = g.node.person.id;
+        held.current = springAt(from.x, from.y);
+      }
+      homing.current = false;
+      target.current = to;
+      // One render to start the frames; the spring itself runs on refs.
+      setDrag({ id: g.node.person.id, x: to.x, y: to.y });
     } else {
       setView({ ...g.panned, tx: g.panned.tx + (e.clientX - g.sx), ty: g.panned.ty + (e.clientY - g.sy) });
     }
@@ -351,8 +448,19 @@ export function RelationCanvas({
     if (!g || g.id !== e.pointerId) return;
     window.clearTimeout(g.hold);
     if (g.moved && g.node && drag) {
-      // Let go: their ring has them back, unless they were already put down.
-      if (g.node.fixed) onPlace(g.node.person.id, { a: drag.a, r: drag.r / Math.max(1, layout.extent) });
+      const polar = polarOf(drag.x, drag.y);
+      // Let go. Someone already put down by hand stays where the finger left
+      // them; everyone else swings back to their own place on the ring, which
+      // is what the spring is given as its new target.
+      if (g.node.fixed) {
+        onPlace(g.node.person.id, { a: polar.a, r: polar.d / Math.max(1, layout.extent) });
+        held.current = null;
+        target.current = null;
+        dragging.current = null;
+      } else {
+        target.current = xyOf(g.node);
+        homing.current = true;
+      }
       setDrag(null);
       return;
     }

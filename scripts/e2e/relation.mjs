@@ -89,7 +89,7 @@ export async function run() {
   };
   const seed = (people, links = []) => page.evaluate(([k, d]) => localStorage.setItem(k, d), [
     RELATION_KEY,
-    JSON.stringify({ version: 1, me: { name: '김하루' }, people, links, updatedAt: '' }),
+    JSON.stringify({ version: 2, me: { name: '김하루' }, people, links, updatedAt: '' }),
   ]);
   try {
     // 1. Its own button in the header, beside the life line's.
@@ -135,6 +135,13 @@ export async function run() {
     await page.locator('[data-relation-name-input]').fill('최민준');
     await page.locator('[data-relation-group="friend"]').click();
     await page.locator('[data-relation-rel-input]').fill('대학 동기');
+    pass('closeness is asked in five rungs', (await count('[data-relation-close]')) === 5,
+      String(await count('[data-relation-close]')));
+    await page.locator('[data-relation-close="5"]').click();
+    await wait(200);
+    pass('…and the chosen rung says what it means',
+      (await page.locator('[data-relation-close-label]').innerText()).trim() === '아주 가까움',
+      await page.locator('[data-relation-close-label]').innerText());
     await page.locator('[data-relation-close="3"]').click();
     pass('the form says whose information this is before it is written',
       /알림이 가지 않습니다/.test(await page.locator('[data-relation-privacy]').innerText()));
@@ -285,7 +292,7 @@ export async function run() {
   try {
     await phone.page.evaluate(([k, d]) => localStorage.setItem(k, d), [
       RELATION_KEY,
-      JSON.stringify({ version: 1, me: {}, people: [person('m1', { name: '최민준' })], links: [], updatedAt: '' }),
+      JSON.stringify({ version: 2, me: {}, people: [person('m1', { name: '최민준' })], links: [], updatedAt: '' }),
     ]);
     await phone.page.reload({ waitUntil: 'domcontentloaded' });
     await phone.page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });

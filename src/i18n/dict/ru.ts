@@ -1064,9 +1064,11 @@ export const ru: Record<TKey, string> = {
   'relation.field.note': 'Заметка',
   'relation.field.photo': 'Фото',
   'relation.field.pinned': 'Всегда показывать имя',
-  'relation.close.1': 'Изредка',
-  'relation.close.2': 'Близко',
-  'relation.close.3': 'Ближе всех',
+  'relation.close.1': 'Далёкие',
+  'relation.close.2': 'Изредка',
+  'relation.close.3': 'Близко',
+  'relation.close.4': 'Очень близко',
+  'relation.close.5': 'Ближе всех',
   'relation.edit.addTitle': 'Добавить человека',
   'relation.edit.editTitle': 'Изменить человека',
   'relation.contactedToday': 'Сегодня общались',
@@ -1163,4 +1165,6 @@ export const ru: Record<TKey, string> = {
   // Place — somewhere to go, as against somewhere been.
   'place.wish': 'Хочу поехать',
   'place.sum.wish': 'Хочу в {n}',
+  // Place — the shortcut rail in the corner of the pin map.
+  'place.shortcut': 'Ярлык',
 };

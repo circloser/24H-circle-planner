@@ -1068,9 +1068,11 @@ export const ko = {
   'relation.field.note': '메모',
   'relation.field.photo': '사진',
   'relation.field.pinned': '이름 항상 보이기',
-  'relation.close.1': '가끔',
-  'relation.close.2': '보통',
-  'relation.close.3': '가까움',
+  'relation.close.1': '먼 사이',
+  'relation.close.2': '가끔',
+  'relation.close.3': '보통',
+  'relation.close.4': '가까움',
+  'relation.close.5': '아주 가까움',
   'relation.edit.addTitle': '사람 추가',
   'relation.edit.editTitle': '사람 고치기',
   'relation.contactedToday': '오늘 연락함',
@@ -1167,6 +1169,8 @@ export const ko = {
   // Place — somewhere to go, as against somewhere been.
   'place.wish': '가 보고 싶음',
   'place.sum.wish': '가 보고 싶은 {n}개국',
+  // Place — the shortcut rail in the corner of the pin map.
+  'place.shortcut': '바로가기',
 } as const;
 
 /** Every translation key — derived, never hand-maintained. */

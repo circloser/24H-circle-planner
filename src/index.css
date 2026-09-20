@@ -707,11 +707,14 @@ html[data-page='life'] #site-copy-wrap { display: none; }
 }
 
 /* ─── Relation map ─────────────────────────────────────────────────────────── */
-/* The map is drawn on a canvas, which cannot read Tailwind classes, so the two
-   colours it needs are published here as plain values it can ask for. */
+/* The map is drawn on a canvas, which cannot read Tailwind classes, so the
+   colours it needs are published here as plain values it can ask for. The
+   paper is what a circle is filled with, so no line shows through a face —
+   it must be opaque, which the box's own background is not. */
 [data-relation-view] {
   --relation-ink: hsl(var(--foreground));
   --relation-accent: hsl(var(--primary));
+  --relation-paper: hsl(var(--surface, var(--background)));
 }
 /* Like the life line, the map fills the window: the home page's reading copy
    (and the app footer, see App.tsx) stay away while it shows. */

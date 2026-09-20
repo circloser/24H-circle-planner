@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Crosshair, Globe, Loader2, MapPin, Minus, Plus, Search, X } from 'lucide-react';
+import { Crosshair, Globe, House, Loader2, MapPin, Minus, Plus, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
@@ -10,8 +10,8 @@ import { COLOR_THEMES } from '@/data/color-themes';
 import { requestUpgrade } from '@/lib/pro';
 import { track, trackOnce } from '@/lib/track';
 import {
-  FREE_PLACE_PINS, byContinent, canAddPin, countryAt, placeSummary,
-  type CountryShape, type PinCategory,
+  FREE_PLACE_PINS, MAX_PLACE_SHORTCUTS, byContinent, canAddPin, countryAt, placeSummary,
+  shortcutPins, type CountryShape, type PinCategory,
 } from '@/lib/place';
 import { countryName, loadCities, loadWorld, searchCountries, type CityRow } from '@/lib/place-world';
 import { PIN_MAX_ZOOM, PIN_MIN_ZOOM, type Camera } from '@/lib/place-tiles';
@@ -126,6 +126,18 @@ export function PlaceView() {
     [life, cityRows, data, askedLife],
   );
   const grouped = byContinent(data, shapes, nameOf);
+  // The shortcut rail: where I live, then whatever has been starred. Ten at
+  // most — past that it is a list, not a row of buttons.
+  const homeCity = data.home?.cityId ? data.cities.find((c) => c.id === data.home!.cityId) : undefined;
+  const starred = shortcutPins(data);
+  const railFull = starred.length >= MAX_PLACE_SHORTCUTS;
+
+  /** Go there: the map moves, close in, and the pin opens its own card. */
+  const goTo = (lng: number, lat: number, id?: string) => {
+    setCamera((c) => ({ lng, lat, zoom: Math.max(c.zoom, 13) }));
+    setPinId(id ?? null);
+    track('place_shortcut');
+  };
 
   const dropAt = (lng: number, lat: number) => {
     if (!canAddPin(data, pro)) {
@@ -221,33 +233,21 @@ export function PlaceView() {
 
       {/* Everything else floats over it. */}
       <div className="pointer-events-none absolute inset-0 flex flex-col p-2 sm:p-3">
-        <div className="flex flex-wrap items-start gap-2">
-          <div role="tablist" aria-label={t('place.title')} className={`${FLOAT} inline-flex p-0.5`}>
+        {/* The two views are the one thing on this page that is always there,
+            so they sit in the middle at the top and nothing shares the line. */}
+        <div className="relative flex min-h-10 items-start">
+          <div role="tablist" aria-label={t('place.title')}
+            className={`${FLOAT} absolute left-1/2 top-0 inline-flex -translate-x-1/2 p-0.5`}>
             {(['world', 'pins'] as const).map((k) => (
               <button key={k} type="button" role="tab" aria-selected={tab === k} data-place-tab={k}
                 onClick={() => { setTab(k); setCountry(null); setPinId(null); }}
-                className={`inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 text-[13px] ${
+                className={`pointer-events-auto inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 text-[13px] ${
                   tab === k ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
                 {k === 'world' ? <Globe aria-hidden className="h-3.5 w-3.5" /> : <MapPin aria-hidden className="h-3.5 w-3.5" />}
                 {t(k === 'world' ? 'place.tab.world' : 'place.tab.pins')}
               </button>
             ))}
           </div>
-
-          {tab === 'pins' && (
-            <>
-              <Button size="sm" className="pointer-events-auto gap-1.5 rounded-full" data-place-add
-                onClick={() => dropAt(camera.lng, camera.lat)}>
-                <Plus aria-hidden className="h-4 w-4" />
-                {t('place.addPin')}
-              </Button>
-              <Button size="sm" variant="outline" className="pointer-events-auto gap-1.5 rounded-full bg-surface/92"
-                data-place-locate disabled={locating} onClick={locate}>
-                {locating ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> : <Crosshair aria-hidden className="h-4 w-4" />}
-                {t('place.locate')}
-              </Button>
-            </>
-          )}
 
           <div className="ml-auto flex items-start gap-2">
             {tab === 'world' && (searching ? (
@@ -282,6 +282,21 @@ export function PlaceView() {
             </div>
           </div>
         </div>
+
+        {tab === 'pins' && (
+          <div className="mt-2 flex flex-wrap items-start gap-2">
+            <Button size="sm" className="pointer-events-auto gap-1.5 rounded-full" data-place-add
+              onClick={() => dropAt(camera.lng, camera.lat)}>
+              <Plus aria-hidden className="h-4 w-4" />
+              {t('place.addPin')}
+            </Button>
+            <Button size="sm" variant="outline" className="pointer-events-auto gap-1.5 rounded-full bg-surface/92"
+              data-place-locate disabled={locating} onClick={locate}>
+              {locating ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> : <Crosshair aria-hidden className="h-4 w-4" />}
+              {t('place.locate')}
+            </Button>
+          </div>
+        )}
 
         {/* What was searched for, under the box that searched for it. */}
         {found.length > 0 && (
@@ -415,6 +430,38 @@ export function PlaceView() {
         </div>
       </div>
 
+      {/* The shortcuts: home and the starred pins, in the corner a thumb
+          reaches, over the map and under the card. */}
+      {tab === 'pins' && (homeCity || starred.length > 0) && (
+        <ul data-place-rail
+          className="pointer-events-auto absolute bottom-7 right-2 grid max-w-[104px] grid-cols-2 justify-items-end gap-1.5 sm:bottom-8 sm:right-3">
+          {homeCity && (
+            <li>
+              <button type="button" data-place-shortcut="home" title={homeCity.name}
+                aria-label={`${t('place.shortcut')} · ${homeCity.name}`}
+                className={`${FLOAT} grid h-11 w-11 place-items-center text-foreground hover:bg-accent/20`}
+                onClick={() => goTo(homeCity.lng, homeCity.lat)}>
+                <House aria-hidden className="h-4 w-4" />
+              </button>
+            </li>
+          )}
+          {starred.map((p) => {
+            const Icon = PIN_ICON[p.category];
+            return (
+              <li key={p.id}>
+                <button type="button" data-place-shortcut={p.id} title={p.name}
+                  aria-label={`${t('place.shortcut')} · ${p.name}`}
+                  className={`${FLOAT} grid h-11 w-11 place-items-center text-foreground hover:bg-accent/20 ${
+                    pinId === p.id ? 'ring-2 ring-primary' : ''}`}
+                  onClick={() => goTo(p.lng, p.lat, p.id)}>
+                  <Icon aria-hidden className="h-4 w-4" />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
       {/* The card for whatever is chosen: a column on the right of a wide
           screen, a sheet across the bottom of a narrow one. */}
       {panel && (
@@ -439,8 +486,10 @@ export function PlaceView() {
             <PinCard
               pin={pin}
               people={people}
+              railFull={railFull}
               onClose={() => setPinId(null)}
               onEdit={() => setTarget({ mode: 'edit', pin })}
+              onStar={() => api.toggleStar(pin.id)}
               onDelete={() => removePin(pin.id)}
             />
           )}

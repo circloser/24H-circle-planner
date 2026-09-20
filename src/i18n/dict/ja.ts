@@ -1064,9 +1064,11 @@ export const ja: Record<TKey, string> = {
   'relation.field.note': 'メモ',
   'relation.field.photo': '写真',
   'relation.field.pinned': '名前をいつも表示',
-  'relation.close.1': 'ときどき',
-  'relation.close.2': '近い',
-  'relation.close.3': 'いちばん近い',
+  'relation.close.1': '遠い',
+  'relation.close.2': 'ときどき',
+  'relation.close.3': '近い',
+  'relation.close.4': 'とても近い',
+  'relation.close.5': 'いちばん近い',
   'relation.edit.addTitle': '人を追加',
   'relation.edit.editTitle': '人を編集',
   'relation.contactedToday': '今日連絡した',
@@ -1163,4 +1165,6 @@ export const ja: Record<TKey, string> = {
   // Place — somewhere to go, as against somewhere been.
   'place.wish': '行ってみたい',
   'place.sum.wish': '行きたい国 {n}',
+  // Place — the shortcut rail in the corner of the pin map.
+  'place.shortcut': 'ショートカット',
 };

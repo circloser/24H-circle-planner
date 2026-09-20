@@ -3,8 +3,8 @@ import { loadPersisted, type PersistedCodec } from '@/hooks/usePersistedState';
 import { persistLocal } from '@/lib/persistence';
 import { deletePhoto } from '@/lib/calendar-photos';
 import {
-  PLACE_KEY, decodePlace, emptyPlace, encodePlace, isNewerPlace, newPinId, placePhotoIds,
-  type CityVisit, type CountryVisit, type Pin, type PlaceData,
+  MAX_PLACE_SHORTCUTS, PLACE_KEY, decodePlace, emptyPlace, encodePlace, isNewerPlace, newPinId,
+  placePhotoIds, type CityVisit, type CountryVisit, type Pin, type PlaceData,
 } from '@/lib/place';
 
 export const placeCodec: PersistedCodec<PlaceData> = {
@@ -143,6 +143,25 @@ export function usePlace() {
     }));
   }, [edit]);
 
+  /** Put a pin on the shortcut rail, or take it off. */
+  const toggleStar = useCallback((id: string) => {
+    edit((d) => {
+      const on = d.pins.find((p) => p.id === id)?.star === true;
+      // The rail is full: the pin stays where it is and nothing is starred.
+      if (!on && d.pins.filter((p) => p.star).length >= MAX_PLACE_SHORTCUTS) return d;
+      return {
+        ...d,
+        pins: d.pins.map((p) => {
+          if (p.id !== id) return p;
+          const next = { ...p };
+          if (on) delete next.star;
+          else next.star = true;
+          return next;
+        }),
+      };
+    });
+  }, [edit]);
+
   const removePin = useCallback((id: string): { pin: Pin; at: number } | null => {
     const at = current.current.pins.findIndex((p) => p.id === id);
     const pin = at < 0 ? null : current.current.pins[at];
@@ -175,7 +194,7 @@ export function usePlace() {
 
   return {
     data, readOnly, generation, setCountry, toggleCountry, toggleWish, addCity, updateCity, removeCity,
-    setHome, addPin, updatePin, removePin, restorePin, replace,
+    setHome, addPin, updatePin, toggleStar, removePin, restorePin, replace,
   };
 }
 

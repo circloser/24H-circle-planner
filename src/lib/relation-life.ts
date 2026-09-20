@@ -50,7 +50,7 @@ export function personFromFamily(f: FamilyMember, labelOf: (relation: FamilyMemb
     group: 'family',
     relation: labelOf(f.relation),
     // Family come in at the closest ring: that is what the life line says.
-    closeness: 3,
+    closeness: 5,
     ...(isFullDate(f.birthDate) ? { birthday: f.birthDate } : {}),
     lifeFamilyId: f.id,
   };

@@ -88,21 +88,44 @@ describe('the stored envelope', () => {
       links: [{ source: 'a', target: 'c' }, { source: 'c', target: 'a' }, { source: 'a', target: 'a' }, { source: 'a', target: 'ghost' }],
       updatedAt: 'then',
     });
-    expect(out?.people.map((x) => [x.id, x.group, x.closeness])).toEqual([['a', 'family', 3], ['c', 'other', 2]]);
+    // A version 1 record: its three rungs of closeness move to the middle
+    // three of the five, and nonsense lands on the middle rung.
+    expect(out?.people.map((x) => [x.id, x.group, x.closeness])).toEqual([['a', 'family', 4], ['c', 'other', 3]]);
     expect(out?.links).toEqual([{ source: 'a', target: 'c' }]);
     expect(out?.me).toEqual({ name: '나', photo: 'ph000001' });
   });
 
   it('refuses anything that is not a record of ours', () => {
     expect(decodeRelation(null)).toBeNull();
-    expect(decodeRelation({ version: 2 })).toBeNull();
+    expect(decodeRelation({ version: 3 })).toBeNull();
     expect(decodeRelation('people')).toBeNull();
   });
 
   it('notices a record from a newer version of the app', () => {
-    expect(isNewerRelation({ version: 2 })).toBe(true);
+    expect(isNewerRelation({ version: 3 })).toBe(true);
+    expect(isNewerRelation({ version: 2 })).toBe(false);
     expect(isNewerRelation({ version: 1 })).toBe(false);
     expect(isNewerRelation(null)).toBe(false);
+  });
+
+  it('carries an old record over without moving anyone on the map', () => {
+    // 1 → 2, 2 → 3, 3 → 4: the same words, with a rung added at each end.
+    const out = decodeRelation({
+      version: 1,
+      people: [
+        { id: 'a', name: 'a', group: 'friend', closeness: 1 },
+        { id: 'b', name: 'b', group: 'friend', closeness: 2 },
+        { id: 'c', name: 'c', group: 'friend', closeness: 3 },
+      ],
+    });
+    expect(out?.version).toBe(2);
+    expect(out?.people.map((x) => x.closeness)).toEqual([2, 3, 4]);
+    // And a record already at version 2 keeps the five rungs as they are.
+    const kept = decodeRelation({
+      version: 2,
+      people: [{ id: 'a', name: 'a', group: 'friend', closeness: 5 }],
+    });
+    expect(kept?.people[0].closeness).toBe(5);
   });
 
   it('stores one canonical shape, so load → save never changes a byte', () => {

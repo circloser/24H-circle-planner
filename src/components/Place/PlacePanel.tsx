@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Check, Heart, House, MapPin, Pencil, Trash2, X } from 'lucide-react';
+import { Check, Heart, House, MapPin, Pencil, Star, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/hooks/usePreferences';
@@ -132,11 +132,14 @@ export function CountryCard({
 }
 
 /** The pin card: what it is, when, who was there, and the note. */
-export function PinCard({ pin, people, onClose, onEdit, onDelete }: {
+export function PinCard({ pin, people, railFull, onClose, onEdit, onStar, onDelete }: {
   pin: Pin;
   people: ReadonlyArray<{ id: string; name: string }>;
+  /** The shortcut rail has no room left, so starring is offered no further. */
+  railFull: boolean;
   onClose: () => void;
   onEdit: () => void;
+  onStar: () => void;
   onDelete: () => void;
 }) {
   const { t } = useTranslation();
@@ -195,6 +198,12 @@ export function PinCard({ pin, people, onClose, onEdit, onDelete }: {
         <Button size="sm" variant="outline" className="gap-1.5" data-place-pin-edit onClick={onEdit}>
           <Pencil aria-hidden className="h-4 w-4" />
           {t('common.edit')}
+        </Button>
+        <Button size="sm" variant={pin.star ? 'default' : 'outline'} className="gap-1.5"
+          aria-pressed={pin.star === true} data-place-pin-star
+          disabled={!pin.star && railFull} onClick={onStar}>
+          <Star aria-hidden className="h-4 w-4" />
+          {t('place.shortcut')}
         </Button>
         <Button size="sm" variant="ghost" className="gap-1.5 text-destructive" data-place-pin-delete onClick={onDelete}>
           <Trash2 aria-hidden className="h-4 w-4" />

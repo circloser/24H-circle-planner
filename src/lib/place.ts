@@ -66,6 +66,8 @@ export interface Pin {
   photo?: string;
   /** People from the relation map who were there. */
   personIds?: string[];
+  /** A shortcut: on the little rail in the corner of the pin map. */
+  star?: boolean;
   /** A moment on the life line this pin belongs to. */
   lifeMilestoneId?: string;
   createdAt: string;
@@ -207,6 +209,7 @@ function cleanPin(v: unknown): Pin | null {
     ...(note ? { note } : {}),
     ...(isId(o['photo']) ? { photo: o['photo'] } : {}),
     ...(people.length ? { personIds: people } : {}),
+    ...(o['star'] === true ? { star: true } : {}),
     ...(isId(o['lifeMilestoneId']) ? { lifeMilestoneId: o['lifeMilestoneId'] } : {}),
     createdAt: typeof o['createdAt'] === 'string' ? o['createdAt'] : '',
   };
@@ -259,6 +262,14 @@ export function decodePlace(parsed: unknown): PlaceData | null {
 /** What is stored (and synced): the same cleaning as a load, so every save has
  *  one canonical shape whatever order an edit built its fields in. */
 export const encodePlace = (data: PlaceData): PlaceData => decodePlace(data) ?? emptyPlace();
+
+/** How many shortcuts fit on the rail. More than this and it is a list, not
+ *  a row of buttons that can be hit without looking. */
+export const MAX_PLACE_SHORTCUTS = 10;
+
+/** The pins on the shortcut rail, oldest first, and never more than fit. */
+export const shortcutPins = (d: PlaceData): Pin[] =>
+  d.pins.filter((p) => p.star === true).slice(0, MAX_PLACE_SHORTCUTS);
 
 // ── Free plan ────────────────────────────────────────────────────────────────
 

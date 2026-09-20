@@ -27,7 +27,7 @@ export const METRIC_EVENTS = [
   'relation_image', 'relation_backup',
   // Place (the countries and spots you have been to).
   'place_open', 'place_country', 'place_city', 'place_pin', 'place_home',
-  'place_locate', 'place_image', 'place_backup',
+  'place_locate', 'place_image', 'place_backup', 'place_shortcut',
 ] as const;
 
 export type MetricEvent = (typeof METRIC_EVENTS)[number];

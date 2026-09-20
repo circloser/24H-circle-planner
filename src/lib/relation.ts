@@ -23,8 +23,11 @@ export const RELATION_KEY = '24h-circle-planner.relation';
 export const RELATION_GROUPS = ['family', 'friend', 'work', 'other'] as const;
 export type RelationGroup = (typeof RELATION_GROUPS)[number];
 
-/** How near the middle someone sits on their own ring. */
-export type Closeness = 1 | 2 | 3;
+/** How near the middle someone sits on their own ring: five rungs, 1 the
+ *  furthest and 5 the nearest. (It was three until version 2 — see
+ *  migrateRelation, which moves the old middle rung to the new one.) */
+export type Closeness = 1 | 2 | 3 | 4 | 5;
+export const CLOSENESS: readonly Closeness[] = [1, 2, 3, 4, 5];
 
 export interface Person {
   id: string;
@@ -58,7 +61,7 @@ export interface RelationLink {
 }
 
 export interface RelationData {
-  version: 1;
+  version: 2;
   me: { name?: string; photo?: string };
   people: Person[];
   links: RelationLink[];
@@ -71,7 +74,7 @@ export const MAX_PERSON_NOTE = 200;
 export const MAX_LINK_LABEL = 20;
 
 export const emptyRelation = (): RelationData => ({
-  version: 1,
+  version: 2,
   me: {},
   people: [],
   links: [],
@@ -194,7 +197,7 @@ function cleanPerson(v: unknown): Person | null {
   const group: RelationGroup = typeof g === 'string' && (RELATION_GROUPS as readonly string[]).includes(g)
     ? (g as RelationGroup) : 'other';
   const c = Number(o['closeness']);
-  const closeness: Closeness = c === 1 || c === 3 ? c : 2;
+  const closeness: Closeness = (CLOSENESS as readonly number[]).includes(c) ? (c as Closeness) : 3;
   const relation = str(o['relation'], MAX_RELATION_TEXT);
   const note = str(o['note'], MAX_PERSON_NOTE);
   const at = o['at'] as Record<string, unknown> | undefined;
@@ -238,19 +241,32 @@ function cleanLinks(v: unknown, people: readonly Person[]): RelationLink[] {
   return out;
 }
 
-/** Bring an older stored version up to the current shape. Only version 1
- *  exists; a later one adds its step here. */
+/**
+ * Bring an older stored version up to the current shape.
+ *
+ * Version 1 had three rungs of closeness, version 2 has five. The old rungs
+ * move to 2, 3 and 4 — the words each one was labelled with are the same
+ * words, and the two new rungs are added at the ends rather than in the
+ * middle, so nobody's place on the map changes meaning overnight.
+ */
 export function migrateRelation(parsed: unknown): Record<string, unknown> | null {
   const p = parsed as Record<string, unknown> | null;
   if (!p || typeof p !== 'object') return null;
-  if (p['version'] === 1) return p;
-  return null;
+  if (p['version'] === 2) return p;
+  if (p['version'] !== 1) return null;
+  const people = (Array.isArray(p['people']) ? p['people'] : []).map((v) => {
+    const o = v as Record<string, unknown> | null;
+    if (!o || typeof o !== 'object') return v;
+    const c = Number(o['closeness']);
+    return { ...o, closeness: c === 1 ? 2 : c === 3 ? 4 : 3 };
+  });
+  return { ...p, version: 2, people };
 }
 
 /** Written by a newer version of the app than this one. */
 export function isNewerRelation(parsed: unknown): boolean {
   const v = (parsed as Record<string, unknown> | null)?.['version'];
-  return typeof v === 'number' && v > 1;
+  return typeof v === 'number' && v > 2;
 }
 
 /** Strict decode: anything unknown or broken is dropped, never thrown on. */
@@ -264,7 +280,7 @@ export function decodeRelation(parsed: unknown): RelationData | null {
   const me = (p['me'] ?? {}) as Record<string, unknown>;
   const myName = str(me['name'], MAX_PERSON_NAME);
   return {
-    version: 1,
+    version: 2,
     me: {
       ...(myName ? { name: myName } : {}),
       ...(isId(me['photo']) ? { photo: me['photo'] } : {}),

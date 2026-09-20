@@ -19,8 +19,8 @@
  */
 import { RELATION_GROUPS, type Closeness, type Person, type RelationGroup } from './relation';
 
-/** Node radius by closeness (§3.2). */
-export const NODE_R: Record<Closeness, number> = { 1: 7, 2: 9, 3: 11 };
+/** Node radius by closeness (§3.2), over the five rungs. */
+export const NODE_R: Record<Closeness, number> = { 1: 5, 2: 7, 3: 9, 4: 11, 5: 13 };
 /** The middle node — me. */
 export const ME_R = 20;
 /** How far the innermost ring sits from me. Wide enough that a name written
@@ -28,8 +28,10 @@ export const ME_R = 20;
 export const RING_MIN = 150;
 /** Distance between one ring and the next. */
 export const RING_GAP = 100;
-/** How far closeness pulls someone in from their ring. */
-export const CLOSE_STEP = 11;
+/** How far each rung of closeness pulls someone in from their ring. Five
+ *  rungs at this step stay well inside RING_GAP, so no ring reaches the one
+ *  inside it however close everyone is. */
+export const CLOSE_STEP = 9;
 /** Clear space kept between two nodes on the same ring. */
 export const NODE_PAD = 16;
 /** How much a ring grows when it cannot hold everyone. */

@@ -25,7 +25,7 @@ describe('bringing the life line\'s family over', () => {
       name: '이정숙',
       group: 'family',
       relation: '어머니',
-      closeness: 3,
+      closeness: 5,
       birthday: '1958-03-02',
       lifeFamilyId: 'f1',
     });
@@ -33,7 +33,7 @@ describe('bringing the life line\'s family over', () => {
 
   it('falls back to what they are called when they have no name, and skips a half date', () => {
     expect(personFromFamily({ id: 'f3', relation: 'father', name: ' ', birthDate: '1955' }, label))
-      .toEqual({ name: '아버지', group: 'family', relation: '아버지', closeness: 3, lifeFamilyId: 'f3' });
+      .toEqual({ name: '아버지', group: 'family', relation: '아버지', closeness: 5, lifeFamilyId: 'f3' });
   });
 });
 

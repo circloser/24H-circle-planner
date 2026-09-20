@@ -9,7 +9,7 @@ import { deletePhoto, newPhotoId, savePhoto, shrinkPhoto } from '@/lib/calendar-
 import { todayKey } from '@/lib/calendar-grid';
 import {
   MAX_PERSON_NAME, MAX_PERSON_NOTE, MAX_RELATION_TEXT, RELATION_GROUPS, isBirthday,
-  type Closeness, type Person, type RelationGroup,
+  CLOSENESS, type Closeness, type Person, type RelationGroup,
 } from '@/lib/relation';
 import type { PersonDraft } from '@/hooks/useRelation';
 import { GROUP_ICON, GROUP_LABEL } from './groups';
@@ -108,7 +108,7 @@ export function PersonDialog({ target, pro, syncing, onClose, onSave, onDelete }
   const [name, setName] = useState('');
   const [group, setGroup] = useState<RelationGroup>('friend');
   const [relation, setRelation] = useState('');
-  const [closeness, setCloseness] = useState<Closeness>(2);
+  const [closeness, setCloseness] = useState<Closeness>(3);
   const [birthday, setBirthday] = useState('');
   const [lastContact, setLastContact] = useState('');
   const [note, setNote] = useState('');
@@ -121,7 +121,7 @@ export function PersonDialog({ target, pro, syncing, onClose, onSave, onDelete }
     setName(base?.name ?? '');
     setGroup(base?.group ?? 'friend');
     setRelation(base?.relation ?? '');
-    setCloseness(base?.closeness ?? 2);
+    setCloseness(base?.closeness ?? 3);
     setBirthday(base?.birthday ?? '');
     setLastContact(base?.lastContact ?? '');
     setNote(base?.note ?? '');
@@ -194,15 +194,26 @@ export function PersonDialog({ target, pro, syncing, onClose, onSave, onDelete }
               placeholder={t('relation.field.relationHint')} onChange={(e) => setRelation(e.target.value)} />
           </label>
 
+          {/* Five rungs. The words are too long to print five times across a
+              phone, so the rungs are dots and the chosen one says itself. */}
           <fieldset className="flex flex-col gap-1.5">
-            <legend className={field}>{t('relation.field.closeness')}</legend>
+            <legend className={`${field} flex items-baseline justify-between gap-2`}>
+              <span>{t('relation.field.closeness')}</span>
+              <span className="text-[13px] font-normal text-muted-foreground" data-relation-close-label>
+                {t(`relation.close.${closeness}` as 'relation.close.1')}
+              </span>
+            </legend>
             <div className="mt-1.5 flex gap-1.5">
-              {([1, 2, 3] as const).map((c) => (
+              {CLOSENESS.map((c) => (
                 <button key={c} type="button" data-relation-close={c} aria-pressed={closeness === c}
+                  aria-label={t(`relation.close.${c}` as 'relation.close.1')}
+                  title={t(`relation.close.${c}` as 'relation.close.1')}
                   onClick={() => setCloseness(c)}
-                  className={`min-h-9 flex-1 rounded-md border px-2 text-sm ${
-                    closeness === c ? 'border-foreground bg-accent/20 text-foreground' : 'border-border text-muted-foreground'}`}>
-                  {t(`relation.close.${c}` as 'relation.close.1')}
+                  className={`grid min-h-9 flex-1 place-items-center rounded-md border ${
+                    closeness === c ? 'border-foreground bg-accent/20' : 'border-border'}`}>
+                  <span aria-hidden className={`block rounded-full ${
+                    closeness === c ? 'bg-foreground' : 'bg-muted-foreground/50'}`}
+                    style={{ width: 4 + c * 2, height: 4 + c * 2 }} />
                 </button>
               ))}
             </div>

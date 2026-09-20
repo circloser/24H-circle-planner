@@ -290,6 +290,11 @@ export async function run() {
     const vp = page.viewportSize();
     pass('the filter is a round button in the bottom-right corner', !!fab && fab.width === fab.height
       && vp.width - (fab.x + fab.width) < 40 && vp.height - (fab.y + fab.height) < 40);
+    const decorFab = await page.locator('[data-life-decor-fab]').boundingBox();
+    pass('decorating is the round button to its left', !!decorFab
+      && decorFab.x + decorFab.width <= fab.x
+      && Math.abs((decorFab.y + decorFab.height) - (fab.y + fab.height)) < 4,
+      JSON.stringify({ decorFab, fab }));
     await page.locator('[data-life-filter-toggle]').click();
     await wait(200);
     const chipsBox = await page.locator('[data-life-filters]').boundingBox();
@@ -436,6 +441,11 @@ export async function run() {
     pass('a free account is offered Pro instead of the tray',
       (await count('[data-decor-tray]')) === 0 && (await page.getByRole('dialog', { name: 'Pro로 업그레이드' }).count()) === 1);
     await closeAll();
+    await page.locator('[data-life-decor-fab]').click();
+    await wait(500);
+    pass('…and the corner button asks the same question',
+      (await count('[data-decor-tray]')) === 0 && (await page.getByRole('dialog', { name: 'Pro로 업그레이드' }).count()) === 1);
+    await closeAll();
     me.plan = 'pro';
     // Pro turns sync on, which asks its privacy question once: answer it here.
     await page.evaluate(() => localStorage.setItem('24h-circle-planner.sync-consent', '1'));
@@ -446,6 +456,8 @@ export async function run() {
     await page.locator('[data-life-decor-tool="sticker"]').click();
     await wait(600);
     pass('with Pro, the tray opens on the line', (await count('[data-decor-tray]')) === 1 && (await count('[data-life-decor-on]')) === 1);
+    pass('…and the corner button reads as pressed while it is open',
+      (await page.locator('[data-life-decor-fab]').getAttribute('aria-pressed')) === 'true');
     await page.locator('[data-sticker]').first().click();
     await wait(300);
     // The page opens on today, so bring the birth row into view before aiming.

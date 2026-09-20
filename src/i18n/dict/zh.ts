@@ -1062,9 +1062,11 @@ export const zh: Record<TKey, string> = {
   'relation.field.note': '备注',
   'relation.field.photo': '照片',
   'relation.field.pinned': '始终显示名字',
-  'relation.close.1': '偶尔',
-  'relation.close.2': '亲近',
-  'relation.close.3': '最亲近',
+  'relation.close.1': '疏远',
+  'relation.close.2': '偶尔',
+  'relation.close.3': '亲近',
+  'relation.close.4': '很亲近',
+  'relation.close.5': '最亲近',
   'relation.edit.addTitle': '添加一个人',
   'relation.edit.editTitle': '编辑此人',
   'relation.contactedToday': '今天联系过',
@@ -1161,4 +1163,6 @@ export const zh: Record<TKey, string> = {
   // Place — somewhere to go, as against somewhere been.
   'place.wish': '想去',
   'place.sum.wish': '想去 {n} 个国家',
+  // Place — the shortcut rail in the corner of the pin map.
+  'place.shortcut': '快捷方式',
 };
