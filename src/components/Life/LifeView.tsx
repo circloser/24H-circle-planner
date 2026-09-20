@@ -23,6 +23,7 @@ import { CATEGORY_ICON, CATEGORY_LABEL, RELATION_LABEL, categoryColors, inkOf } 
 import { LifePhoto, LifeTimeline } from './LifeTimeline';
 import { FamilyDialog, MilestoneDialog, ProfileDialog, type MemberTarget, type MomentTarget } from './LifeDialogs';
 import { LifeExportDialog } from './LifeExport';
+import { LifeMemoir } from './LifeMemoir';
 import { DecorTray } from '@/components/Calendar/Decor';
 import { DecorStoreProvider } from '@/hooks/useDecor';
 import { useLifeDecor } from '@/hooks/useLifeDecor';
@@ -43,7 +44,7 @@ type Parent = 'mother' | 'father';
 export function LifeView() {
   const api = useLife();
   const { life } = api;
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const { prefs } = usePreferences();
   const pro = useAuth().plan === 'pro';
   const syncing = useSyncStatus().status !== 'disabled';
@@ -227,6 +228,7 @@ export function LifeView() {
             onAdd={addMoment} />
           {/* A restore replaces the note: start its field afresh from it. */}
           <EndingNote key={api.generation} api={api} />
+          <LifeMemoir api={api} lang={lang} />
           <FilterFab only={only} setOnly={setOnly} colors={colors} />
         </div>
       )}

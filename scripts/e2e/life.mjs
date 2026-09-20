@@ -4,7 +4,8 @@
  * and the decades; moments are added, sorted, edited, deleted and survive a
  * reload; cards alternate on a wide screen and all sit right of a left line on
  * a phone; the past is solid and the future dashed; the ending note always
- * carries its legal notice; the long PNG; JSON backup → cleared browser →
+ * carries its legal notice; the memoir is bought once and kept on the device;
+ * the long PNG; JSON backup → cleared browser →
  * restore; the free limit only stops adding; reduced motion turns the fade off.
  */
 import { readFileSync } from 'node:fs';
@@ -35,13 +36,34 @@ async function setup(base, opts = {}) {
     const id = new URL(route.request().url()).pathname.split('/').pop();
     await route.fulfill(shares.has(id) ? json({ d: shares.get(id), name: '' }) : { status: 404, body: 'no' });
   });
+  // 자서전: off until a test sets it up, and the writer is a stub — the point
+  // is what the browser sends and keeps, not what a model would write.
+  const memoir = { enabled: false, signedIn: false, credits: 0, price: { amount: 100, currency: 'usd' } };
+  const memoirCalls = [];
+  const checkouts = [];
+  await page.route('**/api/life/memoir', async (route) => {
+    if (route.request().method() === 'GET') return route.fulfill(json(memoir));
+    memoirCalls.push(JSON.parse(route.request().postData() ?? '{}'));
+    memoir.credits = Math.max(0, memoir.credits - 1);
+    return route.fulfill({
+      status: 200,
+      contentType: 'text/plain; charset=utf-8',
+      body: '## 첫 장\n나는 1985년에 태어났다.\n\n자랐다.\n\n## 끝 장\n여기까지.',
+    });
+  });
+  // Registered after, so it wins the longer path.
+  await page.route('**/api/life/memoir/checkout', async (route) => {
+    checkouts.push(1);
+    memoir.credits += 1; // as the webhook would, a moment later
+    await route.fulfill(json({ url: `${base}/?view=life&memoir=paid` }));
+  });
   // The account this page sees; the decorating step turns Pro on.
   const me = { user: { id: 'u1', email: 'me@example.com', provider: 'google' }, plan: 'free', admin: false };
   await page.route('**/api/me', (route) => route.fulfill(json(me)));
   await page.goto(`${base}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
   await seedBasicData(page);
-  return { browser, page, errors, counted, me };
+  return { browser, page, errors, counted, me, memoir, memoirCalls, checkouts };
 }
 
 const pngSize = (buf) => ({ w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) });
@@ -49,7 +71,7 @@ const pngSize = (buf) => ({ w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) });
 export async function run() {
   const { pass, allOk } = makeReporter('life');
   const { base, close } = await serveDist();
-  const { browser, page, errors, counted, me } = await setup(base);
+  const { browser, page, errors, counted, me, memoir, memoirCalls, checkouts } = await setup(base);
   const count = (sel) => page.locator(sel).count();
   const stored = () => page.evaluate((k) => JSON.parse(localStorage.getItem(k) ?? 'null'), LIFE_KEY);
   const titles = () => page.$$eval('[data-life-moment]', (els) => els.map((e) => e.querySelector('.life-serif')?.textContent ?? ''));
@@ -424,6 +446,59 @@ export async function run() {
     await openLife();
     pass('…and it is still there after a reload', (await count('[data-life-decor-item]')) === 1);
 
+    // 16e. 자서전 — bought once, written from the line, kept on the device.
+    await closeAll();
+    memoir.enabled = true;
+    memoir.signedIn = true;
+    await openLife();
+    await closeAll();
+    pass('with too little written down, nothing is offered', (await count('[data-life-memoir]')) === 0);
+    // Three moments is where a life becomes something worth writing about.
+    await page.evaluate((k) => {
+      const life = JSON.parse(localStorage.getItem(k));
+      life.milestones = [1990, 2004, 2010, 2016].map((y, i) => (
+        { id: `mm${i}`, date: String(y), title: `사건 ${i + 1}`, category: 'other', isPlan: false }));
+      localStorage.setItem(k, JSON.stringify(life));
+    }, LIFE_KEY);
+    await openLife();
+    await closeAll();
+    pass('the memoir section shows once the server has a writer', (await count('[data-life-memoir]')) === 1);
+    pass('…and asks the price of one, not of a subscription',
+      /\$1\.00/.test(await page.locator('[data-life-memoir-start]').innerText()),
+      await page.locator('[data-life-memoir-start]').innerText());
+    await page.locator('[data-life-memoir-start]').click();
+    await wait(400);
+    const ask = await page.locator('[data-life-memoir-dialog]').innerText();
+    pass('what leaves the device is said before it leaves',
+      /사진은 보내지 않습니다/.test(ask) && /구독이 아닙니다/.test(ask), ask.replace(/\n/g, ' ').slice(0, 90));
+    // Nothing is paid for yet: the button goes to the till, not to the writer.
+    await page.locator('[data-life-memoir-go]').click();
+    await page.waitForSelector('[data-life-memoir-dialog]', { timeout: 20000 });
+    await wait(600);
+    pass('with nothing paid for, it goes to the till and not to the writer',
+      checkouts.length === 1 && memoirCalls.length === 0, `${checkouts.length} / ${memoirCalls.length}`);
+    pass('…and the form is open and waiting on the way back', (await count('[data-life-memoir-dialog]')) === 1);
+    pass('…with the address tidied up again', !page.url().includes('memoir='), page.url());
+    await page.locator('[data-life-memoir-wish]').fill('담담하게');
+    await page.locator('[data-life-memoir-go]').click();
+    await wait(1600);
+    const sent = memoirCalls[0] ?? {};
+    pass('the writer is given the line, the wish and no picture',
+      (sent.moments?.length ?? 0) >= 3 && sent.wish === '담담하게'
+      && !JSON.stringify(sent).includes('photo'), JSON.stringify(sent).slice(0, 140));
+    pass('…and the birthday, which is what makes the ages true',
+      /^\d{4}-\d{2}-\d{2}$/.test(sent.birthDate ?? ''), String(sent.birthDate));
+    pass('the memoir is laid out as chapters and paragraphs',
+      (await page.locator('[data-life-memoir-text] h4').count()) === 2
+      && (await page.locator('[data-life-memoir-text] p').count()) === 3);
+    pass('…and is kept in the record on this device',
+      /나는 1985년에 태어났다/.test((await stored())?.memoir?.text ?? ''));
+    await openLife();
+    await closeAll();
+    pass('…and is still there after a reload', (await count('[data-life-memoir-text]')) === 1);
+    pass('a second one has to be paid for again',
+      /다시 쓰기/.test(await page.locator('[data-life-memoir-start]').innerText()));
+
     // 17. A phone: the line on the left, every card to its right.
     await page.setViewportSize({ width: 390, height: 844 });
     await wait(500);
@@ -434,7 +509,8 @@ export async function run() {
     });
     pass('phone: a left line with every card on its right', phone.line < 40 && phone.allRight, JSON.stringify(phone));
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
-    const want = ['life_open', 'life_start', 'life_add', 'life_image:downloaded', 'life_backup:json', 'upgrade_open:life'];
+    const want = ['life_open', 'life_start', 'life_add', 'life_image:downloaded', 'life_backup:json', 'upgrade_open:life',
+      'memoir_buy', 'memoir_paid', 'memoir_write'];
     await flush();
     pass('usage is counted', want.every((w) => counted.includes(w)), `missing ${want.filter((w) => !counted.includes(w)).join(',')} · saw ${[...new Set(counted)].join(',')}`);
   } finally {

@@ -47,6 +47,14 @@
     // Web Push (Pro closed-tab alarms). Private key = VAPID_PRIVATE_KEY secret.
     "VAPID_PUBLIC_KEY": "BFUzJmVp8uJlFAKIZEEAFr3O1u-FLD7cbvHVXOuHtPNQ5zdZl0j_vgnDvwDNRWo8kmr0uWRv8E5EcHzmdwBy1ls",
     "VAPID_SUBJECT": "mailto:singlena@gmail.com"
+
+    // 자서전 (worker/memoir.ts) is off until BOTH of these are set, and they
+    // belong in the Worker's runtime "Variables and Secrets" as SECRETS — a
+    // plain text variable added there is wiped by the next `wrangler deploy`,
+    // which reads its variables from this file, while secrets survive:
+    //   ANTHROPIC_API_KEY        — sk-ant-… from console.anthropic.com
+    //   POLAR_MEMOIR_PRODUCT_ID  — the id of a ONE-TIME $1 Polar product
+    // Optional: ANTHROPIC_MODEL (defaults to claude-sonnet-5).
   },
   // Minute cron: match each push plan's local HH:MM and send due notifications.
   "triggers": { "crons": ["* * * * *"] }

@@ -14,8 +14,12 @@ import { handleWidgetPut, handleWidgetPng, handleWidgetDelete } from './widget';
 import { handleMarketingRoute } from './marketing';
 import { handleMetrics, metricsSummary, type MetricRow } from './metrics';
 import { busyResponse, isDbUnavailable } from './busy';
-import { alertOps, clearOps } from './alert';
+import { alertOps, clearOps, keepDevices } from './alert';
 import { handleGeo } from './geo';
+import {
+  MEMOIR_KIND, callClaude, cleanMemoirInput, grantMemoirCredit, memoirCredits,
+  memoirEnabled, memoirStream, refundMemoirCredit, spendMemoirCredit,
+} from './memoir';
 import { handleIcalFetch } from './ical';
 
 export interface Env {
@@ -40,8 +44,15 @@ export interface Env {
   VAPID_PRIVATE_KEY?: string;
   VAPID_SUBJECT?: string;
   /** Where operator alerts go when the database itself is down: a Slack,
-   *  Discord or any JSON webhook URL (runtime secret, optional). */
+   *  Discord or any JSON webhook URL (runtime secret, optional). Without one,
+   *  alerts still try the admin's own phone (worker/alert.ts). */
   ALERT_WEBHOOK?: string;
+  /** 자서전 (worker/memoir.ts): the Anthropic key is a runtime secret, the
+   *  model and the one-time Polar product id are non-secret vars. Without both
+   *  the key and the product id the whole feature stays hidden. */
+  ANTHROPIC_API_KEY?: string;
+  ANTHROPIC_MODEL?: string;
+  POLAR_MEMOIR_PRODUCT_ID?: string;
 }
 
 /** Whether `email` is on the admin allowlist (always Pro). */
@@ -559,7 +570,7 @@ async function handleWebhook(request: Request, env: Env, ctx?: Waiter): Promise<
   if (!(await verifyPolarWebhook(env.POLAR_WEBHOOK_SECRET, request.headers, body))) {
     return json({ error: 'invalid_signature' }, 403);
   }
-  let event: { type?: string; data?: PolarSubscription };
+  let event: { type?: string; data?: PolarSubscription & PolarOrder };
   try {
     event = JSON.parse(body) as typeof event;
   } catch {
@@ -584,7 +595,131 @@ async function handleWebhook(request: Request, env: Env, ctx?: Waiter): Promise<
       }
     }
   }
+  // A one-time purchase: the 자서전 product (worker/memoir.ts).
+  if (event.type === 'order.paid') await creditMemoirOrder(env, event.data, ctx);
   return json({ received: true });
+}
+
+// ─── 자서전 — the life line written out, bought once (worker/memoir.ts) ─────
+
+interface PolarOrder {
+  id?: string;
+  product_id?: string;
+  product?: { id?: string };
+  customer?: { external_id?: string | null };
+  metadata?: Record<string, unknown>;
+}
+
+/** The one-time product's price, read live from Polar so it is never two
+ *  numbers — one on the page and another at the till. */
+async function memoirPrice(env: Env): Promise<{ amount: number; currency: string } | null> {
+  if (!env.POLAR_ACCESS_TOKEN || !env.POLAR_MEMOIR_PRODUCT_ID) return null;
+  try {
+    const res = await fetch(`${polarBase(env)}/products/${env.POLAR_MEMOIR_PRODUCT_ID}`, {
+      headers: { authorization: `Bearer ${env.POLAR_ACCESS_TOKEN}`, accept: 'application/json' },
+    });
+    if (!res.ok) return null;
+    const p = (await res.json()) as { prices?: Array<{ amount_type?: string; price_amount?: number; amount?: number; price_currency?: string }> };
+    for (const pr of p.prices ?? []) {
+      if (pr.amount_type === 'free' || pr.amount_type === 'custom') continue;
+      const amount = typeof pr.price_amount === 'number' ? pr.price_amount : typeof pr.amount === 'number' ? pr.amount : null;
+      if (amount != null) return { amount, currency: (pr.price_currency ?? 'usd').toLowerCase() };
+    }
+    return null;
+  } catch {
+    return null; // the page simply says nothing about the price
+  }
+}
+
+/** GET /api/life/memoir — whether the section shows at all, and what it costs. */
+async function handleMemoirState(request: Request, env: Env): Promise<Response> {
+  if (!memoirEnabled(env)) return json({ enabled: false });
+  const price = await memoirPrice(env);
+  const user = await currentUser(request, env);
+  if (!user || !env.DB) return json({ enabled: true, signedIn: false, credits: 0, price });
+  return json({ enabled: true, signedIn: true, credits: await memoirCredits(env.DB, user.id), price });
+}
+
+/** POST /api/life/memoir/checkout — a Polar checkout for the one-time product. */
+async function handleMemoirCheckout(request: Request, env: Env): Promise<Response> {
+  if (!memoirEnabled(env) || !env.POLAR_ACCESS_TOKEN) return json({ error: 'memoir_unconfigured' }, 503);
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'unauthorized' }, 401);
+  const origin = new URL(request.url).origin;
+  const body: Record<string, unknown> = {
+    products: [env.POLAR_MEMOIR_PRODUCT_ID],
+    success_url: `${origin}/?view=life&memoir=paid`,
+    external_customer_id: user.id,
+    metadata: { user_id: user.id, kind: MEMOIR_KIND },
+  };
+  if (user.email) body.customer_email = user.email;
+  const res = await fetch(`${polarBase(env)}/checkouts/`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${env.POLAR_ACCESS_TOKEN}`, 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) return json({ error: 'checkout_failed', status: res.status }, 502);
+  const data = (await res.json()) as { url?: string };
+  if (!data.url) return json({ error: 'checkout_no_url' }, 502);
+  return json({ url: data.url });
+}
+
+/**
+ * POST /api/life/memoir — spend one credit and write the memoir.
+ *
+ * The answer is plain text, not JSON: a few pages take the better part of a
+ * minute, so it comes back a sentence at a time. The credit is taken first
+ * (two tabs cannot spend it twice) and given back if not one word arrived.
+ */
+async function handleMemoirWrite(request: Request, env: Env, ctx?: Waiter): Promise<Response> {
+  if (!memoirEnabled(env) || !env.DB) return json({ error: 'memoir_unconfigured' }, 503);
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'unauthorized' }, 401);
+  let raw: unknown;
+  try {
+    raw = await request.json();
+  } catch {
+    return json({ error: 'bad_json' }, 400);
+  }
+  const input = cleanMemoirInput(raw);
+  if (!input) return json({ error: 'too_little' }, 400);
+  if (!(await spendMemoirCredit(env.DB, user.id))) return json({ error: 'no_credit' }, 402);
+
+  const db = env.DB;
+  let upstream: Response;
+  try {
+    upstream = await callClaude(env, input);
+  } catch {
+    await refundMemoirCredit(db, user.id);
+    return json({ error: 'writer_unreachable' }, 502);
+  }
+  if (!upstream.ok || !upstream.body) {
+    await refundMemoirCredit(db, user.id);
+    console.error(`[memoir] anthropic answered ${upstream.status}`);
+    return json({ error: 'writer_failed', status: upstream.status }, 502);
+  }
+  const { body, written } = memoirStream(upstream.body);
+  const settle = written.then((n) => (n === 0 ? refundMemoirCredit(db, user.id) : undefined));
+  if (ctx) ctx.waitUntil(settle); else void settle;
+  return new Response(body, {
+    headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' },
+  });
+}
+
+/** A paid one-time order → one memoir. Subscription renewals make orders too,
+ *  so only this product's own orders are worth a credit. */
+async function creditMemoirOrder(env: Env, order: PolarOrder | undefined, ctx?: Waiter): Promise<void> {
+  if (!env.DB || !env.POLAR_MEMOIR_PRODUCT_ID || !order?.id) return;
+  if ((order.product_id ?? order.product?.id) !== env.POLAR_MEMOIR_PRODUCT_ID) return;
+  const meta = order.metadata?.['user_id'];
+  const userId = typeof meta === 'string' && meta ? meta : order.customer?.external_id || '';
+  if (!userId) {
+    console.error(`[memoir] a paid order with nobody to credit: ${order.id}`);
+    return;
+  }
+  if (await grantMemoirCredit(env.DB, userId, order.id)) {
+    ctx?.waitUntil(notifyAdmins(env, '📖 자서전 결제', '자서전 한 편이 결제되었습니다.'));
+  }
 }
 
 // ─── Coupons (self-serve Pro codes) ──────────────────────────────────────────
@@ -690,8 +825,10 @@ async function notifyAdmins(env: Env, title: string, body: string): Promise<void
     const q = emails.map(() => '?').join(',');
     const admins = await env.DB.prepare(`SELECT id FROM users WHERE lower(email) IN (${q})`).bind(...emails).all<{ id: string }>();
     const vapid = { publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY, subject: env.VAPID_SUBJECT || 'mailto:singlena@gmail.com' };
+    const devices: Array<{ endpoint: string; p256dh: string; auth: string }> = [];
     for (const a of admins.results ?? []) {
       const subs = await env.DB.prepare('SELECT endpoint, p256dh, auth FROM push_subs WHERE user_id=?').bind(a.id).all<{ endpoint: string; p256dh: string; auth: string }>();
+      devices.push(...(subs.results ?? []));
       for (const s of subs.results ?? []) {
         try {
           const st = await sendWebPush(s, JSON.stringify({ title, body, tag: 'ops' }), vapid);
@@ -701,8 +838,39 @@ async function notifyAdmins(env: Env, title: string, body: string): Promise<void
         }
       }
     }
+    // Every healthy read refreshes the copy an alert falls back on when D1 is
+    // itself the thing that is down (worker/alert.ts).
+    await keepDevices(devices);
   } catch {
     // ops notifications must never break user-facing flows
+  }
+}
+
+/** When the copy of the admin's devices was last refreshed from the database. */
+let devicesAt = 0;
+const DEVICES_EVERY_MS = 60 * 60_000;
+
+/**
+ * Refresh the out-of-database copy of the admin's devices (see alert.ts), so
+ * an alert has somewhere to go when the database will not answer. Throttled,
+ * because the minute cron calls it; `force` is for the moment an admin
+ * subscribes a device, when the copy is certainly out of date.
+ */
+async function refreshOpsDevices(env: Env, force = false): Promise<void> {
+  try {
+    if (!env.DB) return;
+    const now = Date.now();
+    if (!force && now - devicesAt < DEVICES_EVERY_MS) return;
+    devicesAt = now;
+    const emails = (env.ADMIN_EMAILS || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
+    if (!emails.length) return;
+    const q = emails.map(() => '?').join(',');
+    const rows = await env.DB.prepare(
+      `SELECT s.endpoint AS endpoint, s.p256dh AS p256dh, s.auth AS auth FROM push_subs s JOIN users u ON u.id = s.user_id WHERE lower(u.email) IN (${q})`,
+    ).bind(...emails).all<{ endpoint: string; p256dh: string; auth: string }>();
+    await keepDevices(rows.results ?? []);
+  } catch {
+    // whatever copy we already hold stays; this must never break a caller
   }
 }
 
@@ -828,6 +996,7 @@ async function handlePushSubscribe(request: Request, env: Env): Promise<Response
   await env.DB!.prepare(
     'INSERT INTO push_subs (endpoint, user_id, p256dh, auth, created_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(endpoint) DO UPDATE SET user_id=excluded.user_id, p256dh=excluded.p256dh, auth=excluded.auth',
   ).bind(endpoint, user.id, p256dh, auth, Date.now()).run();
+  if (isAdminEmail(env, user.email)) await refreshOpsDevices(env, true);
   return json({ ok: true });
 }
 
@@ -902,6 +1071,7 @@ async function runPushCron(env: Env): Promise<void> {
   try {
     await env.DB.prepare("INSERT INTO ops_state (key, value) VALUES ('last_cron_run', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind(String(nowMs)).run();
     await clearOps(env, 'db', '데이터베이스가 다시 응답합니다.');
+    await refreshOpsDevices(env);
   } catch (err) {
     await alertOps(env, 'db', `크론에서 데이터베이스 쓰기 실패 — ${err instanceof Error ? err.message.slice(0, 180) : String(err)}`);
     return; // nothing below can work without the database
@@ -1205,24 +1375,66 @@ export default {
   },
 };
 
+/** A health verdict is reused this long, so a public endpoint cannot be turned
+ *  into database load by anyone who cares to refresh it. */
+const HEALTH_CACHE_MS = 20_000;
+let healthAt = 0;
+let healthProbe: { cronLastRun: number | null; db: boolean; error?: string } | null = null;
+
+/**
+ * GET /api/health — liveness, written for an outside monitor as much as for us.
+ *
+ * A binding that exists says nothing about a D1 that has hit the account's
+ * daily row limit, so the database is really asked; when it will not answer
+ * this is a 503, which any free uptime monitor turns into an email without a
+ * webhook anywhere. It is also a second chance to notice an outage: the alert
+ * goes out from whichever place the check came from (see worker/alert.ts).
+ *
+ * `cronAgeSec` over ~120 means the minute cron has stopped firing.
+ */
+async function handleHealth(env: Env, ctx?: Waiter): Promise<Response> {
+  const now = Date.now();
+  if (!healthProbe || now - healthAt >= HEALTH_CACHE_MS) {
+    const probe: { cronLastRun: number | null; db: boolean; error?: string } = { cronLastRun: null, db: false };
+    if (env.DB) {
+      try {
+        const r = await env.DB.prepare("SELECT value FROM ops_state WHERE key='last_cron_run'").first<{ value: string }>();
+        probe.cronLastRun = r ? Number(r.value) : null;
+        probe.db = true;
+      } catch (err) {
+        probe.error = err instanceof Error ? err.message.slice(0, 180) : String(err);
+      }
+    }
+    healthProbe = probe;
+    healthAt = now;
+  }
+  const h = healthProbe;
+  // No binding at all is not an outage: there is simply no database here.
+  const down = Boolean(env.DB) && !h.db;
+  const said = down
+    ? alertOps(env, 'db', `데이터베이스가 응답하지 않습니다 — ${h.error ?? '(이유 없음)'}`)
+    : clearOps(env, 'db', '데이터베이스가 다시 응답합니다.');
+  if (ctx) ctx.waitUntil(said); else void said;
+  return json({
+    ok: !down,
+    service: '24houring-api',
+    db: h.db,
+    auth: Boolean(env.GOOGLE_CLIENT_ID),
+    billing: Boolean(env.POLAR_ACCESS_TOKEN),
+    push: Boolean(env.VAPID_PRIVATE_KEY && env.VAPID_PUBLIC_KEY),
+    cronLastRun: h.cronLastRun,
+    cronAgeSec: h.cronLastRun ? Math.round((now - h.cronLastRun) / 1000) : null,
+    ts: now,
+  }, down ? 503 : 200);
+}
+
 async function route(request: Request, env: Env, ctx?: Waiter): Promise<Response> {
     const url = new URL(request.url);
     const p = url.pathname;
     const m = request.method;
 
     if (p.startsWith('/api/')) {
-      if (p === '/api/health' && m === 'GET') {
-        // Cron liveness: age of the last scheduled run (null if never / DB down).
-        // cronAgeSec > ~120 means the minute cron has stopped firing.
-        let cronLastRun: number | null = null;
-        try {
-          const r = await env.DB?.prepare("SELECT value FROM ops_state WHERE key='last_cron_run'").first<{ value: string }>();
-          cronLastRun = r ? Number(r.value) : null;
-        } catch {
-          // best-effort — health must never fail on a DB hiccup
-        }
-        return json({ ok: true, service: '24houring-api', db: Boolean(env.DB), auth: Boolean(env.GOOGLE_CLIENT_ID), billing: Boolean(env.POLAR_ACCESS_TOKEN), push: Boolean(env.VAPID_PRIVATE_KEY && env.VAPID_PUBLIC_KEY), cronLastRun, cronAgeSec: cronLastRun ? Math.round((Date.now() - cronLastRun) / 1000) : null, ts: Date.now() });
-      }
+      if (p === '/api/health' && m === 'GET') return handleHealth(env, ctx);
       if (p === '/api/auth/google/start' && m === 'GET') return handleStart(request, env);
       if (p === '/api/auth/google/callback' && m === 'GET') return handleCallback(request, env, ctx);
       if (p === '/api/me' && m === 'GET') return handleMe(request, env, ctx);
@@ -1247,6 +1459,9 @@ async function route(request: Request, env: Env, ctx?: Waiter): Promise<Response
       if (p === '/api/referral/claim' && m === 'POST') return handleReferralClaim(request, env);
       if (p === '/api/share' && m === 'POST') return handleShareCreate(request, env);
       if (p === '/api/metrics' && m === 'POST') return handleMetrics(request, env);
+      if (p === '/api/life/memoir' && m === 'GET') return handleMemoirState(request, env);
+      if (p === '/api/life/memoir' && m === 'POST') return handleMemoirWrite(request, env, ctx);
+      if (p === '/api/life/memoir/checkout' && m === 'POST') return handleMemoirCheckout(request, env);
       if (p === '/api/geo' && m === 'GET') return handleGeo(request);
       {
         const share = /^\/api\/share\/([A-Za-z0-9]{4,24})(\/og\.png)?$/.exec(p);

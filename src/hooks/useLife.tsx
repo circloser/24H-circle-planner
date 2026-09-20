@@ -142,6 +142,18 @@ export function useLife() {
     setLife(next);
   }, [readOnly]);
 
+  /** Keep the memoir that was just written. Saved at once, like the note
+   *  above it: a few pages are too dear to wait for the next render. */
+  const setMemoir = useCallback((text: string) => {
+    const now = new Date().toISOString();
+    const body = text.trim();
+    const next = { ...current.current, memoir: body ? { text: body, createdAt: now } : null, updatedAt: now };
+    current.current = next;
+    if (!readOnly) persistLocal(LIFE_KEY, encodeLife(next));
+    loaded.current = next;
+    setLife(next);
+  }, [readOnly]);
+
   /** A restored backup replaces the whole record; pictures only the old one
    *  used leave the device's store. */
   const replace = useCallback((next: LifeData) => {
@@ -154,7 +166,7 @@ export function useLife() {
 
   return {
     life, readOnly, generation, setProfile, addMilestone, updateMilestone, removeMilestone, restoreMilestone,
-    addMember, updateMember, removeMember, restoreMember, setEndingNote, replace,
+    addMember, updateMember, removeMember, restoreMember, setEndingNote, setMemoir, replace,
   };
 }
 

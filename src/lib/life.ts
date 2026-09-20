@@ -62,6 +62,8 @@ export interface LifeData {
   family: FamilyMember[];
   milestones: Milestone[];
   endingNote: { text: string; updatedAt: string } | null;
+  /** The memoir written from this line, once it has been (lib/life-memoir). */
+  memoir: { text: string; createdAt: string } | null;
   updatedAt: string;
 }
 
@@ -71,6 +73,7 @@ export const MAX_DESCRIPTION = 1000;
 export const MAX_NAME = 40;
 export const MAX_NOTE = 200;
 export const MAX_ENDING = 10_000;
+export const MAX_MEMOIR = 40_000;
 const MIN_YEAR = 1800;
 const MAX_YEAR = 2200;
 
@@ -80,6 +83,7 @@ export const emptyLife = (): LifeData => ({
   family: [],
   milestones: [],
   endingNote: null,
+  memoir: null,
   updatedAt: '',
 });
 
@@ -277,12 +281,15 @@ export function decodeLife(parsed: unknown): LifeData | null {
   const family = (Array.isArray(p['family']) ? p['family'] : []).map(cleanMember).filter(unique);
   const note = p['endingNote'] as Record<string, unknown> | null | undefined;
   const text = note && typeof note['text'] === 'string' ? note['text'].slice(0, MAX_ENDING) : '';
+  const mem = p['memoir'] as Record<string, unknown> | null | undefined;
+  const memoir = mem && typeof mem['text'] === 'string' ? mem['text'].slice(0, MAX_MEMOIR) : '';
   return {
     version: 1,
     profile: cleanProfile(p['profile']),
     family,
     milestones,
     endingNote: text ? { text, updatedAt: typeof note!['updatedAt'] === 'string' ? note!['updatedAt'] : '' } : null,
+    memoir: memoir ? { text: memoir, createdAt: typeof mem!['createdAt'] === 'string' ? mem!['createdAt'] : '' } : null,
     updatedAt: typeof p['updatedAt'] === 'string' ? p['updatedAt'] : '',
   };
 }
