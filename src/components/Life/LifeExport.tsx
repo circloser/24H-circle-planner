@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Download, FileJson, Loader2, Share2, ShieldAlert, Upload } from 'lucide-react';
+import { Download, FileJson, Link2, Loader2, Share2, ShieldAlert, Upload } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/usePreferences';
@@ -14,6 +14,7 @@ import {
   type LifeCategory, type LifeData,
 } from '@/lib/life';
 import { downloadLifeBackup } from '@/lib/life-backup';
+import { createLifeShareUrl } from '@/lib/life-share';
 import type { LifeImageInput, LifeImageRow } from '@/lib/export/lifeImage';
 import type { TKey } from '@/i18n/translations';
 import { CATEGORY_LABEL, RELATION_LABEL } from './categories';
@@ -107,6 +108,9 @@ export function LifeExportDialog({ open, onOpenChange, api, colors }: {
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [restore, setRestore] = useState<ReturnType<typeof readLifeFile> | null>(null);
+  const [hideNames, setHideNames] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
   const canShare = typeof navigator !== 'undefined' && typeof navigator.canShare === 'function'
     && navigator.canShare({ files: [new File([''], 'a.png', { type: 'image/png' })] });
 
@@ -120,6 +124,7 @@ export function LifeExportDialog({ open, onOpenChange, api, colors }: {
     /* eslint-disable react-hooks/set-state-in-effect */
     setChecked(false);
     setRestore(null);
+    setShareUrl(null);
     /* eslint-enable react-hooks/set-state-in-effect */
     if (!hasLine) return;
     let live = true;
@@ -212,6 +217,41 @@ export function LifeExportDialog({ open, onOpenChange, api, colors }: {
             </Button>
           </div>
 
+          {/* A read-only link for the family. No photos travel, and the
+              names can be left out — they are other people's to give. */}
+          <div className="flex flex-col gap-2 border-t border-border pt-4">
+            <p className="text-sm font-medium text-foreground">{t('life.share.title')}</p>
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <input type="checkbox" data-life-share-hide checked={hideNames} onChange={(e) => setHideNames(e.target.checked)} className="h-4 w-4" />
+              {t('life.share.hideNames')}
+            </label>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" size="sm" className="gap-1.5" data-life-share disabled={sharing}
+                onClick={() => {
+                  setSharing(true);
+                  void createLifeShareUrl(life, { hideNames })
+                    .then(async (url) => {
+                      if (!url) return toast.error(t('life.share.failed'));
+                      setShareUrl(url);
+                      track('life_share');
+                      try {
+                        await navigator.clipboard.writeText(url);
+                        toast.success(t('life.share.copied'));
+                      } catch {
+                        toast.success(t('life.share.made'));
+                      }
+                    })
+                    .finally(() => setSharing(false));
+                }}>
+                {sharing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 aria-hidden className="h-4 w-4" />}
+                {t('life.share.make')}
+              </Button>
+              {shareUrl && (
+                <input readOnly value={shareUrl} data-life-share-url onFocus={(e) => e.currentTarget.select()}
+                  className="min-w-0 flex-1 rounded-md border border-border bg-transparent px-2 py-1 text-xs text-muted-foreground" />
+              )}
+            </div>
+          </div>
           </>}
           <div className={`flex flex-col gap-2 ${hasLine ? 'border-t border-border pt-4' : ''}`}>
             <p className="text-sm font-medium text-foreground">{t('life.export.jsonTitle')}</p>

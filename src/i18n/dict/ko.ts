@@ -983,6 +983,23 @@ export const ko = {
   'life.quick.child': '첫 아이',
   'life.quick.retire': '은퇴',
   'sync.tooLarge': '기록이 너무 커서 동기화하지 못했어요. 내보내기에서 JSON 백업을 받아 두시고, 긴 설명이나 사건을 조금 줄여 주세요.',
+  // Life — the timeline of a whole life (components/Life).
+  'life.share.title': '가족과 나누기',
+  'life.share.hideNames': '이름은 빼고 보내기',
+  'life.share.make': '공유 링크 만들기',
+  'life.share.copied': '링크를 복사했어요',
+  'life.share.made': '공유 링크를 만들었어요',
+  'life.share.failed': '링크를 만들지 못했어요. 잠시 후 다시 시도해 주세요.',
+  // Life — the timeline of a whole life (components/Life).
+  'life.nudge.plan': '「{title}」이(가) 다가와요.',
+  'life.nudge.review': '{year}년에 있었던 일이 아직 없어요.',
+  'life.nudge.see': '보러 가기',
+  'life.nudge.write': '적어 보기',
+  // Life — the timeline of a whole life (components/Life).
+  'life.cal.birthday': '{who} 생일',
+  'life.cal.years': '{title} {n}주년',
+  'life.cal.me': '나',
+  'settings.lifeInCalendar': '캘린더에 라이프 기념일 표시',
 } as const;
 
 /** Every translation key — derived, never hand-maintained. */

@@ -979,4 +979,21 @@ export const fr: Record<TKey, string> = {
   'life.quick.child': 'Premier enfant',
   'life.quick.retire': 'Retraite',
   'sync.tooLarge': 'Vos données sont trop volumineuses pour être synchronisées. Téléchargez une sauvegarde JSON depuis Exporter et raccourcissez quelques longues entrées.',
+  // Life — the timeline of a whole life (components/Life).
+  'life.share.title': 'Partager avec la famille',
+  'life.share.hideNames': 'Sans les noms',
+  'life.share.make': 'Créer un lien',
+  'life.share.copied': 'Lien copié',
+  'life.share.made': 'Lien créé',
+  'life.share.failed': 'Impossible de créer le lien. Réessayez dans un instant.',
+  // Life — the timeline of a whole life (components/Life).
+  'life.nudge.plan': '« {title} » approche.',
+  'life.nudge.review': 'Rien n’est écrit pour {year}.',
+  'life.nudge.see': 'Y aller',
+  'life.nudge.write': 'En écrire un',
+  // Life — the timeline of a whole life (components/Life).
+  'life.cal.birthday': 'Anniversaire de {who}',
+  'life.cal.years': '{title} · {n} ans',
+  'life.cal.me': 'Moi',
+  'settings.lifeInCalendar': 'Anniversaires de vie dans le calendrier',
 };

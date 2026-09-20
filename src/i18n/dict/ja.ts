@@ -979,4 +979,21 @@ export const ja: Record<TKey, string> = {
   'life.quick.child': '第一子',
   'life.quick.retire': '退職',
   'sync.tooLarge': '記録が大きすぎて同期できませんでした。書き出しからJSONバックアップを保存し、長い記述を少し減らしてください。',
+  // Life — the timeline of a whole life (components/Life).
+  'life.share.title': '家族と共有',
+  'life.share.hideNames': '名前を入れずに送る',
+  'life.share.make': '共有リンクを作る',
+  'life.share.copied': 'リンクをコピーしました',
+  'life.share.made': '共有リンクを作りました',
+  'life.share.failed': 'リンクを作成できませんでした。しばらくしてからお試しください。',
+  // Life — the timeline of a whole life (components/Life).
+  'life.nudge.plan': '「{title}」が近づいています。',
+  'life.nudge.review': '{year}年のことがまだ書かれていません。',
+  'life.nudge.see': '見に行く',
+  'life.nudge.write': '書いてみる',
+  // Life — the timeline of a whole life (components/Life).
+  'life.cal.birthday': '{who}の誕生日',
+  'life.cal.years': '{title} {n}周年',
+  'life.cal.me': 'わたし',
+  'settings.lifeInCalendar': 'カレンダーにライフの記念日を表示',
 };

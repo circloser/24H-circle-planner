@@ -17,7 +17,9 @@
 import type { Env } from './index';
 
 const ORIGIN = 'https://24houring.com';
-const MAX_PAYLOAD = 8_000; // b64url chars (~6KB JSON — far above any real day)
+// b64url chars. A day needs ~6KB; a whole life line (dates, titles, the
+// words to leave behind) needs more, and the client trims itself to fit.
+const MAX_PAYLOAD = 24_000;
 const MAX_NAME = 120;
 const MAX_PNG_B64 = 480_000; // ~360KB decoded
 const RATE_LIMIT_PER_HOUR = 30;

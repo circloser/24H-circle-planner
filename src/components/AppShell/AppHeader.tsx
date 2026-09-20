@@ -446,6 +446,14 @@ export function AppHeader({
                 <CalendarRange className="h-4 w-4" />
                 {t('ical.menu')}
               </DropdownMenuItem>
+              <DropdownMenuCheckboxItem
+                data-life-cal-toggle
+                checked={prefs.lifeInCalendar !== false}
+                onCheckedChange={(v) => setPreference('lifeInCalendar', v === true)}
+                onSelect={(e) => e.preventDefault()}
+              >
+                {t('settings.lifeInCalendar')}
+              </DropdownMenuCheckboxItem>
               <DropdownMenuItem onClick={onOpenMarketing} className="gap-2">
                 <Mail className="h-4 w-4" />
                 {t('marketing.menu')}

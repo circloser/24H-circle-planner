@@ -333,7 +333,7 @@ export function drawCalendar(ctx: CanvasRenderingContext2D, input: CalendarImage
       if (!ev) return;
       const ly = y + HEAD_H + lane * LINE_H;
       const raw = ev.color ?? '#6366f1';
-      const color = ev.src === 'ical' ? raw : shownColor(raw, input.theme);
+      const color = ev.src ? raw : shownColor(raw, input.theme);
       ctx.font = `500 17px ${FONT}`;
       if (!ev.time) {
         const first = ev.index === 0;
@@ -342,7 +342,7 @@ export function drawCalendar(ctx: CanvasRenderingContext2D, input: CalendarImage
         const x1 = x + cellW - (last ? 4 : 0);
         const radius: [number, number, number, number] = [first ? 5 : 0, last ? 5 : 0, last ? 5 : 0, first ? 5 : 0];
         roundRect(ctx, x0, ly, x1 - x0, LINE_H - 3, radius);
-        if (ev.src === 'ical') {
+        if (ev.src) {
           ctx.strokeStyle = color;
           ctx.lineWidth = 1.5;
           ctx.stroke();
@@ -357,7 +357,7 @@ export function drawCalendar(ctx: CanvasRenderingContext2D, input: CalendarImage
       } else {
         ctx.beginPath();
         ctx.arc(x + 12, ly + LINE_H / 2 - 1, 5, 0, Math.PI * 2);
-        if (ev.src === 'ical') {
+        if (ev.src) {
           ctx.strokeStyle = color;
           ctx.lineWidth = 1.5;
           ctx.stroke();

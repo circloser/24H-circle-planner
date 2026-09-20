@@ -23,6 +23,18 @@ async function setup(base, opts = {}) {
     await route.fulfill({ status: 204, body: '' });
   });
   await page.route('**/api/sync*', (route) => route.fulfill(json({ version: 0, data: {}, updatedAt: 0 })));
+  // The share store, in memory: POST keeps the code, GET hands it back.
+  const shares = new Map();
+  await page.route('**/api/share', async (route) => {
+    const body = JSON.parse(route.request().postData() ?? '{}');
+    const id = `share${shares.size + 1}`;
+    shares.set(id, body.d);
+    await route.fulfill(json({ id, url: `https://24houring.com/s/${id}` }));
+  });
+  await page.route('**/api/share/*', async (route) => {
+    const id = new URL(route.request().url()).pathname.split('/').pop();
+    await route.fulfill(shares.has(id) ? json({ d: shares.get(id), name: '' }) : { status: 404, body: 'no' });
+  });
   await page.route('**/api/me', (route) => route.fulfill(json({ user: { id: 'u1', email: 'me@example.com', provider: 'google' }, plan: 'free', admin: false })));
   await page.goto(`${base}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
@@ -41,7 +53,7 @@ export async function run() {
   const titles = () => page.$$eval('[data-life-moment]', (els) => els.map((e) => e.querySelector('.life-serif')?.textContent ?? ''));
   const openLife = async () => {
     await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForSelector('svg[data-circle-timeline], [data-life-view]', { timeout: 15000 });
+    await page.waitForSelector('svg[data-circle-timeline], [data-life-view], [data-calendar-view]', { timeout: 15000 });
     if ((await count('[data-life-view]')) === 0) await page.locator('[data-life-toggle]').click();
     await page.waitForSelector('[data-life-view]', { timeout: 15000 });
     await wait(500);
@@ -57,7 +69,7 @@ export async function run() {
   const flush = async () => {
     await page.evaluate(() => Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true }));
     await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
-    await wait(800);
+    await wait(1200); // the beacon is fire-and-forget: give it room
   };
   /** Add without a button: the keyboard's way in (Tab reaches it). */
   const add = async () => {
@@ -321,6 +333,56 @@ export async function run() {
     await wait(600);
     pass('…and shows once scrolled to', (await last.evaluate((el) => getComputedStyle(el).opacity)) === '1');
 
+    // 16b. A read-only link for the family.
+    await headerExport();
+    await page.locator('[data-life-share-hide]').check();
+    await page.locator('[data-life-share]').click();
+    await page.waitForSelector('[data-life-share-url]', { timeout: 15000 });
+    const shareUrl = await page.locator('[data-life-share-url]').inputValue();
+    pass('a share link is made', /\/s\/share\d+$/.test(shareUrl), shareUrl);
+    await page.keyboard.press('Escape');
+    await page.goto(`${base}/s/${shareUrl.split('/').pop()}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-life-timeline]', { timeout: 15000 });
+    await wait(500);
+    const shared = await page.$$eval('[data-life-moment] .life-serif', (els) => els.map((e) => e.textContent));
+    pass('…that opens as a line of its own', shared.length === 30, `${shared.length} moments`);
+    pass('…read-only: nothing to press, and no + on the line',
+      (await page.locator('[data-life-moment] button').count()) === 0 && (await count('[data-life-add]')) === 0);
+    pass('…and it left the names out', !(await page.locator('body').innerText()).includes('이정숙'));
+    await page.goBack({ waitUntil: 'domcontentloaded' });
+    await openLife();
+
+    // 16c. The calendar shows the line's birthdays and pinned anniversaries.
+    await page.evaluate((k) => {
+      const now = new Date();
+      const life = JSON.parse(localStorage.getItem(k));
+      const pad = (n) => String(n).padStart(2, '0');
+      const md = `${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+      life.profile.birthDate = `1985-${md}`;
+      life.milestones = [{ id: 'p1', date: `2015-${md}`, title: '결혼', category: 'relationship', isPlan: false, pinned: true }];
+      localStorage.setItem(k, JSON.stringify(life));
+      localStorage.setItem('24h-circle-planner.prefs', JSON.stringify({ version: 1, prefs: { language: 'ko', chartView: 'calendar' } }));
+    }, LIFE_KEY);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-calendar-view]', { timeout: 15000 });
+    await wait(800);
+    const today = new Date();
+    const todayCell = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const chips = await page.locator(`[data-day="${todayCell}"]`).first().innerText();
+    pass('the calendar carries the birthday and the pinned anniversary',
+      /생일/.test(chips) && /결혼/.test(chips), JSON.stringify(chips));
+    pass('…read-only, like an imported calendar',
+      (await page.locator(`[data-day="${todayCell}"] [data-event][data-imported]`).count()) >= 2);
+    await page.locator('[data-app-header] button[aria-label="설정"]').click();
+    await wait(300);
+    await page.locator('[data-life-cal-toggle]').click();
+    await wait(600);
+    await page.keyboard.press('Escape');
+    await wait(400);
+    pass('…and the ⚙ switch takes them away',
+      !/생일/.test(await page.locator(`[data-day="${todayCell}"]`).first().innerText()));
+    await openLife();
+
     // 17. A phone: the line on the left, every card to its right.
     await page.setViewportSize({ width: 390, height: 844 });
     await wait(500);
@@ -333,7 +395,7 @@ export async function run() {
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
     const want = ['life_open', 'life_start', 'life_add', 'life_image:downloaded', 'life_backup:json', 'upgrade_open:life'];
     await flush();
-    pass('usage is counted', want.every((w) => counted.includes(w)), want.filter((w) => !counted.includes(w)).join(','));
+    pass('usage is counted', want.every((w) => counted.includes(w)), `missing ${want.filter((w) => !counted.includes(w)).join(',')} · saw ${[...new Set(counted)].join(',')}`);
   } finally {
     await browser.close();
   }

@@ -982,4 +982,21 @@ export const en: Record<TKey, string> = {
   'life.quick.child': 'First child',
   'life.quick.retire': 'Retirement',
   'sync.tooLarge': 'Your records are too large to sync. Download a JSON backup from Export, and shorten a few long entries.',
+  // Life — the timeline of a whole life (components/Life).
+  'life.share.title': 'Share with family',
+  'life.share.hideNames': 'Leave the names out',
+  'life.share.make': 'Create a link',
+  'life.share.copied': 'Link copied',
+  'life.share.made': 'Link created',
+  'life.share.failed': 'Could not create the link. Please try again in a moment.',
+  // Life — the timeline of a whole life (components/Life).
+  'life.nudge.plan': '“{title}” is coming up.',
+  'life.nudge.review': 'Nothing is written for {year} yet.',
+  'life.nudge.see': 'Go to it',
+  'life.nudge.write': 'Write one',
+  // Life — the timeline of a whole life (components/Life).
+  'life.cal.birthday': '{who}’s birthday',
+  'life.cal.years': '{title} · {n} years',
+  'life.cal.me': 'Me',
+  'settings.lifeInCalendar': 'Life anniversaries in the calendar',
 };

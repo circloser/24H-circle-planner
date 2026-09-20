@@ -12,14 +12,14 @@ const PROD_ORIGIN = 'https://24houring.com';
 
 // ─── UTF-8 ⇄ base64url (handles Korean labels + emoji) ────────────────────────
 
-function b64urlEncode(s: string): string {
+export function b64urlEncode(s: string): string {
   const bytes = new TextEncoder().encode(s);
   let bin = '';
   for (const b of bytes) bin += String.fromCharCode(b);
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-function b64urlDecode(s: string): string {
+export function b64urlDecode(s: string): string {
   const b = s.replace(/-/g, '+').replace(/_/g, '/');
   const bin = atob(b);
   const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));

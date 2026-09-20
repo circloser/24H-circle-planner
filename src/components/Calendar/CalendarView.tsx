@@ -23,6 +23,11 @@ import { loadPhoto } from '@/lib/calendar-photos';
 import { CALENDAR_EXPORT_EVENT } from '@/lib/calendar-export';
 import { CalendarExportDialog } from './CalendarExport';
 import { COLOR_THEMES } from '@/data/color-themes';
+import { loadPersisted } from '@/hooks/usePersistedState';
+import { lifeCodec } from '@/hooks/useLife';
+import { LIFE_KEY, type LifeCategory } from '@/lib/life';
+import { lifeAnniversaries } from '@/lib/life-calendar';
+import { categoryColors } from '@/components/Life/categories';
 import { chipInk, shownColor, themeAccent } from '@/lib/calendar-theme';
 import { MONTH_ROWS, WEEK_DAYS, addDays, homeOf, dayGap, monthCells, monthPair, partsOf, shiftMonth, thisMonth, todayKey, type YearMonth } from '@/lib/calendar-grid';
 
@@ -103,11 +108,11 @@ function Chip({ ev, showText = true, inGrid = false }: { ev: DayEvent; showText?
   const raw = ev.color ?? DEFAULT_EVENT_COLOR;
   // A plan's stored colour is shown in the theme; an imported calendar keeps
   // its own tone, so the two never blur together.
-  const color = ev.src === 'ical' ? raw : shownColor(raw, theme);
+  const color = ev.src ? raw : shownColor(raw, theme);
   const mid = ev.index > 0;
   const ends = ev.length === 1 ? 'rounded' : ev.index === 0 ? 'rounded-l' : ev.index === ev.length - 1 ? 'rounded-r' : '';
   // An imported entry is drawn hollow: it is someone else's, and read-only.
-  const imported = ev.src === 'ical';
+  const imported = !!ev.src;
   // Bleed over the cell's padding on the sides the span continues on; the cell
   // clips at its padding edge, so the bar meets the grid line either way.
   const bleed = inGrid
@@ -310,7 +315,7 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver, decorating
                     // An empty lane still holds its line, so the bars below it
                     // stay level with the same bars in the next day.
                     <span key={`gap${lane}`} className="h-[13px] shrink-0 sm:h-[17px]" aria-hidden />
-                  ) : ev.src === 'ical' ? (
+                  ) : ev.src ? (
                     <Chip key={`${ev.from}-${ev.id}`} ev={ev} showText={false} inGrid />
                   ) : (
                     <Handle key={`${ev.from}-${ev.id}`} ev={ev} on={cell.key} onDragStart={onDragStart}>
@@ -330,7 +335,7 @@ function Month({ at, imported, drag, onOpen, onDragStart, onDragOver, decorating
                   className="absolute left-1/2 top-1/2 z-40 flex w-[max(100%,180px)] max-h-[60vh] -translate-x-1/2 -translate-y-1/2 cursor-pointer flex-col gap-0.5 overflow-auto rounded-lg border border-border bg-surface p-1 shadow-xl"
                 >
                   {number}
-                  {list.map((ev) => (ev.src === 'ical' ? (
+                  {list.map((ev) => (ev.src ? (
                     <Chip key={`${ev.from}-${ev.id}`} ev={ev} />
                   ) : (
                     <Handle key={`${ev.from}-${ev.id}`} ev={ev} on={cell.key} onDragStart={onDragStart}>
@@ -427,11 +432,26 @@ export function CalendarView() {
   // Only the two months on screen are expanded — the six-week grids overshoot
   // the months themselves, so the window runs from the first cell to the last.
   const importedDays = feeds.days;
-  const imported = useMemo(() => {
+  // Read-only entries from elsewhere: an imported calendar, and (unless it is
+  // turned off) the birthdays and pinned anniversaries of the life line. The
+  // life record is read once per visit — it is edited on its own page.
+  const lifeRecord = useMemo(() => loadPersisted(LIFE_KEY, lifeCodec), []);
+  const showLife = prefs.lifeInCalendar !== false;
+  const imported = useMemo<Record<string, DayEvent[]>>(() => {
     const first = monthCells(left.y, left.m)[0].key;
     const last = monthCells(right.y, right.m)[MONTH_CELLS - 1].key;
-    return importedDays(first, last);
-  }, [importedDays, left.y, left.m, right.y, right.m]);
+    const feeds = importedDays(first, last);
+    if (!showLife) return feeds;
+    const cat = categoryColors(theme);
+    const days = lifeAnniversaries(lifeRecord, first, last, {
+      birthday: (who) => t('life.cal.birthday', { who }),
+      years: (title, n) => t('life.cal.years', { title, n: String(n) }),
+      me: t('life.cal.me'), mother: t('life.rel.mother'), father: t('life.rel.father'),
+    }, { birth: cat.birth, family: cat.family, moment: (c) => cat[c as LifeCategory] ?? cat.other });
+    const out: Record<string, DayEvent[]> = { ...feeds };
+    for (const [key, list] of Object.entries(days)) out[key] = [...(out[key] ?? []), ...list];
+    return out;
+  }, [importedDays, left.y, left.m, right.y, right.m, lifeRecord, showLife, theme, t]);
   const sorted = picked
     ? sortDayEvents([...dayEvents(events, picked.start), ...(imported[picked.start] ?? [])])
     : [];
@@ -752,7 +772,7 @@ export function CalendarView() {
                     carry?.id === rowKey ? 'border-primary bg-primary/5' : 'border-border'
                   }`}>
                   <div className="flex items-center gap-2">
-                    {ev.src === 'ical' ? (
+                    {ev.src ? (
                       <span className="w-4 shrink-0" aria-hidden />
                     ) : (
                       <button type="button" data-row-handle aria-label={t('calendar.reorder')} title={t('calendar.reorder')}
@@ -763,7 +783,7 @@ export function CalendarView() {
                     )}
                     <span className="min-w-0 flex-1"><Chip ev={ev} /></span>
                     {repeating && <span className="shrink-0 text-xs text-muted-foreground">{t(REPEAT_LABEL[ev.repeat ?? 'none'])}</span>}
-                    {ev.src === 'ical' ? (
+                    {ev.src ? (
                       <span className="shrink-0 text-xs text-muted-foreground" data-row-imported>{t('ical.readOnly')}</span>
                     ) : (
                       <>

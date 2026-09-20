@@ -17,6 +17,7 @@ import {
   type FamilyMember, type LifeCategory,
 } from '@/lib/life';
 import { dismissBackupBanner, downloadLifeBackup, needsBackupWarning } from '@/lib/life-backup';
+import { useLifeNudge } from '@/hooks/useLifeNudge';
 import { LIFE_EXPORT_EVENT } from '@/lib/life-export';
 import { CATEGORY_ICON, CATEGORY_LABEL, RELATION_LABEL, categoryColors, inkOf } from './categories';
 import { LifePhoto, LifeTimeline } from './LifeTimeline';
@@ -60,6 +61,8 @@ export function LifeView() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [bannerOff, setBannerOff] = useState(false);
+  // A plan coming up, or a year with nothing written in it yet.
+  const { nudge, dismiss } = useLifeNudge();
   useEffect(() => {
     const open = () => setExporting(true);
     window.addEventListener(LIFE_EXPORT_EVENT, open);
@@ -127,6 +130,27 @@ export function LifeView() {
           </>
         )}
 
+        {hasLine && nudge && (
+          <p className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[15px] italic text-foreground/80" data-life-nudge={nudge.kind}>
+            <span>
+              {nudge.kind === 'plan'
+                ? t('life.nudge.plan', { title: nudge.moment.title })
+                : t('life.nudge.review', { year: String(nudge.year) })}
+            </span>
+            <button type="button" data-life-nudge-go className="not-italic text-primary underline decoration-1 underline-offset-4"
+              onClick={() => {
+                if (nudge.kind === 'plan') jumpTo(nudge.moment.id);
+                else addMoment({ date: String(nudge.year) });
+                dismiss(nudge.key);
+              }}>
+              {t(nudge.kind === 'plan' ? 'life.nudge.see' : 'life.nudge.write')}
+            </button>
+            <button type="button" aria-label={t('common.close')} data-life-nudge-close
+              className="not-italic text-muted-foreground hover:text-foreground" onClick={() => dismiss(nudge.key)}>
+              <X aria-hidden className="h-4 w-4" />
+            </button>
+          </p>
+        )}
         {api.readOnly && (
           <p role="status" data-life-newer
             className="mt-4 rounded-xl border border-border bg-muted/40 px-4 py-3 text-left text-sm text-foreground">

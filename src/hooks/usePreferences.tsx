@@ -119,6 +119,8 @@ export interface Preferences {
   colorTheme: string | null;
   /** Pro: the calendar's paper texture (a CALENDAR_PAPERS id). */
   calendarPaper: string;
+  /** Show the life line's birthdays and pinned anniversaries in the calendar. */
+  lifeInCalendar: boolean;
   /** Browser notification when the day crosses into the next slice of the
    *  active timetable (needs per-device Notification permission too). */
   sliceAlarms: boolean;
@@ -181,6 +183,7 @@ const DEFAULT_PREFS: Preferences = {
   chartLayout: 'center',
   colorTheme: null,
   calendarPaper: 'none',
+  lifeInCalendar: true,
   sliceAlarms: false,
   pushAlarms: false,
   snapMinutes: 5,

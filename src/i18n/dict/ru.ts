@@ -979,4 +979,21 @@ export const ru: Record<TKey, string> = {
   'life.quick.child': 'Первый ребёнок',
   'life.quick.retire': 'Выход на пенсию',
   'sync.tooLarge': 'Данные слишком велики для синхронизации. Скачайте резервную копию JSON в разделе «Экспорт» и сократите несколько длинных записей.',
+  // Life — the timeline of a whole life (components/Life).
+  'life.share.title': 'Поделиться с семьёй',
+  'life.share.hideNames': 'Без имён',
+  'life.share.make': 'Создать ссылку',
+  'life.share.copied': 'Ссылка скопирована',
+  'life.share.made': 'Ссылка создана',
+  'life.share.failed': 'Не удалось создать ссылку. Попробуйте позже.',
+  // Life — the timeline of a whole life (components/Life).
+  'life.nudge.plan': '«{title}» уже скоро.',
+  'life.nudge.review': 'За {year} год пока ничего не записано.',
+  'life.nudge.see': 'Посмотреть',
+  'life.nudge.write': 'Записать',
+  // Life — the timeline of a whole life (components/Life).
+  'life.cal.birthday': 'День рождения: {who}',
+  'life.cal.years': '{title} — {n} лет',
+  'life.cal.me': 'Я',
+  'settings.lifeInCalendar': 'Годовщины линии жизни в календаре',
 };

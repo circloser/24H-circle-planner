@@ -19,7 +19,7 @@ export const METRIC_EVENTS = [
   // Calendar and decorating.
   'calendar_open', 'cal_plan_add', 'ical_connect', 'decor_tool', 'decor_place', 'paper_set', 'cal_image',
   // Life (the whole-life timeline).
-  'life_open', 'life_start', 'life_add', 'life_image', 'life_backup',
+  'life_open', 'life_start', 'life_add', 'life_image', 'life_backup', 'life_share',
 ] as const;
 
 export type MetricEvent = (typeof METRIC_EVENTS)[number];

@@ -977,4 +977,21 @@ export const zh: Record<TKey, string> = {
   'life.quick.child': '第一个孩子',
   'life.quick.retire': '退休',
   'sync.tooLarge': '记录太大，无法同步。请在导出中下载 JSON 备份，并精简部分较长的内容。',
+  // Life — the timeline of a whole life (components/Life).
+  'life.share.title': '分享给家人',
+  'life.share.hideNames': '不带姓名',
+  'life.share.make': '生成分享链接',
+  'life.share.copied': '已复制链接',
+  'life.share.made': '已生成分享链接',
+  'life.share.failed': '无法生成链接，请稍后再试。',
+  // Life — the timeline of a whole life (components/Life).
+  'life.nudge.plan': '「{title}」快到了。',
+  'life.nudge.review': '{year}年还没有记录。',
+  'life.nudge.see': '去看看',
+  'life.nudge.write': '写一条',
+  // Life — the timeline of a whole life (components/Life).
+  'life.cal.birthday': '{who}的生日',
+  'life.cal.years': '{title} {n}周年',
+  'life.cal.me': '我',
+  'settings.lifeInCalendar': '在日历中显示人生纪念日',
 };
