@@ -15,6 +15,10 @@ function dropPhoto(before: string | undefined, after?: string): void {
   if (before && before !== after) void deletePhoto(before);
 }
 
+/** How long a deleted entry can still be brought back. Its picture waits that
+ *  long too — deleting it at once would make the undo restore an empty frame. */
+export const UNDO_MS = 20_000;
+
 /** The stored record comes from a newer version of the app (an old copy still
  *  cached by the service worker): show nothing we might save over it. */
 function storedIsNewer(): boolean {
@@ -70,9 +74,27 @@ export function useLife() {
     edit((l) => ({ ...l, milestones: l.milestones.map((m) => (m.id === id ? { ...draft, id } : m)) }));
   }, [edit]);
 
-  const removeMilestone = useCallback((id: string) => {
-    dropPhoto(current.current.milestones.find((m) => m.id === id)?.photo);
+  /** Remove it, and hand back what it takes to put it back where it was. */
+  const removeMilestone = useCallback((id: string): { item: Milestone; at: number } | null => {
+    const at = current.current.milestones.findIndex((m) => m.id === id);
+    const item = at < 0 ? null : current.current.milestones[at];
     edit((l) => ({ ...l, milestones: l.milestones.filter((m) => m.id !== id) }));
+    if (item?.photo) {
+      const photo = item.photo;
+      window.setTimeout(() => {
+        if (!current.current.milestones.some((m) => m.photo === photo)) void deletePhoto(photo);
+      }, UNDO_MS);
+    }
+    return item ? { item, at } : null;
+  }, [edit]);
+
+  const restoreMilestone = useCallback((item: Milestone, at: number) => {
+    edit((l) => {
+      if (l.milestones.some((m) => m.id === item.id)) return l;
+      const next = [...l.milestones];
+      next.splice(Math.max(0, Math.min(at, next.length)), 0, item);
+      return { ...l, milestones: next };
+    });
   }, [edit]);
 
   const addMember = useCallback((draft: MemberDraft): string => {
@@ -86,9 +108,26 @@ export function useLife() {
     edit((l) => ({ ...l, family: l.family.map((f) => (f.id === id ? { ...draft, id } : f)) }));
   }, [edit]);
 
-  const removeMember = useCallback((id: string) => {
-    dropPhoto(current.current.family.find((f) => f.id === id)?.photo);
+  const removeMember = useCallback((id: string): { item: FamilyMember; at: number } | null => {
+    const at = current.current.family.findIndex((f) => f.id === id);
+    const item = at < 0 ? null : current.current.family[at];
     edit((l) => ({ ...l, family: l.family.filter((f) => f.id !== id) }));
+    if (item?.photo) {
+      const photo = item.photo;
+      window.setTimeout(() => {
+        if (!current.current.family.some((f) => f.photo === photo)) void deletePhoto(photo);
+      }, UNDO_MS);
+    }
+    return item ? { item, at } : null;
+  }, [edit]);
+
+  const restoreMember = useCallback((item: FamilyMember, at: number) => {
+    edit((l) => {
+      if (l.family.some((f) => f.id === item.id)) return l;
+      const next = [...l.family];
+      next.splice(Math.max(0, Math.min(at, next.length)), 0, item);
+      return { ...l, family: next };
+    });
   }, [edit]);
 
   /** Saved at once, not after the next render: the note is also saved as the
@@ -114,8 +153,8 @@ export function useLife() {
   }, []);
 
   return {
-    life, readOnly, generation, setProfile, addMilestone, updateMilestone, removeMilestone,
-    addMember, updateMember, removeMember, setEndingNote, replace,
+    life, readOnly, generation, setProfile, addMilestone, updateMilestone, removeMilestone, restoreMilestone,
+    addMember, updateMember, removeMember, restoreMember, setEndingNote, replace,
   };
 }
 

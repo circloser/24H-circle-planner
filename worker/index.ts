@@ -14,6 +14,7 @@ import { handleWidgetPut, handleWidgetPng, handleWidgetDelete } from './widget';
 import { handleMarketingRoute } from './marketing';
 import { handleMetrics, metricsSummary, type MetricRow } from './metrics';
 import { busyResponse, isDbUnavailable } from './busy';
+import { alertOps, clearOps } from './alert';
 import { handleGeo } from './geo';
 import { handleIcalFetch } from './ical';
 
@@ -38,6 +39,9 @@ export interface Env {
   VAPID_PUBLIC_KEY?: string;
   VAPID_PRIVATE_KEY?: string;
   VAPID_SUBJECT?: string;
+  /** Where operator alerts go when the database itself is down: a Slack,
+   *  Discord or any JSON webhook URL (runtime secret, optional). */
+  ALERT_WEBHOOK?: string;
 }
 
 /** Whether `email` is on the admin allowlist (always Pro). */
@@ -893,10 +897,14 @@ async function runPushCron(env: Env): Promise<void> {
   const nowMs = Date.now();
   // Heartbeat: every run stamps ops_state so a silent cron outage (like the
   // weeks it was rejected by the account cron-limit) is detectable via /api/health.
+  // It is also the minute-by-minute health check: the write is a real write,
+  // so when it throws, the database is not answering and the operator hears.
   try {
     await env.DB.prepare("INSERT INTO ops_state (key, value) VALUES ('last_cron_run', ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value").bind(String(nowMs)).run();
-  } catch {
-    // heartbeat is best-effort — never let it block sending alarms
+    await clearOps(env, 'db', '데이터베이스가 다시 응답합니다.');
+  } catch (err) {
+    await alertOps(env, 'db', `크론에서 데이터베이스 쓰기 실패 — ${err instanceof Error ? err.message.slice(0, 180) : String(err)}`);
+    return; // nothing below can work without the database
   }
   const { results } = await env.DB.prepare('SELECT user_id, boundaries, tz_offset, last_fired FROM push_plans').all<PushPlanRow>();
   const vapid = { publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY, subject: env.VAPID_SUBJECT || 'mailto:singlena@gmail.com' };
@@ -1180,7 +1188,11 @@ export default {
     } catch (err) {
       const url = new URL(request.url);
       if (url.pathname.startsWith('/api/') && isDbUnavailable(err)) {
-        console.error('database unavailable', url.pathname, err instanceof Error ? err.message : err);
+        const why = err instanceof Error ? err.message : String(err);
+        console.error('database unavailable', url.pathname, why);
+        // Tell the operator once (the push alerts cannot: they read D1 too).
+        const said = alertOps(env, 'db', `데이터베이스가 응답하지 않습니다 (${url.pathname}) — ${why.slice(0, 180)}`);
+        if (ctx) ctx.waitUntil(said); else void said;
         return busyResponse(url.pathname, request.url, err);
       }
       throw err;

@@ -21,13 +21,6 @@ import { CATEGORY_ICON, inkOf } from './categories';
  * absolute coordinates: see the empty [data-life-layer] slot below.
  */
 
-/** Examples offered on an empty line: title key, category, age at the time. */
-const EXAMPLES = [
-  { key: 'life.example.school', category: 'education', age: 7 },
-  { key: 'life.example.job', category: 'career', age: 26 },
-  { key: 'life.example.wedding', category: 'relationship', age: 31 },
-] as const;
-
 /** Adds `data-shown` to each `.life-reveal` box as it scrolls into view. */
 function useReveal(root: React.RefObject<HTMLElement | null>, deps: unknown) {
   useEffect(() => {
@@ -200,11 +193,10 @@ function Description({ text }: { text: string }) {
   );
 }
 
-export function LifeTimeline({ life, items, colors, showExamples, stickyTop, onOpenMoment, onOpenBirth, onAdd }: {
+export function LifeTimeline({ life, items, colors, stickyTop, onOpenMoment, onOpenBirth, onAdd }: {
   life: LifeData;
   items: TimelineItem[];
   colors: Record<LifeCategory, string>;
-  showExamples: boolean;
   /** Where the sticky year sits: just under the app header. */
   stickyTop: number;
   onOpenMoment: (m: Milestone) => void;
@@ -215,7 +207,7 @@ export function LifeTimeline({ life, items, colors, showExamples, stickyTop, onO
   const ref = useRef<HTMLOListElement>(null);
   // Which rows exist, not how many: adding the first moment swaps the
   // examples out for it and leaves the count the same.
-  useReveal(ref, `${items.map((i) => i.key).join('|')}${showExamples ? '+ex' : ''}`);
+  useReveal(ref, items.map((i) => i.key).join('|'));
   const topYear = useTopYear(ref, stickyTop + 28);
   const birth = life.profile.birthDate;
   const birthYear = Number(birth.slice(0, 4));
@@ -304,21 +296,6 @@ export function LifeTimeline({ life, items, colors, showExamples, stickyTop, onO
           {life.profile.name && <p className="mt-3 text-[15px] leading-relaxed text-foreground/75">{life.profile.name}</p>}
         </EntryRow>,
       );
-      if (showExamples) {
-        EXAMPLES.forEach((ex, i) => {
-          const date = String(birthYear + ex.age);
-          const color = colors[ex.category];
-          rows.push(
-            <EntryRow key={ex.key} side={(it.side === 'left') === (i % 2 === 0) ? 'right' : 'left'} tight={false}
-              year={birthYear + ex.age} plan={false} future={false} faint label={t(ex.key)}
-              onOpen={() => onAdd({ title: t(ex.key), category: ex.category, date })}
-              row={{ 'data-life-example': '' }}>
-              <DateLine category={ex.category} color={color} text={`${date} · ${ageText(date)}`} />
-              <Title faint>{t(ex.key)}</Title>
-            </EntryRow>,
-          );
-        });
-      }
     } else {
       const m = it.m;
       const color = colors[m.category];

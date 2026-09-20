@@ -109,6 +109,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   // Latest translator, read from inside the long-lived [user] sync effect without
   // making that effect depend on (and re-subscribe on) every language change.
   const tRef = useRef(t);
+  /** The size warning is said once per session, not on every retry. */
+  const saidTooLarge = useRef(false);
   useEffect(() => { tRef.current = t; }, [t]);
   const [status, setStatus] = useState<SyncStatus>('disabled');
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
@@ -148,6 +150,14 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     };
     const stat = (s: SyncStatus) => {
       if (!stopped) setStatus(s);
+    };
+    // Over the server's size limit: every key stops syncing, not just the big
+    // one, so say what to do about it — once per session, not every attempt.
+    const tooLarge = () => {
+      stat('error');
+      if (saidTooLarge.current) return;
+      saidTooLarge.current = true;
+      toast.error(tRef.current('sync.tooLarge'), { duration: 12_000 });
     };
     const currentFp = () => dataFingerprint(collectSyncData());
 
@@ -236,6 +246,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         stat('offline');
       } else if (r.kind === 'busy') {
         stat('busy');
+      } else if (r.kind === 'too_large') {
+        tooLarge();
       } else if (r.kind === 'unauth') {
         stat('disabled');
       } else {
@@ -276,6 +288,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         stat('offline');
       } else if (r.kind === 'busy') {
         stat('busy');
+      } else if (r.kind === 'too_large') {
+        tooLarge();
       } else if (r.kind === 'unauth') {
         stat('disabled');
       } else {

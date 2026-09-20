@@ -25,6 +25,8 @@ export type PushResult =
   | { kind: 'offline' }
   // The server is up but its database is not answering (e.g. the daily limit).
   | { kind: 'busy' }
+  // Over the server's 1 MB limit: nothing syncs until the records shrink.
+  | { kind: 'too_large' }
   | { kind: 'error' };
 
 /** Decrypt a v2 EncBlock with the session key, or null when locked / wrong key. */
@@ -104,6 +106,7 @@ export async function pushRemote(envelope: SyncEnvelope, baseVersion: number, de
   }
   if (res.status === 401) return { kind: 'unauth' };
   if (res.status === 503) return { kind: 'busy' };
+  if (res.status === 413) return { kind: 'too_large' };
   if (res.status === 409) {
     try {
       const body = (await res.json()) as { blob: string; version: number; updatedAt: number; deviceLabel: string | null };

@@ -81,6 +81,7 @@ function PhotoField({ value, original, pro, onChange }: {
           </Button>
         )}
       </div>
+      {value && <p className="text-xs leading-relaxed text-muted-foreground" data-life-photo-local>{t('life.field.photoLocal')}</p>}
       <input ref={input} type="file" accept="image/*" className="hidden" data-life-photo-input
         onChange={(e) => { void pick(e.target.files?.[0]); e.target.value = ''; }} />
     </div>

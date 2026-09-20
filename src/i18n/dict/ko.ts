@@ -967,6 +967,22 @@ export const ko = {
   'life.sumRecords': '기록 {n}개',
   'life.timelineLabel': '라이프 타임라인',
   'life.newerVersion': '새 버전의 24Houring에서 저장한 라이프 기록이에요. 이 화면에서는 보기만 할 수 있어요. 페이지를 새로고침해 앱을 업데이트해 주세요.',
+  // Life — the timeline of a whole life (components/Life).
+  'life.deleted': '지웠어요',
+  'life.field.photoLocal': '사진은 이 기기에만 저장돼요. JSON 백업에는 함께 담깁니다.',
+  'life.quick.title': '이런 일부터 적어 볼까요',
+  'life.quick.add': '{n}개 추가',
+  'life.quick.school': '초등학교 입학',
+  'life.quick.middle': '중학교 입학',
+  'life.quick.high': '고등학교 입학',
+  'life.quick.college': '대학 입학',
+  'life.quick.trip': '첫 해외여행',
+  'life.quick.job': '첫 직장',
+  'life.quick.move': '이사',
+  'life.quick.wedding': '결혼',
+  'life.quick.child': '첫 아이',
+  'life.quick.retire': '은퇴',
+  'sync.tooLarge': '기록이 너무 커서 동기화하지 못했어요. 내보내기에서 JSON 백업을 받아 두시고, 긴 설명이나 사건을 조금 줄여 주세요.',
 } as const;
 
 /** Every translation key — derived, never hand-maintained. */

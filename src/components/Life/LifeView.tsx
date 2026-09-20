@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
 import { useAuth } from '@/hooks/useAuth';
 import { useSyncStatus } from '@/hooks/useSync';
-import { useLife, type LifeApi, type MilestoneDraft } from '@/hooks/useLife';
+import { useLife, UNDO_MS, type LifeApi, type MilestoneDraft } from '@/hooks/useLife';
 import { COLOR_THEMES } from '@/data/color-themes';
 import { requestUpgrade } from '@/lib/pro';
 import { todayKey } from '@/lib/calendar-grid';
@@ -22,6 +22,7 @@ import { CATEGORY_ICON, CATEGORY_LABEL, RELATION_LABEL, categoryColors, inkOf } 
 import { LifePhoto, LifeTimeline } from './LifeTimeline';
 import { FamilyDialog, MilestoneDialog, ProfileDialog, type MemberTarget, type MomentTarget } from './LifeDialogs';
 import { LifeExportDialog } from './LifeExport';
+import type { TKey } from '@/i18n/translations';
 
 type Parent = 'mother' | 'father';
 
@@ -154,7 +155,7 @@ export function LifeView() {
       {!hasLine ? (
         <Onboarding onStart={(birthDate, name) => {
           api.setProfile({ birthDate, ...(name ? { name } : {}) });
-          track('life_add');
+          track('life_start');
         }} />
       ) : (
         // A record from a newer app version is shown, never edited here.
@@ -162,8 +163,8 @@ export function LifeView() {
           <Parents family={life.family}
             onAdd={(relation) => setMember({ mode: 'add', relation })}
             onOpen={(f) => setMember({ mode: 'edit', f })} />
+          {life.milestones.length === 0 && only.size === 0 && <QuickStart birth={life.profile.birthDate} onAdd={api.addMilestone} />}
           <LifeTimeline life={life} items={items} colors={colors} stickyTop={headerH}
-            showExamples={life.milestones.length === 0 && only.size === 0}
             onOpenMoment={(m) => setMoment({ mode: 'edit', m })}
             onOpenBirth={() => setProfileOpen(true)}
             onAdd={addMoment} />
@@ -183,7 +184,13 @@ export function LifeView() {
           }
           setMoment(null);
         }}
-        onDelete={(id) => { api.removeMilestone(id); setMoment(null); }} />
+        onDelete={(id) => {
+          const gone = api.removeMilestone(id);
+          setMoment(null);
+          if (gone) {
+            toast(t('life.deleted'), { action: { label: t('sync.undo'), onClick: () => api.restoreMilestone(gone.item, gone.at) }, duration: UNDO_MS });
+          }
+        }} />
       <FamilyDialog target={member} pro={pro}
         onClose={() => setMember(null)}
         onSave={(draft, id) => {
@@ -191,7 +198,13 @@ export function LifeView() {
           else api.addMember(draft);
           setMember(null);
         }}
-        onDelete={(id) => { api.removeMember(id); setMember(null); }} />
+        onDelete={(id) => {
+          const gone = api.removeMember(id);
+          setMember(null);
+          if (gone) {
+            toast(t('life.deleted'), { action: { label: t('sync.undo'), onClick: () => api.restoreMember(gone.item, gone.at) }, duration: UNDO_MS });
+          }
+        }} />
       <ProfileDialog open={profileOpen} profile={life.profile} onClose={() => setProfileOpen(false)}
         onSave={(p) => { api.setProfile({ name: p.name, birthDate: p.birthDate, lifeExpectancy: p.lifeExpectancy }); setProfileOpen(false); }} />
       <LifeExportDialog open={exporting} onOpenChange={setExporting} api={api} colors={colors} />
@@ -262,6 +275,63 @@ function FilterFab({ only, setOnly, colors }: {
         )}
       </button>
     </div>
+  );
+}
+
+/**
+ * An empty line is hard to start: these are the moments most lives have, at
+ * the age they usually happen. Picking a few fills the line in one go, and
+ * each one can be opened and corrected afterwards (the years are guesses).
+ */
+const QUICK: ReadonlyArray<{ key: TKey; category: LifeCategory; age: number }> = [
+  { key: 'life.quick.school', category: 'education', age: 7 },
+  { key: 'life.quick.middle', category: 'education', age: 13 },
+  { key: 'life.quick.high', category: 'education', age: 16 },
+  { key: 'life.quick.college', category: 'education', age: 19 },
+  { key: 'life.quick.trip', category: 'travel', age: 22 },
+  { key: 'life.quick.job', category: 'career', age: 25 },
+  { key: 'life.quick.move', category: 'home', age: 28 },
+  { key: 'life.quick.wedding', category: 'relationship', age: 31 },
+  { key: 'life.quick.child', category: 'family', age: 33 },
+  { key: 'life.quick.retire', category: 'career', age: 60 },
+];
+
+function QuickStart({ birth, onAdd }: { birth: string; onAdd: (draft: MilestoneDraft) => void }) {
+  const { t } = useTranslation();
+  const [picked, setPicked] = useState<Set<string>>(() => new Set());
+  const birthYear = Number(birth.slice(0, 4));
+  return (
+    <section className="mx-auto mt-10 w-full max-w-[640px] px-4 text-center" data-life-quick>
+      <h3 className="life-serif text-[15px] font-bold text-muted-foreground">{t('life.quick.title')}</h3>
+      <div className="mt-4 flex flex-wrap justify-center gap-2">
+        {QUICK.map((q) => {
+          const on = picked.has(q.key);
+          const Icon = CATEGORY_ICON[q.category];
+          return (
+            <button key={q.key} type="button" aria-pressed={on} data-life-quick-item={q.key}
+              onClick={() => setPicked((prev) => {
+                const next = new Set(prev);
+                if (on) next.delete(q.key); else next.add(q.key);
+                return next;
+              })}
+              className={`inline-flex min-h-10 items-center gap-1.5 rounded-full border px-3.5 text-sm transition-colors ${
+                on ? 'border-foreground bg-foreground text-background' : 'border-border text-muted-foreground hover:bg-accent/10'}`}>
+              <Icon aria-hidden className="h-4 w-4" />
+              {t(q.key)}
+            </button>
+          );
+        })}
+      </div>
+      <Button className="mt-5 bg-primary text-primary-foreground" disabled={picked.size === 0} data-life-quick-add
+        onClick={() => {
+          QUICK.filter((q) => picked.has(q.key)).forEach((q) => {
+            onAdd({ date: String(birthYear + q.age), title: t(q.key), category: q.category, isPlan: false });
+          });
+          track('life_add');
+        }}>
+        {t('life.quick.add', { n: String(picked.size) })}
+      </Button>
+    </section>
   );
 }
 

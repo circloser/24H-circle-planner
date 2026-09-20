@@ -93,7 +93,7 @@ export async function run() {
       (await count('[data-life-birth]')) === 1 && (await count('[data-life-today]')) === 1 && (await count('[data-life-decade]')) >= 10,
       `decades ${await count('[data-life-decade]')}`);
     pass('today reads as 만 나이', /오늘 · 만 \d+세/.test(await page.locator('[data-life-today]').innerText()));
-    pass('an empty line offers three example cards', (await count('[data-life-example]')) === 3);
+    pass('an empty line offers the usual moments to start from', (await count('[data-life-quick-item]')) === 10);
     pass('the page body has no add or export buttons', (await count('[data-life-export]')) === 0
       && (await page.locator('[data-life-add]').evaluate((el) => el.getBoundingClientRect().width)) <= 1);
     pass('only a mother and a father at the top, no other family', (await count('[data-life-slot="mother"]')) === 1
@@ -133,12 +133,13 @@ export async function run() {
     await wait(150);
     pass('…and leaves when the pointer leaves the line', (await count('[data-life-ghost]')) === 0);
 
-    // 3. An example card opens the form already filled in.
-    await page.locator('[data-life-example] button[aria-label]').first().click();
-    await wait(400);
-    pass('an example opens the add form, filled in', (await page.locator('[data-life-title-input]').inputValue()) === '첫 등교');
-    await save();
-    pass('…and becomes the first moment', (await count('[data-life-moment]')) === 1 && (await count('[data-life-example]')) === 0);
+    // 3. The quick start fills the line in one go.
+    await page.locator('[data-life-quick-item="life.quick.school"]').click();
+    await page.locator('[data-life-quick-item="life.quick.job"]').click();
+    await page.locator('[data-life-quick-add]').click();
+    await wait(600);
+    pass('picking a few of them writes them all at once',
+      (await count('[data-life-moment]')) === 2 && (await count('[data-life-quick]')) === 0, JSON.stringify(await titles()));
     await wait(500);
     const firstOpacity = await page.locator('[data-life-moment] .life-reveal').first().evaluate((el) => getComputedStyle(el).opacity);
     pass('…which fades in (not left transparent)', firstOpacity === '1', firstOpacity);
@@ -161,9 +162,9 @@ export async function run() {
     await page.locator('#life-date-m').selectOption('3');
     await save();
     pass('moments sort by date whatever order they were added in',
-      JSON.stringify(await titles()) === JSON.stringify(['첫 등교', '대학 입학', '첫 직장 입사', '세계 여행']), JSON.stringify(await titles()));
+      JSON.stringify(await titles()) === JSON.stringify(['초등학교 입학', '대학 입학', '첫 직장', '첫 직장 입사', '세계 여행']), JSON.stringify(await titles()));
     const order = await page.$$eval('[data-life-timeline] > li', (els) => els.map((e) => (e.hasAttribute('data-life-today') ? 'today' : e.getAttribute('data-life-moment') ? 'm' : '')).filter(Boolean));
-    pass('today sits between the past and the plans', order.indexOf('today') === 3, order.join(','));
+    pass('today sits between the past and the plans', order.indexOf('today') === 4, order.join(','));
 
     // 5. Solid above today, dashed below.
     const lines = await page.$$eval('[data-life-moment]', (els) => els.map((e) => ({
@@ -182,25 +183,37 @@ export async function run() {
       return [...document.querySelectorAll('[data-life-birth] [data-life-card], [data-life-moment] [data-life-card]')]
         .map((c) => { const r = c.getBoundingClientRect(); return r.right < mid ? 'L' : r.left > mid ? 'R' : '?'; }).join('');
     });
-    pass('wide screen: cards alternate left and right of the line', sides === 'LRLRL', sides);
+    pass('wide screen: cards alternate left and right of the line',
+      sides.length >= 5 && /^(LR)*L?$/.test(sides), sides);
 
     // 7. It all survives a reload.
     await openLife();
-    pass('moments survive a reload', (await count('[data-life-moment]')) === 4);
+    pass('moments survive a reload', (await count('[data-life-moment]')) === 5);
     pass('ages are shown in 만 나이', (await page.locator('[data-life-moment]', { hasText: '첫 직장 입사' }).innerText()).includes('25세'));
 
     // 8. Edit and delete through the card.
     await page.locator('[data-life-moment]', { hasText: '첫 직장 입사' }).locator('button[aria-label]').click();
     await wait(300);
-    await page.locator('[data-life-title-input]').fill('첫 직장');
+    await page.locator('[data-life-title-input]').fill('첫 회사');
     await save();
-    pass('a card opens its editor, and the edit shows', (await titles()).includes('첫 직장'));
-    await page.locator('[data-life-moment]', { hasText: '대학 입학' }).locator('button[aria-label]').click();
-    await wait(300);
-    await page.locator('[data-life-delete]').click();
-    await page.locator('[data-life-delete]').click();
-    await wait(400);
-    pass('delete asks twice, then removes', !(await titles()).includes('대학 입학') && (await stored()).milestones.length === 3);
+    pass('a card opens its editor, and the edit shows', (await titles()).includes('첫 회사'));
+    const del = async (title) => {
+      await page.locator('[data-life-moment]', { hasText: title }).locator('button[aria-label]').click();
+      await wait(300);
+      await page.locator('[data-life-delete]').click();
+      await page.locator('[data-life-delete]').click();
+      await wait(400);
+    };
+    await del('대학 입학');
+    const afterDelete = (await stored()).milestones.length;
+    pass('delete asks twice, then removes', !(await titles()).includes('대학 입학') && afterDelete === 4);
+    // …and it can be taken back.
+    await page.getByRole('button', { name: '되돌리기' }).last().click();
+    await wait(500);
+    pass('a deleted moment can be taken back',
+      (await stored()).milestones.length === 5 && (await titles()).includes('대학 입학'));
+    await del('대학 입학');
+    pass('…and deleting it again sticks', (await stored()).milestones.length === 4);
 
     // 9. Roots: a parent, with the note about other people's details.
     await page.locator('[data-life-slot="mother"]').click();
@@ -232,7 +245,7 @@ export async function run() {
     pass('a category filter shows only its moments', JSON.stringify(await titles()) === JSON.stringify(['세계 여행']), JSON.stringify(await titles()));
     await page.locator('[data-life-filters] button').first().click();
     await wait(300);
-    pass('"all" brings everything back', (await titles()).length === 3);
+    pass('"all" brings everything back', (await titles()).length === 4);
 
     // 12. The long PNG (from the header's 내보내기), only after the privacy check.
     await page.keyboard.press('Escape');
@@ -281,9 +294,9 @@ export async function run() {
     await wait(600);
     const after = await stored();
     pass('restoring brings everything back', JSON.stringify({ ...after, updatedAt: '' }) === JSON.stringify({ ...before, updatedAt: '' })
-      && (await count('[data-life-moment]')) === 3 && (await count('[data-life-member="mother"]')) === 1);
+      && (await count('[data-life-moment]')) === 4 && (await count('[data-life-member="mother"]')) === 1);
     await openLife();
-    pass('…and it stays after a reload', (await count('[data-life-moment]')) === 3);
+    pass('…and it stays after a reload', (await count('[data-life-moment]')) === 4);
 
     // 15. The free limit stops adding — and nothing is lost.
     await page.evaluate((k) => {
@@ -318,7 +331,7 @@ export async function run() {
     });
     pass('phone: a left line with every card on its right', phone.line < 40 && phone.allRight, JSON.stringify(phone));
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
-    const want = ['life_open', 'life_add', 'life_image:downloaded', 'life_backup:json', 'upgrade_open:life'];
+    const want = ['life_open', 'life_start', 'life_add', 'life_image:downloaded', 'life_backup:json', 'upgrade_open:life'];
     await flush();
     pass('usage is counted', want.every((w) => counted.includes(w)), want.filter((w) => !counted.includes(w)).join(','));
   } finally {
