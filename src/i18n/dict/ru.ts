@@ -1167,4 +1167,8 @@ export const ru: Record<TKey, string> = {
   'place.sum.wish': 'Хочу в {n}',
   // Place — the shortcut rail in the corner of the pin map.
   'place.shortcut': 'Ярлык',
+  // Place — which picture the pin map is drawn on.
+  'place.layer': 'Вид карты',
+  'place.layer.map': 'Карта',
+  'place.layer.satellite': 'Спутник',
 };

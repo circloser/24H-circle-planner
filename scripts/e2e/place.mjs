@@ -17,7 +17,7 @@ const RELATION_KEY = '24h-circle-planner.relation';
 const json = (body) => ({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
 
 /** Everything the page could possibly ask the outside world for. */
-const OUTSIDE = '**://{tile.openstreetmap.org,*.tile.openstreetmap.org}/**';
+const OUTSIDE = '**://{tile.openstreetmap.org,*.tile.openstreetmap.org,gibs.earthdata.nasa.gov}/**';
 
 async function setup(base, opts = {}) {
   const { browser, page, errors } = await launchPage({ viewport: { width: 1440, height: 900 }, ...opts });
@@ -257,6 +257,20 @@ export async function run() {
     await wait(900);
     pass('the pin map asks OpenStreetMap for its tiles, and says whose they are',
       tiles.length > 0 && /OpenStreetMap/.test(await page.locator('[data-place-attribution]').innerText()));
+
+    // 6-i. The other picture of the world: NASA's, and named as theirs.
+    await page.locator('[data-place-layer="satellite"]').click();
+    await wait(700);
+    const sky = tiles.filter((u) => u.includes('gibs.earthdata.nasa.gov'));
+    pass('the satellite view asks NASA instead, with no key of any kind',
+      sky.length > 0 && sky.every((u) => !/[?&](key|token|api)/i.test(u)), sky[0] ?? 'none');
+    pass('…and says whose picture it is',
+      /NASA/.test(await page.locator('[data-place-attribution]').innerText()),
+      await page.locator('[data-place-attribution]').innerText());
+    await page.locator('[data-place-layer="map"]').click();
+    await wait(500);
+    pass('…and the street map comes back with its own credit',
+      /OpenStreetMap/.test(await page.locator('[data-place-attribution]').innerText()));
     pass('…and with none of them arriving it says so, rather than showing nothing',
       (await count('[data-place-offline]')) === 1);
     const pinPinch = await pinch('[data-place-tiles]');
@@ -331,6 +345,33 @@ export async function run() {
       && (await count('[data-place-world]')) === 1);
     await page.locator('[data-place-panel-close]').click();
     await wait(300);
+
+    // 6-ii. The two views are one view: zoom out of the tiles and the globe
+    // takes over at the same place, and in past the globe's end the tiles do.
+    const wherePins = async () => {
+      const el = await page.locator('[data-place-pins]').count();
+      return el === 1;
+    };
+    await page.locator('[data-place-tab="pins"]').click();
+    await wait(700);
+    const startedAt = await page.locator('[data-place-pins]').getAttribute('data-place-zoom');
+    for (let i = 0; i < 12 && (await wherePins()); i++) {
+      await page.locator('[data-place-zoom-out]').click();
+      await wait(250);
+    }
+    pass('zooming the tile map out far enough hands over to the globe',
+      (await count('[data-place-globe]')) === 1 && (await count('[data-place-pins]')) === 0,
+      `from ${startedAt}`);
+    pass('…and the globe arrives somewhere it can be zoomed out from',
+      Number(await page.locator('[data-place-globe]').getAttribute('data-place-zoom')) > 1);
+    for (let i = 0; i < 12 && (await count('[data-place-globe]')) === 1; i++) {
+      await page.locator('[data-place-zoom-in]').click();
+      await wait(250);
+    }
+    pass('and zooming the globe in past its end hands back to the tiles',
+      (await count('[data-place-pins]')) === 1 && (await count('[data-place-globe]')) === 0);
+    pass('…close in, where tiles are worth having',
+      Number(await page.locator('[data-place-pins]').getAttribute('data-place-zoom')) >= 9);
 
     // 7. The life line's travels are offered, never taken.
     await page.evaluate(([k, v]) => localStorage.setItem(k, v), [LIFE_KEY, JSON.stringify(LIFE)]);

@@ -1165,4 +1165,8 @@ export const zh: Record<TKey, string> = {
   'place.sum.wish': '想去 {n} 个国家',
   // Place — the shortcut rail in the corner of the pin map.
   'place.shortcut': '快捷方式',
+  // Place — which picture the pin map is drawn on.
+  'place.layer': '地图类型',
+  'place.layer.map': '地图',
+  'place.layer.satellite': '卫星',
 };

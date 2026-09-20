@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Crosshair, Globe, House, Loader2, MapPin, Minus, Plus, Search, X } from 'lucide-react';
+import { Crosshair, Globe, House, Loader2, Map, MapPin, Minus, Mountain, Plus, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
@@ -14,7 +14,9 @@ import {
   shortcutPins, type CountryShape, type PinCategory,
 } from '@/lib/place';
 import { countryName, loadCities, loadWorld, searchCountries, type CityRow } from '@/lib/place-world';
-import { PIN_MAX_ZOOM, PIN_MIN_ZOOM, type Camera } from '@/lib/place-tiles';
+import {
+  PIN_MAX_ZOOM, PIN_MIN_ZOOM, TILE_LAYERS, type Camera, type TileLayer,
+} from '@/lib/place-tiles';
 import { GLOBE_MAX_ZOOM, GLOBE_MIN_ZOOM, type Camera as GlobeCamera } from '@/lib/place-globe';
 import { usePlace, PLACE_UNDO_MS } from '@/hooks/usePlace';
 import { PLACE_EXPORT_EVENT } from '@/lib/place-export';
@@ -28,6 +30,13 @@ import { PlaceExportDialog } from './PlaceExport';
 import { PIN_ICON, PIN_LABEL, continentName, visitedColor, wishedColor } from './palette';
 
 const LAST_TAB = '24h-place-tab';
+const LAST_LAYER = '24h-place-layer';
+
+/** Where the globe hands the view over to the tiles, and where the tiles hand
+ *  it back. Each is the far end of the other's range, so the two never argue
+ *  about who should be showing. */
+const PIN_FROM_GLOBE = 9;
+const GLOBE_FROM_PIN = 3;
 
 /** A floating control over the map, in the page's own colours. */
 const FLOAT = 'pointer-events-auto rounded-full border border-border bg-surface/92 shadow-sm backdrop-blur';
@@ -59,6 +68,13 @@ export function PlaceView() {
       return 'world';
     }
   });
+  const [layer, setLayer] = useState<TileLayer>(() => {
+    try {
+      return localStorage.getItem(LAST_LAYER) === 'satellite' ? 'satellite' : 'map';
+    } catch {
+      return 'map';
+    }
+  });
   const [shapes, setShapes] = useState<readonly CountryShape[]>([]);
   const [cityRows, setCityRows] = useState<readonly CityRow[]>([]);
   const [country, setCountry] = useState<string | null>(null);
@@ -76,7 +92,14 @@ export function PlaceView() {
       : undefined;
     return { lng: at?.lng ?? 20, lat: at?.lat ?? 20, zoom: 1 };
   });
-  const [camera, setCamera] = useState<Camera>({ lng: 10, lat: 25, zoom: PIN_MIN_ZOOM });
+  // The tile map no longer holds the whole world — the globe does — so it
+  // opens where the person lives rather than in the middle of the Sahara.
+  const [camera, setCamera] = useState<Camera>(() => {
+    const at = api.data.home?.cityId
+      ? api.data.cities.find((c) => c.id === api.data.home!.cityId)
+      : undefined;
+    return { lng: at?.lng ?? 10, lat: at?.lat ?? 25, zoom: at ? 9 : 5 };
+  });
   const [here, setHere] = useState<{ lng: number; lat: number } | null>(null);
   const [locating, setLocating] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(() => new Set());
@@ -91,6 +114,9 @@ export function PlaceView() {
   useEffect(() => {
     try { localStorage.setItem(LAST_TAB, tab); } catch { /* storage unavailable */ }
   }, [tab]);
+  useEffect(() => {
+    try { localStorage.setItem(LAST_LAYER, layer); } catch { /* storage unavailable */ }
+  }, [layer]);
 
   // The world and the city list ship with the app; both are fetched once.
   useEffect(() => {
@@ -185,11 +211,45 @@ export function PlaceView() {
     );
   };
 
+  /**
+   * The two views are one view, zoomed differently.
+   *
+   * Brought in past the globe's last stop, the world becomes tiles at the
+   * same place; taken out past the tile map's first stop, the tiles become
+   * the globe again. Each hands over at the far end of its own range and
+   * arrives comfortably inside the other's, so they never bounce.
+   */
+  const toPins = (at: { lng: number; lat: number }) => {
+    setCamera({ ...at, zoom: PIN_FROM_GLOBE });
+    setCountry(null);
+    setTab('pins');
+  };
+  const toGlobe = (at: { lng: number; lat: number }) => {
+    setGlobe({ ...at, zoom: GLOBE_FROM_PIN });
+    setPinId(null);
+    setTab('world');
+  };
+
+  /** The globe's camera, unless it has been zoomed in past its own end. */
+  const onGlobeCamera = (next: GlobeCamera) => {
+    if (next.zoom > GLOBE_MAX_ZOOM) return toPins(next);
+    setGlobe(next);
+  };
+  /** The tile map's camera, unless it has been zoomed out past its own end. */
+  const onPinCamera = (next: Camera) => {
+    if (next.zoom < PIN_MIN_ZOOM) return toGlobe(next);
+    setCamera(next);
+  };
+
   const zoomBy = (by: number) => {
     if (tab === 'world') {
-      setGlobe((g) => ({ ...g, zoom: Math.max(GLOBE_MIN_ZOOM, Math.min(GLOBE_MAX_ZOOM, g.zoom * (by > 0 ? 1.4 : 1 / 1.4))) }));
+      const next = globe.zoom * (by > 0 ? 1.4 : 1 / 1.4);
+      if (next > GLOBE_MAX_ZOOM) return toPins(globe);
+      setGlobe((g) => ({ ...g, zoom: Math.max(GLOBE_MIN_ZOOM, next) }));
     } else {
-      setCamera((c) => ({ ...c, zoom: Math.max(PIN_MIN_ZOOM, Math.min(PIN_MAX_ZOOM, c.zoom + by)) }));
+      const next = camera.zoom + by;
+      if (next < PIN_MIN_ZOOM) return toGlobe(camera);
+      setCamera((c) => ({ ...c, zoom: Math.min(PIN_MAX_ZOOM, next) }));
     }
   };
 
@@ -214,7 +274,7 @@ export function PlaceView() {
             selected={country}
             selectedPin={pinId}
             camera={globe}
-            onCamera={setGlobe}
+            onCamera={onGlobeCamera}
             onSelect={(code) => { setCountry(code); setPinId(null); }}
             onSelectPin={(id) => { setPinId(id); if (id) setCountry(null); }}
             nameOf={nameOf}
@@ -222,8 +282,9 @@ export function PlaceView() {
         ) : (
           <PinMap
             pins={pins}
+            layer={layer}
             camera={camera}
-            onCamera={setCamera}
+            onCamera={onPinCamera}
             selected={pinId}
             onSelect={setPinId}
             onDropAt={dropAt}
@@ -291,6 +352,20 @@ export function PlaceView() {
               <Plus aria-hidden className="h-4 w-4" />
               {t('place.addPin')}
             </Button>
+            <div role="group" aria-label={t('place.layer')} className={`${FLOAT} inline-flex p-0.5`}>
+              {TILE_LAYERS.map((k) => {
+                const Icon = k === 'map' ? Map : Mountain;
+                return (
+                  <button key={k} type="button" data-place-layer={k} aria-pressed={layer === k}
+                    onClick={() => setLayer(k)}
+                    className={`pointer-events-auto inline-flex min-h-8 items-center gap-1.5 rounded-full px-2.5 text-[12px] ${
+                      layer === k ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
+                    <Icon aria-hidden className="h-3.5 w-3.5" />
+                    {t(k === 'map' ? 'place.layer.map' : 'place.layer.satellite')}
+                  </button>
+                );
+              })}
+            </div>
             <Button size="sm" variant="outline" className="pointer-events-auto gap-1.5 rounded-full bg-surface/92"
               data-place-locate disabled={locating} onClick={locate}>
               {locating ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> : <Crosshair aria-hidden className="h-4 w-4" />}

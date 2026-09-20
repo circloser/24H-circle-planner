@@ -1170,4 +1170,8 @@ export const en: Record<TKey, string> = {
   'place.sum.wish': '{n} to go',
   // Place — the shortcut rail in the corner of the pin map.
   'place.shortcut': 'Shortcut',
+  // Place — which picture the pin map is drawn on.
+  'place.layer': 'Map style',
+  'place.layer.map': 'Map',
+  'place.layer.satellite': 'Satellite',
 };
