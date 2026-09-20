@@ -221,9 +221,16 @@ export const MEMOIR_MAX_TOKENS = 8000;
 export const memoirEnabled = (env: MemoirEnv): boolean =>
   Boolean(env.ANTHROPIC_API_KEY && env.POLAR_MEMOIR_PRODUCT_ID);
 
-/** One SSE line from Anthropic → the text it carries, if any. */
+/**
+ * One SSE line from Anthropic → the text it carries, if any.
+ *
+ * The cheap checks come first on purpose. A Worker on the free plan has ten
+ * milliseconds of CPU for the whole request, and a memoir is a few thousand
+ * events; every line that can be dismissed without parsing its JSON is CPU
+ * the reader does not spend waiting.
+ */
 export function deltaText(line: string): string | null {
-  if (!line.startsWith('data:')) return null;
+  if (!line.startsWith('data:') || !line.includes('"text_delta"')) return null;
   const body = line.slice(5).trim();
   if (!body || body === '[DONE]') return null;
   try {

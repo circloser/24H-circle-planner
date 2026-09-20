@@ -15,6 +15,7 @@
  * the better part of a minute, and a blank screen that long looks broken.
  */
 import { MAX_MEMOIR, ageAt, isFullDate, sortMilestones, type LifeData } from './life';
+import { flushMetrics } from './track';
 
 /** Fewer moments than this and there is nothing to write about. */
 export const MEMOIR_MIN_MOMENTS = 3;
@@ -168,6 +169,9 @@ export async function startMemoirCheckout(): Promise<void> {
   if (!res.ok) throw await errorOf(res);
   const data = (await res.json()) as { url?: string };
   if (!data.url) throw new MemoirError('checkout_no_url', 502);
+  // Leaving for Polar: send what this page counted before it goes away, rather
+  // than trusting a beacon fired while the browser is already navigating.
+  flushMetrics();
   window.location.href = data.url;
 }
 

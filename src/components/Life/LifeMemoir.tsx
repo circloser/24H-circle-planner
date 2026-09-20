@@ -143,11 +143,13 @@ export function LifeMemoir({ api, lang }: { api: LifeApi; lang: string }) {
             <Button variant={memoir ? 'outline' : 'default'} size="sm" className="gap-1.5" data-life-memoir-start
               onClick={() => (user ? setOpen(true) : login())}>
               {memoir ? <RefreshCw aria-hidden className="h-4 w-4" /> : <BookOpen aria-hidden className="h-4 w-4" />}
+              {/* The price shows before signing in too: nobody should have to
+                  log in to find out what a thing costs. */}
               {memoir
                 ? t('life.memoir.again')
-                : !user ? t('life.memoir.signIn')
                 : paid ? t('life.memoir.write')
-                : price ? t('life.memoir.buy', { price }) : t('life.memoir.write')}
+                : price ? t('life.memoir.buy', { price })
+                : !user ? t('life.memoir.signIn') : t('life.memoir.write')}
             </Button>
             {memoir && (
               <>
