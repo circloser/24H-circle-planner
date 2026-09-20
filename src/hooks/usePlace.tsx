@@ -59,15 +59,29 @@ export function usePlace() {
       const at = d.countries.findIndex((c) => c.code === code);
       if (at < 0) return { ...d, countries: [...d.countries, { code, ...patch }] };
       const next = [...d.countries];
-      next[at] = { ...next[at], ...patch, code };
+      // An undefined in the patch means "take this away", which spreading
+      // alone would not do.
+      const merged = { ...next[at], ...patch, code } as CountryVisit;
+      for (const key of Object.keys(patch) as Array<keyof CountryVisit>) {
+        if (patch[key] === undefined) delete merged[key];
+      }
+      next[at] = merged;
       return { ...d, countries: next };
     });
   }, [edit]);
 
   /** Been there? (Colouring a country in is the one-tap version of setCountry.) */
   const toggleCountry = useCallback((code: string) => {
-    const there = current.current.countries.some((c) => c.code === code);
-    setCountry(code, there ? null : {});
+    const at = current.current.countries.find((c) => c.code === code);
+    // Off, or wished-for, becomes been; been becomes off.
+    setCountry(code, !at ? {} : at.wish ? { wish: undefined } : null);
+  }, [setCountry]);
+
+  /** Somewhere to go. Saying so takes away anything that said I had been. */
+  const toggleWish = useCallback((code: string) => {
+    const at = current.current.countries.find((c) => c.code === code);
+    if (at?.wish) return setCountry(code, null);
+    setCountry(code, { wish: true, lived: undefined, firstYear: undefined });
   }, [setCountry]);
 
   const addCity = useCallback((city: CityVisit) => {
@@ -160,7 +174,7 @@ export function usePlace() {
   }, []);
 
   return {
-    data, readOnly, generation, setCountry, toggleCountry, addCity, updateCity, removeCity,
+    data, readOnly, generation, setCountry, toggleCountry, toggleWish, addCity, updateCity, removeCity,
     setHome, addPin, updatePin, removePin, restorePin, replace,
   };
 }

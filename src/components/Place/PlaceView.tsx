@@ -25,7 +25,7 @@ import { PinMap } from './PinMap';
 import { CountryCard, PinCard } from './PlacePanel';
 import { PinDialog, CityPicker, type PinTarget } from './PlaceDialogs';
 import { PlaceExportDialog } from './PlaceExport';
-import { PIN_ICON, PIN_LABEL, continentName, visitedColor } from './palette';
+import { PIN_ICON, PIN_LABEL, continentName, visitedColor, wishedColor } from './palette';
 
 const LAST_TAB = '24h-place-tab';
 
@@ -50,6 +50,7 @@ export function PlaceView() {
   const syncing = useSyncStatus().status !== 'disabled';
   const theme = COLOR_THEMES.some((th) => th.id === prefs.colorTheme) ? prefs.colorTheme : null;
   const visited = visitedColor(theme);
+  const wished = wishedColor(theme);
 
   const [tab, setTab] = useState<'world' | 'pins'>(() => {
     try {
@@ -180,7 +181,7 @@ export function PlaceView() {
     }
   };
 
-  const panel = (shape && tab === 'world') || (pin && tab === 'pins');
+  const panel = (shape && tab === 'world') || !!pin;
 
   return (
     <div className="relative min-h-0 w-full flex-1 overflow-hidden" data-place-view>
@@ -193,12 +194,16 @@ export function PlaceView() {
             shapes={shapes}
             countries={data.countries}
             cities={data.cities}
+            pins={pins}
             {...(data.home?.cityId ? { homeCityId: data.home.cityId } : {})}
             visited={visited}
+            wished={wished}
             selected={country}
+            selectedPin={pinId}
             camera={globe}
             onCamera={setGlobe}
-            onSelect={setCountry}
+            onSelect={(code) => { setCountry(code); setPinId(null); }}
+            onSelectPin={(id) => { setPinId(id); if (id) setCountry(null); }}
             nameOf={nameOf}
           />
         ) : (
@@ -403,6 +408,7 @@ export function PlaceView() {
               t('place.sum.percent', { n: String(summary.percent) }),
               t('place.sum.continents', { n: String(summary.continents) }),
               t('place.sum.cities', { n: String(summary.cities) }),
+              summary.wished ? t('place.sum.wish', { n: String(summary.wished) }) : null,
               tab === 'pins' ? t('place.sum.pins', { n: String(summary.pins) }) : null,
             ].filter(Boolean).join(' · ')}
           </p>
@@ -421,6 +427,7 @@ export function PlaceView() {
               cityRows={cityRows}
               name={nameOf(shape.code, shape.name)}
               onToggle={() => { api.toggleCountry(shape.code); track('place_country'); }}
+              onWish={() => { api.toggleWish(shape.code); track('place_country'); }}
               onPatch={(patch) => api.setCountry(shape.code, patch)}
               onAddCity={(city) => { api.addCity(city); track('place_city'); }}
               onRemoveCity={api.removeCity}
@@ -428,7 +435,7 @@ export function PlaceView() {
               onOpenPin={(id) => { setTab('pins'); setPinId(id); }}
             />
           )}
-          {pin && tab === 'pins' && (
+          {pin && (
             <PinCard
               pin={pin}
               people={people}
@@ -451,7 +458,7 @@ export function PlaceView() {
                 {group.countries.map((c) => (
                   <li key={c.code}>
                     <button type="button" data-place-list-item={c.code} onClick={() => setCountry(c.code)}>
-                      {c.name}{c.lived ? ` · ${t('place.lived')}` : ''}
+                      {c.name}{c.wish ? ` · ${t('place.wish')}` : c.lived ? ` · ${t('place.lived')}` : ''}
                     </button>
                   </li>
                 ))}
@@ -483,7 +490,8 @@ export function PlaceView() {
           setTarget(null);
         }}
         onDelete={removePin} />
-      <PlaceExportDialog open={exporting} onOpenChange={setExporting} api={api} shapes={shapes} visited={visited} />
+      <PlaceExportDialog open={exporting} onOpenChange={setExporting} api={api} shapes={shapes}
+        visited={visited} wished={wished} />
     </div>
   );
 }

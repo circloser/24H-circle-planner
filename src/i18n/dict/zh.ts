@@ -1158,4 +1158,7 @@ export const zh: Record<TKey, string> = {
   'place.zoomIn': '放大',
   'place.zoomOut': '缩小',
   'place.tapToPin': '点击地图即可在该处放置图钉。',
+  // Place — somewhere to go, as against somewhere been.
+  'place.wish': '想去',
+  'place.sum.wish': '想去 {n} 个国家',
 };

@@ -1163,4 +1163,7 @@ export const en: Record<TKey, string> = {
   'place.zoomIn': 'Zoom in',
   'place.zoomOut': 'Zoom out',
   'place.tapToPin': 'Tap the map to drop a pin there.',
+  // Place — somewhere to go, as against somewhere been.
+  'place.wish': 'Want to go',
+  'place.sum.wish': '{n} to go',
 };

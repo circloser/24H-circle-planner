@@ -6,7 +6,7 @@
  * on screen writes those only once it is zoomed in, and a picture has no zoom.
  */
 import { MAP_NORTH, MAP_SOUTH, project } from '../place-world';
-import type { CityVisit, CountryShape, CountryVisit } from '../place';
+import { isWished, type CityVisit, type CountryShape, type CountryVisit } from '../place';
 
 export interface PlaceImageInput {
   shapes: readonly CountryShape[];
@@ -16,8 +16,10 @@ export interface PlaceImageInput {
   /** Page background and ink, already resolved to real colours. */
   background: string;
   ink: string;
-  /** The one colour a visited country is filled with. */
+  /** The colour of a country that has been walked on... */
   visited: string;
+  /** ...and of one that is only wanted. */
+  wished: string;
   /** The line under the picture, already translated. */
   caption?: string;
 }
@@ -53,11 +55,13 @@ export function drawPlace(ctx: CanvasRenderingContext2D, input: PlaceImageInput,
   ctx.lineJoin = 'round';
   for (const shape of input.shapes) {
     const visit = been.get(shape.code);
+    const want = isWished(visit);
+    const colour = want ? input.wished : input.visited;
     path(shape);
-    ctx.fillStyle = visit ? input.visited : input.ink;
-    ctx.globalAlpha = visit ? (visit.lived ? 0.7 : 0.45) : 0.06;
+    ctx.fillStyle = visit ? colour : input.ink;
+    ctx.globalAlpha = visit ? (want ? 0.38 : visit.lived ? 0.7 : 0.45) : 0.06;
     ctx.fill();
-    ctx.strokeStyle = visit ? input.visited : input.ink;
+    ctx.strokeStyle = visit ? colour : input.ink;
     ctx.globalAlpha = visit ? 1 : 0.2;
     ctx.lineWidth = (visit ? 1.5 : 1) * (width / 1000);
     ctx.stroke();

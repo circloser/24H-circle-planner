@@ -20,12 +20,13 @@ import type { PlaceApi } from '@/hooks/usePlace';
  * A map of where someone has been shows where they live and where they work,
  * so the picture is only made once that has been read.
  */
-export function PlaceExportDialog({ open, onOpenChange, api, shapes, visited }: {
+export function PlaceExportDialog({ open, onOpenChange, api, shapes, visited, wished }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   api: PlaceApi;
   shapes: readonly CountryShape[];
   visited: string;
+  wished: string;
 }) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState<'png' | 'json' | null>(null);
@@ -48,11 +49,13 @@ export function PlaceExportDialog({ open, onOpenChange, api, shapes, visited }: 
         background: style.backgroundColor || '#f4f5f7',
         ink: getComputedStyle(root).getPropertyValue('--place-ink').trim() || '#2b2b2b',
         visited,
+        wished,
         caption: [
           t('place.sum.countries', { n: String(s.countries) }),
           t('place.sum.percent', { n: String(s.percent) }),
           t('place.sum.continents', { n: String(s.continents) }),
           t('place.sum.cities', { n: String(s.cities) }),
+          ...(s.wished ? [t('place.sum.wish', { n: String(s.wished) })] : []),
         ].join(' · '),
       });
       if (!blob) throw new Error('no image');

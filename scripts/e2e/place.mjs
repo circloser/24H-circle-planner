@@ -189,6 +189,31 @@ export async function run() {
     await page.locator('[data-place-panel-close]').click();
     await wait(300);
 
+    // 5a. Somewhere to go is kept apart from somewhere been.
+    await tapCountry('JP');
+    await page.locator('[data-place-wish-toggle]').click();
+    await wait(500);
+    pass('a country can be marked as somewhere to go',
+      (await stored()).countries.find((c) => c.code === 'JP')?.wish === true,
+      JSON.stringify((await stored()).countries));
+    pass('…and the map keeps the two apart',
+      (await page.locator('[data-place-country="JP"]').getAttribute('data-place-visited')) === 'wish'
+      && (await page.locator('[data-place-country="KR"]').getAttribute('data-place-visited')) === 'yes');
+    pass('…and it is counted on its own line, not as a country visited',
+      /가 보고 싶은 1개국/.test(await page.locator('[data-place-summary]').innerText())
+      && /^1개국/.test(await page.locator('[data-place-summary]').innerText()),
+      await page.locator('[data-place-summary]').innerText());
+    await page.locator('[data-place-visited-toggle]').click();
+    await wait(500);
+    pass('…and saying I have been there now takes the wish away',
+      (await stored()).countries.find((c) => c.code === 'JP')?.wish === undefined
+      && /2개국/.test(await page.locator('[data-place-summary]').innerText()),
+      JSON.stringify((await stored()).countries));
+    await page.locator('[data-place-visited-toggle]').click();
+    await wait(400);
+    await page.locator('[data-place-panel-close]').click();
+    await wait(300);
+
     // 5b. Two fingers work on both maps — a phone has no wheel.
     const globePinch = await pinch('[data-place-world]');
     pass('two fingers zoom the globe', globePinch.after > globePinch.was, JSON.stringify(globePinch));
@@ -234,6 +259,19 @@ export async function run() {
     pass('…and it is on the map and in the list',
       (await count(`[data-place-pin="${withPin.pins[0].id}"]`)) === 1
       && (await count(`[data-place-list-item="${withPin.pins[0].id}"]`)) === 1);
+
+    // 6b. The same pins are on the globe, and open there without leaving it.
+    await page.locator('[data-place-tab="world"]').click();
+    await wait(700);
+    pass('a pin is on the globe as well as on the pin map',
+      (await count(`[data-place-globe-pin="${withPin.pins[0].id}"]`)) === 1);
+    await page.locator(`[data-place-globe-pin="${withPin.pins[0].id}"]`).dispatchEvent('click');
+    await wait(400);
+    pass('…and choosing it there opens its card without leaving the globe',
+      (await page.locator('[data-place-panel]').getAttribute('data-pin')) === withPin.pins[0].id
+      && (await count('[data-place-world]')) === 1);
+    await page.locator('[data-place-panel-close]').click();
+    await wait(300);
 
     // 7. The life line's travels are offered, never taken.
     await page.evaluate(([k, v]) => localStorage.setItem(k, v), [LIFE_KEY, JSON.stringify(LIFE)]);

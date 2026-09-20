@@ -28,8 +28,16 @@ export interface CountryVisit {
   code: string;
   firstYear?: number;
   lived?: boolean;
+  /** Not been — WANT to go. The two are exclusive: a country is one or the
+   *  other, and colouring it in either way clears the other. */
+  wish?: boolean;
   note?: string;
 }
+
+/** Been there (as against only wanting to go). */
+export const isBeen = (visit: CountryVisit | undefined): boolean => !!visit && visit.wish !== true;
+/** On the list of somewhere to go. */
+export const isWished = (visit: CountryVisit | undefined): boolean => visit?.wish === true;
 
 export interface CityVisit {
   /** An id from the bundled list, or one of our own with a `u_` in front. */
@@ -148,10 +156,14 @@ function cleanCountry(v: unknown): CountryVisit | null {
   if (!o || !isCountryCode(o['code'])) return null;
   const first = year(o['firstYear']);
   const note = str(o['note'], MAX_PLACE_NOTE);
+  // Wanting to go somewhere and having been there cannot both be true; the
+  // wish is what is dropped, because a memory outranks a plan.
+  const wish = o['wish'] === true && o['lived'] !== true && first === undefined;
   return {
     code: o['code'],
     ...(first !== undefined ? { firstYear: first } : {}),
     ...(o['lived'] === true ? { lived: true } : {}),
+    ...(wish ? { wish: true } : {}),
     ...(note ? { note } : {}),
   };
 }
@@ -265,10 +277,13 @@ export interface PlaceSummary {
   continents: number;
   cities: number;
   pins: number;
+  /** Countries on the list of somewhere to go. */
+  wished: number;
 }
 
 export function placeSummary(d: PlaceData, shapes: readonly CountryShape[]): PlaceSummary {
-  const visited = new Set(d.countries.map((c) => c.code));
+  const visited = new Set(d.countries.filter(isBeen).map((c) => c.code));
+  const wished = new Set(d.countries.filter(isWished).map((c) => c.code));
   const byCode = new Map(shapes.map((s) => [s.code, s]));
   const continents = new Set<string>();
   for (const code of visited) {
@@ -282,6 +297,7 @@ export function placeSummary(d: PlaceData, shapes: readonly CountryShape[]): Pla
     continents: continents.size,
     cities: d.cities.length,
     pins: d.pins.length,
+    wished: wished.size,
   };
 }
 
@@ -290,14 +306,19 @@ export function byContinent(
   d: PlaceData,
   shapes: readonly CountryShape[],
   nameOf: (code: string, fallback: string) => string,
-): Array<{ continent: string; countries: Array<{ code: string; name: string; lived: boolean }> }> {
+): Array<{ continent: string; countries: Array<{ code: string; name: string; lived: boolean; wish: boolean }> }> {
   const byCode = new Map(shapes.map((s) => [s.code, s]));
-  const out = new Map<string, Array<{ code: string; name: string; lived: boolean }>>();
+  const out = new Map<string, Array<{ code: string; name: string; lived: boolean; wish: boolean }>>();
   for (const visit of d.countries) {
     const s = byCode.get(visit.code);
     if (!s) continue;
     const list = out.get(s.continent) ?? [];
-    list.push({ code: visit.code, name: nameOf(visit.code, s.name), lived: visit.lived === true });
+    list.push({
+      code: visit.code,
+      name: nameOf(visit.code, s.name),
+      lived: visit.lived === true,
+      wish: isWished(visit),
+    });
     out.set(s.continent, list);
   }
   return [...out.entries()]

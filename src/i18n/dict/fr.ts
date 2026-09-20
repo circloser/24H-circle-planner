@@ -1160,4 +1160,7 @@ export const fr: Record<TKey, string> = {
   'place.zoomIn': 'Zoom avant',
   'place.zoomOut': 'Zoom arrière',
   'place.tapToPin': 'Touchez la carte pour y poser une épingle.',
+  // Place — somewhere to go, as against somewhere been.
+  'place.wish': 'À visiter',
+  'place.sum.wish': '{n} à visiter',
 };

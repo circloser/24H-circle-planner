@@ -3,8 +3,8 @@ import { LANGUAGES, TRANSLATIONS } from '@/i18n/translations';
 import { ko } from '@/i18n/dict/ko';
 import {
   FREE_PLACE_PINS, PLACE_KEY, byContinent, canAddPin, countryAt, decodePlace, emptyPlace,
-  encodePlace, isNewerPlace, isPlaceDate, placeFile, placePhotoIds, placeSummary, pointInRing,
-  readPlaceFile, type CountryShape, type Pin, type PlaceData,
+  encodePlace, isBeen, isNewerPlace, isPlaceDate, isWished, placeFile, placePhotoIds, placeSummary,
+  pointInRing, readPlaceFile, type CountryShape, type Pin, type PlaceData,
 } from '../place';
 import { MAP_NORTH, MAP_SOUTH, cityId, countryPath, fromTile, project, searchCities, unproject, toTile } from '../place-world';
 import { clusterPins, tileZoom, tilesFor, tileUrl } from '../place-tiles';
@@ -97,7 +97,18 @@ describe('the line above the map', () => {
       cities: [{ id: 'a', name: 'Seoul', countryCode: 'KR', lat: 37, lng: 126 }],
       pins: [pin('p1')],
     }), shapes);
-    expect(s).toEqual({ countries: 3, percent: 75, continents: 2, cities: 1, pins: 1 });
+    expect(s).toEqual({ countries: 3, percent: 75, continents: 2, cities: 1, pins: 1, wished: 0 });
+  });
+
+  it('counts somewhere wanted apart from somewhere been', () => {
+    const s = placeSummary(data({
+      countries: [{ code: 'KR' }, { code: 'JP', wish: true }, { code: 'BR', wish: true }],
+    }), shapes);
+    // Two of these are only wanted, so the world is a quarter walked on.
+    expect(s.countries).toBe(1);
+    expect(s.percent).toBe(25);
+    expect(s.continents).toBe(1);
+    expect(s.wished).toBe(2);
   });
 
   it('groups what has been visited by continent, in the reader\'s own names', () => {
@@ -107,9 +118,40 @@ describe('the line above the map', () => {
       (code) => ({ FR: '프랑스', KR: '대한민국' }[code] ?? code),
     );
     expect(out).toEqual([
-      { continent: 'Asia', countries: [{ code: 'KR', name: '대한민국', lived: true }] },
-      { continent: 'Europe', countries: [{ code: 'FR', name: '프랑스', lived: false }] },
+      { continent: 'Asia', countries: [{ code: 'KR', name: '대한민국', lived: true, wish: false }] },
+      { continent: 'Europe', countries: [{ code: 'FR', name: '프랑스', lived: false, wish: false }] },
     ]);
+  });
+});
+
+describe('been there, or only wanting to go', () => {
+  it('reads one as the other\'s opposite', () => {
+    expect(isBeen({ code: 'KR' })).toBe(true);
+    expect(isBeen({ code: 'KR', wish: true })).toBe(false);
+    expect(isBeen(undefined)).toBe(false);
+    expect(isWished({ code: 'KR', wish: true })).toBe(true);
+    expect(isWished({ code: 'KR' })).toBe(false);
+    expect(isWished(undefined)).toBe(false);
+  });
+
+  it('never lets a country be both, whatever the file says', () => {
+    const out = decodePlace({
+      version: 1,
+      countries: [
+        { code: 'JP', wish: true },
+        { code: 'KR', wish: true, lived: true },
+        { code: 'FR', wish: true, firstYear: 2019 },
+      ],
+    })!;
+    expect(out.countries[0]).toEqual({ code: 'JP', wish: true });
+    // A memory outranks a plan, so the wish is what goes.
+    expect(out.countries[1]).toEqual({ code: 'KR', lived: true });
+    expect(out.countries[2]).toEqual({ code: 'FR', firstYear: 2019 });
+  });
+
+  it('writes the wish back out unchanged', () => {
+    const before = data({ countries: [{ code: 'JP', wish: true }, { code: 'KR', lived: true }] });
+    expect(decodePlace(encodePlace(before))!.countries).toEqual(before.countries);
   });
 });
 

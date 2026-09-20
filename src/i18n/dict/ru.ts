@@ -1160,4 +1160,7 @@ export const ru: Record<TKey, string> = {
   'place.zoomIn': 'Приблизить',
   'place.zoomOut': 'Отдалить',
   'place.tapToPin': 'Нажмите на карту, чтобы поставить там метку.',
+  // Place — somewhere to go, as against somewhere been.
+  'place.wish': 'Хочу поехать',
+  'place.sum.wish': 'Хочу в {n}',
 };

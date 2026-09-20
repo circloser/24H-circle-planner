@@ -1164,6 +1164,9 @@ export const ko = {
   'place.zoomIn': '확대',
   'place.zoomOut': '축소',
   'place.tapToPin': '지도를 누르면 그 자리에 핀이 생겨요.',
+  // Place — somewhere to go, as against somewhere been.
+  'place.wish': '가 보고 싶음',
+  'place.sum.wish': '가 보고 싶은 {n}개국',
 } as const;
 
 /** Every translation key — derived, never hand-maintained. */

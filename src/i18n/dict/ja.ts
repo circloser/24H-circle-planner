@@ -1160,4 +1160,7 @@ export const ja: Record<TKey, string> = {
   'place.zoomIn': '拡大',
   'place.zoomOut': '縮小',
   'place.tapToPin': '地図を押すと、その場所にピンが立ちます。',
+  // Place — somewhere to go, as against somewhere been.
+  'place.wish': '行ってみたい',
+  'place.sum.wish': '行きたい国 {n}',
 };

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { pointInRing, type CityVisit, type CountryShape, type CountryVisit } from '@/lib/place';
+import { isWished, pointInRing, type CityVisit, type CountryShape, type CountryVisit, type Pin } from '@/lib/place';
 import {
-  CITY_DOT_ZOOM, CITY_NAME_ZOOM, GLOBE_MAX_ZOOM, GLOBE_MIN_ZOOM, anyFacing, facing, graticule,
-  project, screenOf, turn, unproject, visibleRuns, type Camera,
+  CITY_DOT_ZOOM, CITY_NAME_ZOOM, GLOBE_MAX_ZOOM, GLOBE_MIN_ZOOM, anyFacing, densifyShape, facing,
+  graticule, project, ringFill, screenOf, turn, unproject, visibleRuns, type Camera,
 } from '@/lib/place-globe';
 import { capture, listOf, moveBetween, type Pointer } from '@/lib/gesture';
 
@@ -10,12 +10,17 @@ export interface GlobeMapProps {
   shapes: readonly CountryShape[];
   countries: readonly CountryVisit[];
   cities: readonly CityVisit[];
+  /** The particular spots, so the globe shows them too. */
+  pins: readonly Pin[];
   homeCityId?: string;
   visited: string;
+  wished: string;
   selected: string | null;
+  selectedPin: string | null;
   camera: Camera;
   onCamera: (camera: Camera) => void;
   onSelect: (code: string | null) => void;
+  onSelectPin: (id: string | null) => void;
   nameOf: (code: string, fallback: string) => string;
 }
 
@@ -28,17 +33,24 @@ function inks(el: HTMLElement) {
   };
 }
 
+/** How near a finger has to land for a pin to have been the thing meant. */
+const PIN_HIT = 14;
+/** How far above its place a pin's head sits, in pixels. */
+const PIN_RISE = 9;
+
 /**
  * The scratch map, as a globe.
  *
- * Turned with a finger, zoomed with a wheel or two fingers, and coloured in
- * by tapping a country. What it shows changes with how close it is: far out,
- * countries and nothing else; closer, the cities appear; closer still, their
- * names. There is nothing to load — the shapes ship with the app — so it
- * turns in aeroplane mode exactly as it does anywhere else.
+ * Turned with a finger, zoomed with a wheel or two fingers, and coloured in by
+ * tapping a country — one colour for having been, another for wanting to go.
+ * What it shows changes with how close it is: far out, countries and nothing
+ * else; closer, the cities and the pins appear; closer still, their names.
+ * There is nothing to load — the shapes ship with the app — so it turns in
+ * aeroplane mode exactly as it does anywhere else.
  */
 export function GlobeMap({
-  shapes, countries, cities, homeCityId, visited, selected, camera, onCamera, onSelect, nameOf,
+  shapes, countries, cities, pins, homeCityId, visited, wished, selected, selectedPin,
+  camera, onCamera, onSelect, onSelectPin, nameOf,
 }: GlobeMapProps) {
   const box = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -46,6 +58,9 @@ export function GlobeMap({
   const [hover, setHover] = useState<string | null>(null);
   const been = useMemo(() => new Map(countries.map((c) => [c.code, c])), [countries]);
   const lines = useMemo(() => graticule(), []);
+  // The long steps of a coastline are filled in once, not on every frame —
+  // without this a border is drawn as a chord straight through the globe.
+  const drawn = useMemo(() => shapes.map(densifyShape), [shapes]);
 
   useEffect(() => {
     const el = box.current;
@@ -102,31 +117,56 @@ export function GlobeMap({
       }
     }
 
-    // The countries. Only the half facing us is drawn at all.
+    // The countries. Only the half facing us is drawn at all, and nothing is
+    // allowed outside the ball however a shape closes itself.
     const near = camera.zoom >= CITY_DOT_ZOOM;
-    for (const shape of shapes) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(screen.cx, screen.cy, screen.r, 0, Math.PI * 2);
+    ctx.clip();
+    for (const shape of drawn) {
       if (!anyFacing(shape, camera)) continue;
       const visit = been.get(shape.code);
+      const want = isWished(visit);
       const lit = hover === shape.code || selected === shape.code;
-      const runs = shape.rings.flatMap((ring) => visibleRuns(ring, camera, screen));
-      if (!runs.length) continue;
+      const colour = visit ? (want ? wished : visited) : ink;
+
+      // Filled whole, with whatever is round the back lying along the rim.
+      let any = false;
       ctx.beginPath();
-      for (const run of runs) {
-        ctx.moveTo(run[0][0], run[0][1]);
-        for (let i = 1; i < run.length; i++) ctx.lineTo(run[i][0], run[i][1]);
+      for (const ring of shape.rings) {
+        const pts = ringFill(ring, camera, screen);
+        if (!pts) continue;
+        ctx.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
         ctx.closePath();
+        any = true;
       }
-      ctx.fillStyle = visit ? visited : ink;
-      ctx.globalAlpha = visit ? (visit.lived ? 0.72 : 0.46) + (lit ? 0.1 : 0) : 0.07 + (lit ? 0.07 : 0);
+      if (!any) continue;
+      ctx.fillStyle = colour;
+      ctx.globalAlpha = visit
+        ? (want ? 0.4 : visit.lived ? 0.72 : 0.46) + (lit ? 0.1 : 0)
+        : 0.07 + (lit ? 0.07 : 0);
       ctx.fill();
-      ctx.strokeStyle = visit ? visited : ink;
+
+      // Outlined along the coast alone — the rim is the globe's line, not the
+      // country's, and drawing it as a border is what looked like a crack.
+      ctx.beginPath();
+      for (const ring of shape.rings) {
+        for (const run of visibleRuns(ring, camera, screen)) {
+          ctx.moveTo(run[0][0], run[0][1]);
+          for (let i = 1; i < run.length; i++) ctx.lineTo(run[i][0], run[i][1]);
+        }
+      }
+      ctx.strokeStyle = colour;
       ctx.globalAlpha = visit ? 0.95 : 0.22;
       // Zoomed in, a border is worth a little more ink.
       ctx.lineWidth = (visit ? 0.9 : 0.6) * (near ? 1.6 : 1);
       ctx.stroke();
     }
+    ctx.restore();
 
-    // Cities, once there is room for them.
+    // Cities and pins, once there is room for them.
     if (near) {
       const named = camera.zoom >= CITY_NAME_ZOOM;
       ctx.font = '11px ui-sans-serif, system-ui, sans-serif';
@@ -151,9 +191,35 @@ export function GlobeMap({
           ctx.fillText(city.name, p.x, p.y - 6);
         }
       }
+      // A pin stands up off the ball on a little stem, so it is never read as
+      // one more city dot.
+      for (const pin of pins) {
+        if (!facing(pin.lng, pin.lat, camera)) continue;
+        const p = project(pin.lng, pin.lat, camera, screen);
+        const on = selectedPin === pin.id;
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p.x, p.y - PIN_RISE);
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = visited;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(p.x, p.y - PIN_RISE, on ? 5 : 4, 0, Math.PI * 2);
+        ctx.fillStyle = on ? visited : paper;
+        ctx.fill();
+        ctx.lineWidth = on ? 2 : 1.5;
+        ctx.strokeStyle = visited;
+        ctx.stroke();
+        if (named) {
+          ctx.globalAlpha = 0.85;
+          ctx.fillStyle = ink;
+          ctx.fillText(pin.name, p.x, p.y - PIN_RISE - 7);
+        }
+      }
     }
     ctx.globalAlpha = 1;
-  }, [size, screen, camera, shapes, been, cities, homeCityId, visited, selected, hover, lines]);
+  }, [size, screen, camera, drawn, been, cities, pins, homeCityId, visited, wished, selected, selectedPin, hover, lines]);
 
   useEffect(() => {
     const frame = requestAnimationFrame(paint);
@@ -167,6 +233,23 @@ export function GlobeMap({
   const at = (e: React.PointerEvent): Pointer => {
     const r = box.current!.getBoundingClientRect();
     return { id: e.pointerId, x: e.clientX - r.left, y: e.clientY - r.top };
+  };
+
+  /** The pin a tap meant, when one was near enough to have been meant. */
+  const pinAt = (x: number, y: number): Pin | null => {
+    if (camera.zoom < CITY_DOT_ZOOM) return null;
+    let best: Pin | null = null;
+    let near = PIN_HIT;
+    for (const pin of pins) {
+      if (!facing(pin.lng, pin.lat, camera)) continue;
+      const p = project(pin.lng, pin.lat, camera, screen);
+      const gap = Math.hypot(p.x - x, p.y - PIN_RISE - y);
+      if (gap < near) {
+        near = gap;
+        best = pin;
+      }
+    }
+    return best;
   };
 
   const onDown = (e: React.PointerEvent) => {
@@ -198,6 +281,12 @@ export function GlobeMap({
     const had = down.current.delete(e.pointerId);
     if (!had || down.current.size > 0 || moved.current) return;
     const p = at(e);
+    // A pin is the smaller target, so it is asked about first.
+    const pin = pinAt(p.x, p.y);
+    if (pin) {
+      onSelectPin(selectedPin === pin.id ? null : pin.id);
+      return;
+    }
     const where = unproject(p.x, p.y, camera, screen);
     onSelect(where ? countryUnder(shapes, where.lng, where.lat) : null);
   };
@@ -230,14 +319,27 @@ export function GlobeMap({
       />
       {/* The globe cannot be tabbed into, so every country on earth is also a
           button here — hidden from sight, and the only way to colour one in
-          with a keyboard alone. */}
+          with a keyboard alone. The pins follow, for the same reason. */}
       <ul className="sr-only" data-place-countries>
-        {shapes.map((s) => (
-          <li key={s.code}>
-            <button type="button" data-place-country={s.code}
-              data-place-visited={been.get(s.code) ? (been.get(s.code)!.lived ? 'lived' : 'yes') : undefined}
-              onClick={() => onSelect(s.code)}>
-              {nameOf(s.code, s.name)}
+        {shapes.map((s) => {
+          const visit = been.get(s.code);
+          return (
+            <li key={s.code}>
+              <button type="button" data-place-country={s.code}
+                data-place-visited={visit ? (isWished(visit) ? 'wish' : visit.lived ? 'lived' : 'yes') : undefined}
+                onClick={() => onSelect(s.code)}>
+                {nameOf(s.code, s.name)}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      <ul className="sr-only" data-place-globe-pins>
+        {pins.map((pin) => (
+          <li key={pin.id}>
+            <button type="button" data-place-globe-pin={pin.id}
+              onClick={() => onSelectPin(selectedPin === pin.id ? null : pin.id)}>
+              {pin.name}
             </button>
           </li>
         ))}

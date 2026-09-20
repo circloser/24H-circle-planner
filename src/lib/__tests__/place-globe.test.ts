@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CITY_DOT_ZOOM, CITY_NAME_ZOOM, GLOBE_MAX_ZOOM, GLOBE_MIN_ZOOM,
-  anyFacing, facing, graticule, project, screenOf, turn, unproject, visibleRuns,
+  CITY_DOT_ZOOM, CITY_NAME_ZOOM, GLOBE_MAX_ZOOM, GLOBE_MIN_ZOOM, MAX_STEP_DEG,
+  anyFacing, densify, densifyShape, facing, graticule, project, ringFill, screenOf, turn,
+  unproject, visibleRuns,
 } from '../place-globe';
 import { capture, listOf, moveBetween, type Pointer } from '../gesture';
 import type { CountryShape } from '../place';
@@ -79,6 +80,65 @@ describe('cutting a country at the horizon', () => {
     const lines = graticule(30);
     expect(lines.length).toBe(12 + 5);
     expect(lines.every((l) => l.length > 2)).toBe(true);
+  });
+});
+
+describe('filling in a long coastline', () => {
+  it('breaks any step too long to be drawn as a straight line', () => {
+    const out = densify([[0, 0], [40, 0], [40, 30]]);
+    expect(out.length).toBeGreaterThan(3);
+    for (let i = 1; i < out.length; i++) {
+      const dl = Math.abs(((out[i][0] - out[i - 1][0] + 540) % 360) - 180);
+      expect(Math.max(dl, Math.abs(out[i][1] - out[i - 1][1]))).toBeLessThanOrEqual(MAX_STEP_DEG + 1e-9);
+    }
+  });
+
+  it('goes the short way over the date line, not the long way round the world', () => {
+    const out = densify([[175, 0], [-175, 0]]);
+    // Every step in between is out by the date line, never back past zero.
+    for (const [lng] of out) expect(Math.abs(lng)).toBeGreaterThan(170);
+  });
+
+  it('leaves a ring alone when every step is already short', () => {
+    const ring: Array<[number, number]> = [[0, 0], [1, 0], [1, 1], [0, 0]];
+    expect(densify(ring)).toEqual(ring);
+    expect(densifyShape({ code: 'AA', name: 'a', continent: 'Asia', rings: [ring] }).rings[0]).toEqual(ring);
+  });
+});
+
+describe('filling a country that runs over the edge', () => {
+  /** A belt around the equator, listed from a point that faces us. */
+  const belt = Array.from({ length: 72 }, (_, i): [number, number] => [((i * 5 + 540) % 360) - 180, 0]);
+
+  it('is one stretch when the visible part wraps past the end of the list', () => {
+    // The list starts and ends facing us and dips behind in the middle: that
+    // is ONE stretch of coast, not two.
+    expect(facing(belt[0][0], belt[0][1], cam())).toBe(true);
+    expect(facing(belt[belt.length - 1][0], belt[belt.length - 1][1], cam())).toBe(true);
+    expect(visibleRuns(belt, cam(), S).length).toBe(1);
+  });
+
+  it('keeps every point, and lays the far side along the rim', () => {
+    const out = ringFill(belt, cam(), S)!;
+    expect(out.length).toBe(belt.length);
+    // Nothing is outside the ball, and the hidden half sits exactly on it.
+    let onRim = 0;
+    for (const [x, y] of out) {
+      const d = Math.hypot(x - S.cx, y - S.cy);
+      expect(d).toBeLessThanOrEqual(S.r + 1e-6);
+      if (d > S.r - 1e-6) onRim++;
+    }
+    expect(onRim).toBeGreaterThan(belt.length / 3);
+  });
+
+  it('leaves a country wholly in view exactly where it is', () => {
+    const small: Array<[number, number]> = [[0, 0], [2, 0], [2, 2], [0, 2], [0, 0]];
+    const out = ringFill(small, cam(), S)!;
+    expect(out).toEqual(small.map((p) => { const q = project(p[0], p[1], cam(), S); return [q.x, q.y]; }));
+  });
+
+  it('has nothing to fill for a country entirely round the back', () => {
+    expect(ringFill([[175, 0], [180, 0], [-175, 0], [-175, 5], [175, 0]], cam(), S)).toBeNull();
   });
 });
 

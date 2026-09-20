@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Check, House, MapPin, Pencil, Trash2, X } from 'lucide-react';
+import { Check, Heart, House, MapPin, Pencil, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/hooks/usePreferences';
 import { loadPhoto } from '@/lib/calendar-photos';
 import type { CityRow } from '@/lib/place-world';
-import type { CityVisit, CountryShape, CountryVisit, Pin, PlaceData } from '@/lib/place';
+import { isWished, type CityVisit, type CountryShape, type CountryVisit, type Pin, type PlaceData } from '@/lib/place';
 import { PIN_ICON, PIN_LABEL, continentName } from './palette';
 import { CityPicker } from './PlaceDialogs';
 
@@ -14,7 +14,7 @@ import { CityPicker } from './PlaceDialogs';
  * ever home, which of its cities, and a line of one's own about it.
  */
 export function CountryCard({
-  shape, visit, data, cityRows, name, onToggle, onPatch, onAddCity, onRemoveCity, onClose, onOpenPin,
+  shape, visit, data, cityRows, name, onToggle, onWish, onPatch, onAddCity, onRemoveCity, onClose, onOpenPin,
 }: {
   shape: CountryShape;
   visit: CountryVisit | undefined;
@@ -22,6 +22,7 @@ export function CountryCard({
   cityRows: readonly CityRow[];
   name: string;
   onToggle: () => void;
+  onWish: () => void;
   onPatch: (patch: Partial<CountryVisit>) => void;
   onAddCity: (city: CityVisit) => void;
   onRemoveCity: (id: string) => void;
@@ -29,7 +30,10 @@ export function CountryCard({
   onOpenPin: (id: string) => void;
 }) {
   const { t } = useTranslation();
-  const been = !!visit;
+  // Wanting to go and having been are the two states a country can be in, and
+  // never both: the rest of the card is about having been.
+  const wish = isWished(visit);
+  const been = !!visit && !wish;
   const cities = data.cities.filter((c) => c.countryCode === shape.code);
   const pins = data.pins.filter((p) => p.countryCode === shape.code);
 
@@ -52,6 +56,11 @@ export function CountryCard({
           data-place-visited-toggle onClick={onToggle}>
           <Check aria-hidden className="h-4 w-4" />
           {t('place.visited')}
+        </Button>
+        <Button size="sm" variant={wish ? 'default' : 'outline'} className="gap-1.5" aria-pressed={wish}
+          data-place-wish-toggle onClick={onWish}>
+          <Heart aria-hidden className="h-4 w-4" />
+          {t('place.wish')}
         </Button>
         {been && (
           <Button size="sm" variant={visit?.lived ? 'default' : 'outline'} className="gap-1.5"

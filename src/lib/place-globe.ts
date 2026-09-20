@@ -6,11 +6,21 @@
  * No 3D library: a sphere seen this way is two lines of trigonometry per
  * point, and everything else is knowing which half is facing you.
  *
- * The hard part is the edge. A country that runs over the horizon has to be
- * cut there, or its coastline snaps across the middle of the globe; so each
- * ring is broken into the runs that face us, and each cut is walked to the
- * horizon itself rather than left at the last point that happened to be
- * visible.
+ * All the difficulty is at the edge, and it is worth naming, because getting
+ * it wrong is what puts wedges across the middle of the globe:
+ *
+ *  · An outline that runs over the horizon is cut there, and each cut is
+ *    walked out to the rim rather than left at whichever point happened to be
+ *    the last visible one.
+ *  · A ring that is visible at both its first and last point is ONE stretch
+ *    wrapped around the end of the list, not two.
+ *  · A country is FILLED by a different rule than it is outlined. Every point
+ *    of the ring is kept, and the ones round the back are pushed straight out
+ *    to the rim, so the shape closes along the edge of the globe by itself.
+ *    Deciding which way round the rim to close instead — by sampling — gets
+ *    Russia wrong and floods the whole ball with one colour.
+ *  · Halfway between two places is not the average of their longitudes when
+ *    they sit either side of the date line.
  */
 import type { CountryShape } from './place';
 
@@ -38,6 +48,9 @@ export const GLOBE_MAX_ZOOM = 8;
 /** Cities appear at this zoom, and are named at the next one. */
 export const CITY_DOT_ZOOM = 1.5;
 export const CITY_NAME_ZOOM = 2.4;
+/** No step of a coastline may span more than this, or it is drawn as a chord
+ *  across the curve of the globe instead of along it. */
+export const MAX_STEP_DEG = 3;
 
 /** The globe's place on screen for a box of this size. */
 export const screenOf = (w: number, h: number, zoom: number): Screen => ({
@@ -85,64 +98,150 @@ export const facing = (lng: number, lat: number, cam: Camera): boolean => {
     + Math.cos(p0) * Math.cos(lat * RAD) * Math.cos((lng - cam.lng) * RAD) > 0;
 };
 
-/** Walk along the great circle between two places to the horizon between them. */
+/** Longitudes wrap: the way between two of them is the short way. */
+const lngStep = (from: number, to: number): number => {
+  let d = (to - from) % 360;
+  if (d > 180) d -= 360;
+  if (d < -180) d += 360;
+  return d;
+};
+
+const wrapLng = (lng: number): number => ((lng + 540) % 360) - 180;
+
+/**
+ * Extra points along any step long enough to show the curve of the globe.
+ * Done once when the world is loaded, not every frame.
+ */
+export function densify(ring: ReadonlyArray<readonly [number, number]>, step = MAX_STEP_DEG): Array<[number, number]> {
+  const out: Array<[number, number]> = [];
+  for (let i = 0; i < ring.length; i++) {
+    const a = ring[i];
+    out.push([a[0], a[1]]);
+    const b = ring[i + 1];
+    if (!b) break;
+    const dl = lngStep(a[0], b[0]);
+    const dp = b[1] - a[1];
+    const parts = Math.ceil(Math.max(Math.abs(dl), Math.abs(dp)) / step);
+    for (let k = 1; k < parts; k++) {
+      out.push([wrapLng(a[0] + (dl * k) / parts), a[1] + (dp * k) / parts]);
+    }
+  }
+  return out;
+}
+
+/** Every ring of a country, with the long steps filled in. */
+export const densifyShape = (shape: CountryShape): CountryShape => ({
+  ...shape,
+  rings: shape.rings.map((ring) => densify(ring)),
+});
+
+/** Walk along the way between two places to the horizon between them. */
 function toHorizon(
   a: readonly [number, number],
   b: readonly [number, number],
   cam: Camera,
-  steps = 12,
+  steps = 14,
 ): [number, number] {
-  let lo: [number, number] = [a[0], a[1]];
-  let hi: [number, number] = [b[0], b[1]];
   const near = facing(a[0], a[1], cam);
+  let lo = 0;
+  let hi = 1;
+  // Walk in the SHORT direction, so a step over the date line does not go
+  // halfway round the world looking for its middle.
+  const dl = lngStep(a[0], b[0]);
+  const dp = b[1] - a[1];
+  const at = (f: number): [number, number] => [wrapLng(a[0] + dl * f), a[1] + dp * f];
   for (let i = 0; i < steps; i++) {
-    // Halfway in plain coordinates is close enough at a degree of resolution.
-    const mid: [number, number] = [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2];
-    if (facing(mid[0], mid[1], cam) === near) lo = mid;
+    const mid = (lo + hi) / 2;
+    const p = at(mid);
+    if (facing(p[0], p[1], cam) === near) lo = mid;
     else hi = mid;
   }
-  return lo;
+  return at(lo);
 }
 
 /**
- * One ring, cut into the runs of it that face us, each already in pixels.
- * A ring entirely on the far side gives nothing back.
+ * The whole of a ring as a shape to fill: what faces us where it is, and
+ * everything round the back pushed out to the rim it disappeared behind. The
+ * outline of the globe then closes the country for us, at no cost and with no
+ * choice to get wrong. Null when none of it is facing us at all.
+ */
+export function ringFill(
+  ring: ReadonlyArray<readonly [number, number]>,
+  cam: Camera,
+  s: Screen,
+): Array<[number, number]> | null {
+  let any = false;
+  const out: Array<[number, number]> = [];
+  for (const p of ring) {
+    const q = project(p[0], p[1], cam, s);
+    if (q.front) {
+      any = true;
+      out.push([q.x, q.y]);
+    } else {
+      // The far side folds onto the same disc, so its bearing from the middle
+      // is still the bearing it went over the edge at.
+      const a = Math.atan2(q.y - s.cy, q.x - s.cx);
+      out.push([s.cx + Math.cos(a) * s.r, s.cy + Math.sin(a) * s.r]);
+    }
+  }
+  return any ? out : null;
+}
+
+/**
+ * One ring, cut into the stretches of it that face us, each in pixels: the
+ * outline, as against the fill.
  */
 export function visibleRuns(
   ring: ReadonlyArray<readonly [number, number]>,
   cam: Camera,
   s: Screen,
 ): Array<Array<[number, number]>> {
-  const runs: Array<Array<[number, number]>> = [];
-  let run: Array<[number, number]> | null = null;
-  for (let i = 0; i < ring.length; i++) {
-    const here = ring[i];
-    const seen = facing(here[0], here[1], cam);
-    if (seen) {
+  const n = ring.length;
+  if (!n) return [];
+  const seen = ring.map((p) => facing(p[0], p[1], cam));
+  if (seen.every(Boolean)) {
+    return [ring.map((p) => { const q = project(p[0], p[1], cam, s); return [q.x, q.y] as [number, number]; })];
+  }
+  if (!seen.some(Boolean)) return [];
+
+  const runs: Array<{ points: Array<[number, number]>; opened: boolean; closed: boolean }> = [];
+  let run: { points: Array<[number, number]>; opened: boolean; closed: boolean } | null = null;
+  for (let i = 0; i < n; i++) {
+    if (seen[i]) {
       if (!run) {
-        run = [];
-        // Start the run at the horizon rather than at the first point inland.
-        const before = ring[(i - 1 + ring.length) % ring.length];
-        if (!facing(before[0], before[1], cam)) {
-          const edge = toHorizon(here, before, cam);
+        run = { points: [], opened: false, closed: false };
+        const before = ring[(i - 1 + n) % n];
+        if (!seen[(i - 1 + n) % n]) {
+          const edge = toHorizon(ring[i], before, cam);
           const p = project(edge[0], edge[1], cam, s);
-          run.push([p.x, p.y]);
+          run.points.push([p.x, p.y]);
+          run.opened = true;
         }
       }
-      const p = project(here[0], here[1], cam, s);
-      run.push([p.x, p.y]);
+      const p = project(ring[i][0], ring[i][1], cam, s);
+      run.points.push([p.x, p.y]);
     } else if (run) {
-      // Leave the run at the horizon too.
-      const before = ring[(i - 1 + ring.length) % ring.length];
-      const edge = toHorizon(before, here, cam);
+      const edge = toHorizon(ring[(i - 1 + n) % n], ring[i], cam);
       const p = project(edge[0], edge[1], cam, s);
-      run.push([p.x, p.y]);
+      run.points.push([p.x, p.y]);
+      run.closed = true;
       runs.push(run);
       run = null;
     }
   }
-  if (run) runs.push(run);
-  return runs.filter((r) => r.length >= 2);
+  if (run) {
+    // The ring was still visible when the list ran out. If it was visible at
+    // the very start too, this is the same stretch wrapped around the end —
+    // one piece, not two.
+    if (runs.length && !runs[0].opened) {
+      runs[0].points = [...run.points, ...runs[0].points];
+      runs[0].opened = run.opened;
+    } else {
+      runs.push(run);
+    }
+  }
+
+  return runs.filter((r) => r.points.length >= 2).map((r) => r.points);
 }
 
 /** Is any part of this country on the half facing us? (A cheap first pass.) */
@@ -155,29 +254,13 @@ export function anyFacing(shape: CountryShape, cam: Camera): boolean {
   return false;
 }
 
-/** The country under a place, or null out at sea. Shares the rule the flat
- *  map uses, so both agree about where a point is. */
-export function countryAtPoint(
-  shapes: readonly CountryShape[],
-  lng: number,
-  lat: number,
-  inside: (lng: number, lat: number, ring: ReadonlyArray<readonly [number, number]>) => boolean,
-): string | null {
-  for (const s of shapes) {
-    for (const ring of s.rings) {
-      if (inside(lng, lat, ring)) return s.code;
-    }
-  }
-  return null;
-}
-
 /** Turning the globe by a drag: pixels across → degrees around. The further
  *  in it is zoomed, the less a finger moves it. */
 export function turn(cam: Camera, dx: number, dy: number, s: Screen): Camera {
   const perPixel = 90 / Math.max(1, s.r);
   return {
     ...cam,
-    lng: ((cam.lng - dx * perPixel + 540) % 360) - 180,
+    lng: wrapLng(cam.lng - dx * perPixel),
     // Stop short of the poles: past them the world turns upside down.
     lat: Math.max(-85, Math.min(85, cam.lat + dy * perPixel)),
   };
