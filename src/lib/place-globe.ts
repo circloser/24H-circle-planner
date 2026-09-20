@@ -45,9 +45,34 @@ export interface Screen {
 /** How far in and out the globe may be turned. */
 export const GLOBE_MIN_ZOOM = 0.9;
 export const GLOBE_MAX_ZOOM = 8;
-/** Cities appear at this zoom, and are named at the next one. */
+/** The cities of one's own life appear at this zoom, and are named at the
+ *  next one. */
 export const CITY_DOT_ZOOM = 1.5;
 export const CITY_NAME_ZOOM = 2.4;
+/** Past this, the world's own cities start appearing under the countries —
+ *  the capitals first, and more of them the closer the globe is brought. */
+export const WORLD_CITY_ZOOM = 2.5;
+/** How many ranks of city open up for each step of zoom. */
+export const RANK_PER_ZOOM = 2;
+/** The least important rank there is. */
+export const LAST_CITY_RANK = 10;
+
+/**
+ * How far down the list of cities to go at this zoom: -1 for none at all,
+ * 0 for the capitals, and up to LAST_CITY_RANK for every town in the file.
+ *
+ * Opening it a rank at a time is what keeps the globe legible. All seven
+ * thousand at once is a grey smear; the capitals alone, on a globe held at
+ * arm's length, is a map.
+ */
+export const cityRankAt = (zoom: number): number => (
+  zoom < WORLD_CITY_ZOOM
+    ? -1
+    : Math.min(LAST_CITY_RANK, Math.floor((zoom - WORLD_CITY_ZOOM) * RANK_PER_ZOOM))
+);
+
+/** A city is named once it is well inside the cut, never as it arrives. */
+export const cityNamedAt = (rank: number, cut: number): boolean => rank + 3 <= cut;
 /** No step of a coastline may span more than this, or it is drawn as a chord
  *  across the curve of the globe instead of along it. */
 export const MAX_STEP_DEG = 3;

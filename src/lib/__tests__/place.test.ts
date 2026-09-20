@@ -211,8 +211,8 @@ describe('where a place lands on the page', () => {
 
   it('finds a city by what has been typed, nearest match first', () => {
     const rows = [
-      { id: 'a', name: 'York', code: 'GB', lng: 0, lat: 0 },
-      { id: 'b', name: 'New York', code: 'US', lng: 0, lat: 0 },
+      { id: 'a', name: 'York', code: 'GB', lng: 0, lat: 0, rank: 6 },
+      { id: 'b', name: 'New York', code: 'US', lng: 0, lat: 0, rank: 1 },
     ];
     expect(searchCities(rows, 'york').map((c) => c.id)).toEqual(['a', 'b']);
     expect(searchCities(rows, 'new').map((c) => c.id)).toEqual(['b']);

@@ -1,15 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { isWished, pointInRing, type CityVisit, type CountryShape, type CountryVisit, type Pin } from '@/lib/place';
 import {
-  CITY_DOT_ZOOM, CITY_NAME_ZOOM, GLOBE_MAX_ZOOM, GLOBE_MIN_ZOOM, anyFacing, densifyShape, facing,
-  graticule, project, ringFill, screenOf, turn, unproject, visibleRuns, type Camera,
+  CITY_DOT_ZOOM, CITY_NAME_ZOOM, GLOBE_MAX_ZOOM, GLOBE_MIN_ZOOM, anyFacing, cityNamedAt, cityRankAt,
+  densifyShape, facing, graticule, project, ringFill, screenOf, turn, unproject, visibleRuns,
+  type Camera,
 } from '@/lib/place-globe';
+import type { CityRow } from '@/lib/place-world';
 import { capture, listOf, moveBetween, type Pointer } from '@/lib/gesture';
 
 export interface GlobeMapProps {
   shapes: readonly CountryShape[];
   countries: readonly CountryVisit[];
   cities: readonly CityVisit[];
+  /** Every city there is, for the dots that appear as the globe is zoomed in.
+   *  Ranked, so the capitals arrive first and the villages last. */
+  places: readonly CityRow[];
   /** The particular spots, so the globe shows them too. */
   pins: readonly Pin[];
   homeCityId?: string;
@@ -49,7 +54,7 @@ const PIN_RISE = 9;
  * aeroplane mode exactly as it does anywhere else.
  */
 export function GlobeMap({
-  shapes, countries, cities, pins, homeCityId, visited, wished, selected, selectedPin,
+  shapes, countries, cities, places, pins, homeCityId, visited, wished, selected, selectedPin,
   camera, onCamera, onSelect, onSelectPin, nameOf,
 }: GlobeMapProps) {
   const box = useRef<HTMLDivElement>(null);
@@ -61,6 +66,12 @@ export function GlobeMap({
   // The long steps of a coastline are filled in once, not on every frame —
   // without this a border is drawn as a chord straight through the globe.
   const drawn = useMemo(() => shapes.map(densifyShape), [shapes]);
+  // Sorted by how major a place is, so a frame can stop at the first city
+  // past the cut rather than walk all seven thousand of them.
+  const ranked = useMemo(() => [...places].sort((a, b) => a.rank - b.rank), [places]);
+  const cut = cityRankAt(camera.zoom);
+  /** Cities of one's own are drawn by the loop below; these are not drawn twice. */
+  const mine = useMemo(() => new Set(cities.map((c) => c.id)), [cities]);
 
   useEffect(() => {
     const el = box.current;
@@ -166,6 +177,31 @@ export function GlobeMap({
     }
     ctx.restore();
 
+    // The world's own cities, once the globe is close enough to hold them.
+    // Ranked, so what appears first is the capitals and what appears last is
+    // everywhere else.
+    if (cut >= 0) {
+      ctx.font = '10px ui-sans-serif, system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      for (const city of ranked) {
+        if (city.rank > cut) break; // sorted: nothing further can pass either
+        if (mine.has(city.id)) continue;
+        if (!facing(city.lng, city.lat, camera)) continue;
+        const p = project(city.lng, city.lat, camera, screen);
+        const big = city.rank === 0;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, big ? 2.4 : 1.6, 0, Math.PI * 2);
+        ctx.fillStyle = ink;
+        ctx.globalAlpha = big ? 0.75 : 0.5;
+        ctx.fill();
+        if (cityNamedAt(city.rank, cut)) {
+          ctx.globalAlpha = big ? 0.7 : 0.5;
+          ctx.fillText(city.name, p.x, p.y - 4);
+        }
+      }
+    }
+
     // Cities and pins, once there is room for them.
     if (near) {
       const named = camera.zoom >= CITY_NAME_ZOOM;
@@ -219,7 +255,8 @@ export function GlobeMap({
       }
     }
     ctx.globalAlpha = 1;
-  }, [size, screen, camera, drawn, been, cities, pins, homeCityId, visited, wished, selected, selectedPin, hover, lines]);
+  }, [size, screen, camera, drawn, been, cities, ranked, cut, mine, pins, homeCityId, visited, wished,
+    selected, selectedPin, hover, lines]);
 
   useEffect(() => {
     const frame = requestAnimationFrame(paint);
@@ -302,7 +339,10 @@ export function GlobeMap({
   return (
     /* The zoom is published on the element so a test can see what a pinch
        did; nothing in the app reads it. */
+    /* data-place-cities is how many of the world's cities this zoom is
+       willing to show; a test reads it, nothing in the app does. */
     <div ref={box} data-place-globe data-place-zoom={camera.zoom.toFixed(2)}
+      data-place-cities={cut < 0 ? 0 : ranked.filter((c) => c.rank <= cut).length}
       className="absolute inset-0 touch-none select-none text-foreground">
       <canvas
         ref={canvas}

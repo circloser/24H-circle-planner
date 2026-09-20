@@ -230,6 +230,28 @@ export async function run() {
       return Number(await page.locator('[data-place-globe]').getAttribute('data-place-zoom')) < Number(before);
     })());
 
+    // 5c. The world's own cities arrive as the globe is brought closer.
+    const shown = async () => Number(await page.locator('[data-place-globe]').getAttribute('data-place-cities'));
+    const zoomBy = async (which, times) => {
+      for (let i = 0; i < times; i++) await page.locator(`[data-place-zoom-${which}]`).click();
+      await wait(400);
+    };
+    // Right out to the stop first, so each step below starts from a known
+    // zoom rather than from wherever the pinch above left it. (The buttons,
+    // not a double tap: a double tap on the globe also picks a country.)
+    await zoomBy('out', 8);
+    pass('far out, the globe is countries and nothing else', (await shown()) === 0, String(await shown()));
+    await zoomBy('in', 4);
+    const capitals = await shown();
+    pass('brought closer, the capitals appear and little else', capitals > 100 && capitals < 600,
+      `${capitals} at ${await page.locator('[data-place-globe]').getAttribute('data-place-zoom')}`);
+    await zoomBy('in', 1);
+    const more = await shown();
+    pass('…and closer still, the smaller cities join them', more > capitals,
+      `${capitals} → ${more}`);
+    await zoomBy('out', 8);
+    pass('…and zooming back out puts them away again', (await shown()) === 0);
+
     // 6. The pin map: a pin goes where the map was tapped.
     await page.locator('[data-place-tab="pins"]').click();
     await wait(900);

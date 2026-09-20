@@ -12,6 +12,11 @@
  * every language the app speaks, and knows them better; the English name is
  * kept only as the fallback and as something to search against.
  *
+ * Each city carries a rank — 0 for a national capital, then Natural Earth's
+ * own scalerank, which is how prominent a place is on a map of a given size.
+ * The globe uses it to decide which cities are worth a dot at a given zoom:
+ * capitals first, everything else as the map gets closer.
+ *
  * Shapes are rounded to two decimals (about a kilometre) — the map is 1200
  * pixels wide, so a finer coastline would be pixels nobody can see.
  */
@@ -99,7 +104,11 @@ for (const f of cities.features) {
   if (seen.has(key)) continue;
   seen.add(key);
   const [lng, lat] = f.geometry.coordinates;
-  places.push([name, code, round(lng), round(lat)]);
+  // A capital is a major city whatever its size; everything else is ranked
+  // the way Natural Earth ranks it, 1 (biggest) to 10.
+  const scale = Number.isFinite(p.scalerank) ? p.scalerank : 10;
+  const rank = p.adm0cap === 1 ? 0 : Math.max(1, Math.min(10, Math.round(scale)));
+  places.push([name, code, round(lng), round(lat), rank]);
 }
 places.sort((a, b) => (a[1] === b[1] ? (a[0] < b[0] ? -1 : 1) : a[1] < b[1] ? -1 : 1));
 
@@ -110,5 +119,6 @@ const write = (file, data) => {
   console.log(file, `${(text.length / 1024).toFixed(0)} KB`);
 };
 write('countries.json', { v: 1, source: 'Natural Earth 110m (public domain)', countries: world });
-write('cities.json', { v: 1, source: 'Natural Earth 10m populated places (public domain)', cities: places });
-console.log('countries', world.length, '· cities', places.length);
+write('cities.json', { v: 2, source: 'Natural Earth 10m populated places (public domain)', cities: places });
+console.log('countries', world.length, '· cities', places.length,
+  '· capitals', places.filter((p) => p[4] === 0).length);

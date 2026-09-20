@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CITY_DOT_ZOOM, CITY_NAME_ZOOM, GLOBE_MAX_ZOOM, GLOBE_MIN_ZOOM, MAX_STEP_DEG,
-  anyFacing, densify, densifyShape, facing, graticule, project, ringFill, screenOf, turn,
-  unproject, visibleRuns,
+  CITY_DOT_ZOOM, CITY_NAME_ZOOM, GLOBE_MAX_ZOOM, GLOBE_MIN_ZOOM, LAST_CITY_RANK, MAX_STEP_DEG,
+  WORLD_CITY_ZOOM, anyFacing, cityNamedAt, cityRankAt, densify, densifyShape, facing, graticule,
+  project, ringFill, screenOf, turn, unproject, visibleRuns,
 } from '../place-globe';
 import { capture, listOf, moveBetween, type Pointer } from '../gesture';
 import type { CountryShape } from '../place';
@@ -139,6 +139,46 @@ describe('filling a country that runs over the edge', () => {
 
   it('has nothing to fill for a country entirely round the back', () => {
     expect(ringFill([[175, 0], [180, 0], [-175, 0], [-175, 5], [175, 0]], cam(), S)).toBeNull();
+  });
+});
+
+describe('the cities that appear as the globe is brought closer', () => {
+  it('shows none at all until it is well zoomed in', () => {
+    expect(cityRankAt(1)).toBe(-1);
+    expect(cityRankAt(CITY_NAME_ZOOM)).toBe(-1);
+    expect(cityRankAt(WORLD_CITY_ZOOM - 0.01)).toBe(-1);
+  });
+
+  it('starts with the capitals, and opens up from there', () => {
+    // Rank 0 is a capital; the first thing the globe is willing to draw.
+    expect(cityRankAt(WORLD_CITY_ZOOM)).toBe(0);
+    expect(cityRankAt(3)).toBe(1);
+    expect(cityRankAt(4)).toBe(3);
+    expect(cityRankAt(6)).toBe(7);
+  });
+
+  it('never asks for a rank that is not in the file', () => {
+    expect(cityRankAt(GLOBE_MAX_ZOOM)).toBe(LAST_CITY_RANK);
+    expect(cityRankAt(1000)).toBe(LAST_CITY_RANK);
+  });
+
+  it('only opens up: closer never shows less', () => {
+    let last = -Infinity;
+    for (let z = GLOBE_MIN_ZOOM; z <= GLOBE_MAX_ZOOM; z += 0.1) {
+      const cut = cityRankAt(z);
+      expect(cut).toBeGreaterThanOrEqual(last);
+      last = cut;
+    }
+  });
+
+  it('writes a name only once the place is well inside the cut', () => {
+    // A city that has only just arrived is a dot; three ranks later it has
+    // room for its name.
+    expect(cityNamedAt(0, 0)).toBe(false);
+    expect(cityNamedAt(0, 2)).toBe(false);
+    expect(cityNamedAt(0, 3)).toBe(true);
+    expect(cityNamedAt(5, 8)).toBe(true);
+    expect(cityNamedAt(8, 8)).toBe(false);
   });
 });
 

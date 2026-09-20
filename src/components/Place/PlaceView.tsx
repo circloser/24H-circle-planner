@@ -206,6 +206,7 @@ export function PlaceView() {
             shapes={shapes}
             countries={data.countries}
             cities={data.cities}
+            places={cityRows}
             pins={pins}
             {...(data.home?.cityId ? { homeCityId: data.home.cityId } : {})}
             visited={visited}

@@ -21,7 +21,13 @@ export interface CityRow {
   code: string;
   lng: number;
   lat: number;
+  /** How major a place it is: 0 for a national capital, then 1 (biggest) to
+   *  10. The globe opens up one rank at a time as it is zoomed in. */
+  rank: number;
 }
+
+/** What an unranked city (an older cached file) is taken to be. */
+export const DEFAULT_CITY_RANK = 6;
 
 const WORLD_URL = '/world/countries.json';
 const CITIES_URL = '/world/cities.json';
@@ -50,9 +56,13 @@ export const cityId = (code: string, name: string): string =>
 export function loadCities(): Promise<CityRow[]> {
   cities ??= fetch(CITIES_URL)
     .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
-    .then((data: { cities: Array<[string, string, number, number]> }) => data.cities.map(([name, code, lng, lat]) => ({
-      id: cityId(code, name), name, code, lng, lat,
-    })))
+    .then((data: { cities: Array<[string, string, number, number, number?]> }) => data.cities
+      .map(([name, code, lng, lat, rank]) => ({
+        id: cityId(code, name), name, code, lng, lat,
+        // A file from before ranks existed may still be in a browser's cache:
+        // give those a middling rank rather than showing all of them at once.
+        rank: typeof rank === 'number' ? rank : DEFAULT_CITY_RANK,
+      })))
     .catch(() => []);
   return cities;
 }
