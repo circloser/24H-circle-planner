@@ -80,6 +80,11 @@ export const SYNC_KEYS: readonly string[] = [
   // Decorations laid over the life line (stickers, tape, photo frames), the
   // same kind of store as the calendar's layer. Photo PIXELS stay on the device.
   'life-decor',
+  // The relation map (the people around you, and the lines between them) —
+  // user-authored, kept if an older cloud blob predates it. decodeRelation is
+  // byte-stable on load → save, so syncing it is loop-safe. Faces stay on the
+  // device, like every other picture here.
+  'relation',
   'prefs',
   'view',
 ].map((k) => PREFIX + k)
@@ -107,6 +112,7 @@ const KEEP_IF_ABSENT = new Set<string>([
   PREFIX + 'decor-layer',
   PREFIX + 'life',
   PREFIX + 'life-decor',
+  PREFIX + 'relation',
 ]);
 
 /** The synced preferences key — applied live (no reload) when it alone changes. */

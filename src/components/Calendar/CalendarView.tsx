@@ -27,6 +27,10 @@ import { loadPersisted } from '@/hooks/usePersistedState';
 import { lifeCodec } from '@/hooks/useLife';
 import { LIFE_KEY, type LifeCategory } from '@/lib/life';
 import { lifeAnniversaries } from '@/lib/life-calendar';
+import { relationBirthdays } from '@/lib/relation-calendar';
+import { RELATION_KEY } from '@/lib/relation';
+import { relationCodec } from '@/hooks/useRelation';
+import { groupColors } from '@/components/Relation/groups';
 import { categoryColors } from '@/components/Life/categories';
 import { chipInk, shownColor, themeAccent } from '@/lib/calendar-theme';
 import { MONTH_ROWS, WEEK_DAYS, addDays, homeOf, dayGap, monthCells, monthPair, partsOf, shiftMonth, thisMonth, todayKey, type YearMonth } from '@/lib/calendar-grid';
@@ -436,6 +440,10 @@ export function CalendarView() {
   // turned off) the birthdays and pinned anniversaries of the life line. The
   // life record is read once per visit — it is edited on its own page.
   const lifeRecord = useMemo(() => loadPersisted(LIFE_KEY, lifeCodec), []);
+  // The relation map's birthdays ride the same switch: both are quiet
+  // reminders from another page, and one person would not want one without
+  // the other.
+  const relationRecord = useMemo(() => loadPersisted(RELATION_KEY, relationCodec), []);
   const showLife = prefs.lifeInCalendar !== false;
   const imported = useMemo<Record<string, DayEvent[]>>(() => {
     const first = monthCells(left.y, left.m)[0].key;
@@ -448,10 +456,18 @@ export function CalendarView() {
       years: (title, n) => t('life.cal.years', { title, n: String(n) }),
       me: t('life.cal.me'), mother: t('life.rel.mother'), father: t('life.rel.father'),
     }, { birth: cat.birth, family: cat.family, moment: (c) => cat[c as LifeCategory] ?? cat.other });
+    const group = groupColors(theme);
+    const born = relationBirthdays(relationRecord, first, last,
+      (who, age) => (age === null
+        ? t('life.cal.birthday', { who })
+        : `${t('life.cal.birthday', { who })} ${t('relation.turning', { n: String(age) })}`),
+      (g) => group[g]);
     const out: Record<string, DayEvent[]> = { ...feeds };
-    for (const [key, list] of Object.entries(days)) out[key] = [...(out[key] ?? []), ...list];
+    for (const source of [days, born]) {
+      for (const [key, list] of Object.entries(source)) out[key] = [...(out[key] ?? []), ...list];
+    }
     return out;
-  }, [importedDays, left.y, left.m, right.y, right.m, lifeRecord, showLife, theme, t]);
+  }, [importedDays, left.y, left.m, right.y, right.m, lifeRecord, relationRecord, showLife, theme, t]);
   const sorted = picked
     ? sortDayEvents([...dayEvents(events, picked.start), ...(imported[picked.start] ?? [])])
     : [];

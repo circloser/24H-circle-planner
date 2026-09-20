@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Clock, Sun, Moon, Table as TableIcon, Timer, CalendarDays, GitCommitVertical } from 'lucide-react';
+import { Clock, Sun, Moon, Table as TableIcon, Timer, CalendarDays, GitCommitVertical, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
@@ -15,6 +15,7 @@ const ICON: Record<ChartView, typeof Clock> = {
   record: Timer,
   calendar: CalendarDays,
   life: GitCommitVertical,
+  relation: Share2,
 };
 
 const SELECTABLE_VIEWS: ChartView[] = [...CHART_VIEWS, 'record'];
@@ -27,6 +28,7 @@ const LABEL_KEY: Record<ChartView, TKey> = {
   record: 'view.record',
   calendar: 'view.calendar',
   life: 'nav.life',
+  relation: 'nav.relation',
 };
 
 /** Choose any view directly; all views edit the same underlying schedule. */

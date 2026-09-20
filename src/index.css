@@ -705,3 +705,14 @@ html[data-page='life'] #site-copy-wrap { display: none; }
   .life-reveal { opacity: 1; transform: none; transition: none; }
   .life-pulse { animation: none; }
 }
+
+/* ─── Relation map ─────────────────────────────────────────────────────────── */
+/* The map is drawn on a canvas, which cannot read Tailwind classes, so the two
+   colours it needs are published here as plain values it can ask for. */
+[data-relation-view] {
+  --relation-ink: hsl(var(--foreground));
+  --relation-accent: hsl(var(--primary));
+}
+/* Like the life line, the map fills the window: the home page's reading copy
+   (and the app footer, see App.tsx) stay away while it shows. */
+html[data-page='relation'] #site-copy-wrap { display: none; }
