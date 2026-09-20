@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Download, FileJson, Link2, Loader2, Share2, ShieldAlert, Upload } from 'lucide-react';
+import { Download, FileJson, Link2, Loader2, Printer, Share2, ShieldAlert, Upload } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/usePreferences';
@@ -52,7 +52,7 @@ async function imageInput(life: LifeData, colors: Record<LifeCategory, string>, 
     decorPhotos[id] = url ? await loadImage(url) : null;
   }));
   const rows: LifeImageRow[] = buildTimeline(life, { today }).map((it): LifeImageRow => {
-    if (it.kind === 'decade') return { kind: 'decade', label: `${it.decade}s`, future: it.future, row: it.key };
+    if (it.kind === 'decade') return { kind: 'decade', label: it.count ? `${it.decade}s  ${it.count}` : `${it.decade}s`, future: it.future, row: it.key };
     if (it.kind === 'today') return { kind: 'today', label: t('life.todayAge', { n: String(ageAt(birth, it.date)?.years ?? 0) }), row: 'today' };
     if (it.kind === 'birth') {
       return {
@@ -177,6 +177,23 @@ export function LifeExportDialog({ open, onOpenChange, api, colors, decor }: {
     }
   };
 
+  /** The same tall image, cut into A4 pages to print. */
+  const asPdf = async () => {
+    if (busy || !checked) return;
+    setBusy(true);
+    try {
+      const { lifePdf } = await import('@/lib/export/lifePdf');
+      downloadBlob(await lifePdf(await make(2)), `24houring-life-${todayKey()}.pdf`);
+      track('life_image', { outcome: 'pdf' });
+      toast.success(t('life.pdfSaved'));
+      onOpenChange(false);
+    } catch {
+      toast.error(t('life.pdfError'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const pickFile = async (file: File | undefined) => {
     if (!file) return;
     try {
@@ -224,6 +241,10 @@ export function LifeExportDialog({ open, onOpenChange, api, colors, decor }: {
                 {t('calendar.exportShare')}
               </Button>
             )}
+            <Button variant="outline" disabled={busy || !checked} onClick={() => void asPdf()} className="gap-1.5" data-life-export-pdf>
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer aria-hidden className="h-4 w-4" />}
+              {t('life.export.pdf')}
+            </Button>
             <Button disabled={busy || !checked} onClick={() => void image('save')} className="gap-1.5 bg-primary text-primary-foreground" data-life-export-png>
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download aria-hidden className="h-4 w-4" />}
               {t('life.export.png')}

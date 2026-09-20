@@ -152,6 +152,7 @@ describe('the timeline', () => {
   it('from a birthday alone: decades, birth, today, and the decades ahead', () => {
     const items = buildTimeline(life(), { today: TODAY });
     const shape = items.map((i) => (i.kind === 'decade' ? `${i.decade}s${i.future ? '~' : ''}` : i.kind));
+    expect(items.filter((i) => i.kind === 'decade').every((i) => i.count === 0)).toBe(true);
     expect(shape).toEqual([
       '1980s', 'birth', '1990s', '2000s', '2010s', '2020s', 'today',
       '2030s~', '2040s~', '2050s~', '2060s~', '2070s~',
@@ -167,6 +168,9 @@ describe('the timeline', () => {
     const byKey = Object.fromEntries(items.map((i) => [i.key, i]));
     expect(byKey['grad']).toMatchObject({ tight: true, future: false, plan: false });
     expect(byKey['school']).toMatchObject({ tight: false });
+    // Two moments in the 1990s, one each in the 2010s and 2030s.
+    expect(items.filter((i) => i.kind === 'decade').map((i) => [i.decade, i.count]))
+      .toEqual([[1980, 0], [1990, 2], [2000, 0], [2010, 1], [2020, 0], [2030, 1], [2040, 0], [2050, 0], [2060, 0], [2070, 0]]);
     expect(byKey['trip']).toMatchObject({ future: true, plan: true });
     expect(items.findIndex((i) => i.kind === 'today')).toBeLessThan(items.findIndex((i) => i.key === 'trip'));
   });

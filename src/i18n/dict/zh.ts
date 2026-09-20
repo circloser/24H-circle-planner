@@ -997,4 +997,8 @@ export const zh: Record<TKey, string> = {
   // Life — the timeline of a whole life (components/Life).
   'decor.lifeMenu': '装饰人生时间线',
   'life.decorOn': '装饰中 · 点击时间线放置',
+  // Life — the timeline of a whole life (components/Life).
+  'life.export.pdf': '可打印 PDF',
+  'life.pdfSaved': '已保存 PDF',
+  'life.pdfError': '无法生成 PDF',
 };

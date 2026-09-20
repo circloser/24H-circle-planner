@@ -1002,4 +1002,8 @@ export const de: Record<TKey, string> = {
   // Life — the timeline of a whole life (components/Life).
   'decor.lifeMenu': 'Lebenslinie gestalten',
   'life.decorOn': 'Gestalten · zum Platzieren tippen',
+  // Life — the timeline of a whole life (components/Life).
+  'life.export.pdf': 'PDF zum Drucken',
+  'life.pdfSaved': 'PDF gespeichert',
+  'life.pdfError': 'PDF konnte nicht erstellt werden',
 };

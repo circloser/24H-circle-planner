@@ -1003,6 +1003,10 @@ export const ko = {
   // Life — the timeline of a whole life (components/Life).
   'decor.lifeMenu': '라이프 꾸미기',
   'life.decorOn': '꾸미는 중 · 선을 눌러 붙이세요',
+  // Life — the timeline of a whole life (components/Life).
+  'life.export.pdf': '인쇄용 PDF',
+  'life.pdfSaved': 'PDF를 저장했어요',
+  'life.pdfError': 'PDF를 만들지 못했어요',
 } as const;
 
 /** Every translation key — derived, never hand-maintained. */

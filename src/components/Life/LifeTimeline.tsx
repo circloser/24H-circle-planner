@@ -272,6 +272,8 @@ export function LifeTimeline({ life, items, colors, stickyTop, readOnly, rowDeco
           <div className="relative flex min-[900px]:justify-center">
             <span data-life-label className="life-serif relative z-10 ml-[28px] -translate-x-1/2 bg-background px-2 py-1 text-[15px] font-bold tracking-wide text-muted-foreground min-[900px]:ml-0 min-[900px]:translate-x-0">
               {it.decade}s
+              {/* How full this stretch of the life is — a number, no words. */}
+              {it.count > 0 && <span data-life-decade-count className="ml-1.5 font-normal opacity-60">{it.count}</span>}
             </span>
           </div>
         </li>,

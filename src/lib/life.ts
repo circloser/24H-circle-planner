@@ -310,7 +310,7 @@ export type Side = 'left' | 'right';
 /** `future`: below today's marker, where the line turns dashed. `tight`: in
  *  the same year as the card above it, so it sits closer. */
 export type TimelineItem =
-  | { kind: 'decade'; key: string; decade: number; future: boolean }
+  | { kind: 'decade'; key: string; decade: number; future: boolean; count: number }
   | { kind: 'birth'; key: string; date: string; side: Side; tight: boolean; future: false }
   | { kind: 'moment'; key: string; m: Milestone; plan: boolean; side: Side; tight: boolean; future: boolean }
   | { kind: 'today'; key: string; date: string; future: false };
@@ -345,9 +345,15 @@ export function buildTimeline(life: LifeData, opts: TimelineOptions = {}): Timel
   let prevYear: number | null = null;
   let past = true;
   let birthPlaced = false;
+  // How many moments each decade holds — a quiet sense of where a life was full.
+  const perDecade = new Map<number, number>();
+  for (const m of moments) {
+    const d = Math.floor(yearOf(m.date) / 10) * 10;
+    perDecade.set(d, (perDecade.get(d) ?? 0) + 1);
+  }
   const decadesUpTo = (year: number) => {
     for (; decade <= year; decade += 10) {
-      out.push({ kind: 'decade', key: `d${decade}`, decade, future: !past });
+      out.push({ kind: 'decade', key: `d${decade}`, decade, future: !past, count: perDecade.get(decade) ?? 0 });
       prevYear = null; // a decade label resets the "same year" spacing
     }
   };

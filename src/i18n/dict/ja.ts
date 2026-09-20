@@ -999,4 +999,8 @@ export const ja: Record<TKey, string> = {
   // Life — the timeline of a whole life (components/Life).
   'decor.lifeMenu': 'ライフを飾る',
   'life.decorOn': '飾りつけ中 · 線をタップして貼る',
+  // Life — the timeline of a whole life (components/Life).
+  'life.export.pdf': '印刷用PDF',
+  'life.pdfSaved': 'PDFを保存しました',
+  'life.pdfError': 'PDFを作成できませんでした',
 };

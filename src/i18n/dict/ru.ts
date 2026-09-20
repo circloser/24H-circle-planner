@@ -999,4 +999,8 @@ export const ru: Record<TKey, string> = {
   // Life — the timeline of a whole life (components/Life).
   'decor.lifeMenu': 'Украсить линию жизни',
   'life.decorOn': 'Украшение · нажмите на линию',
+  // Life — the timeline of a whole life (components/Life).
+  'life.export.pdf': 'PDF для печати',
+  'life.pdfSaved': 'PDF сохранён',
+  'life.pdfError': 'Не удалось создать PDF',
 };
