@@ -996,4 +996,7 @@ export const fr: Record<TKey, string> = {
   'life.cal.years': '{title} · {n} ans',
   'life.cal.me': 'Moi',
   'settings.lifeInCalendar': 'Anniversaires de vie dans le calendrier',
+  // Life — the timeline of a whole life (components/Life).
+  'decor.lifeMenu': 'Décorer la ligne de vie',
+  'life.decorOn': 'Décoration · touchez la ligne pour poser',
 };

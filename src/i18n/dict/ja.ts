@@ -996,4 +996,7 @@ export const ja: Record<TKey, string> = {
   'life.cal.years': '{title} {n}周年',
   'life.cal.me': 'わたし',
   'settings.lifeInCalendar': 'カレンダーにライフの記念日を表示',
+  // Life — the timeline of a whole life (components/Life).
+  'decor.lifeMenu': 'ライフを飾る',
+  'life.decorOn': '飾りつけ中 · 線をタップして貼る',
 };

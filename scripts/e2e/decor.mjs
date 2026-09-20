@@ -159,7 +159,8 @@ export async function run() {
     pass('the separate theme and sticker buttons are gone', (await count('[data-cal-theme], [data-sticker-tray-toggle]')) === 0);
     const designGroups = await page.locator('[data-design-menu] [role="group"] > div:first-child, [data-design-menu] [data-decor-menu]')
       .evaluateAll((els) => els.map((e) => e.textContent.trim()));
-    pass('디자인 is grouped: 시간표 꾸미기, then 캘린더 꾸미기', JSON.stringify(designGroups) === '["시간표 꾸미기","캘린더 꾸미기"]', JSON.stringify(designGroups));
+    pass('디자인 is grouped: 시간표, then 캘린더, then 라이프 꾸미기',
+      JSON.stringify(designGroups) === '["시간표 꾸미기","캘린더 꾸미기","라이프 꾸미기"]', JSON.stringify(designGroups));
     const timetableItems = await page.locator('[data-design-group="timetable"] [role="menuitem"]').allInnerTexts();
     pass('…시간표 꾸미기 lists layout, presets, theme, font, icons, time lines, palette',
       JSON.stringify(timetableItems.map((x) => x.trim())) === JSON.stringify(['레이아웃', '프리셋', '색상 테마', '폰트', '아이콘', '시간선', '타임 팔레트']),

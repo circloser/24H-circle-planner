@@ -9,6 +9,7 @@ import { track } from './track';
 import { loadPhoto } from './calendar-photos';
 import { todayKey } from './calendar-grid';
 import { lifeFile, photoIds, type LifeData } from './life';
+import { decorPhotoIds, encodeLifeDecor, type LifeDecor } from './life-decor';
 
 const BACKUP_AT = '24h-life-backup-at';
 const BANNER_OFF = '24h-life-banner-off';
@@ -46,13 +47,14 @@ export function needsBackupWarning(o: { moments: number; syncing: boolean; now?:
 
 /** The JSON backup, photos included, saved as a file — and remembered, so
  *  the banner rests for a while. */
-export async function downloadLifeBackup(life: LifeData): Promise<void> {
+export async function downloadLifeBackup(life: LifeData, decor?: LifeDecor): Promise<void> {
   const photos: Record<string, string> = {};
-  await Promise.all(photoIds(life).map(async (id) => {
+  const ids = [...photoIds(life), ...(decor ? decorPhotoIds(decor) : [])];
+  await Promise.all([...new Set(ids)].map(async (id) => {
     const url = await loadPhoto(id);
     if (url) photos[id] = url;
   }));
-  const blob = new Blob([JSON.stringify(lifeFile(life, photos), null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify(lifeFile(life, photos, new Date(), decor && Object.keys(decor).length ? encodeLifeDecor(decor) : undefined), null, 2)], { type: 'application/json' });
   downloadBlob(blob, `24houring-life-${todayKey()}.json`);
   markLifeBackup();
   track('life_backup', { kind: 'json' });

@@ -996,4 +996,7 @@ export const ru: Record<TKey, string> = {
   'life.cal.years': '{title} — {n} лет',
   'life.cal.me': 'Я',
   'settings.lifeInCalendar': 'Годовщины линии жизни в календаре',
+  // Life — the timeline of a whole life (components/Life).
+  'decor.lifeMenu': 'Украсить линию жизни',
+  'life.decorOn': 'Украшение · нажмите на линию',
 };

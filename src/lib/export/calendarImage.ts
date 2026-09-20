@@ -180,7 +180,9 @@ function tapeFill(ctx: CanvasRenderingContext2D, p: TapePattern, color: string, 
   }
 }
 
-function drawItem(ctx: CanvasRenderingContext2D, item: LayerItem, grid: { x: number; y: number; w: number; h: number }, photos: CalendarImageInput['photos']) {
+/** One decoration, drawn into any box (the month grid, or a row of the life
+ *  line): its place and size are fractions of that box, as on the page. */
+export function drawItem(ctx: CanvasRenderingContext2D, item: LayerItem, grid: { x: number; y: number; w: number; h: number }, photos: Record<string, CanvasImageSource | null>) {
   // Sizes follow the page: fractions of the grid's width (the layer's cqw).
   const cq = grid.w / 100;
   ctx.save();

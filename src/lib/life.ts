@@ -411,10 +411,12 @@ export interface LifeFile {
   life: LifeData;
   /** Photo id → data URL, so a restore brings the pictures back too. */
   photos: Record<string, string>;
+  /** Decorations laid over the line, by row (see lib/life-decor). */
+  decor?: unknown;
 }
 
-export function lifeFile(life: LifeData, photos: Record<string, string>, now = new Date()): LifeFile {
-  return { app: '24h-circle-planner', kind: 'life', version: 1, exportedAt: now.toISOString(), life, photos };
+export function lifeFile(life: LifeData, photos: Record<string, string>, now = new Date(), decor?: unknown): LifeFile {
+  return { app: '24h-circle-planner', kind: 'life', version: 1, exportedAt: now.toISOString(), life, photos, ...(decor ? { decor } : {}) };
 }
 
 /** Every photo id the data refers to. */
@@ -426,7 +428,7 @@ export function photoIds(life: LifeData): string[] {
  * Read a life backup — ours, or the whole-app backup (which carries the life
  * store under its key). Throws on anything else.
  */
-export function readLifeFile(text: string): { life: LifeData; photos: Record<string, string> } {
+export function readLifeFile(text: string): { life: LifeData; photos: Record<string, string>; decor?: unknown } {
   const parsed = JSON.parse(text) as Record<string, unknown> | null;
   if (!parsed || parsed['app'] !== '24h-circle-planner') throw new Error('not a 24Houring file');
   let raw: unknown = null;
@@ -444,5 +446,5 @@ export function readLifeFile(text: string): { life: LifeData; photos: Record<str
       if (isId(id) && typeof url === 'string' && url.startsWith('data:image/')) photos[id] = url;
     }
   }
-  return { life, photos };
+  return { life, photos, ...(parsed['decor'] ? { decor: parsed['decor'] } : {}) };
 }

@@ -23,6 +23,12 @@ import { CATEGORY_ICON, CATEGORY_LABEL, RELATION_LABEL, categoryColors, inkOf } 
 import { LifePhoto, LifeTimeline } from './LifeTimeline';
 import { FamilyDialog, MilestoneDialog, ProfileDialog, type MemberTarget, type MomentTarget } from './LifeDialogs';
 import { LifeExportDialog } from './LifeExport';
+import { DecorTray } from '@/components/Calendar/Decor';
+import { DecorStoreProvider } from '@/hooks/useDecor';
+import { useLifeDecor } from '@/hooks/useLifeDecor';
+import { LifeRowDecor, type LifeArmed, type LifePicked } from './LifeDecor';
+import { LIFE_REQUEST_EVENT, takeLifeRequest } from '@/lib/life-requests';
+import type { DecorTool } from '@/components/Calendar/decor-tools';
 import type { TKey } from '@/i18n/translations';
 
 type Parent = 'mother' | 'father';
@@ -63,6 +69,28 @@ export function LifeView() {
   const [bannerOff, setBannerOff] = useState(false);
   // A plan coming up, or a year with nothing written in it yet.
   const { nudge, dismiss } = useLifeNudge();
+
+  // 다꾸: stickers, tape and photos over the line (Pro). The 디자인 menu asks
+  // for a tool; the tray and the layer are the calendar's own.
+  const decorStore = useLifeDecor();
+  const [decorTool, setDecorTool] = useState<DecorTool | null>(null);
+  const [armed, setArmed] = useState<LifeArmed | null>(null);
+  const [chosen, setChosen] = useState<LifePicked | null>(null);
+  const decorating = decorTool !== null || armed !== null || chosen !== null;
+  useEffect(() => {
+    const take = () => {
+      const req = takeLifeRequest();
+      if (!req) return;
+      if (!pro) return requestUpgrade('life');
+      setDecorTool(req.tool);
+      setArmed(null);
+    };
+    take();
+    window.addEventListener(LIFE_REQUEST_EVENT, take);
+    return () => window.removeEventListener(LIFE_REQUEST_EVENT, take);
+  }, [pro]);
+  const closeDecor = () => { setDecorTool(null); setArmed(null); setChosen(null); };
+  const chosenItem = chosen ? decorStore.rows[chosen.row]?.find((i) => i.id === chosen.id) : undefined;
   useEffect(() => {
     const open = () => setExporting(true);
     window.addEventListener(LIFE_EXPORT_EVENT, open);
@@ -163,7 +191,7 @@ export function LifeView() {
             <ShieldAlert aria-hidden className="mt-0.5 h-5 w-5 shrink-0" />
             <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2">
               <p className="min-w-0 flex-[1_1_16rem]">{t('life.backup.banner')}</p>
-              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => { void downloadLifeBackup(life); setBannerOff(true); }}>
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => { void downloadLifeBackup(life, decorStore.rows); setBannerOff(true); }}>
                 <Download aria-hidden className="h-4 w-4" />
                 {t('life.backup.download')}
               </Button>
@@ -189,6 +217,11 @@ export function LifeView() {
             onOpen={(f) => setMember({ mode: 'edit', f })} />
           {life.milestones.length === 0 && only.size === 0 && <QuickStart birth={life.profile.birthDate} onAdd={api.addMilestone} />}
           <LifeTimeline life={life} items={items} colors={colors} stickyTop={headerH}
+            decorating={decorating}
+            rowDecor={(row) => (
+              <LifeRowDecor row={row} store={decorStore} active={decorating} armed={armed}
+                selected={chosen} onSelect={setChosen} onPlaced={setChosen} />
+            )}
             onOpenMoment={(m) => setMoment({ mode: 'edit', m })}
             onOpenBirth={() => setProfileOpen(true)}
             onAdd={addMoment} />
@@ -231,7 +264,16 @@ export function LifeView() {
         }} />
       <ProfileDialog open={profileOpen} profile={life.profile} onClose={() => setProfileOpen(false)}
         onSave={(p) => { api.setProfile({ name: p.name, birthDate: p.birthDate, lifeExpectancy: p.lifeExpectancy }); setProfileOpen(false); }} />
-      <LifeExportDialog open={exporting} onOpenChange={setExporting} api={api} colors={colors} />
+      <LifeExportDialog open={exporting} onOpenChange={setExporting} api={api} colors={colors} decor={decorStore} />
+      {decorating && (
+        <DecorStoreProvider value={decorStore}>
+          <p className="pointer-events-none fixed inset-x-0 top-16 z-40 text-center text-xs italic text-muted-foreground" data-life-decor-on>
+            {t('life.decorOn')}
+          </p>
+          <DecorTray tool={decorTool} armed={armed} onArm={setArmed} onClose={closeDecor}
+            selected={chosen && chosenItem ? { month: chosen.row, item: chosenItem } : null} />
+        </DecorStoreProvider>
+      )}
     </div>
   );
 }

@@ -110,7 +110,7 @@ const SideCtx = createContext(false);
  * around it — spacing and alignment do the work. Wide screens set an entry
  * on the left flush right, toward the line.
  */
-function EntryRow({ side, tight, year, plan, future, faint, children, label, onOpen, row }: {
+function EntryRow({ side, tight, year, plan, future, faint, children, label, onOpen, row, decor }: {
   side: Side;
   tight: boolean;
   year: number;
@@ -122,12 +122,15 @@ function EntryRow({ side, tight, year, plan, future, faint, children, label, onO
   label: string;
   onOpen?: () => void;
   row: Record<string, string>;
+  /** The decorating layer for this row, when the page hands one down. */
+  decor?: ReactNode;
 }) {
   const left = side === 'left';
   const dashed = plan || faint;
   return (
     <li className={`relative ${tight ? 'pt-6' : 'pt-12'}`} data-year={year} data-future={future || undefined} {...row}>
       <Line future={future} />
+      {decor}
       <div className="life-reveal group relative">
         <span aria-hidden data-life-marker
           className={`absolute left-[28px] top-[33px] z-10 h-[26px] w-[26px] -translate-x-1/2 rounded-full border-2 bg-background transition-transform duration-150 group-hover:scale-110 min-[900px]:left-1/2 ${
@@ -196,7 +199,7 @@ function Description({ text }: { text: string }) {
   );
 }
 
-export function LifeTimeline({ life, items, colors, stickyTop, readOnly, onOpenMoment, onOpenBirth, onAdd }: {
+export function LifeTimeline({ life, items, colors, stickyTop, readOnly, rowDecor, decorating, onOpenMoment, onOpenBirth, onAdd }: {
   life: LifeData;
   items: TimelineItem[];
   colors: Record<LifeCategory, string>;
@@ -204,6 +207,10 @@ export function LifeTimeline({ life, items, colors, stickyTop, readOnly, onOpenM
   stickyTop: number;
   /** Someone else's line (a share link): shown, never touched. */
   readOnly?: boolean;
+  /** Decorations for a row (다꾸), when the page is decorating. */
+  rowDecor?: (row: string) => ReactNode;
+  /** While decorating, the line adds nothing on hover. */
+  decorating?: boolean;
   onOpenMoment?: (m: Milestone) => void;
   onOpenBirth?: () => void;
   onAdd?: (preset: Partial<MilestoneDraft>) => void;
@@ -261,6 +268,7 @@ export function LifeTimeline({ life, items, colors, stickyTop, readOnly, onOpenM
       rows.push(
         <li key={it.key} className="relative pt-12" data-year={it.decade} data-life-decade>
           <Line future={it.future} />
+          {rowDecor?.(it.key)}
           <div className="relative flex min-[900px]:justify-center">
             <span data-life-label className="life-serif relative z-10 ml-[28px] -translate-x-1/2 bg-background px-2 py-1 text-[15px] font-bold tracking-wide text-muted-foreground min-[900px]:ml-0 min-[900px]:translate-x-0">
               {it.decade}s
@@ -276,6 +284,7 @@ export function LifeTimeline({ life, items, colors, stickyTop, readOnly, onOpenM
           {/* Solid down to the marker, dashed from it on. */}
           <span aria-hidden className="life-line" style={{ bottom: 'auto', height: 61 }} />
           <span aria-hidden className="life-line life-line--future" style={{ top: 61 }} />
+          {rowDecor?.('today')}
           <div className="relative h-[26px]">
             <span aria-hidden data-life-label className="life-pulse absolute left-[28px] top-0 z-10 h-[26px] w-[26px] -translate-x-1/2 rounded-full border-[6px] border-background bg-primary ring-2 ring-primary min-[900px]:left-1/2" />
             <span data-life-label className="absolute left-[52px] top-0 whitespace-nowrap text-[15px] font-semibold italic leading-[26px] text-primary min-[900px]:left-[calc(50%+28px)]">
@@ -295,7 +304,7 @@ export function LifeTimeline({ life, items, colors, stickyTop, readOnly, onOpenM
       rows.push(
         <EntryRow key={it.key} side={it.side} tight={it.tight} year={birthYear} plan={false} future={false}
           label={`${spokenLifeDate(birth, lang)}, ${t('life.born')}`} onOpen={readOnly ? undefined : onOpenBirth}
-          row={{ 'data-life-birth': '' }}>
+          row={{ 'data-life-birth': '' }} decor={rowDecor?.('birth')}>
           <DateLine category="birth" color={color} text={formatLifeDate(birth)} />
           <Title>{t('life.born')}</Title>
           {life.profile.name && <p className="mt-3 text-[15px] leading-relaxed text-foreground/75">{life.profile.name}</p>}
@@ -308,7 +317,7 @@ export function LifeTimeline({ life, items, colors, stickyTop, readOnly, onOpenM
         <EntryRow key={it.key} side={it.side} tight={it.tight} year={Number(m.date.slice(0, 4))} plan={it.plan} future={it.future}
           label={`${spokenLifeDate(m.date, lang)}, ${m.title}${it.plan ? `, ${t('life.planBadge')}` : ''}`}
           onOpen={readOnly ? undefined : () => onOpenMoment?.(m)}
-          row={{ 'data-life-moment': m.id, ...(it.plan ? { 'data-plan': '' } : {}) }}>
+          row={{ 'data-life-moment': m.id, ...(it.plan ? { 'data-plan': '' } : {}) }} decor={rowDecor?.(m.id)}>
           <DateLine category={m.category} color={color} text={dateText(m)} badge={it.plan ? t('life.planBadge') : undefined} />
           <Title>{m.title}</Title>
           {m.description && <Description text={m.description} />}
@@ -321,7 +330,7 @@ export function LifeTimeline({ life, items, colors, stickyTop, readOnly, onOpenM
   return (
     <div ref={wrap} className="relative"
       onPointerMove={(e) => {
-        if (readOnly || e.pointerType !== 'mouse' || !wrap.current) return;
+        if (readOnly || decorating || e.pointerType !== 'mouse' || !wrap.current) return;
         // Over the circle itself: let it follow, keep its year.
         if ((e.target as Element).closest('[data-life-ghost]')) return;
         if (!onLine(e)) { setGhost(null); return; }
@@ -329,7 +338,7 @@ export function LifeTimeline({ life, items, colors, stickyTop, readOnly, onOpenM
         setGhost({ x: lineX() - box.left, y: e.clientY - box.top, year: yearAtY(e.clientY) });
       }}
       onPointerLeave={() => setGhost(null)}
-      onPointerDown={(e) => { tap.current = !readOnly && e.pointerType === 'touch' && onLine(e) ? { x: e.clientX, y: e.clientY } : null; }}
+      onPointerDown={(e) => { tap.current = !readOnly && !decorating && e.pointerType === 'touch' && onLine(e) ? { x: e.clientX, y: e.clientY } : null; }}
       onPointerUp={(e) => {
         const start = tap.current;
         tap.current = null;

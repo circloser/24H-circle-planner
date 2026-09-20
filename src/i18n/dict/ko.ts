@@ -1000,6 +1000,9 @@ export const ko = {
   'life.cal.years': '{title} {n}주년',
   'life.cal.me': '나',
   'settings.lifeInCalendar': '캘린더에 라이프 기념일 표시',
+  // Life — the timeline of a whole life (components/Life).
+  'decor.lifeMenu': '라이프 꾸미기',
+  'life.decorOn': '꾸미는 중 · 선을 눌러 붙이세요',
 } as const;
 
 /** Every translation key — derived, never hand-maintained. */

@@ -9,10 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
 import { useAuth } from '@/hooks/useAuth';
-import { useDecor } from '@/hooks/useDecor';
+import { useDecor, useDecorStore } from '@/hooks/useDecor';
 import { requestUpgrade } from '@/lib/pro';
 import { track } from '@/lib/track';
 import { requestCalendar } from '@/lib/calendar-requests';
+import { requestLifeDecor } from '@/lib/life-requests';
 import { STICKER_GROUPS, TINTS, stickerGlyph, type StickerGroupId } from '@/lib/decor';
 import {
   CALENDAR_PAPERS, MAX_ITEMS, paperOf, SCALE_MAX, SCALE_MIN, TAPE_COLORS, TAPE_DEFAULT, TAPE_MAX, TAPE_MIN, TAPE_PATTERNS,
@@ -143,6 +144,33 @@ export function CalendarDecorMenuItems({ onLook }: { onLook: (look: CalendarLook
   );
 }
 
+/** The same tools, for the life line (디자인 → 라이프 꾸미기). */
+export function LifeDecorMenuItems() {
+  const { t } = useTranslation();
+  const pro = usePro();
+  const lock = !pro && <Lock className="ml-auto h-3 w-3 text-muted-foreground" aria-hidden />;
+  return (
+    <DropdownMenuGroup data-life-decor-menu-content>
+      <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">{t('decor.lifeMenu')}</DropdownMenuLabel>
+      {TOOLS.map((k) => {
+        const Icon = TOOL_ICON[k];
+        return (
+          <DropdownMenuItem key={k} data-life-decor-tool={k} className="gap-2"
+            onSelect={() => {
+              if (!pro) return requestUpgrade('life');
+              requestLifeDecor(k);
+              track('decor_tool', { tool: k });
+            }}>
+            <Icon className="h-4 w-4" />
+            {t(TOOL_LABEL[k])}
+            {lock}
+          </DropdownMenuItem>
+        );
+      })}
+    </DropdownMenuGroup>
+  );
+}
+
 /** The popup for 캘린더 꾸미기 → 테마 / 속지. */
 export function CalendarLookDialog({ look, onClose }: { look: CalendarLook | null; onClose: () => void }) {
   const { t, lang } = useTranslation();
@@ -236,7 +264,7 @@ export function DecorTray({ tool, armed, onArm, selected, onClose }: {
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const { layer, updateItem, removeItem } = useDecor();
+  const { layer, updateItem, removeItem } = useDecorStore();
   const [pattern, setPattern] = useState<TapePattern>('stripe');
   const [color, setColor] = useState<string>(TAPE_COLORS[1]);
   const [busy, setBusy] = useState(false);
@@ -438,7 +466,7 @@ function PhotoFrame({ id, width }: { id: string; width: string }) {
   );
 }
 
-function ItemBody({ item }: { item: LayerItem }) {
+export function ItemBody({ item }: { item: LayerItem }) {
   if (item.k === 'sticker') {
     return (
       <span className="block leading-none drop-shadow-sm" style={{ fontSize: `${3.6 * item.s}cqw` }}>
@@ -477,7 +505,7 @@ export function DecorLayer({ month, active, armed, selected, onSelect, onPlaced 
   onSelect: (p: Picked | null) => void;
   onPlaced: (p: Picked) => void;
 }) {
-  const { layer, addItem, updateItem } = useDecor();
+  const { layer, addItem, updateItem } = useDecorStore();
   const items = layer[month] ?? [];
   const box = useRef<HTMLDivElement>(null);
   const [moving, setMoving] = useState<{ id: string; x: number; y: number } | null>(null);

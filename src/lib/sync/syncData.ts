@@ -77,6 +77,9 @@ export const SYNC_KEYS: readonly string[] = [
   // The life record (roots, moments, plans, the ending note) — user-authored,
   // kept if an older cloud blob predates it. Its pictures stay on the device.
   'life',
+  // Decorations laid over the life line (stickers, tape, photo frames), the
+  // same kind of store as the calendar's layer. Photo PIXELS stay on the device.
+  'life-decor',
   'prefs',
   'view',
 ].map((k) => PREFIX + k)
@@ -103,6 +106,7 @@ const KEEP_IF_ABSENT = new Set<string>([
   PREFIX + 'decor',
   PREFIX + 'decor-layer',
   PREFIX + 'life',
+  PREFIX + 'life-decor',
 ]);
 
 /** The synced preferences key — applied live (no reload) when it alone changes. */

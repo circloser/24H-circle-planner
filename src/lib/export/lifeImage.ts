@@ -7,7 +7,8 @@
  * Layout width 1080; drawn at 2× (2160 px) unless the line is so long that a
  * canvas that tall would be refused, in which case the scale steps down.
  */
-import { mix, roundRect } from './calendarImage';
+import { drawItem, mix, roundRect } from './calendarImage';
+import type { LayerItem } from '@/lib/decor-layer';
 
 export const LIFE_IMAGE_W = 1080;
 const PAD = 56;
@@ -37,10 +38,10 @@ export interface LifeImageColors {
 }
 
 export type LifeImageRow =
-  | { kind: 'decade'; label: string; future: boolean }
-  | { kind: 'today'; label: string }
+  | { kind: 'decade'; label: string; future: boolean; row?: string }
+  | { kind: 'today'; label: string; row?: string }
   | {
-    kind: 'card'; side: 'left' | 'right'; tight: boolean; future: boolean; plan: boolean;
+    kind: 'card'; side: 'left' | 'right'; tight: boolean; future: boolean; plan: boolean; row?: string;
     color: string; eyebrow: string; title: string; description?: string; photo?: CanvasImageSource | null;
   };
 
@@ -52,6 +53,9 @@ export interface LifeImageInput {
   ending: { title: string; text: string } | null;
   footer: string;
   colors: LifeImageColors;
+  /** Decorations by row (다꾸), and the pictures any photo frames show. */
+  decor?: Record<string, LayerItem[]>;
+  decorPhotos?: Record<string, CanvasImageSource | null>;
 }
 
 /** Greedy line breaking that also breaks inside long words (Korean has few spaces). */
@@ -113,6 +117,12 @@ function layout(ctx: CanvasRenderingContext2D, input: LifeImageInput): Block[] {
     ctx.fill();
     ctx.stroke();
     ctx.restore();
+  };
+  /** A row's decorations, over the whole width of the line, as on the page. */
+  const decorate = (g: CanvasRenderingContext2D, row: string | undefined, y: number, h: number) => {
+    const items = row ? input.decor?.[row] : undefined;
+    if (!items?.length) return;
+    for (const item of items) drawItem(g, item, { x: 0, y, w: LIFE_IMAGE_W, h }, input.decorPhotos ?? {});
   };
   const text = (s: string, x: number, y: number, align: CanvasTextAlign) => {
     ctx.textAlign = align;
@@ -199,6 +209,7 @@ function layout(ctx: CanvasRenderingContext2D, input: LifeImageInput): Block[] {
           g.fillRect(CENTER - w / 2, y + 52, w, 32);
           g.fillStyle = c.muted;
           text(row.label, CENTER, y + 56, 'center');
+          decorate(g, row.row, y, 86);
         },
       });
     } else if (row.kind === 'today') {
@@ -223,6 +234,7 @@ function layout(ctx: CanvasRenderingContext2D, input: LifeImageInput): Block[] {
           g.fill();
           g.font = font(20, 700, FONT, true);
           g.fillText(row.label, CENTER + 32, cy - 12);
+          decorate(g, row.row, y, 86);
         },
       });
     } else {
@@ -272,6 +284,7 @@ function layout(ctx: CanvasRenderingContext2D, input: LifeImageInput): Block[] {
           g.restore();
           // The marker, level with the title.
           ring(CENTER, top + 36 + 20, row.plan);
+          decorate(g, row.row, y, gap + h);
         },
       });
     }

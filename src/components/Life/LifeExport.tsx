@@ -14,6 +14,8 @@ import {
   type LifeCategory, type LifeData,
 } from '@/lib/life';
 import { downloadLifeBackup } from '@/lib/life-backup';
+import { cleanLifeDecor, decorPhotoIds, type LifeDecor } from '@/lib/life-decor';
+import type { LifeDecorStore } from '@/hooks/useLifeDecor';
 import { createLifeShareUrl } from '@/lib/life-share';
 import type { LifeImageInput, LifeImageRow } from '@/lib/export/lifeImage';
 import type { TKey } from '@/i18n/translations';
@@ -29,7 +31,7 @@ const loadImage = (url: string) => new Promise<HTMLImageElement | null>((done) =
 });
 
 /** Everything the image needs, in words already translated. */
-async function imageInput(life: LifeData, colors: Record<LifeCategory, string>, t: T, root: HTMLElement): Promise<LifeImageInput> {
+async function imageInput(life: LifeData, colors: Record<LifeCategory, string>, t: T, root: HTMLElement, decor?: LifeDecor): Promise<LifeImageInput> {
   const { resolveColors } = await import('@/lib/export/calendarImage');
   const today = todayKey();
   const birth = life.profile.birthDate;
@@ -43,19 +45,25 @@ async function imageInput(life: LifeData, colors: Record<LifeCategory, string>, 
     const url = await loadPhoto(m.photo!);
     photos[m.photo!] = url ? await loadImage(url) : null;
   }));
+  // The pictures any photo decorations show, loaded like the moments' own.
+  const decorPhotos: Record<string, CanvasImageSource | null> = {};
+  await Promise.all([...new Set(decor ? decorPhotoIds(decor) : [])].map(async (id) => {
+    const url = await loadPhoto(id);
+    decorPhotos[id] = url ? await loadImage(url) : null;
+  }));
   const rows: LifeImageRow[] = buildTimeline(life, { today }).map((it): LifeImageRow => {
-    if (it.kind === 'decade') return { kind: 'decade', label: `${it.decade}s`, future: it.future };
-    if (it.kind === 'today') return { kind: 'today', label: t('life.todayAge', { n: String(ageAt(birth, it.date)?.years ?? 0) }) };
+    if (it.kind === 'decade') return { kind: 'decade', label: `${it.decade}s`, future: it.future, row: it.key };
+    if (it.kind === 'today') return { kind: 'today', label: t('life.todayAge', { n: String(ageAt(birth, it.date)?.years ?? 0) }), row: 'today' };
     if (it.kind === 'birth') {
       return {
-        kind: 'card', side: it.side, tight: it.tight, future: false, plan: false, color: colors.birth,
+        kind: 'card', side: it.side, tight: it.tight, future: false, plan: false, color: colors.birth, row: 'birth',
         eyebrow: formatLifeDate(birth), title: t('life.born'), description: life.profile.name,
       };
     }
     const m = it.m;
     const when = m.endDate ? `${formatLifeDate(m.date)} – ${formatLifeDate(m.endDate)}` : formatLifeDate(m.date);
     return {
-      kind: 'card', side: it.side, tight: it.tight, future: it.future, plan: it.plan, color: colors[m.category],
+      kind: 'card', side: it.side, tight: it.tight, future: it.future, plan: it.plan, color: colors[m.category], row: m.id,
       eyebrow: [when, age(m.date), t(CATEGORY_LABEL[m.category]), it.plan ? t('life.planBadge') : ''].filter(Boolean).join(' · '),
       title: m.title, description: m.description, photo: m.photo ? photos[m.photo] : null,
     };
@@ -75,6 +83,7 @@ async function imageInput(life: LifeData, colors: Record<LifeCategory, string>, 
     rows,
     ending: life.endingNote ? { title: t('life.endingNote'), text: life.endingNote.text } : null,
     footer: '24houring.com',
+    ...(decor && Object.keys(decor).length ? { decor, decorPhotos } : {}),
     colors: resolveColors(root, {
       background: 'hsl(var(--background))',
       surface: 'hsl(var(--surface))',
@@ -91,11 +100,13 @@ async function imageInput(life: LifeData, colors: Record<LifeCategory, string>, 
  * family names and birthdays are other people's details), or the JSON backup
  * and its restore.
  */
-export function LifeExportDialog({ open, onOpenChange, api, colors }: {
+export function LifeExportDialog({ open, onOpenChange, api, colors, decor }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   api: LifeApi;
   colors: Record<LifeCategory, string>;
+  /** The decorations laid over the line: they ride along in the backup. */
+  decor?: LifeDecorStore;
 }) {
   const { t } = useTranslation();
   const { life } = api;
@@ -116,7 +127,7 @@ export function LifeExportDialog({ open, onOpenChange, api, colors }: {
 
   const make = async (scale: number) => {
     const { renderLifeImage } = await import('@/lib/export/lifeImage');
-    return renderLifeImage(await imageInput(life, colors, t, rootRef.current ?? document.body), scale);
+    return renderLifeImage(await imageInput(life, colors, t, rootRef.current ?? document.body, decor?.rows), scale);
   };
 
   useEffect(() => {
@@ -178,6 +189,8 @@ export function LifeExportDialog({ open, onOpenChange, api, colors }: {
     if (!restore) return;
     await Promise.all(Object.entries(restore.photos).map(([id, url]) => savePhoto(id, url)));
     api.replace(restore.life);
+    const rows = cleanLifeDecor(restore.decor);
+    if (rows && decor) decor.replaceAll(rows);
     setRestore(null);
     toast.success(t('life.export.imported'));
     onOpenChange(false);
@@ -267,7 +280,7 @@ export function LifeExportDialog({ open, onOpenChange, api, colors }: {
             ) : (
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" className="gap-1.5" data-life-export-json
-                  onClick={() => { void downloadLifeBackup(life).then(() => toast.success(t('life.export.jsonSaved'))); }}>
+                  onClick={() => { void downloadLifeBackup(life, decor?.rows).then(() => toast.success(t('life.export.jsonSaved'))); }}>
                   <FileJson aria-hidden className="h-4 w-4" />
                   {t('life.backup.download')}
                 </Button>

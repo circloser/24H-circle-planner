@@ -994,4 +994,7 @@ export const zh: Record<TKey, string> = {
   'life.cal.years': '{title} {n}周年',
   'life.cal.me': '我',
   'settings.lifeInCalendar': '在日历中显示人生纪念日',
+  // Life — the timeline of a whole life (components/Life).
+  'decor.lifeMenu': '装饰人生时间线',
+  'life.decorOn': '装饰中 · 点击时间线放置',
 };

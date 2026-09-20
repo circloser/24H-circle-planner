@@ -35,11 +35,13 @@ async function setup(base, opts = {}) {
     const id = new URL(route.request().url()).pathname.split('/').pop();
     await route.fulfill(shares.has(id) ? json({ d: shares.get(id), name: '' }) : { status: 404, body: 'no' });
   });
-  await page.route('**/api/me', (route) => route.fulfill(json({ user: { id: 'u1', email: 'me@example.com', provider: 'google' }, plan: 'free', admin: false })));
+  // The account this page sees; the decorating step turns Pro on.
+  const me = { user: { id: 'u1', email: 'me@example.com', provider: 'google' }, plan: 'free', admin: false };
+  await page.route('**/api/me', (route) => route.fulfill(json(me)));
   await page.goto(`${base}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
   await seedBasicData(page);
-  return { browser, page, errors, counted };
+  return { browser, page, errors, counted, me };
 }
 
 const pngSize = (buf) => ({ w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) });
@@ -47,24 +49,10 @@ const pngSize = (buf) => ({ w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) });
 export async function run() {
   const { pass, allOk } = makeReporter('life');
   const { base, close } = await serveDist();
-  const { browser, page, errors, counted } = await setup(base);
+  const { browser, page, errors, counted, me } = await setup(base);
   const count = (sel) => page.locator(sel).count();
   const stored = () => page.evaluate((k) => JSON.parse(localStorage.getItem(k) ?? 'null'), LIFE_KEY);
   const titles = () => page.$$eval('[data-life-moment]', (els) => els.map((e) => e.querySelector('.life-serif')?.textContent ?? ''));
-  const openLife = async () => {
-    await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForSelector('svg[data-circle-timeline], [data-life-view], [data-calendar-view]', { timeout: 15000 });
-    if ((await count('[data-life-view]')) === 0) await page.locator('[data-life-toggle]').click();
-    await page.waitForSelector('[data-life-view]', { timeout: 15000 });
-    await wait(500);
-  };
-  const fillMoment = async ({ title, y, m, d, cat }) => {
-    await page.locator('[data-life-title-input]').fill(title);
-    await page.locator('#life-date-y').fill(String(y));
-    if (m) await page.locator('#life-date-m').selectOption(String(m));
-    if (d) await page.locator('#life-date-d').selectOption(String(d));
-    if (cat) await page.locator(`[data-life-cat="${cat}"]`).click();
-  };
   /** Usage counts go out in batches when the page is hidden. */
   const flush = async () => {
     await page.evaluate(() => Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true }));
@@ -82,6 +70,29 @@ export async function run() {
     await wait(400);
   };
   const blurNote = () => page.locator('[data-life-ending-input]').evaluate((el) => el.blur());
+  /** Shut every dialog: an overlay left open swallows the next click. */
+  const closeAll = async () => {
+    for (let i = 0; i < 4 && (await page.locator('[role="dialog"]').count()) > 0; i++) {
+      await page.keyboard.press('Escape');
+      await wait(250);
+    }
+    await wait(200);
+  };
+  const openLife = async () => {
+    await flush(); // the counts of this page session, before it goes away
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.waitForSelector('svg[data-circle-timeline], [data-life-view], [data-calendar-view]', { timeout: 15000 });
+    if ((await count('[data-life-view]')) === 0) await page.locator('[data-life-toggle]').click();
+    await page.waitForSelector('[data-life-view]', { timeout: 15000 });
+    await wait(500);
+  };
+  const fillMoment = async ({ title, y, m, d, cat }) => {
+    await page.locator('[data-life-title-input]').fill(title);
+    await page.locator('#life-date-y').fill(String(y));
+    if (m) await page.locator('#life-date-m').selectOption(String(m));
+    if (d) await page.locator('#life-date-d').selectOption(String(d));
+    if (cat) await page.locator(`[data-life-cat="${cat}"]`).click();
+  };
   const save = async () => {
     await page.locator('[data-life-save]').click();
     await wait(400);
@@ -382,6 +393,36 @@ export async function run() {
     pass('…and the ⚙ switch takes them away',
       !/생일/.test(await page.locator(`[data-day="${todayCell}"]`).first().innerText()));
     await openLife();
+
+    // 16d. Decorating the line (다꾸) — Pro only.
+    await page.locator('button[aria-label="디자인"]').click();
+    await wait(300);
+    pass('the 디자인 menu offers 라이프 꾸미기', (await count('[data-life-decor-tool]')) === 3);
+    await page.locator('[data-life-decor-tool="sticker"]').click();
+    await wait(500);
+    pass('a free account is offered Pro instead of the tray',
+      (await count('[data-decor-tray]')) === 0 && (await page.getByRole('dialog', { name: 'Pro로 업그레이드' }).count()) === 1);
+    await closeAll();
+    me.plan = 'pro';
+    // Pro turns sync on, which asks its privacy question once: answer it here.
+    await page.evaluate(() => localStorage.setItem('24h-circle-planner.sync-consent', '1'));
+    await openLife();
+    await closeAll();
+    await page.locator('button[aria-label="디자인"]').click();
+    await wait(300);
+    await page.locator('[data-life-decor-tool="sticker"]').click();
+    await wait(600);
+    pass('with Pro, the tray opens on the line', (await count('[data-decor-tray]')) === 1 && (await count('[data-life-decor-on]')) === 1);
+    await page.locator('[data-sticker]').first().click();
+    await wait(300);
+    const birthRow = await page.locator('[data-life-birth] [data-life-row-decor]').boundingBox();
+    await page.mouse.click(birthRow.x + birthRow.width * 0.2, birthRow.y + birthRow.height * 0.5);
+    await wait(500);
+    const stored3 = () => page.evaluate(() => JSON.parse(localStorage.getItem('24h-circle-planner.life-decor') ?? 'null'));
+    pass('a sticker lands on the row it was placed on',
+      (await count('[data-life-decor-item]')) === 1 && !!(await stored3())?.rows?.birth?.length, JSON.stringify(await stored3()));
+    await openLife();
+    pass('…and it is still there after a reload', (await count('[data-life-decor-item]')) === 1);
 
     // 17. A phone: the line on the left, every card to its right.
     await page.setViewportSize({ width: 390, height: 844 });

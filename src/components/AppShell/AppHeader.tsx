@@ -24,7 +24,7 @@ import { openBillingPortal } from '@/lib/sync/billing';
 import { canPromoteApp, PLAY_STORE_URL } from '@/lib/twa';
 import { gaActive, gaChoice, onGaChange, setGaChoice } from '@/lib/ga';
 import { requestCalendar } from '@/lib/calendar-requests';
-import { CalendarDecorMenuItems, CalendarLookDialog, type CalendarLook } from '@/components/Calendar/Decor';
+import { CalendarDecorMenuItems, CalendarLookDialog, LifeDecorMenuItems, type CalendarLook } from '@/components/Calendar/Decor';
 
 /** Whether usage statistics go to Google Analytics on this device: the
  *  visitor's own choice, or what the page decided for their region. */
@@ -289,6 +289,8 @@ export function AppHeader({
                 if (look === 'paper' && !calendarMode) setPreference('chartView', 'calendar');
                 setCalLook(look);
               }} />
+              <DropdownMenuSeparator />
+              <LifeDecorMenuItems />
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onOpenSettings('background')} className="gap-2">
                 <ImageIcon className="h-4 w-4" />

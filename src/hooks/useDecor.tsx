@@ -119,3 +119,25 @@ export function useDecor(): DecorApi {
   if (!ctx) throw new Error('useDecor must be used within DecorProvider');
   return ctx;
 }
+
+/**
+ * The part of the store the decorating tools actually use: items in buckets.
+ * The calendar's buckets are months; the life line's are its rows. A surface
+ * puts its own store in this context and the same tray and layer serve it.
+ */
+export interface DecorStore {
+  layer: Record<string, LayerItem[]>;
+  addItem: (bucket: string, item: LayerItem) => boolean;
+  updateItem: (bucket: string, id: string, patch: Partial<LayerItem>) => void;
+  removeItem: (bucket: string, id: string) => void;
+}
+
+const StoreCtx = createContext<DecorStore | null>(null);
+export const DecorStoreProvider = StoreCtx.Provider;
+
+/** The store the surrounding surface provided, or the calendar's own. */
+export function useDecorStore(): DecorStore {
+  const override = useContext(StoreCtx);
+  const calendar = useDecor();
+  return override ?? calendar;
+}
