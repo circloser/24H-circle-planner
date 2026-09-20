@@ -1154,4 +1154,10 @@ export const fr: Record<TKey, string> = {
   'place.continent.antarctica': 'Antarctique',
   // Where we went together (components/Relation, lib/relation-place).
   'relation.placesWith': '{n} lieux ensemble',
+  // The globe, and finding yourself on the pin map (components/Place).
+  'place.locate': 'Où je suis',
+  'place.locateFailed': 'Position indisponible. Touchez la carte pour poser une épingle vous-même.',
+  'place.zoomIn': 'Zoom avant',
+  'place.zoomOut': 'Zoom arrière',
+  'place.tapToPin': 'Touchez la carte pour y poser une épingle.',
 };

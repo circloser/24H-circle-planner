@@ -1152,4 +1152,10 @@ export const zh: Record<TKey, string> = {
   'place.continent.antarctica': '南极洲',
   // Where we went together (components/Relation, lib/relation-place).
   'relation.placesWith': '一起去过 {n} 处',
+  // The globe, and finding yourself on the pin map (components/Place).
+  'place.locate': '我的位置',
+  'place.locateFailed': '无法获取位置，请点击地图自己放置图钉。',
+  'place.zoomIn': '放大',
+  'place.zoomOut': '缩小',
+  'place.tapToPin': '点击地图即可在该处放置图钉。',
 };

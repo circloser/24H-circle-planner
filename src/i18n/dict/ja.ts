@@ -1154,4 +1154,10 @@ export const ja: Record<TKey, string> = {
   'place.continent.antarctica': '南極',
   // Where we went together (components/Relation, lib/relation-place).
   'relation.placesWith': '一緒に行った場所 {n}',
+  // The globe, and finding yourself on the pin map (components/Place).
+  'place.locate': '現在地',
+  'place.locateFailed': '現在地を取得できませんでした。地図を押して直接ピンを置いてください。',
+  'place.zoomIn': '拡大',
+  'place.zoomOut': '縮小',
+  'place.tapToPin': '地図を押すと、その場所にピンが立ちます。',
 };

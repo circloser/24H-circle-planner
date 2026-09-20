@@ -165,9 +165,9 @@ export function RelationView() {
 
   return (
     <div className="mx-auto flex w-full max-w-[1200px] flex-1 flex-col" data-relation-view>
-      <header className="mx-auto w-full max-w-[960px] px-4 pt-4 text-center sm:pt-6">
-        <h2 className="text-3xl font-bold tracking-tight text-foreground">{t('relation.title')}</h2>
-        <p className="mt-2 text-[15px] italic text-muted-foreground">{t('relation.subtitle')}</p>
+      <header className="mx-auto w-full max-w-[960px] px-4 pt-3 text-center">
+        {/* The tab that was just pressed says which page this is. */}
+        <h2 className="sr-only">{t('relation.title')}</h2>
         {api.readOnly && (
           <p role="status" data-relation-newer
             className="mt-4 rounded-xl border border-border bg-muted/40 px-4 py-3 text-left text-sm text-foreground">

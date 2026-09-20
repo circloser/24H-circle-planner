@@ -49,7 +49,11 @@ const shot = async (base, name, viewport, tab) => {
   await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
   await page.locator('[data-place-toggle]').click();
   await page.waitForSelector('[data-place-view]', { timeout: 15000 });
-  await wait(tab === 'pins' ? 5000 : 1800);
+  if (tab === 'world') {
+    // A little closer, so the cities and their names are in the picture.
+    for (let i = 0; i < 3; i++) await page.locator('[data-place-zoom-in]').click();
+  }
+  await wait(tab === 'pins' ? 5000 : 2000);
   await page.screenshot({ path: name });
   await browser.close();
   console.log('wrote', name);
@@ -57,7 +61,7 @@ const shot = async (base, name, viewport, tab) => {
 
 const { base, close } = await serveDist();
 try {
-  await shot(base, 'place-world.png', { width: 1440, height: 900 }, 'world');
+  await shot(base, 'place-globe.png', { width: 1440, height: 900 }, 'world');
   await shot(base, 'place-pins.png', { width: 1440, height: 900 }, 'pins');
 } finally {
   await close();

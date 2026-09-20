@@ -1156,4 +1156,10 @@ export const es: Record<TKey, string> = {
   'place.continent.antarctica': 'Antártida',
   // Where we went together (components/Relation, lib/relation-place).
   'relation.placesWith': '{n} lugares juntos',
+  // The globe, and finding yourself on the pin map (components/Place).
+  'place.locate': 'Dónde estoy',
+  'place.locateFailed': 'No se pudo obtener tu ubicación. Toca el mapa para poner la chincheta tú mismo.',
+  'place.zoomIn': 'Acercar',
+  'place.zoomOut': 'Alejar',
+  'place.tapToPin': 'Toca el mapa para poner ahí una chincheta.',
 };

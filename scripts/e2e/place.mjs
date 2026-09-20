@@ -1,12 +1,13 @@
 /**
  * Place — the countries, cities and spots you have been to (PRD acceptance).
- * Over dist/ with a free account mocked: its own header button; the world map
+ * Over dist/ with a free account mocked: its own header button; the globe
  * draws with NO network at all and a country colours in with one tap; the
- * numbers above it change at once; names come out in the reader's language;
- * the pin map drops a pin where the map was held and colours that country in;
- * the life line's travels are offered and only what is agreed to is written;
- * the free pin limit stops adding and hides nothing; PNG and JSON export,
- * JSON restore; five hundred pins stay smooth; no location is ever asked for.
+ * numbers change at once; names come out in the reader's language; two
+ * fingers pinch on both maps; a tap on the pin map drops a pin and colours
+ * that country in; the life line's travels are offered and only what is
+ * agreed to is written; the free pin limit stops adding and hides nothing;
+ * PNG and JSON export, JSON restore; five hundred pins stay smooth; and the
+ * browser is asked where it is only when the button is pressed.
  */
 import { makeReporter, launchPage, seedBasicData, serveDist, wait, isMain, runStandalone } from './_helpers.mjs';
 
@@ -22,7 +23,22 @@ async function setup(base, opts = {}) {
   const { browser, page, errors } = await launchPage({ viewport: { width: 1440, height: 900 }, ...opts });
   const counted = [];
   const tiles = [];
-  await page.addInitScript(() => { try { localStorage.setItem('24h-metrics-debug', '1'); } catch { /* */ } });
+  await page.addInitScript(() => {
+    try { localStorage.setItem('24h-metrics-debug', '1'); } catch { /* */ }
+    // Count every time the page asks where the device is. Nothing may ask
+    // except the button, and the button asks once.
+    const w = window;
+    w.__located = 0;
+    const fake = {
+      getCurrentPosition: (ok) => {
+        w.__located += 1;
+        ok({ coords: { longitude: 2.35, latitude: 48.86, accuracy: 20 } });
+      },
+      watchPosition: () => { w.__located += 100; return 0; },
+      clearWatch: () => {},
+    };
+    Object.defineProperty(navigator, 'geolocation', { value: fake, configurable: true });
+  });
   await page.route('**/api/metrics', async (route) => {
     try { counted.push(...(JSON.parse(route.request().postData() ?? '{}').e ?? [])); } catch { /* ignore */ }
     await route.fulfill({ status: 204, body: '' });
@@ -82,11 +98,32 @@ export async function run() {
     await wait(200);
   };
   const seed = (place) => page.evaluate(([k, d]) => localStorage.setItem(k, d), [PLACE_KEY, JSON.stringify(place)]);
-  /** Colour a country the way a finger does: on the shape itself. */
+  /** Choose a country the way a keyboard does: the globe is a canvas, so its
+   *  list of every country on earth is the way in without a mouse. */
   const tapCountry = async (code) => {
     await page.locator(`[data-place-country="${code}"]`).dispatchEvent('click');
     await wait(400);
   };
+  /** Two fingers, moving apart. */
+  const pinch = async (sel) => page.evaluate(async (s) => {
+    const el = document.querySelector(s);
+    const r = el.getBoundingClientRect();
+    const send = (type, id, x, y) => el.dispatchEvent(new PointerEvent(type, {
+      pointerId: id, clientX: r.left + x, clientY: r.top + y, bubbles: true, isPrimary: id === 1,
+    }));
+    const box = el.closest('[data-place-zoom]') ?? el.parentElement;
+    const was = Number(box.dataset.placeZoom);
+    send('pointerdown', 1, r.width * 0.4, r.height * 0.5);
+    send('pointerdown', 2, r.width * 0.6, r.height * 0.5);
+    send('pointermove', 1, r.width * 0.2, r.height * 0.5);
+    await new Promise((done) => setTimeout(done, 150));
+    send('pointermove', 2, r.width * 0.8, r.height * 0.5);
+    await new Promise((done) => setTimeout(done, 250));
+    const after = Number(box.dataset.placeZoom);
+    send('pointerup', 1, r.width * 0.2, r.height * 0.5);
+    send('pointerup', 2, r.width * 0.8, r.height * 0.5);
+    return { was, after };
+  }, sel);
 
   try {
     // 1. Its own button in the header.
@@ -109,7 +146,9 @@ export async function run() {
     pass('every country on earth is drawn', (await count('[data-place-country]')) > 150,
       String(await count('[data-place-country]')));
     pass('…and not one tile was asked for to do it', tiles.length === 0, String(tiles.length));
-    pass('an empty map says where to start', (await count('[data-place-empty]')) === 1);
+    pass('an empty map asks the one question it needs', (await count('[data-place-home-ask]')) === 1);
+    await page.locator('[data-place-home-close]').click();
+    await wait(300);
 
     // 3. One tap colours a country in, and the numbers change with it.
     await tapCountry('KR');
@@ -136,7 +175,8 @@ export async function run() {
     pass('a city from the bundled list is added with its coordinates',
       (await stored()).cities[0]?.id === 'KR-seoul' && Math.round((await stored()).cities[0].lat) === 38,
       JSON.stringify((await stored()).cities));
-    pass('…and a dot for it appears on the map', (await count('[data-place-city="KR-seoul"]')) === 1);
+    pass('…and it is listed on the country\'s own card',
+      (await count('[data-place-city-remove="KR-seoul"]')) === 1);
     await page.locator('[data-place-panel-close]').click();
     await wait(300);
     await page.locator('[data-place-search-open]').click();
@@ -149,20 +189,35 @@ export async function run() {
     await page.locator('[data-place-panel-close]').click();
     await wait(300);
 
-    // 6. The pin map: a pin goes where the map was held.
+    // 5b. Two fingers work on both maps — a phone has no wheel.
+    const globePinch = await pinch('[data-place-world]');
+    pass('two fingers zoom the globe', globePinch.after > globePinch.was, JSON.stringify(globePinch));
+    pass('…and the buttons do too', await (async () => {
+      const before = await page.locator('[data-place-globe]').getAttribute('data-place-zoom');
+      await page.locator('[data-place-zoom-out]').click();
+      await wait(300);
+      return Number(await page.locator('[data-place-globe]').getAttribute('data-place-zoom')) < Number(before);
+    })());
+
+    // 6. The pin map: a pin goes where the map was tapped.
     await page.locator('[data-place-tab="pins"]').click();
     await wait(900);
     pass('the pin map asks OpenStreetMap for its tiles, and says whose they are',
       tiles.length > 0 && /OpenStreetMap/.test(await page.locator('[data-place-attribution]').innerText()));
     pass('…and with none of them arriving it says so, rather than showing nothing',
       (await count('[data-place-offline]')) === 1);
+    const pinPinch = await pinch('[data-place-tiles]');
+    pass('two fingers zoom the pin map', pinPinch.after > pinPinch.was, JSON.stringify(pinPinch));
+    pass('nothing has asked where the device is',
+      (await page.evaluate(() => window.__located)) === 0);
+    await page.locator('[data-place-locate]').click();
+    await wait(600);
+    pass('pressing the button asks exactly once, and the map goes there',
+      (await page.evaluate(() => window.__located)) === 1 && (await count('[data-place-here]')) === 1);
     const map = await page.locator('[data-place-pins]').boundingBox();
-    await page.mouse.move(map.x + map.width * 0.5, map.y + map.height * 0.5);
-    await page.mouse.down();
-    await wait(900);
-    await page.mouse.up();
-    await wait(500);
-    pass('holding the map opens a new pin there', (await count('[data-place-pin-dialog]')) === 1);
+    await page.mouse.click(map.x + map.width * 0.5, map.y + map.height * 0.5);
+    await wait(600);
+    pass('tapping the map opens a new pin there', (await count('[data-place-pin-dialog]')) === 1);
     await page.locator('[data-place-name-input]').fill('에펠탑');
     await page.locator('[data-place-cat="culture"]').click();
     pass('the form says nothing is tracked, before anything is written',
@@ -299,16 +354,11 @@ export async function run() {
       JSON.stringify(canon({ ...after, updatedAt: '' })) === JSON.stringify(canon({ ...before, updatedAt: '' })),
       JSON.stringify(after));
 
-    // 11. Nothing ever asks where the device is.
-    pass('the browser is never asked for a location', await page.evaluate(() => {
-      const asked = { n: 0 };
-      // If anything had called it, this stub would already be the one in use.
-      navigator.geolocation.getCurrentPosition = () => { asked.n += 1; };
-      navigator.geolocation.watchPosition = () => { asked.n += 1; return 0; };
-      return asked.n === 0;
-    }));
+    // 11. Nothing watches where the device goes, then or ever.
+    pass('nothing ever watches the device\'s position',
+      (await page.evaluate(() => window.__located)) < 100);
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
-    const want = ['place_open', 'place_country', 'place_city', 'place_pin'];
+    const want = ['place_open', 'place_country', 'place_city', 'place_pin', 'place_locate'];
     await flush();
     pass('usage is counted', want.every((w) => counted.includes(w)),
       `missing ${want.filter((w) => !counted.includes(w)).join(',')} · saw ${[...new Set(counted)].join(',')}`);
@@ -356,10 +406,17 @@ export async function run() {
     await phone.page.locator('[data-place-toggle]').click();
     await phone.page.waitForSelector('[data-place-world]', { timeout: 20000 });
     await wait(900);
+    const full = await phone.page.evaluate(() => {
+      const view = document.querySelector('[data-place-view]').getBoundingClientRect();
+      const globe = document.querySelector('[data-place-globe]').getBoundingClientRect();
+      return { wide: Math.abs(globe.width - view.width) < 2, tall: globe.height > window.innerHeight * 0.6 };
+    });
+    pass('phone: the map fills the page, the way a map application does',
+      full.wide && full.tall, JSON.stringify(full));
     await phone.page.locator('[data-place-country="KR"]').dispatchEvent('click');
     await wait(500);
     const card = await phone.page.locator('[data-place-panel]').boundingBox();
-    pass('phone: the country card sits under the map, full width', card.width > 300, JSON.stringify(card));
+    pass('…and the country card is a sheet across the bottom', card.width > 300, JSON.stringify(card));
     pass('no page errors (phone)', phone.errors.length === 0, phone.errors.slice(0, 2).join(' | '));
   } finally {
     await phone.browser.close();

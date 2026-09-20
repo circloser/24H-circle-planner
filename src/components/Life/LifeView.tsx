@@ -132,7 +132,9 @@ export function LifeView() {
   return (
     <div className="mx-auto flex w-full max-w-[1040px] flex-col pb-24" data-life-view>
       <header className="mx-auto w-full max-w-[960px] px-4 pt-4 text-center sm:pt-6">
-        <h2 className="life-serif text-3xl font-bold tracking-tight text-foreground">{t('life.title')}</h2>
+        {/* The tab that was just pressed says which page this is; the heading
+            stays for a screen reader, which has no tabs to look at. */}
+        <h2 className="sr-only">{t('life.title')}</h2>
         {hasLine && (
           <>
             <p className="mt-2 text-[15px] italic text-muted-foreground" data-life-summary>

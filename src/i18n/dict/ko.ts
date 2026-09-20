@@ -1158,6 +1158,12 @@ export const ko = {
   'place.continent.antarctica': '남극',
   // Where we went together (components/Relation, lib/relation-place).
   'relation.placesWith': '함께 간 곳 {n}',
+  // The globe, and finding yourself on the pin map (components/Place).
+  'place.locate': '내 위치',
+  'place.locateFailed': '위치를 가져오지 못했어요. 지도를 눌러 직접 꽂아 주세요.',
+  'place.zoomIn': '확대',
+  'place.zoomOut': '축소',
+  'place.tapToPin': '지도를 누르면 그 자리에 핀이 생겨요.',
 } as const;
 
 /** Every translation key — derived, never hand-maintained. */

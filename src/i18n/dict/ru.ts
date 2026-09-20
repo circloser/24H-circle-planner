@@ -1154,4 +1154,10 @@ export const ru: Record<TKey, string> = {
   'place.continent.antarctica': 'Антарктида',
   // Where we went together (components/Relation, lib/relation-place).
   'relation.placesWith': '{n} мест вместе',
+  // The globe, and finding yourself on the pin map (components/Place).
+  'place.locate': 'Где я',
+  'place.locateFailed': 'Не удалось определить место. Нажмите на карту, чтобы поставить метку самому.',
+  'place.zoomIn': 'Приблизить',
+  'place.zoomOut': 'Отдалить',
+  'place.tapToPin': 'Нажмите на карту, чтобы поставить там метку.',
 };

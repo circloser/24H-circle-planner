@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { loadPhoto } from '@/lib/calendar-photos';
+import { capture } from '@/lib/gesture';
 import {
   contactFade, hasBirthdaySoon, type Person, type RelationData, type RelationGroup,
 } from '@/lib/relation';
@@ -311,7 +312,7 @@ export function RelationCanvas({
     if (e.button !== 0) return;
     const at = pointOf(e);
     const node = nodeAt(layout, at.x, at.y, 8 / (fit * view.scale));
-    (e.target as Element).setPointerCapture?.(e.pointerId);
+    capture(e.target as Element, e.pointerId);
     gesture.current = {
       id: e.pointerId, sx: e.clientX, sy: e.clientY, node, moved: false, panned: view,
       hold: node
