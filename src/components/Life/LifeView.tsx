@@ -265,7 +265,7 @@ export function LifeView() {
           }
         }} />
       <ProfileDialog open={profileOpen} profile={life.profile} onClose={() => setProfileOpen(false)}
-        onSave={(p) => { api.setProfile({ name: p.name, birthDate: p.birthDate, lifeExpectancy: p.lifeExpectancy }); setProfileOpen(false); }} />
+        onSave={(p) => { api.setProfile({ name: p.name, birthDate: p.birthDate }); setProfileOpen(false); }} />
       <LifeExportDialog open={exporting} onOpenChange={setExporting} api={api} colors={colors} decor={decorStore} />
       {decorating && (
         <DecorStoreProvider value={decorStore}>
@@ -393,7 +393,7 @@ function QuickStart({ birth, onAdd }: { birth: string; onAdd: (draft: MilestoneD
       <Button className="mt-5 bg-primary text-primary-foreground" disabled={picked.size === 0} data-life-quick-add
         onClick={() => {
           QUICK.filter((q) => picked.has(q.key)).forEach((q) => {
-            onAdd({ date: String(birthYear + q.age), title: t(q.key), category: q.category, isPlan: false });
+            onAdd({ date: String(birthYear + q.age), title: t(q.key), category: q.category });
           });
           track('life_add');
         }}>

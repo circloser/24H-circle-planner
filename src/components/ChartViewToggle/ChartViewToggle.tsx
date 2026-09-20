@@ -40,16 +40,13 @@ export function ChartViewToggle() {
   const Icon = ICON[view];
   useEffect(() => { rememberTimetableView(prefs.chartView ?? 'full'); }, [prefs.chartView]);
 
-  const face = (
-    <>
-      <Icon className="h-4 w-4 shrink-0" />
-      <span className="max-w-24 truncate">{t(LABEL_KEY[view])}</span>
-    </>
-  );
+  // An icon alone. The name is in the label and the tooltip: with five of
+  // these side by side, words would not fit across a phone.
+  const face = <Icon className="h-4 w-4 shrink-0" />;
   // No menu while a page is on: the press itself is "back to the timetable".
   if (onPage) {
     return (
-      <Button variant="outline" size="sm" className="min-h-11 gap-1.5 px-2 sm:px-3" data-view-toggle
+      <Button variant="outline" size="sm" className="min-h-11 w-11 shrink-0 px-0" data-view-toggle
         aria-label={t(LABEL_KEY[view])} title={t(LABEL_KEY[view])}
         onClick={() => setPreference('chartView', view)}>
         {face}
@@ -61,7 +58,7 @@ export function ChartViewToggle() {
       <DropdownMenuTrigger asChild>
         {/* The timetable IS what is showing here, so it reads as chosen —
             like the calendar and life buttons beside it. */}
-        <Button variant="default" size="sm" className="min-h-11 gap-1.5 px-2 sm:px-3" data-view-toggle aria-pressed aria-label={t('view.select')} title={t('view.select')}>
+        <Button variant="default" size="sm" className="min-h-11 w-11 shrink-0 px-0" data-view-toggle aria-pressed aria-label={t('view.select')} title={t('view.select')}>
           {face}
         </Button>
       </DropdownMenuTrigger>

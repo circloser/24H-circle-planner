@@ -7,7 +7,7 @@ import {
 
 const TODAY = '2026-09-20';
 const ms = (id: string, date: string, extra: Partial<Milestone> = {}): Milestone =>
-  ({ id, date, title: id, category: 'other', isPlan: false, ...extra });
+  ({ id, date, title: id, category: 'other', ...extra });
 const life = (over: Partial<LifeData> = {}): LifeData =>
   ({ ...emptyLife(), profile: { birthDate: '1985-05-15' }, ...over });
 
@@ -64,7 +64,8 @@ describe('plans and order', () => {
     expect(isPlanned(ms('a', '2027'), TODAY)).toBe(true);
     expect(isPlanned(ms('a', '2026-09-21'), TODAY)).toBe(true);
     expect(isPlanned(ms('a', '2026-09-20'), TODAY)).toBe(false);
-    expect(isPlanned(ms('a', '2020', { isPlan: true }), TODAY)).toBe(true);
+    // Nothing in the past can be a plan, however it was once marked.
+    expect(isPlanned(ms('a', '2020', { pinned: true }), TODAY)).toBe(false);
   });
 
   it('sorts by date; the same date keeps the order added', () => {
@@ -75,11 +76,11 @@ describe('plans and order', () => {
 
 describe('the stored envelope', () => {
   const full = life({
-    profile: { name: '나', birthDate: '1985-05-15', lifeExpectancy: 95 },
+    profile: { name: '나', birthDate: '1985-05-15' },
     family: [{ id: 'f1', relation: 'mother', name: '엄마', birthDate: '1960', note: '메모', photo: 'p1' }],
     milestones: [
       ms('m1', '2010-05-15', { title: '입사', category: 'career', description: '첫 직장', endDate: '2015', photo: 'p2', pinned: true }),
-      ms('m2', '2030', { title: '세계 여행', category: 'travel', isPlan: true }),
+      ms('m2', '2030', { title: '세계 여행', category: 'travel' }),
     ],
     endingNote: { text: '고마웠어요', updatedAt: '2026-09-01T00:00:00.000Z' },
     updatedAt: '2026-09-20T00:00:00.000Z',
@@ -93,8 +94,8 @@ describe('the stored envelope', () => {
   });
 
   it('stores one canonical shape whatever order an edit built its fields in', () => {
-    const shuffled = { ...full, milestones: [{ isPlan: false, category: 'career', title: 'x', date: '2011', id: 'z' }] };
-    expect(Object.keys(encodeLife(shuffled as LifeData).milestones[0])).toEqual(['id', 'date', 'title', 'category', 'isPlan']);
+    const shuffled = { ...full, milestones: [{ category: 'career', title: 'x', date: '2011', id: 'z' }] };
+    expect(Object.keys(encodeLife(shuffled as LifeData).milestones[0])).toEqual(['id', 'date', 'title', 'category']);
   });
 
   it('drops what it does not understand instead of failing', () => {
@@ -155,7 +156,7 @@ describe('the timeline', () => {
     expect(items.filter((i) => i.kind === 'decade').every((i) => i.count === 0)).toBe(true);
     expect(shape).toEqual([
       '1980s', 'birth', '1990s', '2000s', '2010s', '2020s', 'today',
-      '2030s~', '2040s~', '2050s~', '2060s~', '2070s~',
+      '2030s~', '2040s~', '2050s~', '2060s~', '2070s~', '2080s~', '2090s~', '2100s~',
     ]);
   });
 
@@ -170,7 +171,7 @@ describe('the timeline', () => {
     expect(byKey['school']).toMatchObject({ tight: false });
     // Two moments in the 1990s, one each in the 2010s and 2030s.
     expect(items.filter((i) => i.kind === 'decade').map((i) => [i.decade, i.count]))
-      .toEqual([[1980, 0], [1990, 2], [2000, 0], [2010, 1], [2020, 0], [2030, 1], [2040, 0], [2050, 0], [2060, 0], [2070, 0]]);
+      .toEqual([[1980, 0], [1990, 2], [2000, 0], [2010, 1], [2020, 0], [2030, 1], [2040, 0], [2050, 0], [2060, 0], [2070, 0], [2080, 0], [2090, 0], [2100, 0]]);
     expect(byKey['trip']).toMatchObject({ future: true, plan: true });
     expect(items.findIndex((i) => i.kind === 'today')).toBeLessThan(items.findIndex((i) => i.key === 'trip'));
   });
@@ -188,16 +189,22 @@ describe('the timeline', () => {
     expect(items.filter((i) => i.kind !== 'decade').map((i) => i.key)).toEqual(['birth', 'a', 'today']);
   });
 
-  it('reaches past the expected life when a plan does', () => {
-    const items = buildTimeline(life({ profile: { birthDate: '1985-05-15', lifeExpectancy: 50 }, milestones: [ms('late', '2090')] }), { today: TODAY });
-    expect(items.slice(-2)).toMatchObject([{ kind: 'decade', decade: 2090 }, { key: 'late' }]);
+  it('runs the same hundred and twenty years past the birthday for everyone', () => {
+    const items = buildTimeline(life(), { today: TODAY });
+    const last = items.filter((i) => i.kind === 'decade').at(-1);
+    expect(last).toMatchObject({ kind: 'decade', decade: 2100 });
+  });
+
+  it('reaches further still when a plan is dated beyond it', () => {
+    const items = buildTimeline(life({ milestones: [ms('late', '2130')] }), { today: TODAY });
+    expect(items.slice(-2)).toMatchObject([{ kind: 'decade', decade: 2130 }, { key: 'late' }]);
   });
 });
 
 describe('the summary', () => {
   it('counts records and plans, the age, and the years ahead', () => {
-    const s = lifeSummary(life({ milestones: [ms('a', '2000'), ms('b', '2030'), ms('c', '2001', { isPlan: true })] }), TODAY);
-    expect(s).toEqual({ records: 1, plans: 2, age: 41, remaining: 49 });
+    const s = lifeSummary(life({ milestones: [ms('a', '2000'), ms('b', '2030'), ms('c', '2031')] }), TODAY);
+    expect(s).toEqual({ records: 1, plans: 2, age: 41, remaining: 79 });
   });
 });
 

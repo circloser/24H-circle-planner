@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import './index.css';
+import { openViewAt, opensView } from '@/lib/view-scroll';
+import type { ChartView } from '@/lib/chart-view';
 import { Sparkles, Plus, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { v4 as uuid } from 'uuid';
@@ -152,6 +154,18 @@ function App() {
   const [magicianOpen, setMagicianOpen] = useState(false);
   // One count per page load: the denominator for every other usage count.
   useEffect(() => { trackOnce('app_open'); }, []);
+  // A view opens at its own present moment — the calendar and the timetable at
+  // the top, the life line with today in the middle — rather than wherever the
+  // last view happened to be scrolled to (lib/view-scroll).
+  // Undefined on the first render on purpose: a reload straight into the life
+  // page should still land on today, not on the year someone was born.
+  const lastView = useRef<ChartView | undefined>(undefined);
+  useEffect(() => {
+    const next = prefs.chartView ?? 'full';
+    const prev = lastView.current;
+    lastView.current = next;
+    if (opensView(prev, next)) openViewAt(next);
+  }, [prefs.chartView]);
   // /?view=calendar or /?view=life (linked from the /calendar and /life pages)
   // opens that page, once.
   useEffect(() => {

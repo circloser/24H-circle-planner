@@ -7,7 +7,7 @@ import { useTranslation } from '@/hooks/usePreferences';
 import { requestUpgrade } from '@/lib/pro';
 import { deletePhoto, newPhotoId, savePhoto, shrinkPhoto } from '@/lib/calendar-photos';
 import {
-  DEFAULT_LIFE_EXPECTANCY, MAX_DESCRIPTION, MAX_NAME, MAX_NOTE, MAX_TITLE, PICKABLE_CATEGORIES,
+  MAX_DESCRIPTION, MAX_NAME, MAX_NOTE, MAX_TITLE, PICKABLE_CATEGORIES,
   dateFrom, isFullDate, partsFrom, sortKey, type DateParts, type FamilyMember, type LifeCategory, type LifeProfile, type Milestone, type Relation,
 } from '@/lib/life';
 import { todayKey } from '@/lib/calendar-grid';
@@ -125,7 +125,6 @@ export function MilestoneDialog({ target, pro, colors, onSave, onDelete, onClose
   const [category, setCategory] = useState<Exclude<LifeCategory, 'birth'>>('other');
   const [description, setDescription] = useState('');
   const [photo, setPhoto] = useState<string | undefined>();
-  const [isPlan, setIsPlan] = useState(false);
   const [pinned, setPinned] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
   // Fill the form each time the dialog opens on something.
@@ -138,7 +137,6 @@ export function MilestoneDialog({ target, pro, colors, onSave, onDelete, onClose
     setCategory(base.category && base.category !== 'birth' ? base.category : 'other');
     setDescription(base.description ?? '');
     setPhoto(base.photo);
-    setIsPlan(base.isPlan ?? false);
     setPinned(base.pinned ?? false);
     setEndOpen(!!base.endDate);
     /* eslint-enable react-hooks/set-state-in-effect */
@@ -149,6 +147,7 @@ export function MilestoneDialog({ target, pro, colors, onSave, onDelete, onClose
   const when = dateFrom(date);
   const until = dateFrom(end);
   const endBad = !!end.y && (!until || (when !== null && sortKey(until) < sortKey(when)));
+  // A date still to come is a plan by itself; nothing is marked by hand.
   const future = when !== null && sortKey(when) > todayKey();
   const valid = !!title.trim() && when !== null && !endBad;
   const original = target?.mode === 'edit' ? target.m.photo : undefined;
@@ -159,9 +158,7 @@ export function MilestoneDialog({ target, pro, colors, onSave, onDelete, onClose
     onSave({
       date: when, ...(until ? { endDate: until } : {}), title: title.trim(),
       ...(description.trim() ? { description: description.trim() } : {}),
-      // Only the person's own choice is stored: a future date is a plan anyway,
-      // and turns into a record by itself once the day has passed.
-      category, ...(photo ? { photo } : {}), isPlan, ...(pinned ? { pinned: true } : {}),
+      category, ...(photo ? { photo } : {}), ...(pinned ? { pinned: true } : {}),
     }, target?.mode === 'edit' ? target.m.id : undefined);
   };
 
@@ -215,12 +212,8 @@ export function MilestoneDialog({ target, pro, colors, onSave, onDelete, onClose
             <PhotoField value={photo} original={original} pro={pro} onChange={setPhoto} />
           </div>
           <div className="flex flex-col gap-2">
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" data-life-plan-input checked={isPlan || future} disabled={future}
-                onChange={(e) => setIsPlan(e.target.checked)} className="h-4 w-4" />
-              {t('life.field.isPlan')}
-            </label>
-            {future && <p className="-mt-1 pl-6 text-xs text-muted-foreground">{t('life.field.planAuto')}</p>}
+            {/* Nothing to tick: a date still to come is already a plan. */}
+            {future && <p className="text-xs text-muted-foreground" data-life-plan-auto>{t('life.field.planAuto')}</p>}
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" data-life-pin-input checked={pinned} onChange={(e) => setPinned(e.target.checked)} className="h-4 w-4" />
               {t('life.field.pinned')}
@@ -319,17 +312,16 @@ export function ProfileDialog({ open, profile, onSave, onClose }: {
   const { t } = useTranslation();
   const [name, setName] = useState('');
   const [birth, setBirth] = useState('');
-  const [years, setYears] = useState('');
   useEffect(() => {
     if (!open) return;
     /* eslint-disable react-hooks/set-state-in-effect */
     setName(profile.name ?? '');
     setBirth(profile.birthDate);
-    setYears(String(profile.lifeExpectancy ?? DEFAULT_LIFE_EXPECTANCY));
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [open, profile]);
-  const span = Number(years);
-  const valid = isFullDate(birth) && Number.isInteger(span) && span >= 1 && span <= 130;
+  // The line runs the same distance past today for everyone: there is nothing
+  // here to set, and no one is asked how long they expect to live.
+  const valid = isFullDate(birth);
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-sm" data-life-profile-dialog>
@@ -339,7 +331,7 @@ export function ProfileDialog({ open, profile, onSave, onClose }: {
         </DialogHeader>
         <form className="flex flex-col gap-4" onSubmit={(e) => {
           e.preventDefault();
-          if (valid) onSave({ ...(name.trim() ? { name: name.trim() } : {}), birthDate: birth, ...(span !== DEFAULT_LIFE_EXPECTANCY ? { lifeExpectancy: span } : {}) });
+          if (valid) onSave({ ...(name.trim() ? { name: name.trim() } : {}), birthDate: birth });
         }}>
           <label className="flex flex-col gap-1.5">
             <span className={fieldLabel}>{t('life.onboard.name')}</span>
@@ -348,11 +340,6 @@ export function ProfileDialog({ open, profile, onSave, onClose }: {
           <label className="flex flex-col gap-1.5">
             <span className={fieldLabel}>{t('life.field.myBirth')}</span>
             <Input type="date" data-life-birth-input value={birth} min="1900-01-01" max={todayKey()} onChange={(e) => setBirth(e.target.value)} required />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className={fieldLabel}>{t('life.field.expectancy')}</span>
-            <Input type="number" inputMode="numeric" min={1} max={130} value={years} onChange={(e) => setYears(e.target.value)} className="w-28" />
-            <span className="text-xs text-muted-foreground">{t('life.field.expectancyHint')}</span>
           </label>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>{t('common.cancel')}</Button>

@@ -24,11 +24,11 @@ export function LifeToggle() {
       aria-pressed={on}
       aria-label={t('nav.life')}
       title={t('nav.life')}
-      className="relative min-h-11 gap-1.5 px-2 sm:px-3"
+      className="relative min-h-11 w-11 shrink-0 px-0"
       onClick={() => setPreference('chartView', on ? timetableView() : 'life')}
     >
+      {/* An icon alone, like every other tab: the name is in the label. */}
       <GitCommitVertical className="h-4 w-4 shrink-0" />
-      <span className="max-w-24 truncate">{t('nav.life')}</span>
       {nudge && !on && (
         <span aria-hidden data-life-dot className="absolute right-1 top-1 h-2 w-2 rounded-full bg-primary ring-2 ring-surface" />
       )}

@@ -3,7 +3,7 @@ import { lifeNudge } from '../life-nudge';
 import { emptyLife, type LifeData, type Milestone } from '../life';
 
 const ms = (id: string, date: string, extra: Partial<Milestone> = {}): Milestone =>
-  ({ id, date, title: id, category: 'other', isPlan: false, ...extra });
+  ({ id, date, title: id, category: 'other', ...extra });
 const life = (over: Partial<LifeData> = {}): LifeData =>
   ({ ...emptyLife(), profile: { birthDate: '1985-05-15' }, ...over });
 
@@ -20,7 +20,7 @@ describe('what brings someone back to the line', () => {
   });
 
   it('never mentions something already past, or one that was closed', () => {
-    const l = life({ milestones: [ms('gone', '2026-09-19', { isPlan: true }), ms('near', '2026-10-02')] });
+    const l = life({ milestones: [ms('gone', '2026-09-19'), ms('near', '2026-10-02')] });
     expect(lifeNudge(l, { today: '2026-09-20' })?.kind).toBe('plan');
     const key = 'plan:near:2026';
     expect(lifeNudge(l, { today: '2026-09-20', seen: new Set([key]) })).toBeNull();

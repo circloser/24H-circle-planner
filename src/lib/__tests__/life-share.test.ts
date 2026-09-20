@@ -3,7 +3,7 @@ import { MAX_SHARE_CODE, decodeLifeShare, encodeLifeShare, lifeSharePayload } fr
 import { emptyLife, type LifeData, type Milestone } from '../life';
 
 const ms = (id: string, date: string, extra: Partial<Milestone> = {}): Milestone =>
-  ({ id, date, title: `사건 ${id}`, category: 'other', isPlan: false, ...extra });
+  ({ id, date, title: `사건 ${id}`, category: 'other', ...extra });
 const life = (over: Partial<LifeData> = {}): LifeData => ({
   ...emptyLife(),
   profile: { name: '김하루', birthDate: '1985-05-15' },
@@ -11,7 +11,7 @@ const life = (over: Partial<LifeData> = {}): LifeData => ({
     { id: 'f1', relation: 'mother', name: '이정숙', birthDate: '1958-03-02', note: '메모', photo: 'p1' },
     { id: 'f2', relation: 'father', name: '김영수' },
   ],
-  milestones: [ms('a', '2010-05-15', { title: '첫 직장', category: 'career', description: '작은 스튜디오', photo: 'p2' }), ms('b', '2031', { isPlan: true })],
+  milestones: [ms('a', '2010-05-15', { title: '첫 직장', category: 'career', description: '작은 스튜디오', photo: 'p2' }), ms('b', '2031')],
   endingNote: { text: '고마웠어요', updatedAt: '2026-01-01T00:00:00.000Z' },
   ...over,
 });
@@ -20,8 +20,8 @@ describe('a life share link', () => {
   it('carries the line, and never a photo', () => {
     const back = decodeLifeShare(encodeLifeShare(life())!)!;
     expect(back.profile).toEqual({ name: '김하루', birthDate: '1985-05-15' });
-    expect(back.milestones.map((m) => [m.title, m.date, m.category, m.isPlan]))
-      .toEqual([['첫 직장', '2010-05-15', 'career', false], ['사건 b', '2031', 'other', true]]);
+    expect(back.milestones.map((m) => [m.title, m.date, m.category]))
+      .toEqual([['첫 직장', '2010-05-15', 'career'], ['사건 b', '2031', 'other']]);
     expect(back.milestones[0].description).toBe('작은 스튜디오');
     expect(back.endingNote?.text).toBe('고마웠어요');
     expect(back.family.map((f) => [f.relation, f.name])).toEqual([['mother', '이정숙'], ['father', '김영수']]);

@@ -7,7 +7,7 @@
  * fetched, and nothing about the life record reaches the calendar's store.
  */
 import type { DayEvent } from './calendar-events';
-import { isFullDate, partsOfLife, type LifeData } from './life';
+import { isFullDate, isPlanned, partsOfLife, type LifeData } from './life';
 
 /** The words the calendar puts on them (the caller translates). */
 export interface AnniversaryLabels {
@@ -67,7 +67,8 @@ export function lifeAnniversaries(
     }
   }
   for (const m of life.milestones) {
-    if (!m.pinned || m.isPlan) continue;
+    // An anniversary of something that has not happened yet is not one.
+    if (!m.pinned || isPlanned(m)) continue;
     yearly(`life-${m.id}`, m.date, (n) => (n > 0 ? labels.years(m.title, n) : m.title), colors.moment(m.category));
   }
   return out;

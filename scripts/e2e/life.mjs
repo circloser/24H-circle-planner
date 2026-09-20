@@ -136,6 +136,8 @@ export async function run() {
     pass('…and reads as pressed', (await page.locator('[data-life-toggle]').getAttribute('aria-pressed')) === 'true');
     pass('the floating widgets step aside', (await page.locator('button[class*="bottom-5"]').count()) === 0, `${fabs} → 0`);
     pass('a first visit asks only for the birthday', (await count('[data-life-onboarding]')) === 1);
+    pass('…and never how long the visitor expects to live',
+      !/기대|수명/.test(await page.locator('[data-life-onboarding]').innerText()));
 
     // 2. A birthday alone draws the line.
     await page.locator('[data-life-birth-input]').fill('1985-05-15');
@@ -202,8 +204,8 @@ export async function run() {
     await save();
     await add();
     await fillMoment({ title: '세계 여행', y: 2031, cat: 'travel' });
-    const plan = page.locator('[data-life-plan-input]');
-    pass('a date after today is ticked as a plan, and locked', (await plan.isChecked()) && (await plan.isDisabled()));
+    pass('a date after today is a plan by itself — nothing to tick',
+      (await count('[data-life-plan-auto]')) === 1 && (await count('[data-life-plan-input]')) === 0);
     await save();
     await add();
     // A day past the end of a newly picked month is dropped, not hidden.
@@ -353,7 +355,7 @@ export async function run() {
     // 15. The free limit stops adding — and nothing is lost.
     await page.evaluate((k) => {
       const life = JSON.parse(localStorage.getItem(k));
-      life.milestones = Array.from({ length: 30 }, (_, i) => ({ id: `x${i}`, date: String(1990 + i), title: `사건 ${i + 1}`, category: 'other', isPlan: false }));
+      life.milestones = Array.from({ length: 30 }, (_, i) => ({ id: `x${i}`, date: String(1990 + i), title: `사건 ${i + 1}`, category: 'other' }));
       localStorage.setItem(k, JSON.stringify(life));
     }, LIFE_KEY);
     await openLife();
@@ -366,12 +368,14 @@ export async function run() {
     pass('…and all 30 moments are still there', (await count('[data-life-moment]')) === 30 && (await stored()).milestones.length === 30);
     pass('the backup banner asks, with 10+ moments and no backup', (await count('[data-life-backup-banner]')) === 1);
 
-    // 16. Cards fade in as they scroll in.
-    const last = page.locator('[data-life-moment] .life-reveal').last();
-    pass('a card below the fold waits to fade in', (await last.evaluate((el) => getComputedStyle(el).opacity)) === '0');
-    await last.scrollIntoViewIfNeeded();
+    // 16. Cards fade in as they scroll in. The page opens with today in the
+    // middle of the screen, so the two ends of the line have both been seen;
+    // a moment from the middle of the life is the one still waiting.
+    const far = page.locator('[data-life-moment] .life-reveal').nth(14);
+    pass('a card off the screen waits to fade in', (await far.evaluate((el) => getComputedStyle(el).opacity)) === '0');
+    await far.scrollIntoViewIfNeeded();
     await wait(600);
-    pass('…and shows once scrolled to', (await last.evaluate((el) => getComputedStyle(el).opacity)) === '1');
+    pass('…and shows once scrolled to', (await far.evaluate((el) => getComputedStyle(el).opacity)) === '1');
 
     // 16b. A read-only link for the family.
     await headerExport();
@@ -399,7 +403,7 @@ export async function run() {
       const pad = (n) => String(n).padStart(2, '0');
       const md = `${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
       life.profile.birthDate = `1985-${md}`;
-      life.milestones = [{ id: 'p1', date: `2015-${md}`, title: '결혼', category: 'relationship', isPlan: false, pinned: true }];
+      life.milestones = [{ id: 'p1', date: `2015-${md}`, title: '결혼', category: 'relationship', pinned: true }];
       localStorage.setItem(k, JSON.stringify(life));
       localStorage.setItem('24h-circle-planner.prefs', JSON.stringify({ version: 1, prefs: { language: 'ko', chartView: 'calendar' } }));
     }, LIFE_KEY);
@@ -444,6 +448,9 @@ export async function run() {
     pass('with Pro, the tray opens on the line', (await count('[data-decor-tray]')) === 1 && (await count('[data-life-decor-on]')) === 1);
     await page.locator('[data-sticker]').first().click();
     await wait(300);
+    // The page opens on today, so bring the birth row into view before aiming.
+    await page.locator('[data-life-birth]').scrollIntoViewIfNeeded();
+    await wait(300);
     const birthRow = await page.locator('[data-life-birth] [data-life-row-decor]').boundingBox();
     await page.mouse.click(birthRow.x + birthRow.width * 0.2, birthRow.y + birthRow.height * 0.5);
     await wait(500);
@@ -464,7 +471,7 @@ export async function run() {
     await page.evaluate((k) => {
       const life = JSON.parse(localStorage.getItem(k));
       life.milestones = [1990, 2004, 2010, 2016].map((y, i) => (
-        { id: `mm${i}`, date: String(y), title: `사건 ${i + 1}`, category: 'other', isPlan: false }));
+        { id: `mm${i}`, date: String(y), title: `사건 ${i + 1}`, category: 'other' }));
       localStorage.setItem(k, JSON.stringify(life));
     }, LIFE_KEY);
     await openLife();
@@ -533,7 +540,7 @@ export async function run() {
     await calm.page.evaluate((k) => {
       localStorage.setItem(k, JSON.stringify({
         version: 1, profile: { birthDate: '1985-05-15' }, family: [], endingNote: null, updatedAt: '',
-        milestones: Array.from({ length: 20 }, (_, i) => ({ id: `x${i}`, date: String(1990 + i), title: `사건 ${i + 1}`, category: 'other', isPlan: false })),
+        milestones: Array.from({ length: 20 }, (_, i) => ({ id: `x${i}`, date: String(1990 + i), title: `사건 ${i + 1}`, category: 'other' })),
       }));
     }, LIFE_KEY);
     await calm.page.reload({ waitUntil: 'domcontentloaded' });

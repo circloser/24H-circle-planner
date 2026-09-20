@@ -18,7 +18,10 @@ const PROD_ORIGIN = 'https://24houring.com';
 /** What the server takes (worker/shares.ts MAX_PAYLOAD), with room to spare. */
 export const MAX_SHARE_CODE = 24_000;
 
-/** [date, title, category index, plan, description] — short keys, short life. */
+/** [date, title, category index, unused, description] — short keys, short life.
+ *  Slot 3 once carried a hand-set "this is a plan" flag; a plan is now simply a
+ *  date after today, so it is written as 0 and ignored on the way back. Old
+ *  links still decode, because the shape has not moved. */
 type WireMoment = [string, string, number, 0 | 1, string?];
 /** [relation, name, birthday] */
 type WireParent = [Relation, string, string?];
@@ -30,8 +33,6 @@ export interface LifeSharePayload {
   n?: string;
   /** Birthday — the line cannot be drawn without it. */
   b: string;
-  /** Expected life span, when it is not the default. */
-  e?: number;
   m: WireMoment[];
   f?: WireParent[];
   /** The words to leave behind. */
@@ -60,14 +61,13 @@ export function lifeSharePayload(life: LifeData, opts: LifeShareOptions = {}): L
     k: 'life',
     b: life.profile.birthDate,
     m: sortMilestones(life.milestones).map((m) => {
-      const row: WireMoment = [m.date, m.title, LIFE_CATEGORIES.indexOf(m.category), m.isPlan ? 1 : 0];
+      const row: WireMoment = [m.date, m.title, LIFE_CATEGORIES.indexOf(m.category), 0];
       const desc = limit > 0 ? (m.description ?? '').slice(0, limit) : '';
       if (desc) row[4] = desc;
       return row;
     }),
   };
   if (!opts.hideNames && life.profile.name) payload.n = life.profile.name;
-  if (life.profile.lifeExpectancy) payload.e = life.profile.lifeExpectancy;
   if (parents.length) payload.f = parents;
   if (life.endingNote?.text) payload.t = life.endingNote.text;
   return payload;
@@ -103,7 +103,7 @@ export function decodeLifeShare(code: string): LifeData | null {
   if (!p || p.k !== 'life' || p.v !== 1 || !isFullDate(p.b) || !Array.isArray(p.m)) return null;
   const life: LifeData = {
     ...emptyLife(),
-    profile: { birthDate: p.b, ...(p.n ? { name: String(p.n).slice(0, 40) } : {}), ...(p.e ? { lifeExpectancy: Number(p.e) } : {}) },
+    profile: { birthDate: p.b, ...(p.n ? { name: String(p.n).slice(0, 40) } : {}) },
     // Parents and moments share one id space in decodeLife: keep them apart.
     family: (Array.isArray(p.f) ? p.f : []).map((row, i) => ({
       id: `sp${i}`,
@@ -119,7 +119,6 @@ export function decodeLifeShare(code: string): LifeData | null {
         date: row[0],
         title: String(row[1]).slice(0, 80),
         category: category ?? 'other',
-        isPlan: row[3] === 1,
         ...(row[4] ? { description: String(row[4]).slice(0, 1000) } : {}),
       }];
     }),

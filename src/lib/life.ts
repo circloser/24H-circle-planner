@@ -43,8 +43,6 @@ export interface Milestone {
   description?: string;
   category: LifeCategory;
   photo?: string;
-  /** Marked as a plan; a date after today is a plan whatever this says. */
-  isPlan: boolean;
   pinned?: boolean;
 }
 
@@ -52,8 +50,6 @@ export interface LifeProfile {
   name?: string;
   /** 'YYYY-MM-DD'; empty until the person has told us (→ onboarding). */
   birthDate: string;
-  /** Years, for the length of the future stretch and its decade labels. */
-  lifeExpectancy?: number;
 }
 
 export interface LifeData {
@@ -67,7 +63,9 @@ export interface LifeData {
   updatedAt: string;
 }
 
-export const DEFAULT_LIFE_EXPECTANCY = 90;
+/** How far the line runs past today, for everyone alike. Not a prediction and
+ *  not a setting: a hundred and twenty years is simply where the paper ends. */
+export const DEFAULT_LIFE_EXPECTANCY = 120;
 export const MAX_TITLE = 80;
 export const MAX_DESCRIPTION = 1000;
 export const MAX_NAME = 40;
@@ -182,9 +180,13 @@ export function ageAt(birth: string, date: string): { years: number; approx: boo
   return years < 0 ? null : { years, approx };
 }
 
-/** A plan: marked as one, or dated after today. */
-export function isPlanned(m: Pick<Milestone, 'date' | 'isPlan'>, today: string = todayKey()): boolean {
-  return m.isPlan || sortKey(m.date) > today;
+/**
+ * A plan is simply something that has not happened yet. Nothing is marked by
+ * hand: a date after today is a plan, and the day it passes it becomes a
+ * record on its own.
+ */
+export function isPlanned(m: Pick<Milestone, 'date'>, today: string = todayKey()): boolean {
+  return sortKey(m.date) > today;
 }
 
 /** Oldest first; entries on the same date keep the order they were added in
@@ -222,7 +224,6 @@ function cleanMilestone(v: unknown): Milestone | null {
     ...(description ? { description } : {}),
     category,
     ...(isId(o['photo']) ? { photo: o['photo'] } : {}),
-    isPlan: o['isPlan'] === true,
     ...(o['pinned'] === true ? { pinned: true } : {}),
   };
 }
@@ -245,11 +246,9 @@ function cleanMember(v: unknown): FamilyMember | null {
 function cleanProfile(v: unknown): LifeProfile {
   const o = (v ?? {}) as Record<string, unknown>;
   const name = str(o['name'], MAX_NAME);
-  const exp = Number(o['lifeExpectancy']);
   return {
     ...(name ? { name } : {}),
     birthDate: isFullDate(o['birthDate']) ? o['birthDate'] : '',
-    ...(Number.isInteger(exp) && exp >= 1 && exp <= 130 ? { lifeExpectancy: exp } : {}),
   };
 }
 
@@ -344,7 +343,7 @@ export function buildTimeline(life: LifeData, opts: TimelineOptions = {}): Timel
   const only = opts.only && opts.only.size ? opts.only : null;
   const moments = sortMilestones(life.milestones).filter((m) => !only || only.has(m.category));
   const years = moments.map((m) => yearOf(m.date));
-  const lastYear = Math.max(yearOf(birth) + (life.profile.lifeExpectancy ?? DEFAULT_LIFE_EXPECTANCY), yearOf(today), ...years);
+  const lastYear = Math.max(yearOf(birth) + DEFAULT_LIFE_EXPECTANCY, yearOf(today), ...years);
 
   const out: TimelineItem[] = [];
   let decade = Math.floor(Math.min(yearOf(birth), ...years) / 10) * 10;
@@ -405,7 +404,7 @@ export interface LifeSummary {
 export function lifeSummary(life: LifeData, today: string = todayKey()): LifeSummary {
   const plans = life.milestones.filter((m) => isPlanned(m, today)).length;
   const age = life.profile.birthDate ? ageAt(life.profile.birthDate, today)?.years ?? null : null;
-  const expectancy = life.profile.lifeExpectancy ?? DEFAULT_LIFE_EXPECTANCY;
+  const expectancy = DEFAULT_LIFE_EXPECTANCY;
   return {
     records: life.milestones.length - plans,
     plans,

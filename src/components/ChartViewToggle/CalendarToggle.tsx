@@ -20,13 +20,11 @@ export function CalendarToggle() {
       aria-pressed={on}
       aria-label={t('view.calendar')}
       title={t('view.calendar')}
-      className="min-h-11 gap-1.5 px-2 sm:px-3"
+      className="min-h-11 w-11 shrink-0 px-0"
       onClick={() => setPreference('chartView', on ? timetableView() : 'calendar')}
     >
+      {/* An icon alone, like every other tab: the name is in the label. */}
       <CalendarDays className="h-4 w-4 shrink-0" />
-      {/* The label stays on a phone too: this button sits beside the timetable
-          one, and an icon-only twin next to a labelled button reads as broken. */}
-      <span className="max-w-24 truncate">{t('view.calendar')}</span>
     </Button>
   );
 }

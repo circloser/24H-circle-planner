@@ -5,7 +5,7 @@ import {
 } from '../life-memoir';
 
 const ms = (id: string, date: string, extra: Partial<Milestone> = {}): Milestone =>
-  ({ id, date, title: id, category: 'other', isPlan: false, ...extra });
+  ({ id, date, title: id, category: 'other', ...extra });
 const life = (over: Partial<LifeData> = {}): LifeData =>
   ({ ...emptyLife(), profile: { birthDate: '1985-05-15' }, ...over });
 

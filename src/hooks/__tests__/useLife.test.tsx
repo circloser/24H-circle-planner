@@ -20,8 +20,8 @@ describe('useLife', () => {
   it('saves every edit, sorted on read, and survives a reload', () => {
     const { result, unmount } = renderHook(() => useLife());
     act(() => result.current.setProfile({ birthDate: '1985-05-15' }));
-    act(() => { result.current.addMilestone({ date: '2010', title: '입사', category: 'career', isPlan: false }); });
-    act(() => { result.current.addMilestone({ date: '2001-03', title: '입학', category: 'education', isPlan: false }); });
+    act(() => { result.current.addMilestone({ date: '2010', title: '입사', category: 'career' }); });
+    act(() => { result.current.addMilestone({ date: '2001-03', title: '입학', category: 'education' }); });
     expect(stored().milestones.map((m: { title: string }) => m.title)).toEqual(['입사', '입학']);
     expect(stored().updatedAt).not.toBe('');
     unmount();
@@ -29,9 +29,9 @@ describe('useLife', () => {
     const again = renderHook(() => useLife());
     expect(again.result.current.life.profile.birthDate).toBe('1985-05-15');
     const id = again.result.current.life.milestones[0].id;
-    act(() => again.result.current.updateMilestone(id, { date: '2011', title: '이직', category: 'career', isPlan: false }));
+    act(() => again.result.current.updateMilestone(id, { date: '2011', title: '이직', category: 'career' }));
     act(() => again.result.current.removeMilestone(again.result.current.life.milestones[1].id));
-    expect(stored().milestones).toEqual([{ id, date: '2011', title: '이직', category: 'career', isPlan: false }]);
+    expect(stored().milestones).toEqual([{ id, date: '2011', title: '이직', category: 'career' }]);
   });
 
   it('keeps the ending note only while it has words in it', () => {
