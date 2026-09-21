@@ -535,13 +535,10 @@ function EndingNote({ api }: { api: LifeApi }) {
   }, []);
   const updated = note?.updatedAt ? new Date(note.updatedAt) : null;
   return (
+    // No line and no full stop above it any more: the page holds several
+    // lives now, and one stub down the middle belonged to none of them.
     <section aria-labelledby="life-ending" className="mx-auto w-full max-w-[960px]" data-life-ending>
-      <div aria-hidden className="relative h-12"><span className="life-line life-line--future" /></div>
-      {/* The line ends here, in a small closed circle. */}
-      <div aria-hidden className="relative h-3">
-        <span className="absolute left-[28px] top-0 h-3 w-3 -translate-x-1/2 rounded-full bg-foreground/60 min-[900px]:left-1/2" />
-      </div>
-      <div className="mx-4 mt-10 max-w-[640px] min-[900px]:mx-auto">
+      <div className="mx-auto mt-16 w-full max-w-[640px] px-4">
         <h3 id="life-ending" className="life-serif flex items-center justify-center gap-2 text-2xl font-bold tracking-tight text-foreground">
           <Feather aria-hidden className="h-5 w-5 text-muted-foreground" />
           {t('life.endingNote')}

@@ -99,13 +99,15 @@ const dayKey = (date: string): string => {
   return `${y.padStart(4, '0')}${m.padStart(2, '0')}${d.padStart(2, '0')}`;
 };
 
-function EntryRow({ side, tight, year, plan, future, faint, children, label, onOpen, row, decor, line = 'full' }: {
+function EntryRow({ side, tight, year, plan, future, faint, fade, children, label, onOpen, row, decor, line = 'full' }: {
   side: Side;
   tight: boolean;
   year: number;
   plan: boolean;
   /** Below today's marker: the line runs dashed here. */
   future: boolean;
+  /** How strongly to draw it: the years ahead fade as they go (lib/life). */
+  fade?: number;
   line?: RowLine;
   faint?: boolean;
   children: ReactNode;
@@ -119,7 +121,7 @@ function EntryRow({ side, tight, year, plan, future, faint, children, label, onO
   const dashed = plan || faint;
   return (
     <li className={`relative ${tight ? 'pt-6' : 'pt-12'}`} data-year={year} data-future={future || undefined}
-      data-life-anchor={MARKER_MID} {...row}>
+      data-life-anchor={MARKER_MID} style={fade && fade < 1 ? { opacity: fade } : undefined} {...row}>
       {line === 'full' && <Line future={future} />}
       {decor}
       {/* The line starts at the birth marker, so this one is hung off a box
@@ -135,7 +137,7 @@ function EntryRow({ side, tight, year, plan, future, faint, children, label, onO
             className={`absolute left-[28px] top-[33px] z-10 h-[26px] w-[26px] -translate-x-1/2 rounded-full border-2 bg-background transition-transform duration-150 group-hover:scale-110 min-[900px]:left-1/2 ${
               dashed ? 'border-dashed' : ''} ${faint ? 'border-foreground/40' : 'border-foreground'}`} />
           <div data-life-card
-            className={`relative ml-16 mr-4 min-[900px]:mx-0 min-[900px]:w-[calc(50%-72px)] ${
+            className={`relative ml-14 mr-3 min-[900px]:mx-0 min-[900px]:w-[calc(50%-44px)] ${
               left ? 'min-[900px]:text-right' : 'min-[900px]:ml-auto'} ${faint ? 'opacity-55' : plan ? 'opacity-[.8]' : ''}`}>
             {/* The whole entry opens the editor: one button stretched over it.
                 A shared line is read-only, so there is nothing to press. */}
@@ -157,7 +159,7 @@ function DateLine({ category, color, text, badge }: { category: LifeCategory; co
   const left = useContext(SideCtx);
   const Icon = CATEGORY_ICON[category];
   return (
-    <span className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] italic leading-[22px] text-muted-foreground ${left ? 'min-[900px]:justify-end' : ''}`}>
+    <span className={`flex flex-wrap items-center gap-x-2 gap-y-1 break-keep text-[15px] italic leading-[22px] text-muted-foreground ${left ? 'min-[900px]:justify-end' : ''}`}>
       <Icon aria-hidden className="h-4 w-4 shrink-0 not-italic" style={{ color: inkOf(color) }} />
       <span>{text}</span>
       {badge && (
@@ -172,7 +174,7 @@ function Title({ children, faint }: { children: ReactNode; faint?: boolean }) {
   // cluster — so a title does not shout at twenty-two point. Eighteen still
   // reads as the heading it is, which twelve did not.
   return (
-    <span className={`life-serif mt-2 block text-[17px] font-bold leading-6 tracking-tight decoration-1 underline-offset-4 group-hover:underline min-[900px]:text-[18px] ${
+    <span className={`life-serif mt-2 block break-keep text-[17px] font-bold leading-6 tracking-tight decoration-1 underline-offset-4 group-hover:underline min-[900px]:text-[18px] ${
       faint ? 'text-foreground/70' : 'text-foreground'}`}>
       {children}
     </span>
@@ -191,7 +193,7 @@ function Description({ text }: { text: string }) {
   }, [text, open]);
   return (
     <>
-      <p ref={ref} className={`mt-3 whitespace-pre-line text-base leading-relaxed text-foreground/75 ${open ? '' : 'line-clamp-3'}`}>{text}</p>
+      <p ref={ref} className={`mt-3 whitespace-pre-line break-keep text-base leading-relaxed text-foreground/75 ${open ? '' : 'line-clamp-3'}`}>{text}</p>
       {(clamped || open) && (
         <button type="button" onClick={() => setOpen((v) => !v)}
           className="relative z-[2] mt-3 text-[15px] text-primary underline decoration-1 underline-offset-4 hover:decoration-2">
@@ -281,7 +283,8 @@ export function LifeTimeline({ life, items, colors, readOnly, rowDecor, decorati
       rows.push(
         <li key={it.key} className="relative pt-12" data-year={it.decade} data-life-decade
           data-life-at={`${it.decade}0000`} data-life-anchor={0}
-          data-life-before={it.before || undefined}>
+          data-life-before={it.before || undefined}
+          style={it.fade && it.fade < 1 ? { opacity: it.fade } : undefined}>
           {/* Before the birth there is no line to draw — not in the decades
               that ran without this person, and not in the one they were born
               in, where the line starts at the marker itself. */}
@@ -303,9 +306,14 @@ export function LifeTimeline({ life, items, colors, readOnly, rowDecor, decorati
       rows.push(
         <li key={it.key} className="relative pt-12" data-year={year} data-life-today
           data-life-at={`${dayKey(it.date)}.5`} data-life-anchor={TODAY_MID}>
-          {/* Solid down to the marker, dashed from it on. */}
-          <span aria-hidden className="life-line" style={{ bottom: 'auto', height: 61 }} />
-          <span aria-hidden className="life-line life-line--future" style={{ top: 61 }} />
+          {/* Solid down to the marker, dashed from it on. Where the row sits
+              is the board's to decide — it pads rows to make several lives
+              agree on a year — so the split is written against that padding
+              rather than against the padding the class happens to give it. */}
+          <span aria-hidden className="life-line"
+            style={{ bottom: 'auto', height: 'calc(var(--life-pad, 48px) + 13px)' }} />
+          <span aria-hidden className="life-line life-line--future"
+            style={{ top: 'calc(var(--life-pad, 48px) + 13px)' }} />
           {rowDecor?.('today')}
           <div className="relative h-[26px]">
             <span aria-hidden data-life-label className="life-pulse absolute left-[28px] top-0 z-10 h-[26px] w-[26px] -translate-x-1/2 rounded-full border-[6px] border-background bg-primary ring-2 ring-primary min-[900px]:left-1/2" />
@@ -339,6 +347,7 @@ export function LifeTimeline({ life, items, colors, readOnly, rowDecor, decorati
       rows.push(
         <EntryRow key={it.key} side={it.side} tight={it.tight} year={Number(m.date.slice(0, 4))} plan={it.plan} future={it.future}
           line={born ? 'full' : 'none'}
+          fade={it.fade}
           label={`${spokenLifeDate(m.date, lang)}, ${m.title}${it.plan ? `, ${t('life.planBadge')}` : ''}`}
           onOpen={readOnly ? undefined : () => onOpenMoment?.(m)}
           row={{ 'data-life-moment': m.id, 'data-life-at': dayKey(m.date), ...(it.plan ? { 'data-plan': '' } : {}) }}

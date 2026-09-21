@@ -119,7 +119,12 @@ export function LifeBoard({
     const align = () => {
       const cols = [...el.querySelectorAll<HTMLElement>('[data-life-column]')];
       const all = cols.map((c) => [...c.querySelectorAll<HTMLElement>('li[data-life-at]')]);
-      for (const list of all) for (const row of list) row.style.paddingTop = '';
+      for (const list of all) {
+        for (const row of list) {
+          row.style.paddingTop = '';
+          row.style.removeProperty('--life-pad');
+        }
+      }
       if (cols.length < 2) return;
       /**
        * Where the mark on a row sits, in the screen's pixels.
@@ -158,7 +163,11 @@ export function LifeBoard({
           const pad = parseFloat(getComputedStyle(row).paddingTop) || 0;
           // A rectangle is measured in the screen's pixels and padding is
           // written in the board's own, which the zoom makes different sizes.
-          row.style.paddingTop = `${pad + gap / scale}px`;
+          const grown = pad + gap / scale;
+          row.style.paddingTop = `${grown}px`;
+          // Today's row draws a line that changes from solid to dashed at its
+          // own dot, and the dot is below whatever padding it is given.
+          row.style.setProperty('--life-pad', `${grown}px`);
         });
       }
     };
@@ -252,7 +261,7 @@ export function LifeBoard({
         it, so it still comes to rest under the header.
       */}
       <div ref={board} data-life-board data-life-board-lines={lines.length}
-        className="flex w-full items-start gap-4 min-[900px]:gap-10"
+        className="flex w-full items-start gap-3 min-[900px]:gap-6"
         style={scale === 1 ? undefined : { zoom: scale }}>
         {lines.map((line) => (
           <div key={line.id} data-life-column={line.id} className="min-w-0 flex-1">

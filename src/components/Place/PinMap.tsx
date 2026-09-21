@@ -212,16 +212,23 @@ export function PinMap({ pins, camera, onCamera, selected, onSelect, onDropAt, p
               onCamera({ lng: at2.lng, lat: at2.lat, zoom: Math.min(PIN_MAX_ZOOM, camera.zoom + 2) });
             }}
           >
-            {/* A pin wears its kind's colour; a cluster is a count, so it
-                stays the page's own ink. */}
+            {/* A pin IS its kind's colour — filled, with the icon cut out of
+                it in the paper's own white, which is what reads as a pin on a
+                map at this size. A cluster is a count, so it stays ink on
+                paper. */}
             <span aria-hidden data-place-pin-dot={only ? only.category : undefined}
-              className={`grid place-items-center rounded-full border bg-surface transition-transform ${
-                on ? 'scale-110' : ''} ${only ? '' : 'border-foreground/70 text-foreground'}`}
+              className={`grid place-items-center rounded-full border transition-transform ${
+                on ? 'scale-110' : ''} ${only ? 'text-white shadow-sm' : 'border-foreground/70 bg-surface text-foreground'}`}
               style={{
                 width: only ? 26 : 32,
                 height: only ? 26 : 32,
                 borderWidth: on ? 2 : 1.5,
-                ...(only ? { borderColor: pinColors[only.category], color: pinColors[only.category] } : {}),
+                ...(only
+                  ? {
+                    background: pinColors[only.category],
+                    borderColor: on ? 'hsl(var(--foreground))' : 'rgba(255, 255, 255, 0.9)',
+                  }
+                  : {}),
               }}>
               {Icon ? <Icon aria-hidden className="h-3.5 w-3.5" /> : <span className="text-[11px] tabular-nums">{c.pins.length}</span>}
             </span>

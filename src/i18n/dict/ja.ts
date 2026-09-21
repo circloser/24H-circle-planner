@@ -1181,6 +1181,11 @@ export const ja: Record<TKey, string> = {
   // Life — several lives read side by side.
   'life.parallel.title': '並べて見る',
   'life.parallel.who': '並べる人',
+  'life.keep.add': '自分のライフに追加',
+  'life.keep.done': '追加しました。移動します…',
+  'life.keep.already': 'すでに追加されています。',
+  'life.keep.full': '無料では自分を含めて2人までです。Proなら10人。',
+  'life.keep.blank': '誕生日がないため線を描けません。',
   'life.parallel.add': '人を追加',
   'life.parallel.someone': '名前なし',
   'life.parallel.addMoment': 'この人の出来事を追加',

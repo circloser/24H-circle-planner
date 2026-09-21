@@ -218,6 +218,13 @@ export async function run() {
     await wait(500);
     pass('the map offers its own colours', (await count('[data-place-colors-dialog]')) === 1
       && (await count('[data-place-swatch]')) > 20);
+    pass('…laid out evenly rather than wrapping one colour onto its own line',
+      await page.evaluate(() => {
+        const row = document.querySelector('[data-place-color-row]');
+        const tops = new Set([...row.querySelectorAll('[data-place-swatch]')]
+          .map((s) => Math.round(s.getBoundingClientRect().top)));
+        return tops.size === 1;
+      }));
     await page.locator('[data-place-color-row="가 봄"] [data-place-swatch="#3f8f8f"]').click();
     await wait(400);
     pass('…and a colour chosen is kept with the record',
@@ -418,6 +425,21 @@ export async function run() {
       && (await stored()).pins.length === 2);
     await page.locator('[data-place-filter="all"]').click();
     await wait(500);
+
+    // A pin IS its kind's colour: filled, not outlined.
+    await page.locator('[data-place-colors]').click();
+    await wait(500);
+    await page.locator('[data-place-color-row="자연"] [data-place-swatch="#3f8f8f"]').click();
+    await wait(400);
+    await closeAll();
+    pass('a pin is filled with the colour of its kind',
+      (await page.locator(`[data-place-pin="${woods.id}"] [data-place-pin-dot]`)
+        .evaluate((el) => getComputedStyle(el).backgroundColor)) === 'rgb(63, 143, 143)',
+      await page.locator(`[data-place-pin="${woods.id}"] [data-place-pin-dot]`)
+        .evaluate((el) => getComputedStyle(el).backgroundColor));
+    pass('…and the other kind keeps its own',
+      (await page.locator(`[data-place-pin="${withPin.pins[0].id}"] [data-place-pin-dot]`)
+        .evaluate((el) => getComputedStyle(el).backgroundColor)) !== 'rgb(63, 143, 143)');
     pass('…and 전체 brings them all back',
       (await count(`[data-place-pin="${withPin.pins[0].id}"]`)) === 1
       && (await count(`[data-place-pin="${woods.id}"]`)) === 1);

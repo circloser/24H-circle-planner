@@ -1185,6 +1185,11 @@ export const ko = {
   // Life — several lives read side by side.
   'life.parallel.title': '나란히 보기',
   'life.parallel.who': '함께 보는 사람',
+  'life.keep.add': '내 라이프에 이 사람 추가',
+  'life.keep.done': '내 라이프에 추가했어요. 옮겨 갈게요…',
+  'life.keep.already': '이미 내 라이프에 있어요.',
+  'life.keep.full': '무료로는 나 포함 두 명까지예요. Pro에서는 열 명까지.',
+  'life.keep.blank': '태어난 날이 없어서 선을 그릴 수 없어요.',
   'life.parallel.add': '사람 추가',
   'life.parallel.someone': '이름 없음',
   'life.parallel.addMoment': '이 사람의 사건 추가',

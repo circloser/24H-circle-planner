@@ -1181,6 +1181,11 @@ export const fr: Record<TKey, string> = {
   // Life — several lives read side by side.
   'life.parallel.title': 'Côte à côte',
   'life.parallel.who': 'Sur le graphique',
+  'life.keep.add': 'Garder cette vie à côté de la mienne',
+  'life.keep.done': 'Ajoutée. On y va…',
+  'life.keep.already': 'Déjà à côté de la vôtre.',
+  'life.keep.full': 'Deux vies dans l’offre gratuite, la vôtre comprise. Pro en tient dix.',
+  'life.keep.blank': 'Sans date de naissance, pas de ligne à tracer.',
   'life.parallel.add': 'Ajouter quelqu’un',
   'life.parallel.someone': 'Sans nom',
   'life.parallel.addMoment': 'Ajouter un moment à cette vie',

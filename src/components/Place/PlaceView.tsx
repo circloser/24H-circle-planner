@@ -672,6 +672,7 @@ export function PlaceView() {
               people={people}
               railFull={railFull}
               floating={wide}
+              colour={colors.pin[pin.category]}
               onClose={() => setPinId(null)}
               onEdit={() => setTarget({ mode: 'edit', pin })}
               onStar={() => api.toggleStar(pin.id)}

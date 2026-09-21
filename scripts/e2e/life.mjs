@@ -571,7 +571,37 @@ export async function run() {
     pass('…read-only: nothing to press, and no + on the line',
       (await page.locator('[data-life-moment] button').count()) === 0 && (await count('[data-life-add]')) === 0);
     pass('…and it left the names out', !(await page.locator('body').innerText()).includes('이정숙'));
-    await page.goBack({ waitUntil: 'domcontentloaded' });
+
+    // 16b2. The other half of a share: whoever opens it can keep the line.
+    pass('a reader is offered the line to keep', (await count('[data-life-keep]')) === 1);
+    await page.locator('[data-life-keep]').click();
+    await wait(600);
+    const said = await page.locator('[data-life-keep-said]').innerText().catch(() => '(nothing said)');
+    await wait(1200);
+    const keptRecord = await stored();
+    pass('…and it lands beside their own, with its moments',
+      keptRecord.others?.length === 1 && keptRecord.others[0].milestones.length === 30
+      && keptRecord.others[0].birthDate === '1985-05-15',
+      `${said} · ${JSON.stringify({ n: keptRecord.others?.length, m: keptRecord.others?.[0]?.milestones.length })}`);
+    pass('…and their own line is untouched',
+      keptRecord.milestones.length === 30 && keptRecord.profile.birthDate === '1985-05-15');
+    pass('…and a line shared without a name is called by its year',
+      keptRecord.others[0].name === '1985', keptRecord.others?.[0]?.name);
+    await openLife();
+    await closeAll();
+    pass('…and it is drawn as a column of its own', (await count('[data-life-column]')) === 2);
+    // Read twice is still one person; and a third is where the free plan stops.
+    await page.goto(`${base}/s/${shareUrl.split('/').pop()}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-life-keep]', { timeout: 15000 });
+    await page.locator('[data-life-keep]').click();
+    await wait(1600);
+    pass('…and opening the same link again does not make two of them',
+      (await stored()).others.length === 1);
+    await page.evaluate((k) => {
+      const life = JSON.parse(localStorage.getItem(k));
+      delete life.others;
+      localStorage.setItem(k, JSON.stringify(life));
+    }, LIFE_KEY);
     await openLife();
 
     // 16c. The calendar shows the line's birthdays and pinned anniversaries.

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   FREE_LIFE_FAMILY, FREE_LIFE_MILESTONES, LIFE_KEY, ageAt, buildTimeline, canAddFamily, canAddMilestone,
-  decodeLife, emptyLife, encodeLife, isNewerLife, isPlanned, lifeDate, lifeFile, lifeSummary, photoIds, precisionOf,
+  decodeLife, emptyLife, encodeLife, fadeAt, isNewerLife, isPlanned, lifeDate, lifeFile, lifeSummary, photoIds, precisionOf,
   readLifeFile, sortMilestones, spokenLifeDate, type LifeData, type Milestone,
 } from '../life';
 
@@ -228,5 +228,33 @@ describe('the backup file', () => {
     expect(() => readLifeFile('{"app":"other"}')).toThrow();
     expect(() => readLifeFile('{"app":"24h-circle-planner","kind":"life","life":{"version":7}}')).toThrow();
     expect(() => readLifeFile('not json')).toThrow();
+  });
+});
+
+describe('the years ahead', () => {
+  it('draws everything up to today at full strength', () => {
+    expect(fadeAt(1990, 2026, 2105)).toBe(1);
+    expect(fadeAt(2026, 2026, 2105)).toBe(1);
+  });
+
+  it('fades as it goes, and never to nothing', () => {
+    const near = fadeAt(2040, 2026, 2105);
+    const far = fadeAt(2090, 2026, 2105);
+    expect(near).toBeLessThan(1);
+    expect(far).toBeLessThan(near);
+    expect(fadeAt(2105, 2026, 2105)).toBeGreaterThanOrEqual(0.2);
+  });
+
+  it('says so on the line itself', () => {
+    const items = buildTimeline(
+      { ...emptyLife(), profile: { birthDate: '1985-05-15' } },
+      { today: '2026-09-21' },
+    );
+    const decades = items.filter((i) => i.kind === 'decade');
+    const ahead = decades.filter((d) => d.decade > 2026);
+    expect(ahead.length).toBeGreaterThan(5);
+    expect(ahead.every((d) => (d.fade ?? 1) < 1)).toBe(true);
+    // And nothing behind is touched.
+    expect(decades.filter((d) => d.decade <= 2020).every((d) => d.fade === undefined)).toBe(true);
   });
 });

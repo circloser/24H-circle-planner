@@ -1184,6 +1184,11 @@ export const en: Record<TKey, string> = {
   // Life — several lives read side by side.
   'life.parallel.title': 'Side by side',
   'life.parallel.who': 'On the chart',
+  'life.keep.add': 'Keep this life beside mine',
+  'life.keep.done': 'Kept. Taking you there…',
+  'life.keep.already': 'Already beside yours.',
+  'life.keep.full': 'Two lives on the free plan, yours included. Pro holds ten.',
+  'life.keep.blank': 'No birthday, so there is no line to draw.',
   'life.parallel.add': 'Add someone',
   'life.parallel.someone': 'Unnamed',
   'life.parallel.addMoment': 'Add a moment to this life',

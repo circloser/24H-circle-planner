@@ -136,13 +136,15 @@ export function CountryCard({
 }
 
 /** The pin card: what it is, when, who was there, and the note. */
-export function PinCard({ pin, people, railFull, floating, onClose, onEdit, onStar, onDelete }: {
+export function PinCard({ pin, people, railFull, floating, colour, onClose, onEdit, onStar, onDelete }: {
   pin: Pin;
   people: ReadonlyArray<{ id: string; name: string }>;
   /** The shortcut rail has no room left, so starring is offered no further. */
   railFull: boolean;
   /** Floating on the map beside the pin (see CountryCard). */
   floating?: boolean;
+  /** The colour this kind of pin is drawn in on the map. */
+  colour?: string;
   onClose: () => void;
   onEdit: () => void;
   onStar: () => void;
@@ -169,7 +171,12 @@ export function PinCard({ pin, people, railFull, floating, onClose, onEdit, onSt
       className={`flex w-full flex-col gap-4 bg-surface p-4 ${
         floating ? '' : 'border-t border-border min-[900px]:w-[360px] min-[900px]:border-l min-[900px]:border-t-0'}`}>
       <header className="flex items-start gap-3">
-        <Icon aria-hidden className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
+        {/* The same badge the map draws, so the card and the pin are plainly
+            the same thing. */}
+        <span aria-hidden className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-white"
+          style={{ background: colour ?? 'hsl(var(--muted-foreground))' }}>
+          <Icon className="h-4 w-4" />
+        </span>
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-lg font-semibold text-foreground" data-place-panel-name>{pin.name}</h3>
           <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[13px] text-muted-foreground">

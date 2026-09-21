@@ -379,13 +379,25 @@ export type Side = 'left' | 'right';
 
 /** `future`: below today's marker, where the line turns dashed. `tight`: in
  *  the same year as the card above it, so it sits closer. */
+/**
+ * How strongly a year is drawn: everything up to today at full strength, and
+ * the years after it fading as they go, until the end of the paper is barely
+ * there. A life ahead of someone is not the same kind of thing as a life
+ * behind them, and the line should say so without a word.
+ */
+export function fadeAt(year: number, today: number, last: number): number {
+  if (year <= today || last <= today) return 1;
+  const along = Math.min(1, Math.max(0, (year - today) / (last - today)));
+  return Math.max(0.2, 1 - 0.8 * along);
+}
+
 export type TimelineItem =
   /** `before` is a decade that ran before this person was born: it is there so
    *  several lines can be read against the same years, and it is drawn as
    *  empty, because nothing had happened yet. */
-  | { kind: 'decade'; key: string; decade: number; future: boolean; count: number; before?: true }
+  | { kind: 'decade'; key: string; decade: number; future: boolean; count: number; before?: true; fade?: number }
   | { kind: 'birth'; key: string; date: string; side: Side; tight: boolean; future: false }
-  | { kind: 'moment'; key: string; m: Milestone; plan: boolean; side: Side; tight: boolean; future: boolean }
+  | { kind: 'moment'; key: string; m: Milestone; plan: boolean; side: Side; tight: boolean; future: boolean; fade?: number }
   | { kind: 'today'; key: string; date: string; future: false };
 
 export interface TimelineOptions {
@@ -438,10 +450,12 @@ export function buildTimeline(life: LifeData, opts: TimelineOptions = {}): Timel
   }
   const decadesUpTo = (year: number) => {
     for (; decade <= year; decade += 10) {
+      const dim = fadeAt(decade, yearOf(today), lastYear);
       out.push({
         kind: 'decade', key: `d${decade}`, decade, future: !past, count: perDecade.get(decade) ?? 0,
         // A decade that ended before this life began: drawn, but empty.
         ...(decade + 9 < born ? { before: true as const } : {}),
+        ...(dim < 1 ? { fade: dim } : {}),
       });
       prevYear = null; // a decade label resets the "same year" spacing
     }
@@ -468,7 +482,11 @@ export function buildTimeline(life: LifeData, opts: TimelineOptions = {}): Timel
     if (sortKey(m.date) > today) placeToday();
     const y = yearOf(m.date);
     decadesUpTo(y);
-    out.push({ kind: 'moment', key: m.id, m, plan: isPlanned(m, today), side: nextSide(), tight: prevYear === y, future: !past });
+    const dim = fadeAt(y, yearOf(today), lastYear);
+    out.push({
+      kind: 'moment', key: m.id, m, plan: isPlanned(m, today), side: nextSide(), tight: prevYear === y,
+      future: !past, ...(dim < 1 ? { fade: dim } : {}),
+    });
     prevYear = y;
   }
   placeToday();

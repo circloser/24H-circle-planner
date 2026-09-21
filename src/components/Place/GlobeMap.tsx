@@ -303,12 +303,14 @@ export function GlobeMap({
         ctx.lineWidth = 1.5;
         ctx.strokeStyle = ink2;
         ctx.stroke();
+        // Filled with its own colour, ringed in paper so it stands off the
+        // ball whatever colour the country under it is.
         ctx.beginPath();
-        ctx.arc(p.x, p.y - PIN_RISE, on ? 5 : 4, 0, Math.PI * 2);
-        ctx.fillStyle = on ? ink2 : paper;
+        ctx.arc(p.x, p.y - PIN_RISE, on ? 5.5 : 4.5, 0, Math.PI * 2);
+        ctx.fillStyle = ink2;
         ctx.fill();
         ctx.lineWidth = on ? 2 : 1.5;
-        ctx.strokeStyle = ink2;
+        ctx.strokeStyle = on ? ink : paper;
         ctx.stroke();
         if (named) {
           ctx.globalAlpha = 0.85;

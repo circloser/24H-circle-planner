@@ -1179,6 +1179,11 @@ export const zh: Record<TKey, string> = {
   // Life — several lives read side by side.
   'life.parallel.title': '并排查看',
   'life.parallel.who': '同时显示',
+  'life.keep.add': '加入我的人生线',
+  'life.keep.done': '已加入，正在前往…',
+  'life.keep.already': '已经在你的人生线旁边了。',
+  'life.keep.full': '免费版含自己最多两人，Pro 可容纳十人。',
+  'life.keep.blank': '没有生日，无法绘制这条线。',
   'life.parallel.add': '添加一个人',
   'life.parallel.someone': '未命名',
   'life.parallel.addMoment': '为这个人添加事件',

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { readSharedView, decodeShare, type SharedContent } from '@/lib/share-link';
 import { decodeLifeShare } from '@/lib/life-share';
+import { addSharedLine, type InviteResult } from '@/lib/life-invite';
 import { buildTimeline, type LifeData } from '@/lib/life';
 import { CircleTimeline } from '@/components/CircleTimeline/CircleTimeline';
 import { LifeTimeline } from '@/components/Life/LifeTimeline';
@@ -71,6 +72,37 @@ export function SharedView() {
       : '24Houring';
   }, [content, life]);
 
+  /**
+   * Keeping someone else's line.
+   *
+   * The page already draws their life; this puts it beside the reader's own,
+   * on the reader's own device, when they ask for it. How many lines they may
+   * hold depends on their plan, so it is asked once, and only when there is a
+   * life on the page to keep.
+   */
+  const [pro, setPro] = useState(false);
+  const [kept, setKept] = useState<InviteResult | null>(null);
+  useEffect(() => {
+    if (!life) return;
+    let alive = true;
+    void fetch('/api/me', { credentials: 'include' })
+      .then((r) => (r.ok ? (r.json() as Promise<{ plan?: string }>) : null))
+      .then((body) => { if (alive && body?.plan === 'pro') setPro(true); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [life]);
+
+  const keep = () => {
+    // No name of our own for it: a line shared without one is called by the
+    // year it began, which tells the reader who it is. They can rename it.
+    const done = addSharedLine(life, { pro });
+    setKept(done);
+    // The life page reads the record as it loads, so it is opened afresh.
+    if (done === 'added' || done === 'already') {
+      window.setTimeout(() => { window.location.href = '/?view=life'; }, 800);
+    }
+  };
+
   const brand = (
     <a
       href={HOME}
@@ -107,7 +139,21 @@ export function SharedView() {
               <p className="mt-4 whitespace-pre-wrap break-words text-[15px] leading-relaxed text-foreground/80">{life.endingNote.text}</p>
             </section>
           )}
-          <div className="pt-2">{cta}</div>
+          {/* The other half of a share: the reader can keep the line. */}
+          <div className="flex flex-col items-center gap-2 pt-2">
+            <button type="button" data-life-keep onClick={keep}
+              className="inline-flex items-center justify-center rounded-full border border-foreground px-5 py-2.5 text-sm font-semibold text-foreground transition-transform hover:scale-105">
+              {t('life.keep.add')}
+            </button>
+            {kept && (
+              <p role="status" data-life-keep-said className="text-[13px] text-muted-foreground">
+                {t(kept === 'added' ? 'life.keep.done'
+                  : kept === 'already' ? 'life.keep.already'
+                    : kept === 'full' ? 'life.keep.full' : 'life.keep.blank')}
+              </p>
+            )}
+            {cta}
+          </div>
         </main>
       ) : content ? (
         <main className="flex w-full max-w-lg flex-col items-center gap-5">

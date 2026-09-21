@@ -1181,6 +1181,11 @@ export const ru: Record<TKey, string> = {
   // Life — several lives read side by side.
   'life.parallel.title': 'Рядом',
   'life.parallel.who': 'На графике',
+  'life.keep.add': 'Добавить эту жизнь рядом с моей',
+  'life.keep.done': 'Добавлено. Переходим…',
+  'life.keep.already': 'Уже рядом с вашей.',
+  'life.keep.full': 'На бесплатном плане — две жизни, включая вашу. В Pro — десять.',
+  'life.keep.blank': 'Без даты рождения линию не построить.',
   'life.parallel.add': 'Добавить человека',
   'life.parallel.someone': 'Без имени',
   'life.parallel.addMoment': 'Добавить событие в эту жизнь',

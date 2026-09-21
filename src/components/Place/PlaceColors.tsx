@@ -34,11 +34,15 @@ function Row({ label, icon, chosen, showing, reset, onPick, onClear }: {
           </button>
         )}
       </div>
-      <div className="flex flex-wrap gap-1.5">
+      {/* A grid rather than a wrapping row: twelve colours came out as
+          eleven and a stray one, which reads as a mistake. Six across on a
+          phone, where that leaves them big enough to hit; all twelve in one
+          line as soon as there is room. */}
+      <div className="grid grid-cols-6 gap-1.5 sm:grid-cols-12">
         {PLACE_SWATCHES.map((colour) => (
           <button key={colour} type="button" data-place-swatch={colour}
             aria-label={colour} aria-pressed={chosen === colour}
-            className={`grid h-7 w-7 place-items-center rounded-full border transition-transform hover:scale-110 ${
+            className={`grid aspect-square w-full max-w-9 place-items-center rounded-full border transition-transform hover:scale-110 ${
               chosen === colour ? 'border-foreground' : 'border-border'}`}
             style={{ background: colour }}
             onClick={() => onPick(colour)}>
