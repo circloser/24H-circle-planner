@@ -31,11 +31,19 @@ export interface BoardLine {
   life: LifeData;
 }
 
-/** Somebody else's line as a life: a birth, a name, and what happened. */
+/**
+ * Somebody else's line as a life: a birth, a name, and what happened.
+ *
+ * The line is drawn from a day, and a record written by an older version (or
+ * restored from a backup) may hold only a year — so what is missing is filled
+ * in as the first of it, rather than drawing nothing at all.
+ */
 export function lineAsLife(line: LifeLine): LifeData {
+  const [y, m, d] = line.birthDate.split('-');
+  const born = y ? `${y}-${(m ?? '01').padStart(2, '0')}-${(d ?? '01').padStart(2, '0')}` : '';
   return {
     ...emptyLife(),
-    profile: { birthDate: line.birthDate, ...(line.name ? { name: line.name } : {}) },
+    profile: { birthDate: born, ...(line.name ? { name: line.name } : {}) },
     milestones: line.milestones,
   };
 }

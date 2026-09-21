@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '@/hooks/usePreferences';
-import type { Pin } from '@/lib/place';
+import type { Pin, PinCategory } from '@/lib/place';
 import { fromTile, toTile } from '@/lib/place-world';
 import {
   PIN_HANDOVER_ZOOM, PIN_MAX_ZOOM, TILE_CREDIT, TILE_SIZE, clusterPins, tileUrl, tileZoom,
@@ -17,6 +17,8 @@ export interface PinMapProps {
   onSelect: (id: string | null) => void;
   /** A tap on the map itself: a pin goes there. */
   onDropAt: (lng: number, lat: number) => void;
+  /** One colour a kind of pin (lib/place-colors). */
+  pinColors: Record<PinCategory, string>;
   /** Where the person is right now, if they have asked to be found. */
   here?: { lng: number; lat: number } | null;
 }
@@ -31,7 +33,7 @@ export interface PinMapProps {
  *
  * A tap on the map puts a pin there. Two fingers pinch; one finger drags.
  */
-export function PinMap({ pins, camera, onCamera, selected, onSelect, onDropAt, here }: PinMapProps) {
+export function PinMap({ pins, camera, onCamera, selected, onSelect, onDropAt, pinColors, here }: PinMapProps) {
   const { t } = useTranslation();
   const box = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -210,10 +212,17 @@ export function PinMap({ pins, camera, onCamera, selected, onSelect, onDropAt, h
               onCamera({ lng: at2.lng, lat: at2.lat, zoom: Math.min(PIN_MAX_ZOOM, camera.zoom + 2) });
             }}
           >
-            <span aria-hidden
-              className={`grid place-items-center rounded-full border bg-surface text-foreground transition-transform ${
-                on ? 'scale-110 border-primary' : 'border-foreground/70'}`}
-              style={{ width: only ? 26 : 32, height: only ? 26 : 32, borderWidth: on ? 2 : 1.5 }}>
+            {/* A pin wears its kind's colour; a cluster is a count, so it
+                stays the page's own ink. */}
+            <span aria-hidden data-place-pin-dot={only ? only.category : undefined}
+              className={`grid place-items-center rounded-full border bg-surface transition-transform ${
+                on ? 'scale-110' : ''} ${only ? '' : 'border-foreground/70 text-foreground'}`}
+              style={{
+                width: only ? 26 : 32,
+                height: only ? 26 : 32,
+                borderWidth: on ? 2 : 1.5,
+                ...(only ? { borderColor: pinColors[only.category], color: pinColors[only.category] } : {}),
+              }}>
               {Icon ? <Icon aria-hidden className="h-3.5 w-3.5" /> : <span className="text-[11px] tabular-nums">{c.pins.length}</span>}
             </span>
             {/* A pin without its name is a dot among dots. The name is drawn

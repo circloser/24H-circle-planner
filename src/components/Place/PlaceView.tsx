@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { dismissAfterVisible } from '@/lib/toast-dismiss';
-import { Crosshair, Flame, House, Loader2, Minus, Plus, Search, SlidersHorizontal, Star, X } from 'lucide-react';
+import { Crosshair, Flame, House, Loader2, Minus, Palette, Plus, Search, SlidersHorizontal, Star, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
@@ -14,9 +14,13 @@ import {
   FREE_PLACE_PINS, MAX_PLACE_SHORTCUTS, PIN_CATEGORIES, byContinent, canAddPin, countryAt,
   placeSummary, shortcutPins, type CountryShape, type PinCategory,
 } from '@/lib/place';
-import { countryName, loadCities, loadWorld, searchCountries, type CityRow } from '@/lib/place-world';
-import { PIN_MAX_ZOOM, PIN_MIN_ZOOM, type Camera } from '@/lib/place-tiles';
-import { CITY_DOT_ZOOM, GLOBE_MIN_ZOOM, globeZoomForTile, type Camera as GlobeCamera } from '@/lib/place-globe';
+import { countryName, loadCities, loadWorld, searchCountries, toTile, type CityRow } from '@/lib/place-world';
+import { PIN_MAX_ZOOM, PIN_MIN_ZOOM, TILE_SIZE, tileZoom, type Camera } from '@/lib/place-tiles';
+import {
+  CITY_DOT_ZOOM, GLOBE_MIN_ZOOM, facing, globeZoomForTile, project, screenOf,
+  type Camera as GlobeCamera,
+} from '@/lib/place-globe';
+import { cardAt, shapeCentre } from '@/lib/place-anchor';
 import { usePlace, PLACE_UNDO_MS } from '@/hooks/usePlace';
 import { PLACE_EXPORT_EVENT } from '@/lib/place-export';
 import { readRelationPeople } from '@/lib/place-relation';
@@ -26,6 +30,8 @@ import { PinMap } from './PinMap';
 import { CountryCard, PinCard } from './PlacePanel';
 import { PinDialog, CityPicker, type PinTarget } from './PlaceDialogs';
 import { PlaceExportDialog } from './PlaceExport';
+import { PlaceColorsDialog } from './PlaceColors';
+import { placeColors } from '@/lib/place-colors';
 import { PIN_ICON, PIN_LABEL, continentName, visitedColor, wishedColor } from './palette';
 
 const LAST_TAB = '24h-place-tab';
@@ -60,8 +66,14 @@ export function PlaceView() {
   const pro = useAuth().plan === 'pro';
   const syncing = useSyncStatus().status !== 'disabled';
   const theme = COLOR_THEMES.some((th) => th.id === prefs.colorTheme) ? prefs.colorTheme : null;
-  const visited = visitedColor(theme);
-  const wished = wishedColor(theme);
+  // What the map is drawn in: the theme's own two colours, unless this record
+  // says otherwise (lib/place-colors).
+  const colors = useMemo(
+    () => placeColors(data.palette, { visited: visitedColor(theme), wished: wishedColor(theme) }),
+    [data.palette, theme],
+  );
+  const visited = colors.visited;
+  const wished = colors.wished;
 
   const [tab, setTab] = useState<'world' | 'pins'>(() => {
     try {
@@ -76,6 +88,7 @@ export function PlaceView() {
   const [pinId, setPinId] = useState<string | null>(null);
   const [target, setTarget] = useState<PinTarget | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [colouring, setColouring] = useState(false);
   /** Which of the corner's lists is unfolded, if any: only ever one. */
   const [openList, setOpenList] = useState<'shortcuts' | 'filter' | null>(null);
   const [only, setOnly] = useState<Set<PinCategory>>(() => new Set());
@@ -280,6 +293,36 @@ export function PlaceView() {
   };
 
   const panel = (shape && tab === 'world') || !!pin;
+  /**
+   * A card opens beside the thing it is about, on the map itself.
+   *
+   * On a narrow screen it is still a sheet across the bottom — there is
+   * nowhere else for it to be — but on a wide one it stands next to the
+   * country or the pin, and the controls in the corner never move for it.
+   */
+  const wide = size.w >= 900;
+  const CARD = { w: 340, h: Math.min(460, Math.max(220, size.h - 24)) };
+  const at = (() => {
+    if (!wide || !size.w || !size.h) return null;
+    if (pin) {
+      if (tab === 'pins') {
+        const z = tileZoom(camera.zoom);
+        const middle = toTile(camera.lng, camera.lat, z);
+        const spot = toTile(pin.lng, pin.lat, z);
+        return {
+          x: size.w / 2 + (spot.x - middle.x) * TILE_SIZE,
+          y: size.h / 2 + (spot.y - middle.y) * TILE_SIZE,
+        };
+      }
+      if (!facing(pin.lng, pin.lat, globe)) return null;
+      return project(pin.lng, pin.lat, globe, screenOf(size.w, size.h, globe.zoom));
+    }
+    if (!shape || tab !== 'world') return null;
+    const middle = shapeCentre(shape);
+    if (!facing(middle.lng, middle.lat, globe)) return null;
+    return project(middle.lng, middle.lat, globe, screenOf(size.w, size.h, globe.zoom));
+  })();
+  const spot = at ? cardAt(at, size, CARD) : null;
 
   return (
     <div className="relative min-h-0 w-full flex-1 overflow-hidden" data-place-view>
@@ -300,6 +343,7 @@ export function PlaceView() {
             selected={country}
             selectedPin={pinId}
             heat={heat}
+            pinColors={colors.pin}
             here={here}
             maxZoom={globeStop}
             camera={globe}
@@ -313,6 +357,7 @@ export function PlaceView() {
             pins={pins}
             camera={camera}
             onCamera={onPinCamera}
+            pinColors={colors.pin}
             selected={pinId}
             onSelect={setPinId}
             onDropAt={dropAt}
@@ -416,13 +461,10 @@ export function PlaceView() {
       {/* Every control on this page, in the one corner a thumb reaches.
           Each list unfolds sideways from its own button rather than stacking
           upward, so the corner stays the size of the corner. */}
+      {/* It does not move for anything: a card opens beside what it is about
+          (see `cardAt`), which is never this corner. */}
       <div data-place-corner
-        className={`pointer-events-none absolute bottom-7 right-2 z-10 flex flex-col items-end gap-1.5 sm:bottom-8 sm:right-3 ${
-          // A card on a wide screen is a column down the right; the corner
-          // steps aside rather than hiding under it.
-          // (A margin, not another `right`: two `right` utilities would only
-          // argue about which of them the stylesheet lists last.)
-          panel ? 'min-[900px]:mr-[360px]' : ''}`}>
+        className="pointer-events-none absolute bottom-7 right-2 z-10 flex flex-col items-end gap-1.5 sm:bottom-8 sm:right-3">
 
         {/* Looking for a country, on the globe. */}
         {tab === 'world' && (
@@ -455,6 +497,13 @@ export function PlaceView() {
             </button>
           </div>
         )}
+
+        {/* The colours it is all drawn in. */}
+        <button type="button" data-place-colors aria-label={t('place.colors.open')} title={t('place.colors.open')}
+          className={`${FLOAT} pointer-events-auto grid h-11 w-11 place-items-center text-muted-foreground hover:bg-accent/20`}
+          onClick={() => { trackFeature('filter'); setColouring(true); }}>
+          <Palette aria-hidden className="h-4 w-4" />
+        </button>
 
         {/* The same record read as warmth: where the pins gather. */}
         {tab === 'world' && (
@@ -593,7 +642,13 @@ export function PlaceView() {
       {/* The card for whatever is chosen: a column on the right of a wide
           screen, a sheet across the bottom of a narrow one. */}
       {panel && (
-        <div className="pointer-events-auto absolute inset-x-0 bottom-0 max-h-[60%] overflow-y-auto min-[900px]:inset-y-0 min-[900px]:left-auto min-[900px]:max-h-none min-[900px]:w-[360px]">
+        <div data-place-card
+          className={wide
+            ? 'pointer-events-auto absolute z-20 overflow-y-auto rounded-2xl border border-border shadow-xl'
+            : 'pointer-events-auto absolute inset-x-0 bottom-0 max-h-[60%] overflow-y-auto'}
+          style={wide
+            ? { width: CARD.w, maxHeight: CARD.h, left: spot?.left ?? size.w - CARD.w - 76, top: spot?.top ?? 12 }
+            : undefined}>
           {shape && tab === 'world' && (
             <CountryCard
               shape={shape}
@@ -601,6 +656,7 @@ export function PlaceView() {
               data={data}
               cityRows={cityRows}
               name={nameOf(shape.code, shape.name)}
+              floating={wide}
               onToggle={() => { api.toggleCountry(shape.code); track('place_country'); }}
               onWish={() => { api.toggleWish(shape.code); track('place_country'); }}
               onPatch={(patch) => api.setCountry(shape.code, patch)}
@@ -615,6 +671,7 @@ export function PlaceView() {
               pin={pin}
               people={people}
               railFull={railFull}
+              floating={wide}
               onClose={() => setPinId(null)}
               onEdit={() => setTarget({ mode: 'edit', pin })}
               onStar={() => api.toggleStar(pin.id)}
@@ -667,6 +724,8 @@ export function PlaceView() {
           setTarget(null);
         }}
         onDelete={removePin} />
+      <PlaceColorsDialog open={colouring} onOpenChange={setColouring}
+        palette={data.palette} colors={colors} onChange={api.setPalette} />
       <PlaceExportDialog open={exporting} onOpenChange={setExporting} api={api} shapes={shapes}
         visited={visited} wished={wished} />
     </div>

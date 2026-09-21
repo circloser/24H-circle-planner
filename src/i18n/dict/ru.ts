@@ -1169,6 +1169,11 @@ export const ru: Record<TKey, string> = {
   'place.filter': 'Виды меток',
   'place.filterAll': 'Все',
   'place.heat': 'Тепловая карта',
+  'place.colors.title': 'Цвета карты',
+  'place.colors.hint': 'Выберите цвета для посещённого, желаемого и каждого вида меток. Они хранятся вместе с записью.',
+  'place.colors.pins': 'Цвет для каждого вида меток',
+  'place.colors.reset': 'По умолчанию',
+  'place.colors.open': 'Цвета карты',
   'place.heatOff': 'Выключить тепловую карту',
   // Place — looking a place up in the wider world, by name.
   'place.searchOnline': 'Найти «{q}» в интернете',

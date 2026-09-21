@@ -85,6 +85,19 @@ type RowLine = 'full' | 'from-marker' | 'none';
 
 /** Where a marker's middle sits inside the card box: 33px down, 26px across. */
 const MARKER_MID = 46;
+/** And where today's dot sits inside its own, which is half of its height. */
+const TODAY_MID = 13;
+
+/**
+ * A day as one sortable number, YYYYMMDD, with whatever is not known as zero.
+ *
+ * Rows carry it so that several lives can be made to agree: the same day is
+ * the same height on every line, and a day nobody else has simply flows.
+ */
+const dayKey = (date: string): string => {
+  const [y = '0', m = '0', d = '0'] = date.split('-');
+  return `${y.padStart(4, '0')}${m.padStart(2, '0')}${d.padStart(2, '0')}`;
+};
 
 function EntryRow({ side, tight, year, plan, future, faint, children, label, onOpen, row, decor, line = 'full' }: {
   side: Side;
@@ -105,7 +118,8 @@ function EntryRow({ side, tight, year, plan, future, faint, children, label, onO
   const left = side === 'left';
   const dashed = plan || faint;
   return (
-    <li className={`relative ${tight ? 'pt-6' : 'pt-12'}`} data-year={year} data-future={future || undefined} {...row}>
+    <li className={`relative ${tight ? 'pt-6' : 'pt-12'}`} data-year={year} data-future={future || undefined}
+      data-life-anchor={MARKER_MID} {...row}>
       {line === 'full' && <Line future={future} />}
       {decor}
       {/* The line starts at the birth marker, so this one is hung off a box
@@ -266,6 +280,7 @@ export function LifeTimeline({ life, items, colors, readOnly, rowDecor, decorati
     if (it.kind === 'decade') {
       rows.push(
         <li key={it.key} className="relative pt-12" data-year={it.decade} data-life-decade
+          data-life-at={`${it.decade}0000`} data-life-anchor={0}
           data-life-before={it.before || undefined}>
           {/* Before the birth there is no line to draw — not in the decades
               that ran without this person, and not in the one they were born
@@ -286,7 +301,8 @@ export function LifeTimeline({ life, items, colors, readOnly, rowDecor, decorati
       const age = ageAt(birth, it.date)?.years ?? 0;
       const year = Number(it.date.slice(0, 4));
       rows.push(
-        <li key={it.key} className="relative pt-12" data-year={year} data-life-today>
+        <li key={it.key} className="relative pt-12" data-year={year} data-life-today
+          data-life-at={`${dayKey(it.date)}.5`} data-life-anchor={TODAY_MID}>
           {/* Solid down to the marker, dashed from it on. */}
           <span aria-hidden className="life-line" style={{ bottom: 'auto', height: 61 }} />
           <span aria-hidden className="life-line life-line--future" style={{ top: 61 }} />
@@ -311,7 +327,7 @@ export function LifeTimeline({ life, items, colors, readOnly, rowDecor, decorati
         <EntryRow key={it.key} side={it.side} tight={it.tight} year={birthYear} plan={false} future={false}
           line="from-marker"
           label={`${spokenLifeDate(birth, lang)}, ${t('life.born')}`} onOpen={readOnly ? undefined : onOpenBirth}
-          row={{ 'data-life-birth': '' }} decor={rowDecor?.('birth')}>
+          row={{ 'data-life-birth': '', 'data-life-at': dayKey(birth) }} decor={rowDecor?.('birth')}>
           <DateLine category="birth" color={color} text={formatLifeDate(birth)} />
           <Title>{t('life.born')}</Title>
           {life.profile.name && <p className="mt-3 text-[15px] leading-relaxed text-foreground/75">{life.profile.name}</p>}
@@ -325,7 +341,8 @@ export function LifeTimeline({ life, items, colors, readOnly, rowDecor, decorati
           line={born ? 'full' : 'none'}
           label={`${spokenLifeDate(m.date, lang)}, ${m.title}${it.plan ? `, ${t('life.planBadge')}` : ''}`}
           onOpen={readOnly ? undefined : () => onOpenMoment?.(m)}
-          row={{ 'data-life-moment': m.id, ...(it.plan ? { 'data-plan': '' } : {}) }} decor={rowDecor?.(m.id)}>
+          row={{ 'data-life-moment': m.id, 'data-life-at': dayKey(m.date), ...(it.plan ? { 'data-plan': '' } : {}) }}
+          decor={rowDecor?.(m.id)}>
           <DateLine category={m.category} color={color} text={dateText(m)} badge={it.plan ? t('life.planBadge') : undefined} />
           <Title>{m.title}</Title>
           {m.description && <Description text={m.description} />}
@@ -343,7 +360,14 @@ export function LifeTimeline({ life, items, colors, readOnly, rowDecor, decorati
         if ((e.target as Element).closest('[data-life-ghost]')) return;
         if (!onLine(e)) { setGhost(null); return; }
         const box = wrap.current.getBoundingClientRect();
-        setGhost({ x: lineX() - box.left, y: e.clientY - box.top, year: yearAtY(e.clientY) });
+        // A rectangle is measured in the screen's pixels; `left` and `top` are
+        // written in the box's own, which the board's zoom makes smaller.
+        const unit = (box.width / (wrap.current.offsetWidth || box.width)) || 1;
+        setGhost({
+          x: (lineX() - box.left) / unit,
+          y: (e.clientY - box.top) / unit,
+          year: yearAtY(e.clientY),
+        });
       }}
       onPointerLeave={() => setGhost(null)}
       onPointerDown={(e) => { tap.current = !readOnly && !decorating && e.pointerType === 'touch' && onLine(e) ? { x: e.clientX, y: e.clientY } : null; }}

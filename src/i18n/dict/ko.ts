@@ -1173,6 +1173,11 @@ export const ko = {
   'place.filter': '핀 종류',
   'place.filterAll': '전체',
   'place.heat': '핀 히트맵',
+  'place.colors.title': '지도 색',
+  'place.colors.hint': '가 본 곳·가 보고 싶은 곳·핀의 색을 고릅니다. 고른 색은 기기 간에 함께 저장돼요.',
+  'place.colors.pins': '핀 종류별 색',
+  'place.colors.reset': '기본값',
+  'place.colors.open': '지도 색',
   'place.heatOff': '핀 히트맵 끄기',
   // Place — looking a place up in the wider world, by name.
   'place.searchOnline': '인터넷에서 ‘{q}’ 찾기',

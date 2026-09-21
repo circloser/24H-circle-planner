@@ -135,6 +135,21 @@ export function useLife() {
     });
   }, [edit]);
 
+  /**
+   * The order the lines are drawn in, given as the ids from left to right.
+   *
+   * Whatever is not named keeps its place at the end, and a name that is not
+   * there is ignored — so a stale list from another device cannot drop anyone.
+   */
+  const reorderLines = useCallback((ids: readonly string[]) => {
+    edit((l) => {
+      const all = l.others ?? [];
+      const asked = ids.map((id) => all.find((o) => o.id === id)).filter((o): o is LifeLine => !!o);
+      const rest = all.filter((o) => !asked.includes(o));
+      return { ...l, others: [...asked, ...rest] };
+    });
+  }, [edit]);
+
   /** A moment on somebody else's line. Their own list, nobody else's. */
   const addLineMoment = useCallback((lineId: string, draft: MilestoneDraft): string => {
     const id = uuid();
@@ -239,7 +254,8 @@ export function useLife() {
   return {
     life, readOnly, generation, setProfile, addMilestone, updateMilestone, removeMilestone, restoreMilestone,
     addMember, updateMember, removeMember, restoreMember, setEndingNote, setMemoir, replace,
-    addLine, updateLine, removeLine, restoreLine, addLineMoment, updateLineMoment, removeLineMoment,
+    addLine, updateLine, removeLine, restoreLine, reorderLines,
+    addLineMoment, updateLineMoment, removeLineMoment,
   };
 }
 

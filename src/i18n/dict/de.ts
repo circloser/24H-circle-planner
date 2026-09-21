@@ -1172,6 +1172,11 @@ export const de: Record<TKey, string> = {
   'place.filter': 'Art der Nadel',
   'place.filterAll': 'Alle',
   'place.heat': 'Nadel-Heatmap',
+  'place.colors.title': 'Kartenfarben',
+  'place.colors.hint': 'Farben für Besuchtes, Wünsche und jede Art von Nadel. Sie werden mit dem Eintrag gespeichert.',
+  'place.colors.pins': 'Eine Farbe je Nadelart',
+  'place.colors.reset': 'Standard',
+  'place.colors.open': 'Kartenfarben',
   'place.heatOff': 'Heatmap ausschalten',
   // Place — looking a place up in the wider world, by name.
   'place.searchOnline': '„{q}“ online suchen',

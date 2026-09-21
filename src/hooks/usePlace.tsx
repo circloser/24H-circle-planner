@@ -4,7 +4,8 @@ import { persistLocal } from '@/lib/persistence';
 import { deletePhoto } from '@/lib/calendar-photos';
 import {
   MAX_PLACE_SHORTCUTS, PLACE_KEY, decodePlace, emptyPlace, encodePlace, isNewerPlace, newPinId,
-  placePhotoIds, type CityVisit, type CountryVisit, type Pin, type PlaceData,
+  placePhotoIds, type CityVisit, type CountryVisit, type Pin, type PinCategory, type PlaceData,
+  type PlacePalette,
 } from '@/lib/place';
 
 export const placeCodec: PersistedCodec<PlaceData> = {
@@ -105,6 +106,27 @@ export function usePlace() {
     edit((d) => ({ ...d, cities: d.cities.filter((c) => c.id !== id) }));
   }, [edit]);
 
+  /**
+   * The colours the map is drawn in. A patch, so one row of the picker sets
+   * one thing; a colour given as undefined goes back to the theme's own, and
+   * an empty palette is taken out of the record entirely rather than stored
+   * as an empty object (load → save has to be byte-stable).
+   */
+  const setPalette = useCallback((patch: PlacePalette) => {
+    edit((d) => {
+      const pins = { ...d.palette?.pins, ...patch.pins };
+      for (const [k, v] of Object.entries(pins)) if (!v) delete pins[k as PinCategory];
+      const next: PlacePalette = { ...d.palette, ...patch, ...(Object.keys(pins).length ? { pins } : {}) };
+      if (!Object.keys(pins).length) delete next.pins;
+      if (!patch.visited && 'visited' in patch) delete next.visited;
+      if (!patch.wished && 'wished' in patch) delete next.wished;
+      const out = { ...d };
+      if (Object.keys(next).length) out.palette = next;
+      else delete out.palette;
+      return out;
+    });
+  }, [edit]);
+
   const setHome = useCallback((home: PlaceData['home']) => {
     edit((d) => {
       const next = { ...d };
@@ -194,7 +216,7 @@ export function usePlace() {
 
   return {
     data, readOnly, generation, setCountry, toggleCountry, toggleWish, addCity, updateCity, removeCity,
-    setHome, addPin, updatePin, toggleStar, removePin, restorePin, replace,
+    setHome, addPin, updatePin, toggleStar, removePin, restorePin, replace, setPalette,
   };
 }
 

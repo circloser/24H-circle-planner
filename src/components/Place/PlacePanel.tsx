@@ -14,13 +14,16 @@ import { CityPicker } from './PlaceDialogs';
  * ever home, which of its cities, and a line of one's own about it.
  */
 export function CountryCard({
-  shape, visit, data, cityRows, name, onToggle, onWish, onPatch, onAddCity, onRemoveCity, onClose, onOpenPin,
+  shape, visit, data, cityRows, name, floating, onToggle, onWish, onPatch, onAddCity, onRemoveCity, onClose, onOpenPin,
 }: {
   shape: CountryShape;
   visit: CountryVisit | undefined;
   data: PlaceData;
   cityRows: readonly CityRow[];
   name: string;
+  /** Standing on the map beside what was chosen, rather than filling a column
+   *  down the side: the box round it is the floating card's own. */
+  floating?: boolean;
   onToggle: () => void;
   onWish: () => void;
   onPatch: (patch: Partial<CountryVisit>) => void;
@@ -39,7 +42,8 @@ export function CountryCard({
 
   return (
     <aside data-place-panel data-country={shape.code}
-      className="flex w-full flex-col gap-4 border-t border-border bg-surface p-4 min-[900px]:w-[360px] min-[900px]:border-l min-[900px]:border-t-0">
+      className={`flex w-full flex-col gap-4 bg-surface p-4 ${
+        floating ? '' : 'border-t border-border min-[900px]:w-[360px] min-[900px]:border-l min-[900px]:border-t-0'}`}>
       <header className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-lg font-semibold text-foreground" data-place-panel-name>{name}</h3>
@@ -132,11 +136,13 @@ export function CountryCard({
 }
 
 /** The pin card: what it is, when, who was there, and the note. */
-export function PinCard({ pin, people, railFull, onClose, onEdit, onStar, onDelete }: {
+export function PinCard({ pin, people, railFull, floating, onClose, onEdit, onStar, onDelete }: {
   pin: Pin;
   people: ReadonlyArray<{ id: string; name: string }>;
   /** The shortcut rail has no room left, so starring is offered no further. */
   railFull: boolean;
+  /** Floating on the map beside the pin (see CountryCard). */
+  floating?: boolean;
   onClose: () => void;
   onEdit: () => void;
   onStar: () => void;
@@ -160,7 +166,8 @@ export function PinCard({ pin, people, railFull, onClose, onEdit, onStar, onDele
 
   return (
     <aside data-place-panel data-pin={pin.id}
-      className="flex w-full flex-col gap-4 border-t border-border bg-surface p-4 min-[900px]:w-[360px] min-[900px]:border-l min-[900px]:border-t-0">
+      className={`flex w-full flex-col gap-4 bg-surface p-4 ${
+        floating ? '' : 'border-t border-border min-[900px]:w-[360px] min-[900px]:border-l min-[900px]:border-t-0'}`}>
       <header className="flex items-start gap-3">
         <Icon aria-hidden className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
         <div className="min-w-0 flex-1">

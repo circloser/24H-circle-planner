@@ -1169,6 +1169,11 @@ export const fr: Record<TKey, string> = {
   'place.filter': "Types d'épingle",
   'place.filterAll': 'Toutes',
   'place.heat': 'Carte de chaleur',
+  'place.colors.title': 'Couleurs de la carte',
+  'place.colors.hint': 'Choisissez les couleurs des pays visités, des envies et de chaque type de repère. Elles suivent le carnet.',
+  'place.colors.pins': 'Une couleur par type de repère',
+  'place.colors.reset': 'Par défaut',
+  'place.colors.open': 'Couleurs de la carte',
   'place.heatOff': 'Désactiver la carte de chaleur',
   // Place — looking a place up in the wider world, by name.
   'place.searchOnline': 'Chercher « {q} » en ligne',

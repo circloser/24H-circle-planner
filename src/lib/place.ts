@@ -23,6 +23,41 @@ export const PLACE_KEY = '24h-circle-planner.place';
 export const PIN_CATEGORIES = ['home', 'stay', 'food', 'nature', 'culture', 'work', 'meet', 'other'] as const;
 export type PinCategory = (typeof PIN_CATEGORIES)[number];
 
+/**
+ * The colours the map is drawn in, where they are not the theme's own.
+ *
+ * Two for the countries — been, and meaning to — and one a kind of pin. Stored
+ * as `#rrggbb` and nothing else: what a sync or a restored backup hands over
+ * is drawn straight onto a canvas and into a stylesheet, so anything that is
+ * not exactly a colour is dropped rather than trusted.
+ */
+export interface PlacePalette {
+  visited?: string;
+  wished?: string;
+  pins?: Partial<Record<PinCategory, string>>;
+}
+
+export const isPlaceColor = (v: unknown): v is string =>
+  typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v);
+
+export function cleanPalette(v: unknown): PlacePalette | undefined {
+  if (!v || typeof v !== 'object') return undefined;
+  const raw = v as Record<string, unknown>;
+  const out: PlacePalette = {};
+  if (isPlaceColor(raw['visited'])) out.visited = raw['visited'].toLowerCase();
+  if (isPlaceColor(raw['wished'])) out.wished = raw['wished'].toLowerCase();
+  const pins = raw['pins'];
+  if (pins && typeof pins === 'object') {
+    const kept: Partial<Record<PinCategory, string>> = {};
+    for (const category of PIN_CATEGORIES) {
+      const colour = (pins as Record<string, unknown>)[category];
+      if (isPlaceColor(colour)) kept[category] = colour.toLowerCase();
+    }
+    if (Object.keys(kept).length) out.pins = kept;
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
 export interface CountryVisit {
   /** ISO 3166-1 alpha-2, upper case. */
   code: string;
@@ -80,6 +115,9 @@ export interface PlaceData {
   countries: CountryVisit[];
   cities: CityVisit[];
   pins: Pin[];
+  /** The colours the map is drawn in, where they are not the theme's own
+   *  (lib/place-colors). */
+  palette?: PlacePalette;
   updatedAt: string;
 }
 
@@ -245,6 +283,7 @@ export function decodePlace(parsed: unknown): PlaceData | null {
   const pins = (Array.isArray(p['pins']) ? p['pins'] : [])
     .map(cleanPin)
     .filter((x): x is Pin => !!x && !pinIds.has(x.id) && !!pinIds.add(x.id));
+  const palette = cleanPalette(p['palette']);
   const home = p['home'] as Record<string, unknown> | undefined;
   const homeCode = home && isCountryCode(home['countryCode']) ? home['countryCode'] : null;
   return {
@@ -255,6 +294,7 @@ export function decodePlace(parsed: unknown): PlaceData | null {
     countries,
     cities,
     pins,
+    ...(palette ? { palette } : {}),
     updatedAt: typeof p['updatedAt'] === 'string' ? p['updatedAt'] : '',
   };
 }

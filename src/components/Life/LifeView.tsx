@@ -257,6 +257,7 @@ export function LifeView() {
             })}
             onAddLine={addLine}
             onOpenLine={openLine}
+            onReorder={api.reorderLines}
             onOpenMoment={(lineId, m) => {
               setOnLine(lineId === 'me' ? '' : lineId);
               setMoment({ mode: 'edit', m });

@@ -27,6 +27,8 @@ export interface LifeBoardProps {
   onToggle: (id: string) => void;
   onAddLine: () => void;
   onOpenLine: (id: string) => void;
+  /** The order to draw them in, left to right (mine is always first). */
+  onReorder: (ids: readonly string[]) => void;
   /** 다꾸 belongs to my own line: its rows are keyed by my own moments. */
   rowDecor?: (row: string) => ReactNode;
   decorating?: boolean;
@@ -47,7 +49,7 @@ export interface LifeBoardProps {
  */
 export function LifeBoard({
   life, colors, today, only, meLabel, readOnly, hidden, chosen,
-  onChoose, onToggle, onAddLine, onOpenLine, rowDecor, decorating,
+  onChoose, onToggle, onAddLine, onOpenLine, onReorder, rowDecor, decorating,
   onOpenMoment, onOpenBirth, onAdd,
 }: LifeBoardProps) {
   const { t } = useTranslation();
@@ -73,6 +75,29 @@ export function LifeBoard({
 
   const all = life.others ?? [];
   const showing = new Set(lines.map((l) => l.id));
+
+  /**
+   * Whose line goes where: a name is dragged along the row and the columns
+   * follow it. Mine stays first — this is my page — so it is the others that
+   * are put in order, and the order is kept in the record rather than in the
+   * screen, because it is a way of reading that is worth keeping.
+   *
+   * Alt with an arrow does the same thing from the keyboard, which is the only
+   * way to do it without a mouse and the only way that works on a phone.
+   */
+  const [dragging, setDragging] = useState<string | null>(null);
+  const moveTo = (id: string, at: number) => {
+    const ids = all.map((o) => o.id);
+    const from = ids.indexOf(id);
+    const to = Math.max(0, Math.min(ids.length - 1, at));
+    if (from < 0 || from === to) return;
+    ids.splice(to, 0, ...ids.splice(from, 1));
+    onReorder(ids);
+  };
+  const dropOn = (id: string, onto: string) => {
+    if (id === onto) return;
+    moveTo(id, all.findIndex((o) => o.id === onto));
+  };
   // One run of years for every column, so the same year is the same place on
   // each of them — which is what reading two lives side by side is for.
   const span = useMemo(() => boardSpan(lines, today), [lines, today]);
@@ -93,24 +118,47 @@ export function LifeBoard({
     if (!el) return;
     const align = () => {
       const cols = [...el.querySelectorAll<HTMLElement>('[data-life-column]')];
-      const rows = cols.map((c) => [...c.querySelectorAll<HTMLElement>('li[data-life-decade], li[data-life-today]')]);
-      for (const list of rows) for (const row of list) row.style.paddingTop = '';
+      const all = cols.map((c) => [...c.querySelectorAll<HTMLElement>('li[data-life-at]')]);
+      for (const list of all) for (const row of list) row.style.paddingTop = '';
       if (cols.length < 2) return;
-      // The year itself is what has to line up, and padding pushes the year
-      // down inside its row rather than moving the row — so the label is what
-      // is measured.
-      const yearOf = (row: HTMLElement) => (row.querySelector('[data-life-label]') ?? row).getBoundingClientRect().top;
-      const deep = Math.min(...rows.map((list) => list.length));
-      for (let i = 0; i < deep; i++) {
-        const tops = rows.map((list) => yearOf(list[i]));
-        const lowest = Math.max(...tops);
-        rows.forEach((list, c) => {
-          const gap = lowest - tops[c];
+      /**
+       * Where the mark on a row sits, in the screen's pixels.
+       *
+       * Measured from the row rather than from the mark itself, because a card
+       * that has not been scrolled to yet is still sixteen pixels down from
+       * where it will come to rest. The row's own padding is part of it: that
+       * is the thing this loop writes.
+       */
+      const markOf = (row: HTMLElement) => {
+        const pad = parseFloat(getComputedStyle(row).paddingTop) || 0;
+        const own = Number(row.dataset.lifeAnchor ?? 0);
+        return row.getBoundingClientRect().top + (pad + own) * scale;
+      };
+      // One row per day per column — the first, where a day is written twice.
+      const days = all.map((list) => {
+        const map = new Map<string, HTMLElement>();
+        for (const row of list) {
+          const key = row.dataset.lifeAt;
+          if (key && !map.has(key)) map.set(key, row);
+        }
+        return map;
+      });
+      const keys = [...new Set(days.flatMap((map) => [...map.keys()]))]
+        .sort((a, b) => parseFloat(a) - parseFloat(b));
+      // Earliest first, pushing down only: a day two lines share is dropped to
+      // the lower of the two, and everything after it comes with it.
+      for (const key of keys) {
+        const here = days.map((map) => map.get(key)).filter((row): row is HTMLElement => !!row);
+        if (here.length < 2) continue;
+        const marks = here.map(markOf);
+        const lowest = Math.max(...marks);
+        here.forEach((row, i) => {
+          const gap = lowest - marks[i];
           if (gap <= 0.5) return;
-          const pad = parseFloat(getComputedStyle(list[i]).paddingTop) || 0;
+          const pad = parseFloat(getComputedStyle(row).paddingTop) || 0;
           // A rectangle is measured in the screen's pixels and padding is
           // written in the board's own, which the zoom makes different sizes.
-          list[i].style.paddingTop = `${pad + gap / scale}px`;
+          row.style.paddingTop = `${pad + gap / scale}px`;
         });
       }
     };
@@ -142,11 +190,34 @@ export function LifeBoard({
           {[{ id: 'me', name: life.profile.name || meLabel }, ...all.map((o) => ({ id: o.id, name: o.name }))]
             .map(({ id, name }) => {
               const on = showing.has(id);
+              const mine = id === 'me';
               return (
                 <button key={id} type="button" data-life-line-toggle={id} aria-pressed={on}
-                  onClick={() => (id === 'me' ? undefined : isMobile ? onChoose(id) : onToggle(id))}
-                  onDoubleClick={() => (id === 'me' ? undefined : onOpenLine(id))}
+                  draggable={!mine}
+                  onDragStart={(e) => {
+                    setDragging(id);
+                    e.dataTransfer.effectAllowed = 'move';
+                    // Firefox starts no drag at all without something to carry.
+                    e.dataTransfer.setData('text/plain', id);
+                  }}
+                  onDragOver={(e) => { if (!mine && dragging && dragging !== id) e.preventDefault(); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const from = dragging ?? e.dataTransfer.getData('text/plain');
+                    if (from && !mine) dropOn(from, id);
+                    setDragging(null);
+                  }}
+                  onDragEnd={() => setDragging(null)}
+                  onKeyDown={(e) => {
+                    if (mine || !e.altKey || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
+                    e.preventDefault();
+                    moveTo(id, all.findIndex((o) => o.id === id) + (e.key === 'ArrowLeft' ? -1 : 1));
+                  }}
+                  onClick={() => (mine ? undefined : isMobile ? onChoose(id) : onToggle(id))}
+                  onDoubleClick={() => (mine ? undefined : onOpenLine(id))}
                   className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] ${
+                    mine ? '' : 'cursor-grab active:cursor-grabbing'} ${
+                    dragging === id ? 'opacity-50' : ''} ${
                     on ? 'border-foreground text-foreground' : 'border-border text-muted-foreground'}`}>
                   {name || t('life.parallel.someone')}
                 </button>

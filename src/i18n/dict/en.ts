@@ -1172,6 +1172,11 @@ export const en: Record<TKey, string> = {
   'place.filter': 'Kinds of pin',
   'place.filterAll': 'All',
   'place.heat': 'Pin heat map',
+  'place.colors.title': 'Map colours',
+  'place.colors.hint': 'Pick the colours for been, meaning to, and each kind of pin. They travel with the record.',
+  'place.colors.pins': 'A colour a kind of pin',
+  'place.colors.reset': 'Default',
+  'place.colors.open': 'Map colours',
   'place.heatOff': 'Turn the heat off',
   // Place — looking a place up in the wider world, by name.
   'place.searchOnline': 'Look up “{q}” online',

@@ -319,7 +319,9 @@ export function LineDialog({ target, onSave, onDelete, onClose }: {
   }, [target, base]);
 
   const birth = dateFrom(parts);
-  const valid = !!name.trim() && !!birth;
+  // A line is drawn from a day, not from a year: without the whole date there
+  // is nowhere to start it, so the form waits for one.
+  const valid = !!name.trim() && isFullDate(birth ?? '');
   return (
     <Dialog open={target !== null} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-sm" data-life-line-dialog>

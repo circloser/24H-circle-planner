@@ -182,6 +182,19 @@ export async function run() {
       (await page.locator('[data-place-panel-name]').innerText()) === '대한민국',
       await page.locator('[data-place-panel-name]').innerText());
     pass('…and so is its continent', /아시아/.test(await page.locator('[data-place-panel]').innerText()));
+    pass('the card opens on the map, not as a column down the side', await page.evaluate(() => {
+      const card = document.querySelector('[data-place-card]').getBoundingClientRect();
+      const view = document.querySelector('[data-place-view]').getBoundingClientRect();
+      // Beside something rather than filling the height, and clear of the edge.
+      return card.height < view.height * 0.9 && card.right < view.right - 40;
+    }));
+    pass('…and the controls in the corner do not move for it', await page.evaluate(() => {
+      const corner = document.querySelector('[data-place-corner]').getBoundingClientRect();
+      const card = document.querySelector('[data-place-card]').getBoundingClientRect();
+      // The whole point: the corner is where it was, and the card is not on it.
+      window.__cornerRight = corner.right;
+      return card.right <= corner.left + 1;
+    }));
 
     // 5. A city, and a search that finds one.
     await page.locator('[data-place-panel] [data-place-city-search]').fill('Seoul');
@@ -194,7 +207,30 @@ export async function run() {
     pass('…and it is listed on the country\'s own card',
       (await count('[data-place-city-remove="KR-seoul"]')) === 1);
     await page.locator('[data-place-panel-close]').click();
-    await wait(300);
+    await wait(400);
+    pass('…and is back where it was once the card is closed', await page.evaluate(() => {
+      const corner = document.querySelector('[data-place-corner]').getBoundingClientRect();
+      return Math.abs(corner.right - window.__cornerRight) < 1;
+    }));
+
+    // 4b. The colours of the map are the reader's to choose.
+    await page.locator('[data-place-colors]').click();
+    await wait(500);
+    pass('the map offers its own colours', (await count('[data-place-colors-dialog]')) === 1
+      && (await count('[data-place-swatch]')) > 20);
+    await page.locator('[data-place-color-row="가 봄"] [data-place-swatch="#3f8f8f"]').click();
+    await wait(400);
+    pass('…and a colour chosen is kept with the record',
+      (await stored()).palette?.visited === '#3f8f8f', JSON.stringify((await stored()).palette));
+    await page.locator('[data-place-color-row="가 봄"] [data-place-color-clear]').click();
+    await wait(400);
+    pass('…and can be put back to the one the theme gives it',
+      (await stored()).palette === undefined, JSON.stringify((await stored()).palette));
+    await page.locator('[data-place-color-row="먹은 곳"] [data-place-swatch="#c9a227"]').click();
+    await wait(400);
+    pass('…and a kind of pin can have one of its own',
+      (await stored()).palette?.pins?.food === '#c9a227', JSON.stringify((await stored()).palette));
+    await closeAll();
     await page.locator('[data-place-search-open]').click();
     await page.locator('[data-place-search]').fill('프랑');
     await wait(400);

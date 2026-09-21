@@ -53,6 +53,29 @@ describe('the columns on the board', () => {
   it('keeps a nameless line nameless rather than inventing one', () => {
     expect(lineAsLife({ id: 'x', name: '', birthDate: '1990', milestones: [] }).profile.name).toBeUndefined();
   });
+
+  it('fills in a half-known birthday so the line can still be drawn', () => {
+    // A record from an older version, or a restored backup, may hold a year.
+    expect(lineAsLife({ id: 'x', name: 'n', birthDate: '1990', milestones: [] }).profile.birthDate).toBe('1990-01-01');
+    expect(lineAsLife({ id: 'x', name: 'n', birthDate: '1990-03', milestones: [] }).profile.birthDate).toBe('1990-03-01');
+    expect(buildTimeline(lineAsLife({ id: 'x', name: 'n', birthDate: '1990', milestones: [] }), { today: '2026-09-21' })
+      .some((i) => i.kind === 'birth')).toBe(true);
+  });
+});
+
+describe('the order the lines are drawn in', () => {
+  it('follows the record, mine first', () => {
+    const life = mine([line('a', '1958'), line('b', '1990')]);
+    expect(boardLines(life).map((b) => b.id)).toEqual(['me', 'a', 'b']);
+    const swapped = { ...life, others: [life.others![1], life.others![0]] };
+    expect(boardLines(swapped).map((b) => b.id)).toEqual(['me', 'b', 'a']);
+  });
+
+  it('and a phone shows the first of them unless another is chosen', () => {
+    const life = mine([line('a', '1958'), line('b', '1990')]);
+    const swapped = { ...life, others: [life.others![1], life.others![0]] };
+    expect(boardLines(swapped, { max: PHONE_LINES }).map((b) => b.id)).toEqual(['me', 'b']);
+  });
 });
 
 describe('how far out the board starts', () => {

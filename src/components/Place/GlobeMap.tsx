@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { isWished, pointInRing, type CityVisit, type CountryShape, type CountryVisit, type Pin } from '@/lib/place';
+import {
+  isWished, pointInRing, type CityVisit, type CountryShape, type CountryVisit, type Pin, type PinCategory,
+} from '@/lib/place';
 import {
   CITY_DOT_ZOOM, CITY_NAME_ZOOM, GLOBE_MIN_ZOOM, anyFacing, cityNamedAt, cityRankAt,
   densifyShape, facing, graticule, project, ringFill, screenOf, tileZoomOfGlobe, turn, unproject,
@@ -29,6 +31,8 @@ export interface GlobeMapProps {
   /** As close as the globe goes before the tile map is the better picture.
    *  A finger may ask for one step past it — that step is the handover. */
   maxZoom: number;
+  /** One colour a kind of pin (lib/place-colors). */
+  pinColors: Record<PinCategory, string>;
   /** Where the person is right now, if they have asked to be found. */
   here?: { lng: number; lat: number } | null;
   camera: Camera;
@@ -72,7 +76,7 @@ const SPIN_MS = 33;
  */
 export function GlobeMap({
   shapes, countries, cities, places, pins, homeCityId, visited, wished, selected, selectedPin,
-  heat, maxZoom, here, camera, onCamera, onSelect, onSelectPin, nameOf,
+  heat, maxZoom, pinColors, here, camera, onCamera, onSelect, onSelectPin, nameOf,
 }: GlobeMapProps) {
   /** One step past the stop, which the view above reads as "now the tiles". */
   const reach = maxZoom * 1.4;
@@ -291,19 +295,20 @@ export function GlobeMap({
         if (!facing(pin.lng, pin.lat, camera)) continue;
         const p = project(pin.lng, pin.lat, camera, screen);
         const on = selectedPin === pin.id;
+        const ink2 = pinColors[pin.category] ?? visited;
         ctx.globalAlpha = 1;
         ctx.beginPath();
         ctx.moveTo(p.x, p.y);
         ctx.lineTo(p.x, p.y - PIN_RISE);
         ctx.lineWidth = 1.5;
-        ctx.strokeStyle = visited;
+        ctx.strokeStyle = ink2;
         ctx.stroke();
         ctx.beginPath();
         ctx.arc(p.x, p.y - PIN_RISE, on ? 5 : 4, 0, Math.PI * 2);
-        ctx.fillStyle = on ? visited : paper;
+        ctx.fillStyle = on ? ink2 : paper;
         ctx.fill();
         ctx.lineWidth = on ? 2 : 1.5;
-        ctx.strokeStyle = visited;
+        ctx.strokeStyle = ink2;
         ctx.stroke();
         if (named) {
           ctx.globalAlpha = 0.85;
@@ -331,7 +336,7 @@ export function GlobeMap({
     }
     ctx.globalAlpha = 1;
   }, [size, screen, camera, drawn, been, cities, ranked, cut, mine, pins, homeCityId, visited, wished,
-    heat, here, selected, selectedPin, hover, lines]);
+    heat, here, pinColors, selected, selectedPin, hover, lines]);
 
   useEffect(() => {
     const frame = requestAnimationFrame(paint);

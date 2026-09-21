@@ -1169,6 +1169,11 @@ export const ja: Record<TKey, string> = {
   'place.filter': 'ピンの種類',
   'place.filterAll': 'すべて',
   'place.heat': 'ピンのヒートマップ',
+  'place.colors.title': '地図の色',
+  'place.colors.hint': '行った場所・行きたい場所・ピンの色を選べます。選んだ色は記録と一緒に保存されます。',
+  'place.colors.pins': 'ピンの種類ごとの色',
+  'place.colors.reset': '既定',
+  'place.colors.open': '地図の色',
   'place.heatOff': 'ヒートマップを消す',
   // Place — looking a place up in the wider world, by name.
   'place.searchOnline': '「{q}」をインターネットで探す',

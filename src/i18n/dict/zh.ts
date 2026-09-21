@@ -1167,6 +1167,11 @@ export const zh: Record<TKey, string> = {
   'place.filter': '图钉类型',
   'place.filterAll': '全部',
   'place.heat': '图钉热力图',
+  'place.colors.title': '地图颜色',
+  'place.colors.hint': '为去过、想去和各类图钉选择颜色，所选颜色会随记录一起保存。',
+  'place.colors.pins': '各类图钉的颜色',
+  'place.colors.reset': '默认',
+  'place.colors.open': '地图颜色',
   'place.heatOff': '关闭热力图',
   // Place — looking a place up in the wider world, by name.
   'place.searchOnline': '在网上查找“{q}”',

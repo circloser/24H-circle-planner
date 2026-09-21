@@ -1171,6 +1171,11 @@ export const es: Record<TKey, string> = {
   'place.filter': 'Tipos de chincheta',
   'place.filterAll': 'Todas',
   'place.heat': 'Mapa de calor',
+  'place.colors.title': 'Colores del mapa',
+  'place.colors.hint': 'Elige los colores de lo visitado, lo pendiente y cada tipo de marcador. Se guardan con el registro.',
+  'place.colors.pins': 'Un color por tipo de marcador',
+  'place.colors.reset': 'Por defecto',
+  'place.colors.open': 'Colores del mapa',
   'place.heatOff': 'Desactivar el mapa de calor',
   // Place — looking a place up in the wider world, by name.
   'place.searchOnline': 'Buscar «{q}» en línea',

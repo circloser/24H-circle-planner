@@ -444,11 +444,40 @@ export async function run() {
     await wait(500);
     pass('…and brought back', (await count('[data-life-column]')) === 2);
 
+    // 15b2. Whose line goes where: the names are dragged along the row.
+    await page.evaluate((k) => {
+      const life = JSON.parse(localStorage.getItem(k));
+      life.others = [
+        { id: 'o1', name: '첫째', birthDate: '1960-01-02', milestones: [] },
+        { id: 'o2', name: '둘째', birthDate: '1970-01-02', milestones: [] },
+      ];
+      localStorage.setItem(k, JSON.stringify(life));
+    }, LIFE_KEY);
+    await openLife();
+    await closeAll();
+    const columns = async () => page.$$eval('[data-life-column]', (els) => els.map((e) => e.dataset.lifeColumn));
+    pass('the lines are drawn in the order the record holds them',
+      (await columns()).join() === 'me,o1,o2', (await columns()).join());
+    await page.dragAndDrop('[data-life-line-toggle="o2"]', '[data-life-line-toggle="o1"]');
+    await wait(600);
+    pass('…and a name dragged past another takes its column with it',
+      (await columns()).join() === 'me,o2,o1', (await columns()).join());
+    pass('…and the new order is kept in the record',
+      (await stored()).others.map((o) => o.id).join() === 'o2,o1');
+    // The same move without a mouse, which is the only way on a phone.
+    await page.locator('[data-life-line-toggle="o2"]').focus();
+    await page.keyboard.press('Alt+ArrowRight');
+    await wait(500);
+    pass('…and alt with an arrow does it from the keyboard',
+      (await columns()).join() === 'me,o1,o2', (await columns()).join());
+    pass('mine stays the first line, whatever is moved',
+      (await columns())[0] === 'me');
+
     // 15c. A wide screen holds them all; a phone holds two.
     await page.evaluate((k) => {
       const life = JSON.parse(localStorage.getItem(k));
       life.others = ['a', 'b', 'c'].map((id, i) => ({
-        id, name: `사람 ${id}`, birthDate: String(1950 + i * 10),
+        id, name: `사람 ${id}`, birthDate: `${1950 + i * 10}-03-02`,
         milestones: [{ id: `${id}m`, date: String(1990 + i), title: `일 ${id}`, category: 'other' }],
       }));
       localStorage.setItem(k, JSON.stringify(life));
@@ -458,6 +487,47 @@ export async function run() {
     pass('a wide screen holds every line there is', (await count('[data-life-column]')) === 4);
     pass('…and stands back far enough to show them',
       Number(await zoomNow()) < 1, await zoomNow());
+    // The whole point of reading them together: one day, one height.
+    pass('a day two lines share is at one height on both', await page.evaluate(() => {
+      const scale = parseFloat(getComputedStyle(document.querySelector('[data-life-board]')).zoom) || 1;
+      const mark = (row) => {
+        const pad = parseFloat(getComputedStyle(row).paddingTop) || 0;
+        return row.getBoundingClientRect().top + (pad + Number(row.dataset.lifeAnchor ?? 0)) * scale;
+      };
+      const cols = [...document.querySelectorAll('[data-life-column]')].map((c) => {
+        const map = new Map();
+        for (const row of c.querySelectorAll('li[data-life-at]')) {
+          if (!map.has(row.dataset.lifeAt)) map.set(row.dataset.lifeAt, mark(row));
+        }
+        return map;
+      });
+      let shared = 0;
+      for (const key of cols[0].keys()) {
+        const all = cols.map((m) => m.get(key)).filter((v) => v !== undefined);
+        if (all.length < 2) continue;
+        shared += 1;
+        if (Math.max(...all) - Math.min(...all) > 1.5) return false;
+      }
+      // The decades alone would pass this; the seeded moment is the real test.
+      return shared > 3;
+    }));
+    // Zoomed out, the circle that offers a new moment still lands under the
+    // pointer: it is written in the board's pixels, not the screen's.
+    const mePlace = await page.evaluate(() => {
+      const ol = document.querySelector('[data-life-column="me"] [data-life-timeline]').getBoundingClientRect();
+      return { x: ol.left + ol.width / 2, y: Math.min(innerHeight - 60, ol.bottom - 40) };
+    });
+    await page.mouse.move(mePlace.x, mePlace.y);
+    await wait(300);
+    const ghost = await page.evaluate(() => {
+      const g = document.querySelector('[data-life-ghost]');
+      if (!g) return null;
+      const r = g.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    });
+    pass('the + follows the pointer even on a zoomed-out board',
+      !!ghost && Math.abs(ghost.x - mePlace.x) < 6 && Math.abs(ghost.y - mePlace.y) < 6,
+      JSON.stringify({ ghost, at: mePlace }));
     await page.setViewportSize({ width: 390, height: 844 });
     await wait(600);
     pass('a phone holds two: mine, and the one chosen',
