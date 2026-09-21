@@ -17,7 +17,6 @@ export interface LifeBoardProps {
   today: string;
   /** The category filter, applied to every line alike. */
   only: ReadonlySet<LifeCategory>;
-  stickyTop: number;
   meLabel: string;
   readOnly?: boolean;
   /** Who is folded away for now (wide screens). */
@@ -47,7 +46,7 @@ export interface LifeBoardProps {
  * a phone has room for two, so it shows mine and whichever one is asked for.
  */
 export function LifeBoard({
-  life, colors, today, only, stickyTop, meLabel, readOnly, hidden, chosen,
+  life, colors, today, only, meLabel, readOnly, hidden, chosen,
   onChoose, onToggle, onAddLine, onOpenLine, rowDecor, decorating,
   onOpenMoment, onOpenBirth, onAdd,
 }: LifeBoardProps) {
@@ -94,7 +93,7 @@ export function LifeBoard({
     if (!el) return;
     const align = () => {
       const cols = [...el.querySelectorAll<HTMLElement>('[data-life-column]')];
-      const rows = cols.map((c) => [...c.querySelectorAll<HTMLElement>('li[data-life-decade]')]);
+      const rows = cols.map((c) => [...c.querySelectorAll<HTMLElement>('li[data-life-decade], li[data-life-today]')]);
       for (const list of rows) for (const row of list) row.style.paddingTop = '';
       if (cols.length < 2) return;
       // The year itself is what has to line up, and padding pushes the year
@@ -190,7 +189,6 @@ export function LifeBoard({
               life={line.life}
               items={buildTimeline(line.life, { today, only, ...(lines.length > 1 ? span : {}) })}
               colors={colors}
-              stickyTop={stickyTop / scale}
               readOnly={readOnly}
               {...(line.mine && rowDecor ? { rowDecor } : {})}
               decorating={decorating}

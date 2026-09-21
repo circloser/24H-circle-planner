@@ -153,6 +153,14 @@ export async function run() {
     pass('the line starts at the birth, with nothing joined on above it',
       (await count('[data-life-roots]')) === 0 && (await count('[data-life-slot]')) === 0
       && (await count('[data-life-birth]')) === 1);
+    pass('…and no line at all is drawn above that first marker', await page.evaluate(() => {
+      const marker = document.querySelector('[data-life-birth] [data-life-marker]');
+      const box = marker.getBoundingClientRect();
+      const middle = box.top + box.height / 2;
+      return [...document.querySelectorAll('.life-line')].every((l) => l.getBoundingClientRect().bottom > middle - 2);
+    }));
+    pass('…and the year no longer follows the scroll in a black badge',
+      (await count('[data-life-year]')) === 0);
     const bodyText = await page.locator('[data-life-view]').innerText();
     pass('no will wording, no "뿌리", no filler under the page', !/유언|뿌리/.test(bodyText) && (await count('[data-life-footer]')) === 0);
     pass('the site footer and reading copy stay away here',
@@ -389,6 +397,19 @@ export async function run() {
       (await count(`[data-life-column="${her}"] [data-life-birth]`)) === 1
       && /이정숙/.test(await page.locator(`[data-life-column="${her}"] [data-life-birth]`).innerText())
       && /1958/.test(await page.locator(`[data-life-column="${her}"] [data-life-birth]`).innerText()));
+    pass('today is at the same height on every line', await page.evaluate(() => {
+      const dots = [...document.querySelectorAll('[data-life-column] [data-life-today] .life-pulse')]
+        .map((d) => d.getBoundingClientRect().top);
+      return dots.length === 2 && Math.abs(dots[0] - dots[1]) < 1.5;
+    }));
+    pass('…and so is every decade', await page.evaluate(() => {
+      const cols = [...document.querySelectorAll('[data-life-column]')];
+      const rows = cols.map((c) => [...c.querySelectorAll('li[data-life-decade]')]);
+      const year = (row) => (row.querySelector('[data-life-label]') ?? row).getBoundingClientRect().top;
+      if (rows[0].length !== rows[1].length) return false;
+      return rows[0].every((row, i) => Math.abs(year(row) - year(rows[1][i])) < 1.5
+        && row.dataset.year === rows[1][i].dataset.year);
+    }));
     pass('…and the two columns stand side by side, not one under the other',
       await page.evaluate(() => {
         const [a, b] = [...document.querySelectorAll('[data-life-column]')].map((c) => c.getBoundingClientRect());

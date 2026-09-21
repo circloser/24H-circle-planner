@@ -99,7 +99,7 @@ export function SharedView() {
             {life.profile.name || t('life.title')}
           </h1>
           <div className="w-full">
-            <LifeTimeline life={life} items={buildTimeline(life)} colors={categoryColors(null)} stickyTop={0} readOnly />
+            <LifeTimeline life={life} items={buildTimeline(life)} colors={categoryColors(null)} readOnly />
           </div>
           {life.endingNote?.text && (
             <section className="mx-4 w-full max-w-[640px]">

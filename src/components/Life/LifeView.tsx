@@ -106,18 +106,6 @@ export function LifeView() {
     return () => window.removeEventListener(LIFE_EXPORT_EVENT, open);
   }, []);
 
-  // The sticky year sits just under the app header, whatever its height.
-  const [headerH, setHeaderH] = useState(56);
-  useEffect(() => {
-    const header = document.querySelector<HTMLElement>('[data-app-header]');
-    if (!header) return;
-    const measure = () => setHeaderH(header.getBoundingClientRect().height);
-    measure();
-    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
-    ro?.observe(header);
-    return () => ro?.disconnect();
-  }, []);
-
   /**
    * Another life beside this one. Two are free — mine and one other — and Pro
    * holds ten; the limit only ever stops ADDING another.
@@ -253,7 +241,6 @@ export function LifeView() {
             colors={colors}
             today={today}
             only={only}
-            stickyTop={headerH}
             meLabel={t('relation.me.short')}
             hidden={hiddenLines}
             chosen={chosenLine}

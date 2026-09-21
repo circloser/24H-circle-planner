@@ -43,37 +43,6 @@ function useReveal(root: React.RefObject<HTMLElement | null>, deps: unknown) {
   }, [root, deps]);
 }
 
-/** The year of the row at the top of the window, for the sticky year label. */
-function useTopYear(root: React.RefObject<HTMLElement | null>, offset: number): number | null {
-  const [year, setYear] = useState<number | null>(null);
-  useEffect(() => {
-    let frame = 0;
-    const measure = () => {
-      frame = 0;
-      const rows = root.current?.querySelectorAll<HTMLElement>('[data-year]');
-      if (!rows?.length) return setYear(null);
-      // Rows run top to bottom, so the last one above the line is found by halving.
-      let lo = 0;
-      let hi = rows.length - 1;
-      let found = -1;
-      while (lo <= hi) {
-        const mid = (lo + hi) >> 1;
-        if (rows[mid].getBoundingClientRect().top <= offset) { found = mid; lo = mid + 1; } else hi = mid - 1;
-      }
-      setYear(found < 1 ? null : Number(rows[found].dataset.year));
-    };
-    const onScroll = () => { if (!frame) frame = requestAnimationFrame(measure); };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
-      if (frame) cancelAnimationFrame(frame);
-    };
-  }, [root, offset]);
-  return year;
-}
-
 /** A picture from this device's store, fetched only once it comes near. */
 export function LifePhoto({ id, className }: { id: string; className?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
@@ -110,13 +79,21 @@ const SideCtx = createContext(false);
  * around it — spacing and alignment do the work. Wide screens set an entry
  * on the left flush right, toward the line.
  */
-function EntryRow({ side, tight, year, plan, future, faint, children, label, onOpen, row, decor }: {
+/** How much of the row the line runs down: all of it, from the marker (the
+ *  birth — the line starts where the life does), or not at all (above it). */
+type RowLine = 'full' | 'from-marker' | 'none';
+
+/** Where a marker's middle sits inside the card box: 33px down, 26px across. */
+const MARKER_MID = 46;
+
+function EntryRow({ side, tight, year, plan, future, faint, children, label, onOpen, row, decor, line = 'full' }: {
   side: Side;
   tight: boolean;
   year: number;
   plan: boolean;
   /** Below today's marker: the line runs dashed here. */
   future: boolean;
+  line?: RowLine;
   faint?: boolean;
   children: ReactNode;
   label: string;
@@ -129,22 +106,31 @@ function EntryRow({ side, tight, year, plan, future, faint, children, label, onO
   const dashed = plan || faint;
   return (
     <li className={`relative ${tight ? 'pt-6' : 'pt-12'}`} data-year={year} data-future={future || undefined} {...row}>
-      <Line future={future} />
+      {line === 'full' && <Line future={future} />}
       {decor}
-      <div className="life-reveal group relative">
-        <span aria-hidden data-life-marker
-          className={`absolute left-[28px] top-[33px] z-10 h-[26px] w-[26px] -translate-x-1/2 rounded-full border-2 bg-background transition-transform duration-150 group-hover:scale-110 min-[900px]:left-1/2 ${
-            dashed ? 'border-dashed' : ''} ${faint ? 'border-foreground/40' : 'border-foreground'}`} />
-        <div data-life-card
-          className={`relative ml-16 mr-4 min-[900px]:mx-0 min-[900px]:w-[calc(50%-72px)] ${
-            left ? 'min-[900px]:text-right' : 'min-[900px]:ml-auto'} ${faint ? 'opacity-55' : plan ? 'opacity-[.8]' : ''}`}>
-          {/* The whole entry opens the editor: one button stretched over it.
-              A shared line is read-only, so there is nothing to press. */}
-          {onOpen && (
-            <button type="button" aria-label={label} onClick={onOpen}
-              className="absolute -inset-2 z-[1] rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
-          )}
-          <SideCtx.Provider value={left}>{children}</SideCtx.Provider>
+      {/* The line starts at the birth marker, so this one is hung off a box
+          that begins where the card does — the row's own padding is set from
+          the outside (several lives are made to share their years) and would
+          otherwise have to be worked out here. */}
+      <div className="relative">
+        {line === 'from-marker' && (
+          <span aria-hidden className="life-line" style={{ top: MARKER_MID }} />
+        )}
+        <div className="life-reveal group relative">
+          <span aria-hidden data-life-marker
+            className={`absolute left-[28px] top-[33px] z-10 h-[26px] w-[26px] -translate-x-1/2 rounded-full border-2 bg-background transition-transform duration-150 group-hover:scale-110 min-[900px]:left-1/2 ${
+              dashed ? 'border-dashed' : ''} ${faint ? 'border-foreground/40' : 'border-foreground'}`} />
+          <div data-life-card
+            className={`relative ml-16 mr-4 min-[900px]:mx-0 min-[900px]:w-[calc(50%-72px)] ${
+              left ? 'min-[900px]:text-right' : 'min-[900px]:ml-auto'} ${faint ? 'opacity-55' : plan ? 'opacity-[.8]' : ''}`}>
+            {/* The whole entry opens the editor: one button stretched over it.
+                A shared line is read-only, so there is nothing to press. */}
+            {onOpen && (
+              <button type="button" aria-label={label} onClick={onOpen}
+                className="absolute -inset-2 z-[1] rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+            )}
+            <SideCtx.Provider value={left}>{children}</SideCtx.Provider>
+          </div>
         </div>
       </div>
     </li>
@@ -202,12 +188,10 @@ function Description({ text }: { text: string }) {
   );
 }
 
-export function LifeTimeline({ life, items, colors, stickyTop, readOnly, rowDecor, decorating, onOpenMoment, onOpenBirth, onAdd }: {
+export function LifeTimeline({ life, items, colors, readOnly, rowDecor, decorating, onOpenMoment, onOpenBirth, onAdd }: {
   life: LifeData;
   items: TimelineItem[];
   colors: Record<LifeCategory, string>;
-  /** Where the sticky year sits: just under the app header. */
-  stickyTop: number;
   /** Someone else's line (a share link): shown, never touched. */
   readOnly?: boolean;
   /** Decorations for a row (다꾸), when the page is decorating. */
@@ -223,7 +207,6 @@ export function LifeTimeline({ life, items, colors, stickyTop, readOnly, rowDeco
   // Which rows exist, not how many: adding the first moment swaps the
   // examples out for it and leaves the count the same.
   useReveal(ref, items.map((i) => i.key).join('|'));
-  const topYear = useTopYear(ref, stickyTop + 28);
   const birth = life.profile.birthDate;
   const birthYear = Number(birth.slice(0, 4));
 
@@ -258,22 +241,36 @@ export function LifeTimeline({ life, items, colors, stickyTop, readOnly, rowDeco
     rows?.forEach((r) => { if (r.getBoundingClientRect().top <= clientY) year = Number(r.dataset.year); });
     return year;
   };
-  /** Near the line, and not over an entry's own text or a button. Markers and
-   *  labels do NOT hide it: the circle should glide the whole way down. */
+  /** Where the line begins on screen: the middle of the birth marker. */
+  const lineTop = (): number => {
+    const marker = ref.current?.querySelector<HTMLElement>('[data-life-birth] [data-life-marker]');
+    if (!marker) return -Infinity;
+    const box = marker.getBoundingClientRect();
+    return box.top + box.height / 2;
+  };
+  /** Near the line, below where it starts, and not over an entry's own text or
+   *  a button. Markers and labels do NOT hide it: the circle should glide the
+   *  whole way down. */
   const onLine = (e: React.PointerEvent) =>
     Math.abs(e.clientX - lineX()) <= 28
+    && e.clientY >= lineTop() - 2
     && !(e.target as Element).closest('[data-life-card], button, a');
   const tap = useRef<{ x: number; y: number } | null>(null);
 
   const rows: ReactNode[] = [];
+  // Nothing is drawn on the line above the birth, because there was no line
+  // yet: the years are there so that another life can be read against them.
+  let born = false;
   for (const it of items) {
+    if (it.kind === 'birth') born = true;
     if (it.kind === 'decade') {
       rows.push(
         <li key={it.key} className="relative pt-12" data-year={it.decade} data-life-decade
           data-life-before={it.before || undefined}>
-          {/* Before the birth there is no line to draw — only the years, so
-              that another life beside this one can be read against them. */}
-          {!it.before && <Line future={it.future} />}
+          {/* Before the birth there is no line to draw — not in the decades
+              that ran without this person, and not in the one they were born
+              in, where the line starts at the marker itself. */}
+          {born && <Line future={it.future} />}
           {rowDecor?.(it.key)}
           <div className="relative flex min-[900px]:justify-center">
             <span data-life-label className={`life-serif relative z-10 ml-[28px] -translate-x-1/2 bg-background px-2 py-1 text-[15px] font-bold tracking-wide min-[900px]:ml-0 min-[900px]:translate-x-0 ${
@@ -312,6 +309,7 @@ export function LifeTimeline({ life, items, colors, stickyTop, readOnly, rowDeco
       const color = colors.birth;
       rows.push(
         <EntryRow key={it.key} side={it.side} tight={it.tight} year={birthYear} plan={false} future={false}
+          line="from-marker"
           label={`${spokenLifeDate(birth, lang)}, ${t('life.born')}`} onOpen={readOnly ? undefined : onOpenBirth}
           row={{ 'data-life-birth': '' }} decor={rowDecor?.('birth')}>
           <DateLine category="birth" color={color} text={formatLifeDate(birth)} />
@@ -324,6 +322,7 @@ export function LifeTimeline({ life, items, colors, stickyTop, readOnly, rowDeco
       const color = colors[m.category];
       rows.push(
         <EntryRow key={it.key} side={it.side} tight={it.tight} year={Number(m.date.slice(0, 4))} plan={it.plan} future={it.future}
+          line={born ? 'full' : 'none'}
           label={`${spokenLifeDate(m.date, lang)}, ${m.title}${it.plan ? `, ${t('life.planBadge')}` : ''}`}
           onOpen={readOnly ? undefined : () => onOpenMoment?.(m)}
           row={{ 'data-life-moment': m.id, ...(it.plan ? { 'data-plan': '' } : {}) }} decor={rowDecor?.(m.id)}>
@@ -359,14 +358,6 @@ export function LifeTimeline({ life, items, colors, stickyTop, readOnly, rowDeco
         className="sr-only focus:not-sr-only focus:absolute focus:left-1/2 focus:top-0 focus:z-30 focus:-translate-x-1/2 focus:rounded-full focus:bg-foreground focus:px-4 focus:py-2 focus:text-sm focus:text-background">
         {t('life.add')}
       </button>}
-      {/* The year at the top of the window follows the scroll. */}
-      <div className="pointer-events-none sticky z-20 h-0" style={{ top: stickyTop + 8 }} aria-hidden>
-        {topYear !== null && (
-          <span data-life-year className="life-serif absolute left-[28px] -translate-x-1/2 rounded-full bg-foreground px-3 py-0.5 text-sm font-bold tabular-nums text-background min-[900px]:left-1/2">
-            {topYear}
-          </span>
-        )}
-      </div>
       <ol ref={ref} aria-label={t('life.timelineLabel')} className="relative mx-auto max-w-[960px] select-none" data-life-timeline>
         {rows}
       </ol>
