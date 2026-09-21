@@ -7,10 +7,7 @@ import {
   pointInRing, readPlaceFile, type CountryShape, type Pin, type PlaceData,
 } from '../place';
 import { MAP_NORTH, MAP_SOUTH, cityId, countryPath, fromTile, project, searchCities, unproject, toTile } from '../place-world';
-import {
-  PIN_HANDOVER_ZOOM, PIN_MIN_ZOOM, TILE_LAYERS, TILE_SIZE, TILE_SOURCE, clusterPins, tileZoom,
-  tilesFor, tileUrl,
-} from '../place-tiles';
+import { PIN_HANDOVER_ZOOM, PIN_MIN_ZOOM, clusterPins, tileZoom, tilesFor, tileUrl } from '../place-tiles';
 
 /** A square country, one degree on a side, with its corner at (lng, lat). */
 const box = (code: string, lng: number, lat: number, continent = 'Asia'): CountryShape => ({
@@ -243,39 +240,6 @@ describe('the tiles under the pins', () => {
     expect(tileUrl(3, 1, 2)).toBe('https://tile.openstreetmap.org/3/1/2.png');
     expect(tileZoom(2.4)).toBe(2);
     expect(tileZoom(-5)).toBe(0);
-  });
-
-  it('has a second picture of the world, and says whose both are', () => {
-    expect(TILE_LAYERS).toEqual(['map', 'satellite']);
-    // The satellite tiles are NASA's own, asked for without a key and free to
-    // use; the row and the column are the other way round in their address.
-    expect(tileUrl(3, 1, 2, 'satellite')).toBe(
-      'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/3/2/1.jpeg',
-    );
-    for (const layer of TILE_LAYERS) {
-      expect(TILE_SOURCE[layer].credit.length).toBeGreaterThan(4);
-      expect(TILE_SOURCE[layer].url.startsWith('https://')).toBe(true);
-    }
-    expect(TILE_SOURCE.satellite.maxZoom).toBeLessThan(TILE_SOURCE.map.maxZoom);
-  });
-
-  it('stretches the deepest tiles it has rather than going blank', () => {
-    const deep = { lng: 0, lat: 0, zoom: 11 };
-    const map = tilesFor(deep, 800, 600, TILE_SOURCE.map.maxZoom);
-    expect(map.z).toBe(11);
-    expect(map.size).toBe(TILE_SIZE);
-    // The satellite has nothing past 8, so eight is drawn eight times larger.
-    const sky = tilesFor(deep, 800, 600, TILE_SOURCE.satellite.maxZoom);
-    expect(sky.z).toBe(8);
-    expect(sky.size).toBe(TILE_SIZE * 8);
-    // Either way the picture covers the box it was asked for.
-    for (const set of [map, sky]) {
-      const right = Math.max(...set.tiles.map((t) => t.left + set.size));
-      const bottom = Math.max(...set.tiles.map((t) => t.top + set.size));
-      expect(right).toBeGreaterThanOrEqual(800);
-      expect(bottom).toBeGreaterThanOrEqual(600);
-      expect(Math.min(...set.tiles.map((t) => t.left))).toBeLessThanOrEqual(0);
-    }
   });
 
   it('leaves the tile map one step below its floor, to ask for the globe', () => {

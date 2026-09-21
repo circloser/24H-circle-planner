@@ -1102,8 +1102,6 @@ export const ko = {
   'nav.place': '플레이스',
   'place.title': '나의 플레이스',
   'place.subtitle': '가 본 나라와 도시, 기억에 남는 곳을 지도에.',
-  'place.tab.world': '세계',
-  'place.tab.pins': '핀',
   'place.visited': '가 봄',
   'place.lived': '살았음',
   'place.addPin': '핀 추가',
@@ -1171,10 +1169,6 @@ export const ko = {
   'place.sum.wish': '가 보고 싶은 {n}개국',
   // Place — the shortcut rail in the corner of the pin map.
   'place.shortcut': '바로가기',
-  // Place — which picture the pin map is drawn on.
-  'place.layer': '지도 종류',
-  'place.layer.map': '지도',
-  'place.layer.satellite': '위성',
 } as const;
 
 /** Every translation key — derived, never hand-maintained. */

@@ -1100,8 +1100,6 @@ export const es: Record<TKey, string> = {
   'nav.place': 'Lugares',
   'place.title': 'Mis lugares',
   'place.subtitle': 'Los países, las ciudades y los sitios donde has estado, en un mapa.',
-  'place.tab.world': 'Mundo',
-  'place.tab.pins': 'Chinchetas',
   'place.visited': 'Visitado',
   'place.lived': 'Aquí viví',
   'place.addPin': 'Añadir chincheta',
@@ -1169,8 +1167,4 @@ export const es: Record<TKey, string> = {
   'place.sum.wish': '{n} por visitar',
   // Place — the shortcut rail in the corner of the pin map.
   'place.shortcut': 'Acceso directo',
-  // Place — which picture the pin map is drawn on.
-  'place.layer': 'Tipo de mapa',
-  'place.layer.map': 'Mapa',
-  'place.layer.satellite': 'Satélite',
 };

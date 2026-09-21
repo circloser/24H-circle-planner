@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   CITY_DOT_ZOOM, CITY_NAME_ZOOM, GLOBE_MAX_ZOOM, GLOBE_MIN_ZOOM, LAST_CITY_RANK, MAX_STEP_DEG,
-  WORLD_CITY_ZOOM, anyFacing, cityNamedAt, cityRankAt, densify, densifyShape, facing, graticule,
-  project, ringFill, screenOf, turn, unproject, visibleRuns,
+  WORLD_CITY_ZOOM, anyFacing, cityNamedAt, cityRankAt, densify, densifyShape, facing, globeZoomForTile,
+  graticule, project, ringFill, screenOf, turn, unproject, visibleRuns,
 } from '../place-globe';
+import { PIN_MIN_ZOOM, TILE_SIZE } from '../place-tiles';
 import { capture, listOf, moveBetween, type Pointer } from '../gesture';
 import type { CountryShape } from '../place';
 
@@ -143,18 +144,23 @@ describe('filling a country that runs over the edge', () => {
 });
 
 describe('the cities that appear as the globe is brought closer', () => {
-  it('shows none at all until it is well zoomed in', () => {
+  it('shows none at all on a globe held at a distance', () => {
+    // These are scales, said as tile zooms: a whole earth in a window is
+    // about 3, and nothing is written on it.
     expect(cityRankAt(1)).toBe(-1);
-    expect(cityRankAt(CITY_NAME_ZOOM)).toBe(-1);
+    expect(cityRankAt(3.5)).toBe(-1);
     expect(cityRankAt(WORLD_CITY_ZOOM - 0.01)).toBe(-1);
   });
 
   it('starts with the capitals, and opens up from there', () => {
     // Rank 0 is a capital; the first thing the globe is willing to draw.
     expect(cityRankAt(WORLD_CITY_ZOOM)).toBe(0);
-    expect(cityRankAt(3)).toBe(1);
-    expect(cityRankAt(4)).toBe(3);
-    expect(cityRankAt(6)).toBe(7);
+    expect(cityRankAt(5)).toBe(2);
+    expect(cityRankAt(5.5)).toBe(3);
+    expect(cityRankAt(6)).toBe(5);
+    // The crossover into the tile map still leaves the smallest places out —
+    // by then the tiles are about to write every street name anyway.
+    expect(cityRankAt(PIN_MIN_ZOOM)).toBeLessThan(LAST_CITY_RANK);
   });
 
   it('never asks for a rank that is not in the file', () => {
@@ -179,6 +185,42 @@ describe('the cities that appear as the globe is brought closer', () => {
     expect(cityNamedAt(0, 3)).toBe(true);
     expect(cityNamedAt(5, 8)).toBe(true);
     expect(cityNamedAt(8, 8)).toBe(false);
+  });
+});
+
+describe('where the globe gives way to the tiles', () => {
+  /** How many pixels a degree is worth, measured off the drawing itself. */
+  const perDegree = (w: number, h: number, zoom: number) => {
+    const cam = { lng: 0, lat: 0, zoom };
+    const s = screenOf(w, h, zoom);
+    return project(0.5, 0, cam, s).x - project(-0.5, 0, cam, s).x;
+  };
+
+  it('is the very scale a tile map opens at, so nothing appears to move', () => {
+    for (const [w, h] of [[1760, 960], [1200, 800], [390, 700], [820, 1100]]) {
+      const zoom = globeZoomForTile(w, h);
+      // A tile map at PIN_MIN_ZOOM puts this many pixels in a degree.
+      const tiles = (TILE_SIZE * 2 ** PIN_MIN_ZOOM) / 360;
+      expect(perDegree(w, h, zoom)).toBeCloseTo(tiles, 1);
+    }
+  });
+
+  it('is further in on a wide screen than on a narrow one', () => {
+    // The globe is drawn to fit the box, so a phone needs more zoom to reach
+    // the same scale — the number is different, the picture is the same.
+    expect(globeZoomForTile(390, 700)).toBeGreaterThan(globeZoomForTile(1760, 960));
+  });
+
+  it('answers something usable before the box has been measured', () => {
+    expect(globeZoomForTile(0, 0)).toBe(GLOBE_MAX_ZOOM);
+    expect(Number.isFinite(globeZoomForTile(0, 0))).toBe(true);
+  });
+
+  it('leaves room to show a city before handing over', () => {
+    // Whatever the screen, the globe reaches the stop with cities on it.
+    for (const [w, h] of [[1760, 960], [390, 700]]) {
+      expect(cityRankAt(globeZoomForTile(w, h))).toBeGreaterThanOrEqual(0);
+    }
   });
 });
 

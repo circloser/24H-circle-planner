@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { isWished, pointInRing, type CityVisit, type CountryShape, type CountryVisit, type Pin } from '@/lib/place';
 import {
-  CITY_DOT_ZOOM, CITY_NAME_ZOOM, GLOBE_MAX_ZOOM, GLOBE_MIN_ZOOM, anyFacing, cityNamedAt, cityRankAt,
-  densifyShape, facing, graticule, project, ringFill, screenOf, turn, unproject, visibleRuns,
-  type Camera,
+  CITY_DOT_ZOOM, CITY_NAME_ZOOM, GLOBE_MIN_ZOOM, anyFacing, cityNamedAt, cityRankAt,
+  densifyShape, facing, graticule, project, ringFill, screenOf, tileZoomOfGlobe, turn, unproject,
+  visibleRuns, type Camera,
 } from '@/lib/place-globe';
 import type { CityRow } from '@/lib/place-world';
 import { capture, listOf, moveBetween, type Pointer } from '@/lib/gesture';
@@ -22,6 +22,9 @@ export interface GlobeMapProps {
   wished: string;
   selected: string | null;
   selectedPin: string | null;
+  /** As close as the globe goes before the tile map is the better picture.
+   *  A finger may ask for one step past it — that step is the handover. */
+  maxZoom: number;
   camera: Camera;
   onCamera: (camera: Camera) => void;
   onSelect: (code: string | null) => void;
@@ -55,8 +58,10 @@ const PIN_RISE = 9;
  */
 export function GlobeMap({
   shapes, countries, cities, places, pins, homeCityId, visited, wished, selected, selectedPin,
-  camera, onCamera, onSelect, onSelectPin, nameOf,
+  maxZoom, camera, onCamera, onSelect, onSelectPin, nameOf,
 }: GlobeMapProps) {
+  /** One step past the stop, which the view above reads as "now the tiles". */
+  const reach = maxZoom * 1.4;
   const box = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -69,7 +74,10 @@ export function GlobeMap({
   // Sorted by how major a place is, so a frame can stop at the first city
   // past the cut rather than walk all seven thousand of them.
   const ranked = useMemo(() => [...places].sort((a, b) => a.rank - b.rank), [places]);
-  const cut = cityRankAt(camera.zoom);
+  // How much ground a pixel covers, said as the tile zoom that covers the
+  // same: that, not the globe's own number, is what decides which cities are
+  // worth a dot.
+  const cut = size.w ? cityRankAt(tileZoomOfGlobe(camera.zoom, size.w, size.h)) : -1;
   /** Cities of one's own are drawn by the loop below; these are not drawn twice. */
   const mine = useMemo(() => new Set(cities.map((c) => c.id)), [cities]);
 
@@ -309,7 +317,7 @@ export function GlobeMap({
     if (Math.hypot(move.dx, move.dy) > 2 || move.scale !== 1) moved.current = true;
     let next = turn(camera, move.dx, move.dy, screen);
     if (move.scale !== 1) {
-      next = { ...next, zoom: Math.max(GLOBE_MIN_ZOOM, Math.min(GLOBE_MAX_ZOOM, camera.zoom * move.scale)) };
+      next = { ...next, zoom: Math.max(GLOBE_MIN_ZOOM, Math.min(reach, camera.zoom * move.scale)) };
     }
     onCamera(next);
   };
@@ -332,7 +340,7 @@ export function GlobeMap({
     e.preventDefault();
     onCamera({
       ...camera,
-      zoom: Math.max(GLOBE_MIN_ZOOM, Math.min(GLOBE_MAX_ZOOM, camera.zoom * (e.deltaY < 0 ? 1.15 : 1 / 1.15))),
+      zoom: Math.max(GLOBE_MIN_ZOOM, Math.min(reach, camera.zoom * (e.deltaY < 0 ? 1.15 : 1 / 1.15))),
     });
   };
 

@@ -1098,8 +1098,6 @@ export const ja: Record<TKey, string> = {
   'nav.place': 'プレイス',
   'place.title': 'わたしのプレイス',
   'place.subtitle': '行った国と都市、心に残る場所を地図に。',
-  'place.tab.world': '世界',
-  'place.tab.pins': 'ピン',
   'place.visited': '行った',
   'place.lived': '住んでいた',
   'place.addPin': 'ピンを追加',
@@ -1167,8 +1165,4 @@ export const ja: Record<TKey, string> = {
   'place.sum.wish': '行きたい国 {n}',
   // Place — the shortcut rail in the corner of the pin map.
   'place.shortcut': 'ショートカット',
-  // Place — which picture the pin map is drawn on.
-  'place.layer': '地図の種類',
-  'place.layer.map': '地図',
-  'place.layer.satellite': '衛星',
 };

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Crosshair, Globe, House, Loader2, Map, MapPin, Minus, Mountain, Plus, Search, X } from 'lucide-react';
+import { Crosshair, House, Loader2, Minus, Plus, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
@@ -11,13 +11,11 @@ import { requestUpgrade } from '@/lib/pro';
 import { track, trackOnce } from '@/lib/track';
 import {
   FREE_PLACE_PINS, MAX_PLACE_SHORTCUTS, byContinent, canAddPin, countryAt, placeSummary,
-  shortcutPins, type CountryShape, type PinCategory,
+  shortcutPins, type CountryShape,
 } from '@/lib/place';
 import { countryName, loadCities, loadWorld, searchCountries, type CityRow } from '@/lib/place-world';
-import {
-  PIN_MAX_ZOOM, PIN_MIN_ZOOM, TILE_LAYERS, type Camera, type TileLayer,
-} from '@/lib/place-tiles';
-import { GLOBE_MAX_ZOOM, GLOBE_MIN_ZOOM, type Camera as GlobeCamera } from '@/lib/place-globe';
+import { PIN_MAX_ZOOM, PIN_MIN_ZOOM, type Camera } from '@/lib/place-tiles';
+import { GLOBE_MIN_ZOOM, globeZoomForTile, type Camera as GlobeCamera } from '@/lib/place-globe';
 import { usePlace, PLACE_UNDO_MS } from '@/hooks/usePlace';
 import { PLACE_EXPORT_EVENT } from '@/lib/place-export';
 import { readRelationPeople } from '@/lib/place-relation';
@@ -30,13 +28,16 @@ import { PlaceExportDialog } from './PlaceExport';
 import { PIN_ICON, PIN_LABEL, continentName, visitedColor, wishedColor } from './palette';
 
 const LAST_TAB = '24h-place-tab';
-const LAST_LAYER = '24h-place-layer';
 
-/** Where the globe hands the view over to the tiles, and where the tiles hand
- *  it back. Each is the far end of the other's range, so the two never argue
- *  about who should be showing. */
-const PIN_FROM_GLOBE = 9;
-const GLOBE_FROM_PIN = 3;
+/**
+ * The one place the two views meet.
+ *
+ * The globe stops where a tile map at PIN_MIN_ZOOM begins, and the tile map
+ * stops where the globe can take over — the same scale from both sides, so
+ * crossing it is a change of drawing rather than a jump of distance. Which of
+ * them is showing is therefore only ever a matter of how far in you are.
+ */
+const GLOBE_FROM_PIN = (w: number, h: number) => globeZoomForTile(w, h);
 
 /** A floating control over the map, in the page's own colours. */
 const FLOAT = 'pointer-events-auto rounded-full border border-border bg-surface/92 shadow-sm backdrop-blur';
@@ -68,13 +69,6 @@ export function PlaceView() {
       return 'world';
     }
   });
-  const [layer, setLayer] = useState<TileLayer>(() => {
-    try {
-      return localStorage.getItem(LAST_LAYER) === 'satellite' ? 'satellite' : 'map';
-    } catch {
-      return 'map';
-    }
-  });
   const [shapes, setShapes] = useState<readonly CountryShape[]>([]);
   const [cityRows, setCityRows] = useState<readonly CityRow[]>([]);
   const [country, setCountry] = useState<string | null>(null);
@@ -83,7 +77,6 @@ export function PlaceView() {
   const [exporting, setExporting] = useState(false);
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
-  const [only, setOnly] = useState<Set<PinCategory>>(() => new Set());
   // The globe opens looking at home, when there is a home to look at. The
   // record is already loaded by the time this runs, so it is decided once.
   const [globe, setGlobe] = useState<GlobeCamera>(() => {
@@ -98,13 +91,31 @@ export function PlaceView() {
     const at = api.data.home?.cityId
       ? api.data.cities.find((c) => c.id === api.data.home!.cityId)
       : undefined;
-    return { lng: at?.lng ?? 10, lat: at?.lat ?? 25, zoom: at ? 9 : 5 };
+    return { lng: at?.lng ?? 10, lat: at?.lat ?? 25, zoom: at ? 9 : PIN_MIN_ZOOM };
   });
   const [here, setHere] = useState<{ lng: number; lat: number } | null>(null);
   const [locating, setLocating] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(() => new Set());
   const [askedLife, setAskedLife] = useState(false);
   const [homeAsked, setHomeAsked] = useState(false);
+
+  // How big the map is drawn, which is what decides the scale the globe and
+  // the tiles meet at.
+  const box = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ w: 0, h: 0 });
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      setSize({ w: Math.round(r.width), h: Math.round(r.height) });
+    };
+    measure();
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+    ro?.observe(el);
+    return () => ro?.disconnect();
+  }, []);
+  const globeStop = GLOBE_FROM_PIN(size.w, size.h);
 
   useEffect(() => { trackOnce('place_open'); }, []);
   useEffect(() => {
@@ -114,9 +125,7 @@ export function PlaceView() {
   useEffect(() => {
     try { localStorage.setItem(LAST_TAB, tab); } catch { /* storage unavailable */ }
   }, [tab]);
-  useEffect(() => {
-    try { localStorage.setItem(LAST_LAYER, layer); } catch { /* storage unavailable */ }
-  }, [layer]);
+
 
   // The world and the city list ship with the app; both are fetched once.
   useEffect(() => {
@@ -139,10 +148,7 @@ export function PlaceView() {
   const summary = placeSummary(data, shapes);
   const shape = country ? shapes.find((s) => s.code === country) ?? null : null;
   const pin = pinId ? data.pins.find((p) => p.id === pinId) ?? null : null;
-  const pins = useMemo(
-    () => (only.size ? data.pins.filter((p) => only.has(p.category)) : data.pins),
-    [data.pins, only],
-  );
+  const pins = data.pins;
   const found = useMemo(
     () => (query.trim() ? searchCountries(shapes, query, lang) : []),
     [shapes, query, lang],
@@ -220,19 +226,19 @@ export function PlaceView() {
    * arrives comfortably inside the other's, so they never bounce.
    */
   const toPins = (at: { lng: number; lat: number }) => {
-    setCamera({ ...at, zoom: PIN_FROM_GLOBE });
+    setCamera({ ...at, zoom: PIN_MIN_ZOOM });
     setCountry(null);
     setTab('pins');
   };
   const toGlobe = (at: { lng: number; lat: number }) => {
-    setGlobe({ ...at, zoom: GLOBE_FROM_PIN });
+    setGlobe({ ...at, zoom: globeStop });
     setPinId(null);
     setTab('world');
   };
 
   /** The globe's camera, unless it has been zoomed in past its own end. */
   const onGlobeCamera = (next: GlobeCamera) => {
-    if (next.zoom > GLOBE_MAX_ZOOM) return toPins(next);
+    if (next.zoom > globeStop) return toPins(next);
     setGlobe(next);
   };
   /** The tile map's camera, unless it has been zoomed out past its own end. */
@@ -243,9 +249,12 @@ export function PlaceView() {
 
   const zoomBy = (by: number) => {
     if (tab === 'world') {
+      // The last step in lands exactly on the stop, so the globe is left at
+      // the tile map's own scale; the step after that is the step across, and
+      // nothing appears to move as the drawing changes.
+      if (by > 0 && globe.zoom >= globeStop - 0.001) return toPins(globe);
       const next = globe.zoom * (by > 0 ? 1.4 : 1 / 1.4);
-      if (next > GLOBE_MAX_ZOOM) return toPins(globe);
-      setGlobe((g) => ({ ...g, zoom: Math.max(GLOBE_MIN_ZOOM, next) }));
+      setGlobe((g) => ({ ...g, zoom: Math.max(GLOBE_MIN_ZOOM, Math.min(globeStop, next)) }));
     } else {
       const next = camera.zoom + by;
       if (next < PIN_MIN_ZOOM) return toGlobe(camera);
@@ -260,7 +269,7 @@ export function PlaceView() {
       <h2 className="sr-only">{t('place.title')}</h2>
 
       {/* The map is the page. */}
-      <div className="absolute inset-0" inert={api.readOnly || undefined}>
+      <div ref={box} className="absolute inset-0" inert={api.readOnly || undefined}>
         {tab === 'world' ? (
           <GlobeMap
             shapes={shapes}
@@ -273,6 +282,7 @@ export function PlaceView() {
             wished={wished}
             selected={country}
             selectedPin={pinId}
+            maxZoom={globeStop}
             camera={globe}
             onCamera={onGlobeCamera}
             onSelect={(code) => { setCountry(code); setPinId(null); }}
@@ -282,7 +292,6 @@ export function PlaceView() {
         ) : (
           <PinMap
             pins={pins}
-            layer={layer}
             camera={camera}
             onCamera={onPinCamera}
             selected={pinId}
@@ -295,22 +304,9 @@ export function PlaceView() {
 
       {/* Everything else floats over it. */}
       <div className="pointer-events-none absolute inset-0 flex flex-col p-2 sm:p-3">
-        {/* The two views are the one thing on this page that is always there,
-            so they sit in the middle at the top and nothing shares the line. */}
+        {/* There is no view to choose any more — how far in you are chooses
+            it — so the top of the map carries only the zoom and the search. */}
         <div className="relative flex min-h-10 items-start">
-          <div role="tablist" aria-label={t('place.title')}
-            className={`${FLOAT} absolute left-1/2 top-0 inline-flex -translate-x-1/2 p-0.5`}>
-            {(['world', 'pins'] as const).map((k) => (
-              <button key={k} type="button" role="tab" aria-selected={tab === k} data-place-tab={k}
-                onClick={() => { setTab(k); setCountry(null); setPinId(null); }}
-                className={`pointer-events-auto inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 text-[13px] ${
-                  tab === k ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
-                {k === 'world' ? <Globe aria-hidden className="h-3.5 w-3.5" /> : <MapPin aria-hidden className="h-3.5 w-3.5" />}
-                {t(k === 'world' ? 'place.tab.world' : 'place.tab.pins')}
-              </button>
-            ))}
-          </div>
-
           <div className="ml-auto flex items-start gap-2">
             {tab === 'world' && (searching ? (
               <span className={`${FLOAT} inline-flex items-center gap-1 px-1`}>
@@ -345,35 +341,6 @@ export function PlaceView() {
           </div>
         </div>
 
-        {tab === 'pins' && (
-          <div className="mt-2 flex flex-wrap items-start gap-2">
-            <Button size="sm" className="pointer-events-auto gap-1.5 rounded-full" data-place-add
-              onClick={() => dropAt(camera.lng, camera.lat)}>
-              <Plus aria-hidden className="h-4 w-4" />
-              {t('place.addPin')}
-            </Button>
-            <div role="group" aria-label={t('place.layer')} className={`${FLOAT} inline-flex p-0.5`}>
-              {TILE_LAYERS.map((k) => {
-                const Icon = k === 'map' ? Map : Mountain;
-                return (
-                  <button key={k} type="button" data-place-layer={k} aria-pressed={layer === k}
-                    onClick={() => setLayer(k)}
-                    className={`pointer-events-auto inline-flex min-h-8 items-center gap-1.5 rounded-full px-2.5 text-[12px] ${
-                      layer === k ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
-                    <Icon aria-hidden className="h-3.5 w-3.5" />
-                    {t(k === 'map' ? 'place.layer.map' : 'place.layer.satellite')}
-                  </button>
-                );
-              })}
-            </div>
-            <Button size="sm" variant="outline" className="pointer-events-auto gap-1.5 rounded-full bg-surface/92"
-              data-place-locate disabled={locating} onClick={locate}>
-              {locating ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> : <Crosshair aria-hidden className="h-4 w-4" />}
-              {t('place.locate')}
-            </Button>
-          </div>
-        )}
-
         {/* What was searched for, under the box that searched for it. */}
         {found.length > 0 && (
           <ul className={`${FLOAT} mt-2 ml-auto flex max-w-[320px] flex-wrap justify-end gap-1 p-1.5`} data-place-found>
@@ -386,33 +353,6 @@ export function PlaceView() {
                 </button>
               </li>
             ))}
-          </ul>
-        )}
-
-        {tab === 'pins' && data.pins.length > 0 && (
-          <ul className="mt-2 flex flex-wrap gap-1.5">
-            {(Object.keys(PIN_LABEL) as PinCategory[]).map((c) => {
-              const on = only.has(c);
-              const Icon = PIN_ICON[c];
-              const n = data.pins.filter((p) => p.category === c).length;
-              if (!n && !on) return null;
-              return (
-                <li key={c}>
-                  <button type="button" data-place-filter={c} aria-pressed={on}
-                    onClick={() => setOnly((was) => {
-                      const next = new Set(was);
-                      if (!next.delete(c)) next.add(c);
-                      return next;
-                    })}
-                    className={`${FLOAT} inline-flex min-h-8 items-center gap-1.5 px-2.5 text-[12px] ${
-                      on ? 'text-foreground' : 'text-muted-foreground'}`}>
-                    <Icon aria-hidden className="h-3.5 w-3.5" />
-                    {t(PIN_LABEL[c])}
-                    <span className="tabular-nums">{n}</span>
-                  </button>
-                </li>
-              );
-            })}
           </ul>
         )}
 
@@ -506,36 +446,48 @@ export function PlaceView() {
         </div>
       </div>
 
-      {/* The shortcuts: home and the starred pins, in the corner a thumb
-          reaches, over the map and under the card. */}
-      {tab === 'pins' && (homeCity || starred.length > 0) && (
-        <ul data-place-rail
-          className="pointer-events-auto absolute bottom-7 right-2 grid max-w-[104px] grid-cols-2 justify-items-end gap-1.5 sm:bottom-8 sm:right-3">
-          {homeCity && (
-            <li>
-              <button type="button" data-place-shortcut="home" title={homeCity.name}
-                aria-label={`${t('place.shortcut')} · ${homeCity.name}`}
-                className={`${FLOAT} grid h-11 w-11 place-items-center text-foreground hover:bg-accent/20`}
-                onClick={() => goTo(homeCity.lng, homeCity.lat)}>
-                <House aria-hidden className="h-4 w-4" />
-              </button>
-            </li>
+      {/* The whole of the pin map's own furniture, in the corner a thumb
+          reaches: where I am, and the places worth one press. Nothing else —
+          how far in you are is what decides globe or tiles, a tap on the map
+          is what drops a pin, and neither of those needs a button. */}
+      {tab === 'pins' && (
+        <div className="pointer-events-none absolute bottom-7 right-2 flex flex-col items-end gap-1.5 sm:bottom-8 sm:right-3">
+          {(homeCity || starred.length > 0) && (
+            <ul data-place-rail className="grid max-w-[104px] grid-cols-2 justify-items-end gap-1.5">
+              {homeCity && (
+                <li>
+                  <button type="button" data-place-shortcut="home" title={homeCity.name}
+                    aria-label={`${t('place.shortcut')} · ${homeCity.name}`}
+                    className={`${FLOAT} grid h-11 w-11 place-items-center text-foreground hover:bg-accent/20`}
+                    onClick={() => goTo(homeCity.lng, homeCity.lat)}>
+                    <House aria-hidden className="h-4 w-4" />
+                  </button>
+                </li>
+              )}
+              {starred.map((p) => {
+                const Icon = PIN_ICON[p.category];
+                return (
+                  <li key={p.id}>
+                    <button type="button" data-place-shortcut={p.id} title={p.name}
+                      aria-label={`${t('place.shortcut')} · ${p.name}`}
+                      className={`${FLOAT} grid h-11 w-11 place-items-center text-foreground hover:bg-accent/20 ${
+                        pinId === p.id ? 'ring-2 ring-primary' : ''}`}
+                      onClick={() => goTo(p.lng, p.lat, p.id)}>
+                      <Icon aria-hidden className="h-4 w-4" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           )}
-          {starred.map((p) => {
-            const Icon = PIN_ICON[p.category];
-            return (
-              <li key={p.id}>
-                <button type="button" data-place-shortcut={p.id} title={p.name}
-                  aria-label={`${t('place.shortcut')} · ${p.name}`}
-                  className={`${FLOAT} grid h-11 w-11 place-items-center text-foreground hover:bg-accent/20 ${
-                    pinId === p.id ? 'ring-2 ring-primary' : ''}`}
-                  onClick={() => goTo(p.lng, p.lat, p.id)}>
-                  <Icon aria-hidden className="h-4 w-4" />
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+          <button type="button" data-place-locate disabled={locating} onClick={locate}
+            aria-label={t('place.locate')} title={t('place.locate')}
+            className={`${FLOAT} grid h-11 w-11 place-items-center text-foreground hover:bg-accent/20 disabled:opacity-60`}>
+            {locating
+              ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" />
+              : <Crosshair aria-hidden className="h-4 w-4" />}
+          </button>
+        </div>
       )}
 
       {/* The card for whatever is chosen: a column on the right of a wide

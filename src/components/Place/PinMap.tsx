@@ -3,16 +3,14 @@ import { useTranslation } from '@/hooks/usePreferences';
 import type { Pin } from '@/lib/place';
 import { fromTile, toTile } from '@/lib/place-world';
 import {
-  PIN_HANDOVER_ZOOM, PIN_MAX_ZOOM, TILE_SIZE, TILE_SOURCE, clusterPins, tileUrl,
-  tileZoom, tilesFor, type Camera, type TileLayer,
+  PIN_HANDOVER_ZOOM, PIN_MAX_ZOOM, TILE_CREDIT, TILE_SIZE, clusterPins, tileUrl, tileZoom,
+  tilesFor, type Camera,
 } from '@/lib/place-tiles';
 import { capture, listOf, moveBetween, type Pointer } from '@/lib/gesture';
 import { PIN_ICON } from './palette';
 
 export interface PinMapProps {
   pins: readonly Pin[];
-  /** Streets, or the earth from orbit. */
-  layer: TileLayer;
   camera: Camera;
   onCamera: (camera: Camera) => void;
   selected: string | null;
@@ -33,7 +31,7 @@ export interface PinMapProps {
  *
  * A tap on the map puts a pin there. Two fingers pinch; one finger drags.
  */
-export function PinMap({ pins, layer, camera, onCamera, selected, onSelect, onDropAt, here }: PinMapProps) {
+export function PinMap({ pins, camera, onCamera, selected, onSelect, onDropAt, here }: PinMapProps) {
   const { t } = useTranslation();
   const box = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -84,33 +82,33 @@ export function PinMap({ pins, layer, camera, onCamera, selected, onSelect, onDr
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, size.w, size.h);
 
-    const { tiles, size: side } = tilesFor(camera, size.w, size.h, TILE_SOURCE[layer].maxZoom);
+    const { tiles } = tilesFor(camera, size.w, size.h);
     let missing = 0;
     for (const tile of tiles) {
-      const key = `${layer}/${tile.z}/${tile.x}/${tile.y}`;
+      const key = `${tile.z}/${tile.x}/${tile.y}`;
       let img = images.current.get(key);
       if (!img) {
         img = new Image();
         img.crossOrigin = 'anonymous';
         img.onload = () => setPainted((n) => n + 1);
         img.onerror = () => setPainted((n) => n + 1);
-        img.src = tileUrl(tile.z, tile.x, tile.y, layer);
+        img.src = tileUrl(tile.z, tile.x, tile.y);
         images.current.set(key, img);
       }
       if (img.complete && img.naturalWidth > 0) {
-        ctx.drawImage(img, tile.left, tile.top, side, side);
+        ctx.drawImage(img, tile.left, tile.top, TILE_SIZE, TILE_SIZE);
       } else {
         missing += 1;
         // A faint grid stands in until (or instead of) the tile.
         ctx.strokeStyle = 'currentColor';
         ctx.globalAlpha = 0.08;
-        ctx.strokeRect(tile.left, tile.top, side, side);
+        ctx.strokeRect(tile.left, tile.top, TILE_SIZE, TILE_SIZE);
         ctx.globalAlpha = 1;
       }
     }
     setOffline(missing === tiles.length && tiles.length > 0
       && [...images.current.values()].every((i) => !i.complete || i.naturalWidth === 0));
-  }, [camera, size, painted, layer]);
+  }, [camera, size, painted]);
 
   const clusters = useMemo(() => {
     if (!size.w) return [];
@@ -225,9 +223,9 @@ export function PinMap({ pins, layer, camera, onCamera, selected, onSelect, onDr
         </p>
       )}
 
-      {/* Whoever drew these tiles is named here, always. */}
-      <p className="pointer-events-none absolute bottom-1 right-2 text-[10px] text-muted-foreground" data-place-attribution>
-        {TILE_SOURCE[layer].credit}
+      {/* OpenStreetMap asks for this, and it is theirs to ask. */}
+      <p className="pointer-events-none absolute bottom-1 left-2 text-[10px] text-muted-foreground" data-place-attribution>
+        {TILE_CREDIT}
       </p>
     </div>
   );

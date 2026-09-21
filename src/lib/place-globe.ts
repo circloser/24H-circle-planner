@@ -23,6 +23,7 @@
  *    they sit either side of the date line.
  */
 import type { CountryShape } from './place';
+import { PIN_MIN_ZOOM, TILE_SIZE } from './place-tiles';
 
 const RAD = Math.PI / 180;
 
@@ -42,33 +43,43 @@ export interface Screen {
   r: number;
 }
 
-/** How far in and out the globe may be turned. */
+/** How far out the globe may be turned. How far IN is not a number but a
+ *  scale — see globeZoomForTile — because past a certain closeness the tile
+ *  map is the better picture, and the two should meet without a jump. */
 export const GLOBE_MIN_ZOOM = 0.9;
-export const GLOBE_MAX_ZOOM = 8;
+/** A stop that should never be reached, in case a box is measured as nothing
+ *  and the scale below cannot be worked out. */
+export const GLOBE_MAX_ZOOM = 24;
 /** The cities of one's own life appear at this zoom, and are named at the
  *  next one. */
 export const CITY_DOT_ZOOM = 1.5;
 export const CITY_NAME_ZOOM = 2.4;
-/** Past this, the world's own cities start appearing under the countries —
- *  the capitals first, and more of them the closer the globe is brought. */
-export const WORLD_CITY_ZOOM = 2.5;
-/** How many ranks of city open up for each step of zoom. */
-export const RANK_PER_ZOOM = 2;
+/** Past this much scale — said as the tile zoom that shows the same detail —
+ *  the world's own cities start appearing under the countries: the capitals
+ *  first, and more of them the closer the globe is brought. */
+export const WORLD_CITY_ZOOM = 4.3;
+/** How many ranks of city open up for each doubling of scale. */
+export const RANK_PER_ZOOM = 3;
 /** The least important rank there is. */
 export const LAST_CITY_RANK = 10;
 
 /**
- * How far down the list of cities to go at this zoom: -1 for none at all,
+ * How far down the list of cities to go at this scale: -1 for none at all,
  * 0 for the capitals, and up to LAST_CITY_RANK for every town in the file.
+ *
+ * The argument is a TILE zoom, not the globe's own — see tileZoomOfGlobe.
+ * Scale is the honest measure: the same globe zoom is a wider view on a
+ * phone than on a desk, and what belongs on the map is decided by how much
+ * ground a pixel covers, not by a number in the state.
  *
  * Opening it a rank at a time is what keeps the globe legible. All seven
  * thousand at once is a grey smear; the capitals alone, on a globe held at
  * arm's length, is a map.
  */
-export const cityRankAt = (zoom: number): number => (
-  zoom < WORLD_CITY_ZOOM
+export const cityRankAt = (tileZ: number): number => (
+  tileZ < WORLD_CITY_ZOOM
     ? -1
-    : Math.min(LAST_CITY_RANK, Math.floor((zoom - WORLD_CITY_ZOOM) * RANK_PER_ZOOM))
+    : Math.min(LAST_CITY_RANK, Math.floor((tileZ - WORLD_CITY_ZOOM) * RANK_PER_ZOOM))
 );
 
 /** A city is named once it is well inside the cut, never as it arrives. */
@@ -83,6 +94,28 @@ export const screenOf = (w: number, h: number, zoom: number): Screen => ({
   cy: h / 2,
   r: (Math.min(w, h) / 2) * 0.92 * zoom,
 });
+
+/**
+ * The zoom at which the globe is drawn to the same scale as a tile map at
+ * `tileZ` — the point where one can become the other and nothing appears to
+ * move.
+ *
+ * The globe's radius in pixels IS its pixels per radian (an orthographic
+ * projection is flat enough near the middle for that to hold), and a tile map
+ * at zoom z puts 256·2^z pixels around the whole 2π, so the two scales can
+ * simply be set equal. It depends on the box because the globe is drawn to
+ * fit it: the same zoom is a smaller globe on a phone, and a smaller globe at
+ * the same zoom is a wider view.
+ */
+export function globeZoomForTile(w: number, h: number, tileZ = PIN_MIN_ZOOM): number {
+  const perRadian = (TILE_SIZE * 2 ** tileZ) / (Math.PI * 2);
+  const unit = screenOf(w, h, 1).r;
+  return unit > 0 ? perRadian / unit : GLOBE_MAX_ZOOM;
+}
+
+/** The other way round: what tile zoom this globe is drawn at the scale of. */
+export const tileZoomOfGlobe = (zoom: number, w: number, h: number): number =>
+  PIN_MIN_ZOOM + Math.log2(zoom / globeZoomForTile(w, h));
 
 export interface Point { x: number; y: number; front: boolean }
 

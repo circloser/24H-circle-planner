@@ -1096,8 +1096,6 @@ export const zh: Record<TKey, string> = {
   'nav.place': '地点',
   'place.title': '我的地点',
   'place.subtitle': '去过的国家、城市和难忘的地方，都在一张地图上。',
-  'place.tab.world': '世界',
-  'place.tab.pins': '图钉',
   'place.visited': '去过',
   'place.lived': '住过',
   'place.addPin': '添加图钉',
@@ -1165,8 +1163,4 @@ export const zh: Record<TKey, string> = {
   'place.sum.wish': '想去 {n} 个国家',
   // Place — the shortcut rail in the corner of the pin map.
   'place.shortcut': '快捷方式',
-  // Place — which picture the pin map is drawn on.
-  'place.layer': '地图类型',
-  'place.layer.map': '地图',
-  'place.layer.satellite': '卫星',
 };
