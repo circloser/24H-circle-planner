@@ -8,7 +8,7 @@ import { requestUpgrade } from '@/lib/pro';
 import { deletePhoto, newPhotoId, savePhoto, shrinkPhoto } from '@/lib/calendar-photos';
 import {
   MAX_DESCRIPTION, MAX_NAME, MAX_NOTE, MAX_TITLE, PICKABLE_CATEGORIES,
-  dateFrom, isFullDate, partsFrom, sortKey, type DateParts, type FamilyMember, type LifeCategory, type LifeProfile, type Milestone, type Relation,
+  dateFrom, isFullDate, partsFrom, sortKey, type DateParts, type FamilyMember, type LifeCategory, type LifeLine, type LifeProfile, type Milestone, type Relation,
 } from '@/lib/life';
 import { todayKey } from '@/lib/calendar-grid';
 import type { MemberDraft, MilestoneDraft } from '@/hooks/useLife';
@@ -295,6 +295,70 @@ export function MilestoneDialog({ target, pro, colors, onSave, onDelete, onClose
 }
 
 export type MemberTarget = { mode: 'add'; relation: Relation } | { mode: 'edit'; f: FamilyMember };
+
+/** Adding or editing somebody else's line: a name and a birthday, no more. */
+export type LineTarget = { mode: 'add' } | { mode: 'edit'; line: LifeLine };
+
+export function LineDialog({ target, onSave, onDelete, onClose }: {
+  target: LineTarget | null;
+  onSave: (name: string, birthDate: string, id?: string) => void;
+  onDelete: (id: string) => void;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const base = target?.mode === 'edit' ? target.line : null;
+  const [name, setName] = useState('');
+  const [parts, setParts] = useState<DateParts>({ y: '', m: '', d: '' });
+  // Fill the form each time the dialog opens on somebody.
+  useEffect(() => {
+    if (!target) return;
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setName(base?.name ?? '');
+    setParts(partsFrom(base?.birthDate ?? ''));
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [target, base]);
+
+  const birth = dateFrom(parts);
+  const valid = !!name.trim() && !!birth;
+  return (
+    <Dialog open={target !== null} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-sm" data-life-line-dialog>
+        <DialogHeader>
+          <DialogTitle>{t('life.parallel.add')}</DialogTitle>
+          <DialogDescription className="sr-only">{t('life.parallel.none')}</DialogDescription>
+        </DialogHeader>
+        <form className="flex flex-col gap-4" onSubmit={(e) => {
+          e.preventDefault();
+          if (!valid || !birth) return;
+          onSave(name.trim().slice(0, MAX_NAME), birth, base?.id);
+        }}>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-foreground">{t('life.parallel.name')}</span>
+            <Input autoFocus data-life-line-name value={name} maxLength={MAX_NAME}
+              onChange={(e) => setName(e.target.value)} />
+          </label>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-foreground">{t('life.parallel.birth')}</span>
+            <LifeDateInput label={t('life.parallel.birth')} value={parts} onChange={setParts} idPrefix="life-line-birth" />
+          </div>
+          <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
+            {base && (
+              <Button type="button" variant="ghost" className="mr-auto text-destructive"
+                data-life-line-delete onClick={() => onDelete(base.id)}>
+                {t('life.parallel.remove')}
+              </Button>
+            )}
+            <Button type="button" variant="outline" onClick={onClose}>{t('common.cancel')}</Button>
+            <Button type="submit" disabled={!valid} data-life-line-save
+              className="bg-primary text-primary-foreground">
+              {t('common.save')}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export function FamilyDialog({ target, pro, onSave, onDelete, onClose }: {
   target: MemberTarget | null;

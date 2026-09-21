@@ -1167,4 +1167,20 @@ export const zh: Record<TKey, string> = {
   'place.filter': '图钉类型',
   'place.filterAll': '全部',
   'place.heat': '图钉热力图',
+  // Place — looking a place up in the wider world, by name.
+  'place.searchOnline': '在网上查找“{q}”',
+  'place.searchCredit': '搜索结果 © OpenStreetMap 贡献者',
+  // Life — several lives read side by side.
+  'life.parallel.title': '并排查看',
+  'life.parallel.who': '同时显示',
+  'life.parallel.add': '添加一个人',
+  'life.parallel.someone': '未命名',
+  'life.parallel.addMoment': '为这个人添加事件',
+  'life.parallel.none': '把别人的人生放在你的旁边，按同一条年份来读。',
+  'life.parallel.limit': '免费版可并排两个人生，Pro 可并排十个。',
+  'life.parallel.name': '姓名',
+  'life.parallel.birth': '出生日期',
+  'life.parallel.remove': '移除这条线',
+  'life.parallel.open': '打开并排查看',
+  'life.parallel.close': '关闭并排查看',
 };

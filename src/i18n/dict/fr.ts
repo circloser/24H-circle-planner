@@ -1169,4 +1169,20 @@ export const fr: Record<TKey, string> = {
   'place.filter': "Types d'épingle",
   'place.filterAll': 'Toutes',
   'place.heat': 'Carte de chaleur',
+  // Place — looking a place up in the wider world, by name.
+  'place.searchOnline': 'Chercher « {q} » en ligne',
+  'place.searchCredit': 'Résultats © les contributeurs d’OpenStreetMap',
+  // Life — several lives read side by side.
+  'life.parallel.title': 'Côte à côte',
+  'life.parallel.who': 'Sur le graphique',
+  'life.parallel.add': 'Ajouter quelqu’un',
+  'life.parallel.someone': 'Sans nom',
+  'life.parallel.addMoment': 'Ajouter un moment à cette vie',
+  'life.parallel.none': 'Placez une autre vie à côté de la vôtre et lisez les mêmes années sur les deux.',
+  'life.parallel.limit': 'Deux vies côte à côte en gratuit. Pro en tient dix.',
+  'life.parallel.name': 'Nom',
+  'life.parallel.birth': 'Naissance',
+  'life.parallel.remove': 'Retirer cette ligne',
+  'life.parallel.open': 'Ouvrir côte à côte',
+  'life.parallel.close': 'Fermer côte à côte',
 };

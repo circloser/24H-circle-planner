@@ -1169,4 +1169,20 @@ export const ru: Record<TKey, string> = {
   'place.filter': 'Виды меток',
   'place.filterAll': 'Все',
   'place.heat': 'Тепловая карта',
+  // Place — looking a place up in the wider world, by name.
+  'place.searchOnline': 'Найти «{q}» в интернете',
+  'place.searchCredit': 'Результаты © участники OpenStreetMap',
+  // Life — several lives read side by side.
+  'life.parallel.title': 'Рядом',
+  'life.parallel.who': 'На графике',
+  'life.parallel.add': 'Добавить человека',
+  'life.parallel.someone': 'Без имени',
+  'life.parallel.addMoment': 'Добавить событие в эту жизнь',
+  'life.parallel.none': 'Поставьте чужую жизнь рядом со своей и читайте одни и те же годы по обеим.',
+  'life.parallel.limit': 'Бесплатно — две жизни рядом. В Pro — десять.',
+  'life.parallel.name': 'Имя',
+  'life.parallel.birth': 'Дата рождения',
+  'life.parallel.remove': 'Убрать эту линию',
+  'life.parallel.open': 'Открыть режим «рядом»',
+  'life.parallel.close': 'Закрыть режим «рядом»',
 };

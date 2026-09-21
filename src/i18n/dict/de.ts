@@ -1172,4 +1172,20 @@ export const de: Record<TKey, string> = {
   'place.filter': 'Art der Nadel',
   'place.filterAll': 'Alle',
   'place.heat': 'Nadel-Heatmap',
+  // Place — looking a place up in the wider world, by name.
+  'place.searchOnline': '„{q}“ online suchen',
+  'place.searchCredit': 'Suchergebnisse © OpenStreetMap-Mitwirkende',
+  // Life — several lives read side by side.
+  'life.parallel.title': 'Nebeneinander',
+  'life.parallel.who': 'Im Diagramm',
+  'life.parallel.add': 'Person hinzufügen',
+  'life.parallel.someone': 'Ohne Namen',
+  'life.parallel.addMoment': 'Diesem Leben einen Moment hinzufügen',
+  'life.parallel.none': 'Stelle ein anderes Leben neben deines und lies dieselben Jahre über beide hinweg.',
+  'life.parallel.limit': 'Zwei Leben nebeneinander im Gratisplan. Pro fasst zehn.',
+  'life.parallel.name': 'Name',
+  'life.parallel.birth': 'Geboren',
+  'life.parallel.remove': 'Diese Linie entfernen',
+  'life.parallel.open': 'Nebeneinander öffnen',
+  'life.parallel.close': 'Nebeneinander schließen',
 };

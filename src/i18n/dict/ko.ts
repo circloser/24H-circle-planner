@@ -1173,6 +1173,22 @@ export const ko = {
   'place.filter': '핀 종류',
   'place.filterAll': '전체',
   'place.heat': '핀 히트맵',
+  // Place — looking a place up in the wider world, by name.
+  'place.searchOnline': '인터넷에서 ‘{q}’ 찾기',
+  'place.searchCredit': '검색 결과 © OpenStreetMap 기여자',
+  // Life — several lives read side by side.
+  'life.parallel.title': '나란히 보기',
+  'life.parallel.who': '함께 보는 사람',
+  'life.parallel.add': '사람 추가',
+  'life.parallel.someone': '이름 없음',
+  'life.parallel.addMoment': '이 사람의 사건 추가',
+  'life.parallel.none': '다른 사람의 인생을 옆에 놓고 같은 해를 나란히 볼 수 있어요.',
+  'life.parallel.limit': '무료로는 두 사람까지 나란히 볼 수 있어요. Pro에서는 열 명까지.',
+  'life.parallel.name': '이름',
+  'life.parallel.birth': '태어난 날',
+  'life.parallel.remove': '이 사람 지우기',
+  'life.parallel.open': '나란히 보기 열기',
+  'life.parallel.close': '나란히 보기 닫기',
 } as const;
 
 /** Every translation key — derived, never hand-maintained. */

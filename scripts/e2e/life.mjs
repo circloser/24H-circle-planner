@@ -373,6 +373,72 @@ export async function run() {
     pass('…and all 30 moments are still there', (await count('[data-life-moment]')) === 30 && (await stored()).milestones.length === 30);
     pass('the backup banner asks, with 10+ moments and no backup', (await count('[data-life-backup-banner]')) === 1);
 
+    // 15b. Lives side by side: mine, and one other on the free plan.
+    await page.locator('[data-life-parallel-toggle]').scrollIntoViewIfNeeded();
+    await page.locator('[data-life-parallel-toggle]').click();
+    await wait(600);
+    pass('the line can be read beside other lives', (await count('[data-life-parallel]')) === 1);
+    pass('…and mine is on it by itself to start with',
+      (await count('[data-life-lane]')) === 1 && (await count('[data-life-lane="me"]')) === 1);
+    await page.locator('[data-life-parallel] [data-life-line-add]').click();
+    await wait(500);
+    await page.locator('[data-life-line-name]').fill('이정숙');
+    await page.locator('#life-line-birth-y').fill('1958');
+    await page.locator('#life-line-birth-m').selectOption('3');
+    await page.locator('#life-line-birth-d').selectOption('2');
+    await page.locator('[data-life-line-save]').click();
+    await wait(700);
+    const withLine = await stored();
+    pass('somebody else can be put beside it',
+      withLine.others?.length === 1 && withLine.others[0].name === '이정숙',
+      JSON.stringify(withLine.others));
+    pass('…and they get a lane of their own',
+      (await count('[data-life-lane]')) === 2 && (await count(`[data-life-lane="${withLine.others[0].id}"]`)) === 1);
+
+    // The whole point: one year is one height, whoever is being read.
+    pass('a year is at the same height on every line', await page.evaluate(() => {
+      const years = [...document.querySelectorAll('[data-life-parallel-year]')];
+      const y2000 = years.find((e) => e.textContent.trim() === '2000');
+      const lanes = [...document.querySelectorAll('[data-life-lane]')];
+      if (!y2000 || lanes.length < 2) return false;
+      // Both lanes start at the top of the same scroll box, so a year is one
+      // offset for all of them.
+      const box = document.querySelector('[data-life-parallel-box] > div').getBoundingClientRect();
+      return lanes.every((l) => Math.abs(l.getBoundingClientRect().top - box.top) < 1);
+    }));
+
+    await page.locator('[data-life-parallel] [data-life-line-add]').click();
+    await wait(600);
+    pass('a third life is where the free plan stops',
+      (await page.getByRole('dialog', { name: 'Pro로 업그레이드' }).count()) === 1
+      && (await count('[data-life-line-dialog]')) === 0);
+    await closeAll();
+    pass('…and the two already there are untouched', (await stored()).others.length === 1);
+
+    // Folding somebody away is a way of looking, not a change to the record.
+    await page.locator(`[data-life-line-toggle="${withLine.others[0].id}"]`).click();
+    await wait(500);
+    pass('a line can be folded away without being deleted',
+      (await count('[data-life-lane]')) === 1 && (await stored()).others.length === 1);
+    await page.locator(`[data-life-line-toggle="${withLine.others[0].id}"]`).click();
+    await wait(500);
+    pass('…and brought back', (await count('[data-life-lane]')) === 2);
+
+    // Zoom stretches the years without moving anyone off theirs.
+    const height = async () => page.evaluate(() =>
+      document.querySelector('[data-life-parallel-box] > div').getBoundingClientRect().height);
+    const wasTall = await height();
+    await page.locator('[data-life-parallel-in]').click();
+    await wait(400);
+    pass('the years stretch when zoomed in', (await height()) > wasTall, `${wasTall} → ${await height()}`);
+    await page.locator('[data-life-parallel-out]').click();
+    await page.locator('[data-life-parallel-out]').click();
+    await wait(400);
+    pass('…and squeeze back when zoomed out', (await height()) < wasTall);
+    await page.locator('[data-life-parallel-toggle]').click();
+    await wait(400);
+    pass('the chart closes again', (await count('[data-life-parallel]')) === 0);
+
     // 16. Cards fade in as they scroll in. The page opens with today in the
     // middle of the screen, so the two ends of the line have both been seen;
     // a moment from the middle of the life is the one still waiting.
@@ -463,8 +529,24 @@ export async function run() {
     // The page opens on today, so bring the birth row into view before aiming.
     await page.locator('[data-life-birth]').scrollIntoViewIfNeeded();
     await wait(300);
-    const birthRow = await page.locator('[data-life-birth] [data-life-row-decor]').boundingBox();
-    await page.mouse.click(birthRow.x + birthRow.width * 0.2, birthRow.y + birthRow.height * 0.5);
+    // Somewhere on the birth row that the decor layer itself would receive:
+    // a fixed fraction of the row lands on the card once the type size
+    // changes, and then the sticker goes nowhere at all.
+    const stickerSpot = await page.evaluate(() => {
+      const el = document.querySelector('[data-life-birth] [data-life-row-decor]');
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      for (let fx = 0.05; fx < 0.96; fx += 0.05) {
+        for (const fy of [0.5, 0.25, 0.75]) {
+          const x = r.x + r.width * fx;
+          const y = r.y + r.height * fy;
+          if (document.elementFromPoint(x, y) === el) return { x, y };
+        }
+      }
+      return null;
+    });
+    pass('the line has somewhere a sticker can actually be put', !!stickerSpot);
+    await page.mouse.click(stickerSpot.x, stickerSpot.y);
     await wait(500);
     const stored3 = () => page.evaluate(() => JSON.parse(localStorage.getItem('24h-circle-planner.life-decor') ?? 'null'));
     pass('a sticker lands on the row it was placed on',

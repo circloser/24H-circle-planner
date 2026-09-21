@@ -1169,4 +1169,20 @@ export const ja: Record<TKey, string> = {
   'place.filter': 'ピンの種類',
   'place.filterAll': 'すべて',
   'place.heat': 'ピンのヒートマップ',
+  // Place — looking a place up in the wider world, by name.
+  'place.searchOnline': '「{q}」をインターネットで探す',
+  'place.searchCredit': '検索結果 © OpenStreetMap contributors',
+  // Life — several lives read side by side.
+  'life.parallel.title': '並べて見る',
+  'life.parallel.who': '並べる人',
+  'life.parallel.add': '人を追加',
+  'life.parallel.someone': '名前なし',
+  'life.parallel.addMoment': 'この人の出来事を追加',
+  'life.parallel.none': 'ほかの人の人生を隣に置いて、同じ年を並べて読めます。',
+  'life.parallel.limit': '無料では二人まで。Proなら十人まで並べられます。',
+  'life.parallel.name': '名前',
+  'life.parallel.birth': '生まれた日',
+  'life.parallel.remove': 'この線を消す',
+  'life.parallel.open': '並べて見るを開く',
+  'life.parallel.close': '並べて見るを閉じる',
 };

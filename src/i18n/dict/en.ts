@@ -1172,4 +1172,20 @@ export const en: Record<TKey, string> = {
   'place.filter': 'Kinds of pin',
   'place.filterAll': 'All',
   'place.heat': 'Pin heat map',
+  // Place — looking a place up in the wider world, by name.
+  'place.searchOnline': 'Look up “{q}” online',
+  'place.searchCredit': 'Search results © OpenStreetMap contributors',
+  // Life — several lives read side by side.
+  'life.parallel.title': 'Side by side',
+  'life.parallel.who': 'On the chart',
+  'life.parallel.add': 'Add someone',
+  'life.parallel.someone': 'Unnamed',
+  'life.parallel.addMoment': 'Add a moment to this life',
+  'life.parallel.none': 'Put another life beside your own and read the same years across both.',
+  'life.parallel.limit': 'Two lives side by side on the free plan. Pro holds ten.',
+  'life.parallel.name': 'Name',
+  'life.parallel.birth': 'Born',
+  'life.parallel.remove': 'Remove this line',
+  'life.parallel.open': 'Open side by side',
+  'life.parallel.close': 'Close side by side',
 };

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ImagePlus, Lock, MapPin, Trash2, X } from 'lucide-react';
+import { Globe, ImagePlus, Loader2, Lock, MapPin, Trash2, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import {
   type Pin, type PinCategory,
 } from '@/lib/place';
 import { searchCities, type CityRow } from '@/lib/place-world';
+import { lookupPlace, type FoundPlace } from '@/lib/place-geocode';
 import type { PinDraft } from '@/hooks/usePlace';
 import { PIN_ICON, PIN_LABEL } from './palette';
 
@@ -248,20 +249,41 @@ export function CityPicker({ rows, code, onPick, label }: {
   onPick: (city: CityRow) => void;
   label: string;
 }) {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const [query, setQuery] = useState('');
   const found = useMemo(() => searchCities(rows, query, 6, code), [rows, query, code]);
+  // What the wider world says, when it has been asked — and it is only ever
+  // asked by pressing the button, never by typing.
+  const [asked, setAsked] = useState<{ q: string; places: FoundPlace[] } | null>(null);
+  const [asking, setAsking] = useState(false);
+  const q = query.trim();
+  const online = asked && asked.q === q ? asked.places : null;
+
+  const ask = async () => {
+    if (!q || asking) return;
+    setAsking(true);
+    const places = await lookupPlace(q, lang);
+    setAsked({ q, places });
+    setAsking(false);
+  };
+
   return (
     <div className="flex flex-col gap-1.5">
       <Input value={query} data-place-city-search placeholder={label}
-        onChange={(e) => setQuery(e.target.value)} />
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key !== 'Enter') return;
+          // Inside a form, Enter would submit it; here it is how you search.
+          e.preventDefault();
+          void ask();
+        }} />
       {found.length > 0 && (
         <ul className="flex flex-col gap-0.5">
           {found.map((city) => (
             <li key={city.id}>
               <button type="button" data-place-city-option={city.id}
                 className="min-h-9 w-full rounded-md px-2 text-left text-sm hover:bg-accent/20"
-                onClick={() => { onPick(city); setQuery(''); }}>
+                onClick={() => { onPick(city); setQuery(''); setAsked(null); }}>
                 {city.name}
                 <span className="ml-1.5 text-muted-foreground">{city.code}</span>
               </button>
@@ -269,8 +291,40 @@ export function CityPicker({ rows, code, onPick, label }: {
           ))}
         </ul>
       )}
-      {query.trim() && found.length === 0 && (
+
+      {/* The list that ships with the app is seven thousand places named in
+          English; a life happens in smaller ones, called what they are called.
+          Asking the wider world is one press, never a keystroke. */}
+      {q.length > 1 && (
+        <button type="button" data-place-city-online disabled={asking} onClick={() => void ask()}
+          className="inline-flex min-h-9 items-center gap-1.5 self-start rounded-md px-2 text-[13px] text-primary hover:bg-accent/20 disabled:opacity-60">
+          {asking
+            ? <Loader2 aria-hidden className="h-3.5 w-3.5 animate-spin" />
+            : <Globe aria-hidden className="h-3.5 w-3.5" />}
+          {t('place.searchOnline', { q })}
+        </button>
+      )}
+      {online && online.length > 0 && (
+        <ul className="flex flex-col gap-0.5" data-place-city-online-list>
+          {online.map((city) => (
+            <li key={city.id}>
+              <button type="button" data-place-city-option={city.id}
+                className="min-h-9 w-full rounded-md px-2 text-left text-sm hover:bg-accent/20"
+                onClick={() => { onPick(city); setQuery(''); setAsked(null); }}>
+                {city.name}
+                <span className="ml-1.5 text-[12px] text-muted-foreground">{city.detail}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {((q && found.length === 0 && !online) || (online && online.length === 0)) && (
         <p className="px-2 text-[13px] text-muted-foreground">{t('place.noCity')}</p>
+      )}
+      {online && online.length > 0 && (
+        <p className="px-2 text-[11px] text-muted-foreground" data-place-city-credit>
+          {t('place.searchCredit')}
+        </p>
       )}
     </div>
   );

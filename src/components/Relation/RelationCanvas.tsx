@@ -5,9 +5,10 @@ import {
   contactFade, hasBirthdaySoon, type Person, type RelationData, type RelationGroup,
 } from '@/lib/relation';
 import {
-  LABEL_ZOOM, MAX_ZOOM, ME_R, MIN_ZOOM, initialsOf, layoutRelation, nodeAt, polarOf, xyOf, type Placed,
+  MAX_ZOOM, ME_R, MIN_ZOOM, layoutRelation, nodeAt, polarOf, xyOf, type Placed,
 } from '@/lib/relation-layout';
 import { atRest, bowOf, sagOf, springAt, stepSpring, type Spring } from '@/lib/relation-spring';
+import { NAME_SIZE, nameBox } from '@/lib/relation-name';
 
 /** A press this long puts someone down where they are, or picks them up again. */
 const HOLD_MS = 550;
@@ -25,6 +26,8 @@ export interface RelationCanvasProps {
   onPlace: (id: string, at: Person['at']) => void;
   /** A double tap on empty space: somewhere to put a new person. */
   onAddAt?: (at: { a: number; r: number }) => void;
+  /** The circle in the middle is me; pressing it is how I am edited. */
+  onOpenMe?: () => void;
   /** Ids drawn as arriving, oldest first; empty once they have all appeared. */
   appearing?: readonly string[];
   /** Waiting to be linked to whoever is tapped next. */
@@ -69,7 +72,7 @@ function paperOf(el: HTMLElement): string {
  * when something has actually changed.
  */
 export function RelationCanvas({
-  data, colors, today, selected, onSelect, onPlace, onAddAt, appearing = [], linking, meLabel,
+  data, colors, today, selected, onSelect, onPlace, onAddAt, onOpenMe, appearing = [], linking, meLabel,
 }: RelationCanvasProps) {
   const box = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -88,6 +91,8 @@ export function RelationCanvas({
   /** Set while a let-go node is on its way back to its own place. */
   const homing = useRef(false);
   const lastFrame = useRef(0);
+  /** Where the middle was last drawn, so a tap on it can be recognised. */
+  const meAt = useRef<{ x: number; y: number; r: number } | null>(null);
   const [photos, setPhotos] = useState<ReadonlyMap<string, HTMLImageElement>>(() => new Map());
   const asked = useRef(new Set<string>());
   // When the current arrival began. Refs, not state: the clock is read while
@@ -261,8 +266,21 @@ export function RelationCanvas({
     }
     ctx.setLineDash([]);
 
-    /** A face: a photograph clipped to the circle, or initials. */
-    const face = (name: string, photo: string | undefined, cx: number, cy: number, r: number, a: number) => {
+    /**
+     * What is inside a circle: a photograph if there is one, and otherwise
+     * the name itself, written across as many lines as it needs.
+     *
+     * The name used to hang underneath, which reads as a caption on a dot;
+     * inside, the circle IS the person. Where the name is longer than the
+     * circle the layout has already made the circle bigger — see nameBox,
+     * which both this and lib/relation-layout ask.
+     */
+    const face = (
+      name: string, photo: string | undefined, cx: number, cy: number, r: number, a: number,
+      /** The same circle in layout units, which is what the name was fitted to. */
+      unit: number,
+      lines?: readonly string[],
+    ) => {
       const img = photo ? photos.get(photo) : undefined;
       if (img && img.complete && img.naturalWidth > 0) {
         ctx.save();
@@ -275,14 +293,22 @@ export function RelationCanvas({
         ctx.restore();
         return;
       }
-      const letters = initialsOf(name);
-      if (!letters || r < 12) return;
-      ctx.globalAlpha = a * 0.75;
+      // The layout worked the circle out in its own units and the screen is
+      // those units scaled; the writing is scaled by exactly the same amount,
+      // so a name that fitted in the layout fits on the screen.
+      const box = lines?.length ? { lines, radius: unit } : nameBox(name, unit);
+      const rows = box.lines;
+      if (!rows.length || unit <= 0) return;
+      const size = NAME_SIZE * (r / unit);
+      if (size < 6) return; // smaller than this is a smudge, not a name
+      ctx.globalAlpha = a * 0.9;
       ctx.fillStyle = ink;
-      ctx.font = `${Math.round(r * 0.8)}px ui-sans-serif, system-ui, sans-serif`;
+      ctx.font = `${size}px ui-sans-serif, system-ui, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(letters, cx, cy + 1);
+      const step = size * 1.15;
+      const top = cy - ((rows.length - 1) * step) / 2;
+      rows.forEach((row, i) => ctx.fillText(row, cx, top + i * step));
     };
 
     // Me, in the middle, always.
@@ -295,7 +321,8 @@ export function RelationCanvas({
     ctx.strokeStyle = ink;
     ctx.globalAlpha = selected ? 0.35 : 0.85;
     ctx.stroke();
-    face(data.me.name || meLabel, data.me.photo, middle.x, middle.y, ME_R * dots, selected ? 0.35 : 1);
+    face(data.me.name || meLabel, data.me.photo, middle.x, middle.y, ME_R * dots, selected ? 0.35 : 1, ME_R);
+    meAt.current = { x: middle.x, y: middle.y, r: ME_R * dots };
 
     // Everyone else.
     ctx.lineWidth = 1.5;
@@ -329,17 +356,7 @@ export function RelationCanvas({
       ctx.strokeStyle = colors[n.person.group];
       ctx.lineWidth = selected === n.person.id || linking === n.person.id ? 2.5 : 1.5;
       ctx.stroke();
-      if (r >= 14) face(n.person.name, n.person.photo, c.x, c.y, r, a);
-      // The name: family and the pinned always, everyone once zoomed in.
-      const named = n.person.group === 'family' || n.person.pinned || view.scale >= LABEL_ZOOM || selected === n.person.id;
-      if (named) {
-        ctx.globalAlpha = a * 0.7;
-        ctx.fillStyle = ink;
-        ctx.font = '11px ui-sans-serif, system-ui, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        ctx.fillText(n.person.name, c.x, c.y + r + 6);
-      }
+      face(n.person.name, n.person.photo, c.x, c.y, r, a, n.r, n.lines);
     }
     ctx.globalAlpha = 1;
   }, [size, view, fit, layout, data, colors, today, selected, appearing, linking, meLabel, toScreen, photos]);
@@ -467,6 +484,13 @@ export function RelationCanvas({
     setDrag(null);
     if (g.moved) return;
     if (g.node) return onSelect(g.node.person.id);
+    // The middle is me: pressing it opens my own card rather than clearing
+    // the selection, which is what pressing anywhere else does.
+    const me = meAt.current;
+    if (me && onOpenMe) {
+      const r = canvas.current!.getBoundingClientRect();
+      if (Math.hypot(e.clientX - r.left - me.x, e.clientY - r.top - me.y) <= me.r) return onOpenMe();
+    }
     // Empty space: a second tap in quick succession asks for someone new.
     const now = performance.now();
     if (onAddAt && now - lastTap.current < 400) {

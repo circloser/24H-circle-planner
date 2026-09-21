@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { dismissAfterVisible } from '@/lib/toast-dismiss';
-import { Download, Feather, ListFilter, Pin, Plus, ShieldAlert, Smile, X } from 'lucide-react';
+import { Columns3, Download, Feather, ListFilter, Pin, Plus, ShieldAlert, Smile, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
@@ -13,8 +13,8 @@ import { requestUpgrade } from '@/lib/pro';
 import { todayKey } from '@/lib/calendar-grid';
 import { track, trackOnce } from '@/lib/track';
 import {
-  FREE_LIFE_MILESTONES, MAX_ENDING, MAX_NAME, PICKABLE_CATEGORIES, ageAt, buildTimeline,
-  canAddMilestone, formatLifeDate, isFullDate, lifeSummary,
+  FREE_LIFE_LINES, FREE_LIFE_MILESTONES, MAX_ENDING, MAX_LIFE_LINES, MAX_NAME, PICKABLE_CATEGORIES,
+  ageAt, buildTimeline, canAddMilestone, formatLifeDate, isFullDate, lifeSummary,
   type FamilyMember, type LifeCategory,
 } from '@/lib/life';
 import { dismissBackupBanner, downloadLifeBackup, needsBackupWarning } from '@/lib/life-backup';
@@ -22,7 +22,11 @@ import { useLifeNudge } from '@/hooks/useLifeNudge';
 import { LIFE_EXPORT_EVENT } from '@/lib/life-export';
 import { CATEGORY_ICON, CATEGORY_LABEL, RELATION_LABEL, categoryColors, inkOf } from './categories';
 import { LifePhoto, LifeTimeline } from './LifeTimeline';
-import { FamilyDialog, MilestoneDialog, ProfileDialog, type MemberTarget, type MomentTarget } from './LifeDialogs';
+import {
+  FamilyDialog, LineDialog, MilestoneDialog, ProfileDialog,
+  type LineTarget, type MemberTarget, type MomentTarget,
+} from './LifeDialogs';
+import { LifeParallel } from './LifeParallel';
 import { LifeExportDialog } from './LifeExport';
 import { LifeMemoir } from './LifeMemoir';
 import { DecorTray } from '@/components/Calendar/Decor';
@@ -67,6 +71,14 @@ export function LifeView() {
   const [moment, setMoment] = useState<MomentTarget | null>(null);
   const [member, setMember] = useState<MemberTarget | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
+  // Several lives at once: off by default, because most days one is the
+  // question. Who is folded away lives here rather than in the record — it is
+  // a way of looking, not a fact about anybody.
+  const [parallel, setParallel] = useState(false);
+  const [hiddenLines, setHiddenLines] = useState<Set<string>>(() => new Set());
+  const [lineTarget, setLineTarget] = useState<LineTarget | null>(null);
+  /** Which line a moment is being added to or edited on; '' is my own. */
+  const [onLine, setOnLine] = useState('');
   const [exporting, setExporting] = useState(false);
   const [bannerOff, setBannerOff] = useState(false);
   // A plan coming up, or a year with nothing written in it yet.
@@ -110,6 +122,21 @@ export function LifeView() {
     ro?.observe(header);
     return () => ro?.disconnect();
   }, []);
+
+  /**
+   * Another life beside this one. Two are free — mine and one other — and Pro
+   * holds ten; the limit only ever stops ADDING another.
+   */
+  const addLine = () => {
+    const lines = 1 + (life.others?.length ?? 0);
+    if (lines >= MAX_LIFE_LINES) return toast(t('life.parallel.limit'));
+    if (!pro && lines >= FREE_LIFE_LINES) {
+      toast(t('life.parallel.limit'));
+      requestUpgrade('life');
+      return;
+    }
+    setLineTarget({ mode: 'add' });
+  };
 
   /** Open the add form — unless the free plan is full (nothing is lost). */
   const addMoment = (preset: Partial<MilestoneDraft>) => {
@@ -229,6 +256,44 @@ export function LifeView() {
             onOpenMoment={(m) => setMoment({ mode: 'edit', m })}
             onOpenBirth={() => setProfileOpen(true)}
             onAdd={addMoment} />
+          {/* Several lives, read against the same years. */}
+          <div className="mt-6 flex justify-center">
+            <Button size="sm" variant={parallel ? 'default' : 'outline'} className="gap-1.5 rounded-full"
+              aria-pressed={parallel} data-life-parallel-toggle
+              onClick={() => setParallel((v) => !v)}>
+              <Columns3 aria-hidden className="h-4 w-4" />
+              {t(parallel ? 'life.parallel.close' : 'life.parallel.open')}
+            </Button>
+          </div>
+          {parallel && (
+            <LifeParallel
+              life={life}
+              colors={colors}
+              today={today}
+              meLabel={t('relation.me.short')}
+              hidden={hiddenLines}
+              onToggle={(id) => setHiddenLines((was) => {
+                const next = new Set(was);
+                if (!next.delete(id)) next.add(id);
+                return next;
+              })}
+              onAddLine={addLine}
+              onOpenLine={(id) => {
+                const line = (life.others ?? []).find((o) => o.id === id);
+                if (line) setLineTarget({ mode: 'edit', line });
+              }}
+              onAddMoment={(lineId) => {
+                if (lineId === 'me') return addMoment({});
+                setOnLine(lineId);
+                setMoment({ mode: 'add', preset: {} });
+              }}
+              onOpenMoment={(lineId, m) => {
+                setOnLine(lineId === 'me' ? '' : lineId);
+                setMoment({ mode: 'edit', m });
+              }}
+            />
+          )}
+
           {/* A restore replaces the note: start its field afresh from it. */}
           <EndingNote key={api.generation} api={api} />
           <LifeMemoir api={api} lang={lang} />
@@ -244,20 +309,46 @@ export function LifeView() {
       )}
 
       <MilestoneDialog target={moment} pro={pro} colors={colors}
-        onClose={() => setMoment(null)}
+        onClose={() => { setMoment(null); setOnLine(''); }}
         onSave={(draft, id) => {
-          if (id) api.updateMilestone(id, draft);
-          else {
+          // The same form writes to whichever life it was opened from.
+          if (onLine) {
+            if (id) api.updateLineMoment(onLine, id, draft);
+            else api.addLineMoment(onLine, draft);
+          } else if (id) {
+            api.updateMilestone(id, draft);
+          } else {
             api.addMilestone(draft);
             track('life_add');
           }
           setMoment(null);
+          setOnLine('');
         }}
         onDelete={(id) => {
+          if (onLine) {
+            api.removeLineMoment(onLine, id);
+            setMoment(null);
+            setOnLine('');
+            return;
+          }
           const gone = api.removeMilestone(id);
           setMoment(null);
           if (gone) {
             dismissAfterVisible(toast(t('life.deleted'), { action: { label: t('sync.undo'), onClick: () => api.restoreMilestone(gone.item, gone.at) }, duration: UNDO_MS }), UNDO_MS);
+          }
+        }} />
+      <LineDialog target={lineTarget}
+        onClose={() => setLineTarget(null)}
+        onSave={(name, birthDate, id) => {
+          if (id) api.updateLine(id, { name, birthDate });
+          else api.addLine(name, birthDate);
+          setLineTarget(null);
+        }}
+        onDelete={(id) => {
+          const gone = api.removeLine(id);
+          setLineTarget(null);
+          if (gone) {
+            dismissAfterVisible(toast(t('life.deleted'), { action: { label: t('sync.undo'), onClick: () => api.restoreLine(gone.item, gone.at) }, duration: UNDO_MS }), UNDO_MS);
           }
         }} />
       <FamilyDialog target={member} pro={pro}

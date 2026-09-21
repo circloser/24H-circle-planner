@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { dismissAfterVisible } from '@/lib/toast-dismiss';
-import { Download, ListFilter, Plus, Search, ShieldAlert, UserPlus, X } from 'lucide-react';
+import { Download, ListFilter, Plus, Search, UserPlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
@@ -254,6 +254,7 @@ export function RelationView() {
               onSelect={pick}
               onPlace={api.placePerson}
               onAddAt={(at) => add(at)}
+              onOpenMe={() => setMeOpen(true)}
             />
 
             {empty ? (
@@ -316,14 +317,6 @@ export function RelationView() {
           />
         </div>
 
-        {/* Someone else's details, said where they are first written down. */}
-        {!empty && (
-          <p className="flex items-center justify-center gap-1.5 px-4 pb-4 text-center text-[11px] text-muted-foreground"
-            data-relation-privacy-foot>
-            <ShieldAlert aria-hidden className="h-3.5 w-3.5 shrink-0" />
-            {t('relation.privacy.hint')}
-          </p>
-        )}
       </div>
 
       <PersonDialog target={target} pro={pro} syncing={syncing}
@@ -342,10 +335,11 @@ export function RelationView() {
         onSave={(me) => { api.setMe(me); setMeOpen(false); }} />
       <RelationExportDialog open={exporting} onOpenChange={setExporting} api={api} colors={colors} />
 
-      {/* The middle of the map is me: one quiet way to say who that is. */}
-      <button type="button" data-relation-me-open onClick={() => setMeOpen(true)}
-        className="mx-auto mb-4 min-h-9 text-[11px] text-muted-foreground underline decoration-dotted underline-offset-4">
-        {t('relation.me.title')}
+      {/* The middle of the map is me, so the middle of the map is the way in:
+          the line that used to say so under the map has gone, and tapping the
+          circle opens it instead. A keyboard needs a target of its own. */}
+      <button type="button" data-relation-me-open onClick={() => setMeOpen(true)} className="sr-only">
+        {t('relation.me.name')}
       </button>
 
       {/* A download button for the header's export menu to find. */}

@@ -18,6 +18,7 @@
  * apart along it, and a ring that cannot hold its people grows until it can.
  */
 import { RELATION_GROUPS, type Closeness, type Person, type RelationGroup } from './relation';
+import { nameBox } from './relation-name';
 
 /** Node radius by closeness (§3.2), over the five rungs. */
 export const NODE_R: Record<Closeness, number> = { 1: 5, 2: 7, 3: 9, 4: 11, 5: 13 };
@@ -92,8 +93,10 @@ export interface Placed {
   a: number;
   /** Distance from the middle, in layout units. */
   d: number;
-  /** Node radius, in layout units. */
+  /** Node radius, in layout units — big enough to hold the name. */
   r: number;
+  /** The name, broken into the lines it is drawn on. */
+  lines: string[];
   /** Put here by hand rather than by the ring. */
   fixed: boolean;
 }
@@ -181,11 +184,15 @@ export function layoutRelation(people: readonly Person[]): Layout {
     if (!mine.length) continue;
     const band: Placed[] = [];
     for (const person of mine) {
-      const r = NODE_R[person.closeness];
+      // Closeness still says how big a circle someone gets; their name says
+      // how big it has to be. The bigger of the two wins, so a name is never
+      // written outside the circle it belongs to.
+      const { lines, radius } = nameBox(person.name, NODE_R[person.closeness]);
+      const r = radius;
       if (person.at) {
-        nodes.push({ person, a: person.at.a, d: person.at.r * outermost, r, fixed: true });
+        nodes.push({ person, a: person.at.a, d: person.at.r * outermost, r, lines, fixed: true });
       } else {
-        band.push({ person, a: angleOf(person.id), d: 0, r, fixed: false });
+        band.push({ person, a: angleOf(person.id), d: 0, r, lines, fixed: false });
       }
     }
     if (!band.length) {

@@ -1171,4 +1171,20 @@ export const es: Record<TKey, string> = {
   'place.filter': 'Tipos de chincheta',
   'place.filterAll': 'Todas',
   'place.heat': 'Mapa de calor',
+  // Place — looking a place up in the wider world, by name.
+  'place.searchOnline': 'Buscar «{q}» en línea',
+  'place.searchCredit': 'Resultados © colaboradores de OpenStreetMap',
+  // Life — several lives read side by side.
+  'life.parallel.title': 'Lado a lado',
+  'life.parallel.who': 'En el gráfico',
+  'life.parallel.add': 'Añadir a alguien',
+  'life.parallel.someone': 'Sin nombre',
+  'life.parallel.addMoment': 'Añadir un momento a esta vida',
+  'life.parallel.none': 'Pon otra vida junto a la tuya y lee los mismos años en ambas.',
+  'life.parallel.limit': 'Dos vidas lado a lado en el plan gratuito. Pro admite diez.',
+  'life.parallel.name': 'Nombre',
+  'life.parallel.birth': 'Nacimiento',
+  'life.parallel.remove': 'Quitar esta línea',
+  'life.parallel.open': 'Abrir lado a lado',
+  'life.parallel.close': 'Cerrar lado a lado',
 };

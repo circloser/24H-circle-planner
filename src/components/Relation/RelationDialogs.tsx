@@ -249,12 +249,14 @@ export function PersonDialog({ target, pro, syncing, onClose, onSave, onDelete }
             {t('relation.field.pinned')}
           </label>
 
-          {/* Someone else's details. Said every time, not once. */}
-          <p className="rounded-lg border border-border bg-muted/40 px-3.5 py-3 text-[13px] leading-relaxed text-muted-foreground"
-            data-relation-privacy>
-            {t('relation.privacy.hint')}
-            {syncing ? ` ${t('relation.privacy.sync')}` : ''}
-          </p>
+          {/* Where the record goes is said in the privacy policy and in the
+              guide; on the form itself it was one more thing to read past
+              every time someone is added. */}
+          {syncing && (
+            <p className="text-[12px] leading-relaxed text-muted-foreground" data-relation-privacy>
+              {t('relation.privacy.sync')}
+            </p>
+          )}
 
           <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
             {base && <DeleteButton onDelete={() => onDelete(base.id)} />}
@@ -292,7 +294,7 @@ export function MeDialog({ open, me, pro, onClose, onSave }: {
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-sm" data-relation-me-dialog>
         <DialogHeader>
-          <DialogTitle>{t('relation.me.title')}</DialogTitle>
+          <DialogTitle>{t('relation.me.name')}</DialogTitle>
           <DialogDescription className="sr-only">{t('relation.subtitle')}</DialogDescription>
         </DialogHeader>
         <form className="flex flex-col gap-4" onSubmit={(e) => {

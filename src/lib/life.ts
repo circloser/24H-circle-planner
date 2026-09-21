@@ -55,11 +55,34 @@ export interface LifeProfile {
   birthDate: string;
 }
 
+/**
+ * Somebody else's line, to be read beside one's own.
+ *
+ * A life makes a different kind of sense next to the lives it was lived
+ * among: a parent's, a child's, the friend who was in the same city for three
+ * of those years. So a line can be added for each of them — the same
+ * milestones, kept apart, drawn against the same run of years.
+ *
+ * It is a note about them kept on this device, exactly as the relation map
+ * is. Nobody is told, and nothing is fetched from anywhere.
+ */
+export interface LifeLine {
+  id: string;
+  name: string;
+  /** 'YYYY-MM-DD', 'YYYY-MM' or 'YYYY' — as much as is known. */
+  birthDate: string;
+  /** Folded away for now, without being deleted. */
+  hidden?: boolean;
+  milestones: Milestone[];
+}
+
 export interface LifeData {
   version: 1;
   profile: LifeProfile;
   family: FamilyMember[];
   milestones: Milestone[];
+  /** Other people's lines, drawn beside this one. */
+  others?: LifeLine[];
   endingNote: { text: string; updatedAt: string } | null;
   /** The memoir written from this line, once it has been (lib/life-memoir). */
   memoir: { text: string; createdAt: string } | null;
@@ -69,6 +92,11 @@ export interface LifeData {
 /** How far the line runs past today, for everyone alike. Not a prediction and
  *  not a setting: a hundred and twenty years is simply where the paper ends. */
 export const DEFAULT_LIFE_EXPECTANCY = 120;
+/** Lines that can be read side by side at once, mine included. More than ten
+ *  is a chart, not a comparison. */
+export const MAX_LIFE_LINES = 10;
+/** Lines the free plan draws, mine included: mine, and one other. */
+export const FREE_LIFE_LINES = 2;
 export const MAX_TITLE = 80;
 export const MAX_DESCRIPTION = 1000;
 export const MAX_NAME = 40;
@@ -267,6 +295,27 @@ function cleanProfile(v: unknown): LifeProfile {
  * exists; a later one adds its step here, so a device that updates never
  * loses what it wrote before.
  */
+/** Somebody else's line: a name, a birthday and their own moments. */
+function cleanLine(v: unknown): LifeLine | null {
+  const o = v as Record<string, unknown> | null;
+  if (!o || typeof o['id'] !== 'string' || !o['id'] || o['id'].length > 64) return null;
+  const name = typeof o['name'] === 'string' ? o['name'].trim().slice(0, MAX_NAME) : '';
+  if (!name) return null;
+  const birth = isLifeDate(o['birthDate']) ? o['birthDate'] : '';
+  if (!birth) return null;
+  const seen = new Set<string>();
+  const milestones = (Array.isArray(o['milestones']) ? o['milestones'] : [])
+    .map(cleanMilestone)
+    .filter((m): m is Milestone => !!m && !seen.has(m.id) && !!seen.add(m.id));
+  return {
+    id: o['id'],
+    name,
+    birthDate: birth,
+    ...(o['hidden'] === true ? { hidden: true } : {}),
+    milestones,
+  };
+}
+
 export function migrateLife(parsed: unknown): Record<string, unknown> | null {
   const p = parsed as Record<string, unknown> | null;
   if (!p || typeof p !== 'object') return null;
@@ -288,6 +337,10 @@ export function decodeLife(parsed: unknown): LifeData | null {
   const unique = <T extends { id: string }>(x: T | null): x is T => !!x && !seen.has(x.id) && !!seen.add(x.id);
   const milestones = (Array.isArray(p['milestones']) ? p['milestones'] : []).map(cleanMilestone).filter(unique);
   const family = (Array.isArray(p['family']) ? p['family'] : []).map(cleanMember).filter(unique);
+  const others = (Array.isArray(p['others']) ? p['others'] : [])
+    .map(cleanLine)
+    .filter(unique)
+    .slice(0, MAX_LIFE_LINES - 1);
   const note = p['endingNote'] as Record<string, unknown> | null | undefined;
   const text = note && typeof note['text'] === 'string' ? note['text'].slice(0, MAX_ENDING) : '';
   const mem = p['memoir'] as Record<string, unknown> | null | undefined;
@@ -297,6 +350,7 @@ export function decodeLife(parsed: unknown): LifeData | null {
     profile: cleanProfile(p['profile']),
     family,
     milestones,
+    ...(others.length ? { others } : {}),
     endingNote: text ? { text, updatedAt: typeof note!['updatedAt'] === 'string' ? note!['updatedAt'] : '' } : null,
     memoir: memoir ? { text: memoir, createdAt: typeof mem!['createdAt'] === 'string' ? mem!['createdAt'] : '' } : null,
     updatedAt: typeof p['updatedAt'] === 'string' ? p['updatedAt'] : '',

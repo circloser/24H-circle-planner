@@ -67,13 +67,30 @@ describe('the rings', () => {
     expect(layoutRelation([]).rings).toEqual([]);
   });
 
-  it('pull the closest people a little way inward, and draw them bigger', () => {
+  it('pull the closest people a little way inward', () => {
     const l = layoutRelation([p('near', 'family', 3), p('far', 'family', 1)]);
     const near = l.nodes.find((n) => n.person.id === 'near')!;
     const far = l.nodes.find((n) => n.person.id === 'far')!;
     expect(near.d).toBeLessThan(far.d);
-    expect(near.r).toBe(NODE_R[3]);
-    expect(far.r).toBe(NODE_R[1]);
+  });
+
+  it('give every circle room for at least what closeness asks', () => {
+    // Closeness is the floor; a long name raises it, because the name is
+    // written inside the circle and has to fit there.
+    const l = layoutRelation([p('near', 'family', 3), p('far', 'family', 1)]);
+    for (const n of l.nodes) expect(n.r).toBeGreaterThanOrEqual(NODE_R[n.person.closeness]);
+  });
+
+  it('makes the circle big enough to hold the name it will be given', () => {
+    const l = layoutRelation([
+      { id: 'a', name: '나', group: 'friend', closeness: 2, createdAt: '' },
+      { id: 'b', name: '알렉산드라 콘스탄티노바', group: 'friend', closeness: 2, createdAt: '' },
+    ]);
+    const short = l.nodes.find((n) => n.person.id === 'a')!;
+    const long = l.nodes.find((n) => n.person.id === 'b')!;
+    expect(long.r).toBeGreaterThan(short.r);
+    expect(long.lines.length).toBeGreaterThan(1);
+    expect(short.lines).toEqual(['나']);
   });
 
   it('grow rather than let anyone overlap', () => {

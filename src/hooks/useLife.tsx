@@ -4,8 +4,8 @@ import { loadPersisted, type PersistedCodec } from '@/hooks/usePersistedState';
 import { persistLocal } from '@/lib/persistence';
 import { deletePhoto } from '@/lib/calendar-photos';
 import {
-  LIFE_KEY, decodeLife, emptyLife, encodeLife, isNewerLife, photoIds,
-  type FamilyMember, type LifeData, type LifeProfile, type Milestone,
+  LIFE_KEY, MAX_LIFE_LINES, decodeLife, emptyLife, encodeLife, isNewerLife, photoIds,
+  type FamilyMember, type LifeData, type LifeLine, type LifeProfile, type Milestone,
 } from '@/lib/life';
 
 export const lifeCodec: PersistedCodec<LifeData> = { decode: decodeLife, encode: encodeLife, fallback: emptyLife };
@@ -97,6 +97,78 @@ export function useLife() {
     });
   }, [edit]);
 
+  // ── Other people's lines, read beside mine ────────────────────────────────
+
+  /** Someone else's life, added to the chart. */
+  const addLine = useCallback((name: string, birthDate: string): string => {
+    const id = uuid();
+    edit((l) => ({
+      ...l,
+      others: [...(l.others ?? []), { id, name, birthDate, milestones: [] }].slice(0, MAX_LIFE_LINES - 1),
+    }));
+    return id;
+  }, [edit]);
+
+  const updateLine = useCallback((id: string, patch: { name?: string; birthDate?: string }) => {
+    edit((l) => ({
+      ...l,
+      others: (l.others ?? []).map((o) => (o.id === id ? { ...o, ...patch } : o)),
+    }));
+  }, [edit]);
+
+  /** Take a line off the chart, and hand back what it takes to put it back. */
+  const removeLine = useCallback((id: string): { item: LifeLine; at: number } | null => {
+    const all = current.current.others ?? [];
+    const at = all.findIndex((o) => o.id === id);
+    const item = at < 0 ? null : all[at];
+    edit((l) => ({ ...l, others: (l.others ?? []).filter((o) => o.id !== id) }));
+    return item ? { item, at } : null;
+  }, [edit]);
+
+  const restoreLine = useCallback((item: LifeLine, at: number) => {
+    edit((l) => {
+      const all = l.others ?? [];
+      if (all.some((o) => o.id === item.id)) return l;
+      const next = [...all];
+      next.splice(Math.max(0, Math.min(at, next.length)), 0, item);
+      return { ...l, others: next };
+    });
+  }, [edit]);
+
+  /** A moment on somebody else's line. Their own list, nobody else's. */
+  const addLineMoment = useCallback((lineId: string, draft: MilestoneDraft): string => {
+    const id = uuid();
+    edit((l) => ({
+      ...l,
+      others: (l.others ?? []).map((o) => (
+        o.id === lineId ? { ...o, milestones: [...o.milestones, { ...draft, id }] } : o
+      )),
+    }));
+    return id;
+  }, [edit]);
+
+  const updateLineMoment = useCallback((lineId: string, id: string, draft: MilestoneDraft) => {
+    const line = (current.current.others ?? []).find((o) => o.id === lineId);
+    dropPhoto(line?.milestones.find((m) => m.id === id)?.photo, draft.photo);
+    edit((l) => ({
+      ...l,
+      others: (l.others ?? []).map((o) => (
+        o.id === lineId
+          ? { ...o, milestones: o.milestones.map((m) => (m.id === id ? { ...draft, id } : m)) }
+          : o
+      )),
+    }));
+  }, [edit]);
+
+  const removeLineMoment = useCallback((lineId: string, id: string) => {
+    edit((l) => ({
+      ...l,
+      others: (l.others ?? []).map((o) => (
+        o.id === lineId ? { ...o, milestones: o.milestones.filter((m) => m.id !== id) } : o
+      )),
+    }));
+  }, [edit]);
+
   const addMember = useCallback((draft: MemberDraft): string => {
     const id = uuid();
     edit((l) => ({ ...l, family: [...l.family, { ...draft, id }] }));
@@ -167,6 +239,7 @@ export function useLife() {
   return {
     life, readOnly, generation, setProfile, addMilestone, updateMilestone, removeMilestone, restoreMilestone,
     addMember, updateMember, removeMember, restoreMember, setEndingNote, setMemoir, replace,
+    addLine, updateLine, removeLine, restoreLine, addLineMoment, updateLineMoment, removeLineMoment,
   };
 }
 

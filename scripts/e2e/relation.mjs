@@ -143,8 +143,10 @@ export async function run() {
       (await page.locator('[data-relation-close-label]').innerText()).trim() === '아주 가까움',
       await page.locator('[data-relation-close-label]').innerText());
     await page.locator('[data-relation-close="3"]').click();
-    pass('the form says whose information this is before it is written',
-      /알림이 가지 않습니다/.test(await page.locator('[data-relation-privacy]').innerText()));
+    // Where the record goes is said in the privacy policy and the guide; the
+    // form itself no longer repeats it every time someone is added.
+    pass('the form does not lecture about privacy every single time',
+      (await count('[data-relation-privacy]')) === 0);
     await page.locator('[data-relation-save]').click();
     await wait(700);
     const added = (await stored()).people.find((p) => p.name === '최민준');

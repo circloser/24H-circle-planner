@@ -168,8 +168,11 @@ function DateLine({ category, color, text, badge }: { category: LifeCategory; co
 }
 
 function Title({ children, faint }: { children: ReactNode; faint?: boolean }) {
+  // Half of what it was. A life line is read by its shape first — the run of
+  // years and where they cluster — and a title in twenty-two point turns the
+  // line into a list of headlines.
   return (
-    <span className={`life-serif mt-2 block text-[22px] font-bold leading-8 tracking-tight decoration-1 underline-offset-[6px] group-hover:underline min-[900px]:text-2xl ${
+    <span className={`life-serif mt-2 block text-[12px] font-bold leading-5 tracking-tight decoration-1 underline-offset-4 group-hover:underline min-[900px]:text-[13px] ${
       faint ? 'text-foreground/70' : 'text-foreground'}`}>
       {children}
     </span>
