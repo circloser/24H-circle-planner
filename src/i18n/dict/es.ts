@@ -1167,4 +1167,8 @@ export const es: Record<TKey, string> = {
   'place.sum.wish': '{n} por visitar',
   // Place — the shortcut rail in the corner of the pin map.
   'place.shortcut': 'Acceso directo',
+  // Place — the buttons in the corner of the map.
+  'place.filter': 'Tipos de chincheta',
+  'place.filterAll': 'Todas',
+  'place.heat': 'Mapa de calor',
 };

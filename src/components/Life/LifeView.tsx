@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { dismissAfterVisible } from '@/lib/toast-dismiss';
 import { Download, Feather, ListFilter, Pin, Plus, ShieldAlert, Smile, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -256,7 +257,7 @@ export function LifeView() {
           const gone = api.removeMilestone(id);
           setMoment(null);
           if (gone) {
-            toast(t('life.deleted'), { action: { label: t('sync.undo'), onClick: () => api.restoreMilestone(gone.item, gone.at) }, duration: UNDO_MS });
+            dismissAfterVisible(toast(t('life.deleted'), { action: { label: t('sync.undo'), onClick: () => api.restoreMilestone(gone.item, gone.at) }, duration: UNDO_MS }), UNDO_MS);
           }
         }} />
       <FamilyDialog target={member} pro={pro}
@@ -270,7 +271,7 @@ export function LifeView() {
           const gone = api.removeMember(id);
           setMember(null);
           if (gone) {
-            toast(t('life.deleted'), { action: { label: t('sync.undo'), onClick: () => api.restoreMember(gone.item, gone.at) }, duration: UNDO_MS });
+            dismissAfterVisible(toast(t('life.deleted'), { action: { label: t('sync.undo'), onClick: () => api.restoreMember(gone.item, gone.at) }, duration: UNDO_MS }), UNDO_MS);
           }
         }} />
       <ProfileDialog open={profileOpen} profile={life.profile} onClose={() => setProfileOpen(false)}

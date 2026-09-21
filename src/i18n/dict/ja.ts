@@ -1165,4 +1165,8 @@ export const ja: Record<TKey, string> = {
   'place.sum.wish': '行きたい国 {n}',
   // Place — the shortcut rail in the corner of the pin map.
   'place.shortcut': 'ショートカット',
+  // Place — the buttons in the corner of the map.
+  'place.filter': 'ピンの種類',
+  'place.filterAll': 'すべて',
+  'place.heat': 'ピンのヒートマップ',
 };

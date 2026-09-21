@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Crosshair, House, Loader2, Minus, Plus, Search, X } from 'lucide-react';
+import { dismissAfterVisible } from '@/lib/toast-dismiss';
+import { Crosshair, Flame, House, Loader2, Minus, Plus, Search, SlidersHorizontal, Star, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
@@ -10,8 +11,8 @@ import { COLOR_THEMES } from '@/data/color-themes';
 import { requestUpgrade } from '@/lib/pro';
 import { track, trackOnce } from '@/lib/track';
 import {
-  FREE_PLACE_PINS, MAX_PLACE_SHORTCUTS, byContinent, canAddPin, countryAt, placeSummary,
-  shortcutPins, type CountryShape,
+  FREE_PLACE_PINS, MAX_PLACE_SHORTCUTS, PIN_CATEGORIES, byContinent, canAddPin, countryAt,
+  placeSummary, shortcutPins, type CountryShape, type PinCategory,
 } from '@/lib/place';
 import { countryName, loadCities, loadWorld, searchCountries, type CityRow } from '@/lib/place-world';
 import { PIN_MAX_ZOOM, PIN_MIN_ZOOM, type Camera } from '@/lib/place-tiles';
@@ -75,6 +76,10 @@ export function PlaceView() {
   const [pinId, setPinId] = useState<string | null>(null);
   const [target, setTarget] = useState<PinTarget | null>(null);
   const [exporting, setExporting] = useState(false);
+  /** Which of the corner's lists is unfolded, if any: only ever one. */
+  const [openList, setOpenList] = useState<'shortcuts' | 'filter' | null>(null);
+  const [only, setOnly] = useState<Set<PinCategory>>(() => new Set());
+  const [heat, setHeat] = useState(false);
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
   // The globe opens looking at home, when there is a home to look at. The
@@ -148,7 +153,12 @@ export function PlaceView() {
   const summary = placeSummary(data, shapes);
   const shape = country ? shapes.find((s) => s.code === country) ?? null : null;
   const pin = pinId ? data.pins.find((p) => p.id === pinId) ?? null : null;
-  const pins = data.pins;
+  /** Every pin, or only the kinds asked for. Both maps read this, and so
+   *  does the heat: filtering a map that shows warmth should cool it. */
+  const pins = useMemo(
+    () => (only.size ? data.pins.filter((p) => only.has(p.category)) : data.pins),
+    [data.pins, only],
+  );
   const found = useMemo(
     () => (query.trim() ? searchCountries(shapes, query, lang) : []),
     [shapes, query, lang],
@@ -186,10 +196,13 @@ export function PlaceView() {
     setTarget(null);
     setPinId(null);
     if (!gone) return;
-    toast(t('place.deleted'), {
+    // Sonner stops its own clock while a finger or a pointer rests on the
+    // toast, and on a touch screen that pause outlives the touch — so the
+    // undo offer is closed on a timer of our own, which ignores the pointer.
+    dismissAfterVisible(toast(t('place.deleted'), {
       action: { label: t('sync.undo'), onClick: () => api.restorePin(gone.pin, gone.at) },
       duration: PLACE_UNDO_MS,
-    });
+    }), PLACE_UNDO_MS);
   };
 
   /**
@@ -282,6 +295,7 @@ export function PlaceView() {
             wished={wished}
             selected={country}
             selectedPin={pinId}
+            heat={heat}
             maxZoom={globeStop}
             camera={globe}
             onCamera={onGlobeCamera}
@@ -304,58 +318,6 @@ export function PlaceView() {
 
       {/* Everything else floats over it. */}
       <div className="pointer-events-none absolute inset-0 flex flex-col p-2 sm:p-3">
-        {/* There is no view to choose any more — how far in you are chooses
-            it — so the top of the map carries only the zoom and the search. */}
-        <div className="relative flex min-h-10 items-start">
-          <div className="ml-auto flex items-start gap-2">
-            {tab === 'world' && (searching ? (
-              <span className={`${FLOAT} inline-flex items-center gap-1 px-1`}>
-                <Input autoFocus value={query} data-place-search placeholder={t('place.searchCountry')}
-                  className="h-9 w-44 border-0 bg-transparent" onChange={(e) => setQuery(e.target.value)} />
-                <button type="button" aria-label={t('common.close')} data-place-search-close
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-accent/20"
-                  onClick={() => { setQuery(''); setSearching(false); }}>
-                  <X aria-hidden className="h-4 w-4" />
-                </button>
-              </span>
-            ) : (
-              <button type="button" aria-label={t('place.searchCountry')} title={t('place.searchCountry')}
-                data-place-search-open
-                className={`${FLOAT} grid h-10 w-10 place-items-center text-muted-foreground hover:bg-accent/20`}
-                onClick={() => setSearching(true)}>
-                <Search aria-hidden className="h-4 w-4" />
-              </button>
-            ))}
-            <div className={`${FLOAT} flex flex-col overflow-hidden`}>
-              <button type="button" aria-label={t('place.zoomIn')} title={t('place.zoomIn')} data-place-zoom-in
-                className="grid h-10 w-10 place-items-center text-muted-foreground hover:bg-accent/20"
-                onClick={() => zoomBy(1)}>
-                <Plus aria-hidden className="h-4 w-4" />
-              </button>
-              <button type="button" aria-label={t('place.zoomOut')} title={t('place.zoomOut')} data-place-zoom-out
-                className="grid h-10 w-10 place-items-center border-t border-border text-muted-foreground hover:bg-accent/20"
-                onClick={() => zoomBy(-1)}>
-                <Minus aria-hidden className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* What was searched for, under the box that searched for it. */}
-        {found.length > 0 && (
-          <ul className={`${FLOAT} mt-2 ml-auto flex max-w-[320px] flex-wrap justify-end gap-1 p-1.5`} data-place-found>
-            {found.map((s) => (
-              <li key={s.code}>
-                <button type="button" data-place-found-item={s.code}
-                  className="min-h-8 rounded-full px-2.5 text-[13px] hover:bg-accent/20"
-                  onClick={() => { setCountry(s.code); setQuery(''); setSearching(false); }}>
-                  {nameOf(s.code, s.name)}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-
         <div className="mt-auto flex flex-col items-center gap-2">
           {/* What the life line seems to say. Only ever an offer. */}
           {tab === 'world' && guesses.length > 0 && (
@@ -446,49 +408,176 @@ export function PlaceView() {
         </div>
       </div>
 
-      {/* The whole of the pin map's own furniture, in the corner a thumb
-          reaches: where I am, and the places worth one press. Nothing else —
-          how far in you are is what decides globe or tiles, a tap on the map
-          is what drops a pin, and neither of those needs a button. */}
-      {tab === 'pins' && (
-        <div className="pointer-events-none absolute bottom-7 right-2 flex flex-col items-end gap-1.5 sm:bottom-8 sm:right-3">
-          {(homeCity || starred.length > 0) && (
-            <ul data-place-rail className="grid max-w-[104px] grid-cols-2 justify-items-end gap-1.5">
-              {homeCity && (
+      {/* Every control on this page, in the one corner a thumb reaches.
+          Each list unfolds sideways from its own button rather than stacking
+          upward, so the corner stays the size of the corner. */}
+      <div data-place-corner
+        className={`pointer-events-none absolute bottom-7 right-2 z-10 flex flex-col items-end gap-1.5 sm:bottom-8 sm:right-3 ${
+          // A card on a wide screen is a column down the right; the corner
+          // steps aside rather than hiding under it.
+          // (A margin, not another `right`: two `right` utilities would only
+          // argue about which of them the stylesheet lists last.)
+          panel ? 'min-[900px]:mr-[360px]' : ''}`}>
+
+        {/* Looking for a country, on the globe. */}
+        {tab === 'world' && (
+          <div className="flex items-center justify-end gap-1.5">
+            {searching && (
+              <span className={`${FLOAT} pointer-events-auto inline-flex items-center gap-1 px-1`}>
+                <Input autoFocus value={query} data-place-search placeholder={t('place.searchCountry')}
+                  className="h-9 w-44 border-0 bg-transparent" onChange={(e) => setQuery(e.target.value)} />
+                {found.length > 0 && (
+                  <ul className="flex max-w-[40vw] items-center gap-1 overflow-x-auto" data-place-found>
+                    {found.map((s) => (
+                      <li key={s.code}>
+                        <button type="button" data-place-found-item={s.code}
+                          className="min-h-8 whitespace-nowrap rounded-full px-2.5 text-[13px] hover:bg-accent/20"
+                          onClick={() => { setCountry(s.code); setQuery(''); setSearching(false); }}>
+                          {nameOf(s.code, s.name)}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </span>
+            )}
+            <button type="button" data-place-search-open aria-pressed={searching}
+              aria-label={t('place.searchCountry')} title={t('place.searchCountry')}
+              className={`${FLOAT} pointer-events-auto grid h-11 w-11 place-items-center hover:bg-accent/20 ${
+                searching ? 'text-foreground' : 'text-muted-foreground'}`}
+              onClick={() => { setQuery(''); setSearching((v) => !v); }}>
+              {searching ? <X aria-hidden className="h-4 w-4" /> : <Search aria-hidden className="h-4 w-4" />}
+            </button>
+          </div>
+        )}
+
+        {/* The same record read as warmth: where the pins gather. */}
+        {tab === 'world' && (
+          <button type="button" data-place-heat aria-pressed={heat}
+            aria-label={t('place.heat')} title={t('place.heat')}
+            className={`${FLOAT} pointer-events-auto grid h-11 w-11 place-items-center hover:bg-accent/20 ${
+              heat ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+            onClick={() => setHeat((v) => !v)}>
+            <Flame aria-hidden className="h-4 w-4" />
+          </button>
+        )}
+
+        {/* Which kinds of pin to show. */}
+        {tab === 'pins' && data.pins.length > 0 && (
+          <div className="flex items-center justify-end gap-1.5">
+            {openList === 'filter' && (
+              <ul data-place-filters
+                className={`${FLOAT} pointer-events-auto flex max-w-[min(70vw,560px)] items-center gap-1 overflow-x-auto p-1`}>
                 <li>
-                  <button type="button" data-place-shortcut="home" title={homeCity.name}
-                    aria-label={`${t('place.shortcut')} · ${homeCity.name}`}
-                    className={`${FLOAT} grid h-11 w-11 place-items-center text-foreground hover:bg-accent/20`}
-                    onClick={() => goTo(homeCity.lng, homeCity.lat)}>
-                    <House aria-hidden className="h-4 w-4" />
+                  <button type="button" data-place-filter="all" aria-pressed={only.size === 0}
+                    onClick={() => setOnly(new Set())}
+                    className={`min-h-9 whitespace-nowrap rounded-full px-3 text-[12px] ${
+                      only.size === 0 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
+                    {t('place.filterAll')}
                   </button>
                 </li>
+                {PIN_CATEGORIES.map((c) => {
+                  const on = only.has(c);
+                  const Icon = PIN_ICON[c];
+                  const n = data.pins.filter((p) => p.category === c).length;
+                  return (
+                    <li key={c}>
+                      <button type="button" data-place-filter={c} aria-pressed={on} disabled={n === 0}
+                        onClick={() => setOnly((was) => {
+                          const next = new Set(was);
+                          if (!next.delete(c)) next.add(c);
+                          return next;
+                        })}
+                        className={`inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[12px] disabled:opacity-40 ${
+                          on ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
+                        <Icon aria-hidden className="h-3.5 w-3.5" />
+                        {t(PIN_LABEL[c])}
+                        <span className="tabular-nums">{n}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <button type="button" data-place-filter-toggle aria-expanded={openList === 'filter'}
+              aria-label={t('place.filter')} title={t('place.filter')}
+              className={`${FLOAT} pointer-events-auto relative grid h-11 w-11 place-items-center hover:bg-accent/20 ${
+                only.size ? 'text-foreground' : 'text-muted-foreground'}`}
+              onClick={() => setOpenList((o) => (o === 'filter' ? null : 'filter'))}>
+              <SlidersHorizontal aria-hidden className="h-4 w-4" />
+              {only.size > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                  {only.size}
+                </span>
               )}
-              {starred.map((p) => {
-                const Icon = PIN_ICON[p.category];
-                return (
-                  <li key={p.id}>
-                    <button type="button" data-place-shortcut={p.id} title={p.name}
-                      aria-label={`${t('place.shortcut')} · ${p.name}`}
-                      className={`${FLOAT} grid h-11 w-11 place-items-center text-foreground hover:bg-accent/20 ${
-                        pinId === p.id ? 'ring-2 ring-primary' : ''}`}
-                      onClick={() => goTo(p.lng, p.lat, p.id)}>
-                      <Icon aria-hidden className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
+        {/* The places worth one press, in a row rather than a block. */}
+        {tab === 'pins' && (homeCity || starred.length > 0) && (
+          <div className="flex items-center justify-end gap-1.5">
+            {openList === 'shortcuts' && (
+              <ul data-place-rail
+                className={`${FLOAT} pointer-events-auto flex max-w-[min(70vw,560px)] items-center gap-1 overflow-x-auto p-1`}>
+                {homeCity && (
+                  <li>
+                    <button type="button" data-place-shortcut="home"
+                      className="inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[12px] text-foreground hover:bg-accent/20"
+                      onClick={() => goTo(homeCity.lng, homeCity.lat)}>
+                      <House aria-hidden className="h-3.5 w-3.5" />
+                      {homeCity.name}
                     </button>
                   </li>
-                );
-              })}
-            </ul>
-          )}
+                )}
+                {starred.map((p) => {
+                  const Icon = PIN_ICON[p.category];
+                  return (
+                    <li key={p.id}>
+                      <button type="button" data-place-shortcut={p.id}
+                        className={`inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[12px] hover:bg-accent/20 ${
+                          pinId === p.id ? 'bg-primary text-primary-foreground' : 'text-foreground'}`}
+                        onClick={() => goTo(p.lng, p.lat, p.id)}>
+                        <Icon aria-hidden className="h-3.5 w-3.5" />
+                        {p.name}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <button type="button" data-place-rail-toggle aria-expanded={openList === 'shortcuts'}
+              aria-label={t('place.shortcut')} title={t('place.shortcut')}
+              className={`${FLOAT} pointer-events-auto grid h-11 w-11 place-items-center text-foreground hover:bg-accent/20`}
+              onClick={() => setOpenList((o) => (o === 'shortcuts' ? null : 'shortcuts'))}>
+              <Star aria-hidden className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Where I am, and how far in. */}
+        {tab === 'pins' && (
           <button type="button" data-place-locate disabled={locating} onClick={locate}
             aria-label={t('place.locate')} title={t('place.locate')}
-            className={`${FLOAT} grid h-11 w-11 place-items-center text-foreground hover:bg-accent/20 disabled:opacity-60`}>
+            className={`${FLOAT} pointer-events-auto grid h-11 w-11 place-items-center text-foreground hover:bg-accent/20 disabled:opacity-60`}>
             {locating
               ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" />
               : <Crosshair aria-hidden className="h-4 w-4" />}
           </button>
+        )}
+        <div className={`${FLOAT} pointer-events-auto flex flex-col overflow-hidden`}>
+          <button type="button" aria-label={t('place.zoomIn')} title={t('place.zoomIn')} data-place-zoom-in
+            className="grid h-11 w-11 place-items-center text-muted-foreground hover:bg-accent/20"
+            onClick={() => zoomBy(1)}>
+            <Plus aria-hidden className="h-4 w-4" />
+          </button>
+          <button type="button" aria-label={t('place.zoomOut')} title={t('place.zoomOut')} data-place-zoom-out
+            className="grid h-11 w-11 place-items-center border-t border-border text-muted-foreground hover:bg-accent/20"
+            onClick={() => zoomBy(-1)}>
+            <Minus aria-hidden className="h-4 w-4" />
+          </button>
         </div>
-      )}
+      </div>
 
       {/* The card for whatever is chosen: a column on the right of a wide
           screen, a sheet across the bottom of a narrow one. */}

@@ -1169,6 +1169,10 @@ export const ko = {
   'place.sum.wish': '가 보고 싶은 {n}개국',
   // Place — the shortcut rail in the corner of the pin map.
   'place.shortcut': '바로가기',
+  // Place — the buttons in the corner of the map.
+  'place.filter': '핀 종류',
+  'place.filterAll': '전체',
+  'place.heat': '핀 히트맵',
 } as const;
 
 /** Every translation key — derived, never hand-maintained. */

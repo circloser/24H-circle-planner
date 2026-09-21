@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { dismissAfterVisible } from '@/lib/toast-dismiss';
 import { Download, ListFilter, Plus, Search, ShieldAlert, UserPlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -153,10 +154,10 @@ export function RelationView() {
     setTarget(null);
     setSelected(null);
     if (!gone) return;
-    toast(t('relation.deleted'), {
+    dismissAfterVisible(toast(t('relation.deleted'), {
       action: { label: t('sync.undo'), onClick: () => api.restorePerson(gone.person, gone.at, gone.links) },
       duration: RELATION_UNDO_MS,
-    });
+    }), RELATION_UNDO_MS);
   };
 
   const empty = data.people.length === 0;

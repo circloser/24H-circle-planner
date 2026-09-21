@@ -69,3 +69,25 @@ export const continentName = (
   continent: string,
   t: (key: TKey) => string,
 ): string => (CONTINENT[continent] ? t(CONTINENT[continent]) : continent);
+
+/**
+ * The same colour at a given opacity, for a gradient that has to fade out.
+ *
+ * Themes hand us `#rgb`, `#rrggbb` or an `rgb(...)`, and a gradient stop
+ * cannot be given an alpha separately — so it is put into the colour here.
+ */
+export function hexAlpha(colour: string, alpha: number): string {
+  const hex = colour.trim();
+  const short = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(hex);
+  const long = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+  const rgb = /^rgba?\(\s*([0-9.]+)[\s,]+([0-9.]+)[\s,]+([0-9.]+)/i.exec(hex);
+  const parts = short
+    ? short.slice(1).map((c) => parseInt(c + c, 16))
+    : long
+      ? long.slice(1).map((c) => parseInt(c, 16))
+      : rgb
+        ? rgb.slice(1).map((c) => Math.round(Number(c)))
+        : null;
+  if (!parts || parts.some((n) => !Number.isFinite(n))) return hex;
+  return `rgba(${parts[0]}, ${parts[1]}, ${parts[2]}, ${alpha})`;
+}

@@ -1168,4 +1168,8 @@ export const de: Record<TKey, string> = {
   'place.sum.wish': '{n} auf der Liste',
   // Place — the shortcut rail in the corner of the pin map.
   'place.shortcut': 'Kurzbefehl',
+  // Place — the buttons in the corner of the map.
+  'place.filter': 'Art der Nadel',
+  'place.filterAll': 'Alle',
+  'place.heat': 'Nadel-Heatmap',
 };

@@ -195,15 +195,14 @@ export function PinMap({ pins, camera, onCamera, selected, onSelect, onDropAt, h
             data-place-pin={only ? only.id : undefined}
             data-place-cluster={only ? undefined : c.pins.length}
             aria-label={only ? only.name : String(c.pins.length)}
-            className={`absolute grid place-items-center rounded-full border bg-surface text-foreground transition-transform ${
-              on ? 'scale-110 border-primary' : 'border-foreground/70'}`}
+            className="absolute flex flex-col items-center"
             style={{
               left: c.x,
               top: c.y,
-              width: only ? 26 : 32,
-              height: only ? 26 : 32,
+              // The circle sits on the spot; the name hangs under it, and the
+              // whole thing is the button, so a name is as easy to hit as a
+              // dot is.
               transform: 'translate(-50%, -100%)',
-              borderWidth: on ? 2 : 1.5,
             }}
             onClick={() => {
               if (only) return onSelect(on ? null : only.id);
@@ -211,7 +210,22 @@ export function PinMap({ pins, camera, onCamera, selected, onSelect, onDropAt, h
               onCamera({ lng: at2.lng, lat: at2.lat, zoom: Math.min(PIN_MAX_ZOOM, camera.zoom + 2) });
             }}
           >
-            {Icon ? <Icon aria-hidden className="h-3.5 w-3.5" /> : <span className="text-[11px] tabular-nums">{c.pins.length}</span>}
+            <span aria-hidden
+              className={`grid place-items-center rounded-full border bg-surface text-foreground transition-transform ${
+                on ? 'scale-110 border-primary' : 'border-foreground/70'}`}
+              style={{ width: only ? 26 : 32, height: only ? 26 : 32, borderWidth: on ? 2 : 1.5 }}>
+              {Icon ? <Icon aria-hidden className="h-3.5 w-3.5" /> : <span className="text-[11px] tabular-nums">{c.pins.length}</span>}
+            </span>
+            {/* A pin without its name is a dot among dots. The name is drawn
+                in the page's own ink on its own paper, so it stays readable
+                over a light map and a dark one alike. */}
+            {only && (
+              <span data-place-pin-label={only.id}
+                className={`mt-0.5 max-w-[104px] truncate rounded px-1 text-[11px] leading-4 ${
+                  on ? 'bg-primary text-primary-foreground' : 'bg-surface/85 text-foreground'}`}>
+                {only.name}
+              </span>
+            )}
           </button>
         );
       })}

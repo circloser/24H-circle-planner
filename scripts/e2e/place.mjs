@@ -299,27 +299,46 @@ export async function run() {
       (await count(`[data-place-pin="${withPin.pins[0].id}"]`)) === 1
       && (await count(`[data-place-list-item="${withPin.pins[0].id}"]`)) === 1);
 
-    // 6a. The shortcut rail: whatever has been starred, and where I live.
-    pass('nothing is starred, so there is no rail to start with',
-      (await count('[data-place-rail]')) === 0);
+    // 6a. Its name is written under it, so one pin can be told from another.
+    pass('a pin carries its name on the map',
+      (await page.locator(`[data-place-pin-label="${withPin.pins[0].id}"]`).innerText()).trim() === '에펠탑');
+
+    // 6b. The shortcut rail: a button that unfolds a row, not a block.
+    pass('nothing is starred, so there is no rail to open',
+      (await count('[data-place-rail-toggle]')) === 0);
     await page.locator(`[data-place-list-item="${withPin.pins[0].id}"]`).focus();
     await page.keyboard.press('Enter');
     await wait(400);
     await page.locator('[data-place-pin-star]').click();
     await wait(500);
-    pass('starring a pin puts it on the rail',
-      (await stored()).pins[0].star === true
-      && (await count(`[data-place-shortcut="${withPin.pins[0].id}"]`)) === 1,
+    pass('starring a pin gives the corner a shortcut button',
+      (await stored()).pins[0].star === true && (await count('[data-place-rail-toggle]')) === 1,
       JSON.stringify((await stored()).pins[0]));
-    pass('…in the corner a thumb reaches, with where-I-am under it', await page.evaluate(() => {
-      const rail = document.querySelector('[data-place-rail]').getBoundingClientRect();
-      const me = document.querySelector('[data-place-locate]').getBoundingClientRect();
-      const view = document.querySelector('[data-place-view]').getBoundingClientRect();
-      return view.right - me.right < 40 && view.bottom - me.bottom < 60
-        && Math.abs(view.right - rail.right) < 40 && rail.bottom <= me.top + 1;
-    }));
+    pass('…and the list stays folded until it is asked for',
+      (await count('[data-place-rail]')) === 0);
     await page.locator('[data-place-panel-close]').click();
     await wait(300);
+    await page.locator('[data-place-rail-toggle]').click();
+    await wait(400);
+    pass('…then unfolds sideways from its own button, not upward', await page.evaluate(() => {
+      const rail = document.querySelector('[data-place-rail]').getBoundingClientRect();
+      const toggle = document.querySelector('[data-place-rail-toggle]').getBoundingClientRect();
+      // Along the bottom, to the left of the button that opened it.
+      return rail.right <= toggle.left + 1 && Math.abs(rail.height - toggle.height) < 12;
+    }));
+    pass('…with every shortcut named rather than guessed at',
+      (await page.locator(`[data-place-shortcut="${withPin.pins[0].id}"]`).innerText()).includes('에펠탑'));
+    pass('…and every button on this page is in that one corner', await page.evaluate(() => {
+      const view = document.querySelector('[data-place-view]').getBoundingClientRect();
+      const corner = document.querySelector('[data-place-corner]').getBoundingClientRect();
+      const loose = ['[data-place-zoom-in]', '[data-place-zoom-out]', '[data-place-locate]',
+        '[data-place-rail-toggle]', '[data-place-filter-toggle]'];
+      return view.bottom - corner.bottom < 60
+        && loose.every((s) => {
+          const el = document.querySelector(s);
+          return !el || document.querySelector('[data-place-corner]').contains(el);
+        });
+    }));
     await page.locator('[data-place-zoom-out]').click();
     await wait(300);
     const wide = Number(await page.locator('[data-place-pins]').getAttribute('data-place-zoom'));
@@ -332,10 +351,55 @@ export async function run() {
     await page.locator('[data-place-panel-close]').click();
     await wait(300);
 
+    // 6c. The kinds of pin, filtered from the same corner. A second pin of
+    // another kind, so that filtering has something to hide.
+    const near = await page.locator('[data-place-pins]').boundingBox();
+    await page.mouse.click(near.x + near.width * 0.35, near.y + near.height * 0.62);
+    await wait(700);
+    await page.locator('[data-place-name-input]').fill('뒷산');
+    await page.locator('[data-place-cat="nature"]').click();
+    await page.locator('[data-place-save]').click();
+    await wait(800);
+    const both = await stored();
+    const woods = both.pins.find((p) => p.name === '뒷산');
+    pass('a second pin, of another kind', both.pins.length === 2 && woods?.category === 'nature',
+      JSON.stringify(both.pins.map((p) => `${p.name}:${p.category}`)));
+    await page.locator('[data-place-panel-close]').click();
+    await wait(300);
+    await page.locator('[data-place-filter-toggle]').click();
+    await wait(400);
+    pass('the kinds of pin unfold from the corner too',
+      (await count('[data-place-filters]')) === 1 && (await count('[data-place-filter]')) > 4);
+    pass('…and a kind you have none of is shown but cannot be chosen',
+      await page.locator('[data-place-filter="stay"]').isDisabled());
+    await page.locator('[data-place-filter="nature"]').click();
+    await wait(500);
+    pass('…and choosing one kind takes the others off the map',
+      (await count(`[data-place-pin="${withPin.pins[0].id}"]`)) === 0
+      && (await count(`[data-place-pin="${woods.id}"]`)) === 1
+      && (await stored()).pins.length === 2);
+    await page.locator('[data-place-filter="all"]').click();
+    await wait(500);
+    pass('…and 전체 brings them all back',
+      (await count(`[data-place-pin="${withPin.pins[0].id}"]`)) === 1
+      && (await count(`[data-place-pin="${woods.id}"]`)) === 1);
+    await page.locator('[data-place-filter-toggle]').click();
+    await wait(300);
+
     // 6b. The same pins are on the globe, and open there without leaving it.
     await show('world');
     pass('a pin is on the globe as well as on the pin map',
       (await count(`[data-place-globe-pin="${withPin.pins[0].id}"]`)) === 1);
+    // 6d. The same record read as warmth rather than as borders.
+    pass('the globe offers a heat map of the pins',
+      (await page.locator('[data-place-heat]').getAttribute('aria-pressed')) === 'false');
+    await page.locator('[data-place-heat]').click();
+    await wait(600);
+    pass('…and turning it on leaves the pins where they were',
+      (await page.locator('[data-place-heat]').getAttribute('aria-pressed')) === 'true'
+      && (await count(`[data-place-globe-pin="${withPin.pins[0].id}"]`)) === 1);
+    await page.locator('[data-place-heat]').click();
+    await wait(400);
     await page.locator(`[data-place-globe-pin="${withPin.pins[0].id}"]`).dispatchEvent('click');
     await wait(400);
     pass('…and choosing it there opens its card without leaving the globe',
@@ -366,6 +430,30 @@ export async function run() {
     pass('…at the scale the globe stopped at, not somewhere else',
       Number(await page.locator('[data-place-pins]').getAttribute('data-place-zoom')) === 6,
       await page.locator('[data-place-pins]').getAttribute('data-place-zoom'));
+
+    // 6e. Deleting says so, offers it back — and then goes away by itself,
+    // even with a pointer resting on it. (Sonner stops its own clock while
+    // the pointer is there, which once left this notice on screen for good.)
+    await show('pins');
+    await page.locator(`[data-place-list-item="${withPin.pins[0].id}"]`).focus();
+    await page.keyboard.press('Enter');
+    await wait(400);
+    await page.locator('[data-place-pin-delete]').click();
+    await wait(600);
+    const said = page.locator('[data-sonner-toast]').first();
+    pass('deleting a pin says so, and offers it back',
+      (await said.count()) === 1 && !(await stored()).pins.some((p) => p.id === withPin.pins[0].id),
+      await said.innerText().catch(() => 'no toast'));
+    await said.hover().catch(() => {});
+    await wait(3000);
+    pass('…and the offer stands while it is being read',
+      (await page.locator('[data-sonner-toast]').count()) === 1);
+    // The undo window is twenty seconds; a little longer than that, and it
+    // must be gone whatever the pointer is doing.
+    await wait(19000);
+    pass('…and then it goes away on its own', (await page.locator('[data-sonner-toast]').count()) === 0);
+    pass('…leaving the pin deleted',
+      !(await stored()).pins.some((p) => p.id === withPin.pins[0].id));
 
     // 7. The life line's travels are offered, never taken.
     await page.evaluate(([k, v]) => localStorage.setItem(k, v), [LIFE_KEY, JSON.stringify(LIFE)]);
@@ -401,8 +489,12 @@ export async function run() {
     await closeAll();
     await show('pins');
     pass('all fifty pins are in the list', (await count('[data-place-list-item]')) === 50);
+    await page.locator('[data-place-rail-toggle]').click();
+    await wait(400);
     pass('where I live is a shortcut by itself, and fifty pins add no others',
       (await count('[data-place-shortcut="home"]')) === 1 && (await count('[data-place-shortcut]')) === 1);
+    await page.locator('[data-place-rail-toggle]').click();
+    await wait(300);
     const full = await page.locator('[data-place-pins]').boundingBox();
     await page.mouse.click(full.x + full.width * 0.4, full.y + full.height * 0.4);
     await wait(800);

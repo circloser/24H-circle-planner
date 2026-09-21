@@ -7,6 +7,7 @@ import {
 } from '@/lib/place-globe';
 import type { CityRow } from '@/lib/place-world';
 import { capture, listOf, moveBetween, type Pointer } from '@/lib/gesture';
+import { hexAlpha } from './palette';
 
 export interface GlobeMapProps {
   shapes: readonly CountryShape[];
@@ -22,6 +23,9 @@ export interface GlobeMapProps {
   wished: string;
   selected: string | null;
   selectedPin: string | null;
+  /** Show where the pins are gathered rather than which countries are
+   *  coloured in: the same record read as warmth instead of as borders. */
+  heat: boolean;
   /** As close as the globe goes before the tile map is the better picture.
    *  A finger may ask for one step past it — that step is the handover. */
   maxZoom: number;
@@ -58,7 +62,7 @@ const PIN_RISE = 9;
  */
 export function GlobeMap({
   shapes, countries, cities, places, pins, homeCityId, visited, wished, selected, selectedPin,
-  maxZoom, camera, onCamera, onSelect, onSelectPin, nameOf,
+  heat, maxZoom, camera, onCamera, onSelect, onSelectPin, nameOf,
 }: GlobeMapProps) {
   /** One step past the stop, which the view above reads as "now the tiles". */
   const reach = maxZoom * 1.4;
@@ -145,7 +149,9 @@ export function GlobeMap({
     ctx.clip();
     for (const shape of drawn) {
       if (!anyFacing(shape, camera)) continue;
-      const visit = been.get(shape.code);
+      // With the heat showing, every country is drawn the same faint way:
+      // two readings of the same record would only fight each other.
+      const visit = heat ? undefined : been.get(shape.code);
       const want = isWished(visit);
       const lit = hover === shape.code || selected === shape.code;
       const colour = visit ? (want ? wished : visited) : ink;
@@ -184,6 +190,40 @@ export function GlobeMap({
       ctx.stroke();
     }
     ctx.restore();
+
+    /*
+     * The heat: one soft blob a pin, added together.
+     *
+     * Where pins stand on their own the blob is faint; where several are
+     * close their blobs add up, and the colour runs from a wash to something
+     * that reads as "here, often". Drawn with 'lighter' so the adding is the
+     * picture rather than something computed into a grid, and clipped to the
+     * ball so nothing spills off the edge of the world.
+     */
+    if (heat && pins.length) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(screen.cx, screen.cy, screen.r, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.globalCompositeOperation = 'lighter';
+      // Wide enough to blend at a distance, tight enough to mean a place
+      // when the globe is brought close.
+      const spread = Math.max(16, Math.min(90, screen.r * 0.07));
+      for (const pin of pins) {
+        if (!facing(pin.lng, pin.lat, camera)) continue;
+        const p = project(pin.lng, pin.lat, camera, screen);
+        const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, spread);
+        glow.addColorStop(0, hexAlpha(visited, 0.5));
+        glow.addColorStop(0.5, hexAlpha(visited, 0.16));
+        glow.addColorStop(1, hexAlpha(visited, 0));
+        ctx.fillStyle = glow;
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, spread, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
 
     // The world's own cities, once the globe is close enough to hold them.
     // Ranked, so what appears first is the capitals and what appears last is
@@ -264,7 +304,7 @@ export function GlobeMap({
     }
     ctx.globalAlpha = 1;
   }, [size, screen, camera, drawn, been, cities, ranked, cut, mine, pins, homeCityId, visited, wished,
-    selected, selectedPin, hover, lines]);
+    heat, selected, selectedPin, hover, lines]);
 
   useEffect(() => {
     const frame = requestAnimationFrame(paint);
