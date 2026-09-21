@@ -19,7 +19,7 @@ const json = (body) => ({ status: 200, contentType: 'application/json', body: JS
 /** Everything the page could possibly ask the outside world for. */
 const OUTSIDE = '**://{tile.openstreetmap.org,*.tile.openstreetmap.org}/**';
 
-async function setup(base, opts = {}) {
+async function setup(base, { granted, ...opts } = {}) {
   const { browser, page, errors } = await launchPage({ viewport: { width: 1440, height: 900 }, ...opts });
   const counted = [];
   const tiles = [];
@@ -39,6 +39,17 @@ async function setup(base, opts = {}) {
     };
     Object.defineProperty(navigator, 'geolocation', { value: fake, configurable: true });
   });
+  // A browser that has already been told it may say where it is. The app asks
+  // `permissions.query` first and only reads a plain "granted" — it never
+  // prompts on its own — so this is the whole of that state.
+  if (granted) {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'permissions', {
+        value: { query: () => Promise.resolve({ state: 'granted', onchange: null }) },
+        configurable: true,
+      });
+    });
+  }
   await page.route('**/api/metrics', async (route) => {
     try { counted.push(...(JSON.parse(route.request().postData() ?? '{}').e ?? [])); } catch { /* ignore */ }
     await route.fulfill({ status: 204, body: '' });
@@ -318,7 +329,9 @@ export async function run() {
     pass('nothing has asked where the device is',
       (await page.evaluate(() => window.__located)) === 0);
     await page.locator('[data-place-locate]').click();
-    await wait(600);
+    // The camera travels there (lib/place-fly), so the reading is taken once
+    // it has arrived rather than halfway across the world.
+    await wait(1600);
     pass('pressing the button asks exactly once, and the map goes there',
       (await page.evaluate(() => window.__located)) === 1 && (await count('[data-place-here]')) === 1);
     const map = await page.locator('[data-place-pins]').boundingBox();
@@ -466,6 +479,23 @@ export async function run() {
     await page.locator('[data-place-heat]').click();
     await wait(400);
 
+    // A country under the pointer says which one it is.
+    pass('the globe names the country under the pointer', await page.evaluate(() => {
+      const globe = document.querySelector('[data-place-globe]');
+      const canvas = document.querySelector('[data-place-world]');
+      const box = globe.getBoundingClientRect();
+      const ctx = canvas.getContext('2d');
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const x = Math.round(box.width / 2);
+      const y = Math.round(box.height / 2);
+      const strip = () => ctx.getImageData(Math.round((x + 10) * dpr), Math.round((y - 34) * dpr), 160, 30).data.join();
+      const before = strip();
+      canvas.dispatchEvent(new PointerEvent('pointermove', {
+        clientX: box.left + x + 2, clientY: box.top + y + 2, bubbles: true, pointerId: 1, pointerType: 'mouse',
+      }));
+      return new Promise((done) => setTimeout(() => done(strip() !== before), 400));
+    }));
+
     // Where I am works on the globe too: it turns to show the place.
     // Turned away from the person first, so coming back is what is measured.
     const globeBox = await page.locator('[data-place-world]').boundingBox();
@@ -475,11 +505,27 @@ export async function run() {
     await page.mouse.up();
     await wait(300);
     const wasFacing = await page.locator('[data-place-globe]').getAttribute('data-place-lng');
+    // Watch the zoom while it goes: out first, then in.
+    const watching = page.evaluate(() => new Promise((done) => {
+      const el = document.querySelector('[data-place-globe]');
+      const seen = [];
+      const stop = setTimeout(() => { clearInterval(tick); done(seen); }, 1500);
+      const tick = setInterval(() => {
+        seen.push(Number(el.dataset.placeZoom));
+        if (seen.length > 40) { clearInterval(tick); clearTimeout(stop); done(seen); }
+      }, 40);
+    }));
     await page.locator('[data-place-locate]').click();
+    const zooms = await watching;
+    const flown = {
+      start: zooms[0], lowest: Math.min(...zooms), end: zooms[zooms.length - 1],
+      pulledBack: Math.min(...zooms) < Math.min(zooms[0], zooms[zooms.length - 1]) - 0.05,
+    };
     await wait(700);
     const facing = await page.locator('[data-place-globe]').getAttribute('data-place-lng');
     pass('the globe turns to where the person is when asked',
       Math.abs(Number(facing) - 2.35) < 0.5 && facing !== wasFacing, `${wasFacing} → ${facing}`);
+    pass('…and it travelled there rather than cutting to it', flown.pulledBack, JSON.stringify(flown));
     await page.locator(`[data-place-globe-pin="${withPin.pins[0].id}"]`).dispatchEvent('click');
     await wait(400);
     pass('…and choosing it there opens its card without leaving the globe',
@@ -731,6 +777,23 @@ export async function run() {
     pass('no page errors (the turning globe)', spun.errors.length === 0, spun.errors.slice(0, 2).join(' | '));
   } finally {
     await spun.browser.close();
+  }
+
+  // 12c. Where the browser has already been told it may, the map opens where
+  // the person is — without a prompt, and without asking again.
+  const known = await setup(base, { granted: true });
+  try {
+    await known.page.locator('[data-place-toggle]').click();
+    await known.page.waitForSelector('[data-place-world]', { timeout: 20000 });
+    await wait(1200);
+    const lng = await known.page.locator('[data-place-globe]').getAttribute('data-place-lng');
+    pass('the globe opens looking at where the person is',
+      Math.abs(Number(lng) - 2.35) < 0.5, String(lng));
+    pass('…having read it once, and asked nobody anything',
+      (await known.page.evaluate(() => window.__located)) === 1);
+    pass('no page errors (opening where they are)', known.errors.length === 0, known.errors.slice(0, 2).join(' | '));
+  } finally {
+    await known.browser.close();
   }
 
   // 13. A phone: the card becomes a sheet under the map.

@@ -21,6 +21,7 @@ import {
   type Camera as GlobeCamera,
 } from '@/lib/place-globe';
 import { cardAt, shapeCentre } from '@/lib/place-anchor';
+import { FLY_MS, flyLevels, flyStep } from '@/lib/place-fly';
 import { usePlace, PLACE_UNDO_MS } from '@/hooks/usePlace';
 import { PLACE_EXPORT_EVENT } from '@/lib/place-export';
 import { readRelationPeople } from '@/lib/place-relation';
@@ -113,6 +114,15 @@ export function PlaceView() {
   });
   const [here, setHere] = useState<{ lng: number; lat: number } | null>(null);
   const [locating, setLocating] = useState(false);
+  /** Which flight is the current one, so a cancelled one stops stepping. */
+  const flight = useRef(0);
+  /** And whether one is under way, which the globe reads to hold still. */
+  const [flying, setFlying] = useState(false);
+  /** The person's own hand always wins: any camera of their own ends it. */
+  const stopFlying = useCallback(() => {
+    flight.current = 0;
+    setFlying(false);
+  }, []);
   const [picked, setPicked] = useState<Set<string>>(() => new Set());
   const [askedLife, setAskedLife] = useState(false);
   const [homeAsked, setHomeAsked] = useState(false);
@@ -136,6 +146,38 @@ export function PlaceView() {
   const globeStop = GLOBE_FROM_PIN(size.w, size.h);
 
   useEffect(() => { trackOnce('place_open'); }, []);
+  /**
+   * The map opens where the person is — but only where the browser has
+   * already been told it may say so.
+   *
+   * Permission is never asked for here: a page that throws up a location
+   * prompt the moment it opens is a page nobody trusts. `permissions.query`
+   * answers without asking, and only a plain "granted" (from the 내 위치
+   * button, once) leads to a reading. Anything else and the map opens where
+   * it always did: home, or the middle of the world.
+   */
+  useEffect(() => {
+    const perms = navigator.permissions;
+    if (!perms?.query || !navigator.geolocation) return;
+    let alive = true;
+    void perms.query({ name: 'geolocation' as PermissionName })
+      .then((status) => {
+        if (!alive || status.state !== 'granted') return;
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            if (!alive) return;
+            const at = { lng: pos.coords.longitude, lat: pos.coords.latitude };
+            setHere(at);
+            setGlobe((g) => ({ ...at, zoom: Math.max(g.zoom, CITY_DOT_ZOOM) }));
+            setCamera((c) => ({ ...at, zoom: Math.max(c.zoom, 10) }));
+          },
+          () => {},
+          { enableHighAccuracy: false, timeout: 10_000, maximumAge: 600_000 },
+        );
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
   useEffect(() => {
     document.documentElement.setAttribute('data-page', 'place');
     return () => document.documentElement.removeAttribute('data-page');
@@ -219,6 +261,33 @@ export function PlaceView() {
   };
 
   /**
+   * Going to a place rather than appearing there: out, across, and back in
+   * (lib/place-fly). Whichever view is showing does its own kind of zoom —
+   * the globe multiplies, the tiles count levels — and anything the person
+   * does cancels the flight, because their hand beats ours.
+   */
+  const flyTo = useCallback((at: { lng: number; lat: number }, close: number) => {
+    const started = performance.now();
+    const mine = started;
+    flight.current = mine;
+    setFlying(true);
+    const world = tab === 'world';
+    const from = world ? { ...globe } : { ...camera };
+    const to = world
+      ? { ...at, zoom: Math.min(globeStop, Math.max(globe.zoom, close)) }
+      : { ...at, zoom: Math.max(camera.zoom, close) };
+    const step = (now: number) => {
+      if (flight.current !== mine) return; // somebody else took the camera
+      const t = Math.min(1, (now - started) / FLY_MS);
+      if (world) setGlobe(flyStep(from, to, t));
+      else setCamera(flyLevels(from, to, t, 2.5, PIN_MIN_ZOOM));
+      if (t < 1) requestAnimationFrame(step);
+      else stopFlying();
+    };
+    requestAnimationFrame(step);
+  }, [tab, globe, camera, globeStop, stopFlying]);
+
+  /**
    * Where am I? Asked for by pressing this, answered once, and never asked
    * again on its own. The answer is not stored anywhere — it moves the map
    * and draws a dot, and that is all.
@@ -230,11 +299,15 @@ export function PlaceView() {
       (pos) => {
         const at = { lng: pos.coords.longitude, lat: pos.coords.latitude };
         setHere(at);
-        setCamera((c) => ({ ...at, zoom: Math.max(c.zoom, 12) }));
-        // The globe turns to it too, and comes close enough for the place to
-        // be a place rather than a continent — whichever view is showing, the
-        // answer to "where am I" is on screen.
-        setGlobe((gl) => ({ ...at, zoom: Math.max(gl.zoom, Math.min(globeStop, CITY_DOT_ZOOM * 1.6)) }));
+        // Whichever view is showing flies there; the other is simply set, so
+        // that crossing between them afterwards lands in the right place.
+        if (tab === 'world') {
+          setCamera((c) => ({ ...at, zoom: Math.max(c.zoom, 12) }));
+          flyTo(at, Math.min(globeStop, CITY_DOT_ZOOM * 1.6));
+        } else {
+          setGlobe((gl) => ({ ...at, zoom: Math.max(gl.zoom, Math.min(globeStop, CITY_DOT_ZOOM * 1.6)) }));
+          flyTo(at, 12);
+        }
         setLocating(false);
         track('place_locate');
       },
@@ -268,11 +341,13 @@ export function PlaceView() {
 
   /** The globe's camera, unless it has been zoomed in past its own end. */
   const onGlobeCamera = (next: GlobeCamera) => {
+    stopFlying();
     if (next.zoom > globeStop) return toPins(next);
     setGlobe(next);
   };
   /** The tile map's camera, unless it has been zoomed out past its own end. */
   const onPinCamera = (next: Camera) => {
+    stopFlying();
     if (next.zoom < PIN_MIN_ZOOM) return toGlobe(next);
     setCamera(next);
   };
@@ -345,6 +420,7 @@ export function PlaceView() {
             heat={heat}
             pinColors={colors.pin}
             here={here}
+            still={flying}
             maxZoom={globeStop}
             camera={globe}
             onCamera={onGlobeCamera}

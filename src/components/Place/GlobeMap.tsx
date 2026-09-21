@@ -35,6 +35,8 @@ export interface GlobeMapProps {
   pinColors: Record<PinCategory, string>;
   /** Where the person is right now, if they have asked to be found. */
   here?: { lng: number; lat: number } | null;
+  /** The camera is being moved from outside: do not turn on our own. */
+  still?: boolean;
   camera: Camera;
   onCamera: (camera: Camera) => void;
   onSelect: (code: string | null) => void;
@@ -76,7 +78,7 @@ const SPIN_MS = 33;
  */
 export function GlobeMap({
   shapes, countries, cities, places, pins, homeCityId, visited, wished, selected, selectedPin,
-  heat, maxZoom, pinColors, here, camera, onCamera, onSelect, onSelectPin, nameOf,
+  heat, maxZoom, pinColors, here, still, camera, onCamera, onSelect, onSelectPin, nameOf,
 }: GlobeMapProps) {
   /** One step past the stop, which the view above reads as "now the tiles". */
   const reach = maxZoom * 1.4;
@@ -84,6 +86,10 @@ export function GlobeMap({
   const canvas = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [hover, setHover] = useState<string | null>(null);
+  /** Where the pointer is, for the name that follows it. A ref: it changes
+   *  with every mouse move, and a render each time would be a render too many
+   *  — the drawing is asked for directly instead. */
+  const pointer = useRef<{ x: number; y: number } | null>(null);
   const been = useMemo(() => new Map(countries.map((c) => [c.code, c])), [countries]);
   const lines = useMemo(() => graticule(), []);
   // The long steps of a coastline are filled in once, not on every frame —
@@ -319,6 +325,33 @@ export function GlobeMap({
         }
       }
     }
+    // The name of whatever the pointer is over, beside the pointer. Countries
+    // have no labels on this globe — there is no room at this size — so this
+    // is the only way to be sure which one is about to be coloured in.
+    const over = hover ? shapes.find((s) => s.code === hover) : null;
+    if (over && pointer.current) {
+      const name = nameOf(over.code, over.name);
+      ctx.font = '12px ui-sans-serif, system-ui, sans-serif';
+      const wide = ctx.measureText(name).width;
+      const pad = 6;
+      const x = Math.min(size.w - wide - pad * 2 - 4, pointer.current.x + 14);
+      const y = Math.max(4, pointer.current.y - 28);
+      ctx.globalAlpha = 0.92;
+      ctx.fillStyle = paper;
+      ctx.beginPath();
+      ctx.roundRect(x, y, wide + pad * 2, 22, 11);
+      ctx.fill();
+      ctx.globalAlpha = 0.18;
+      ctx.strokeStyle = ink;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.globalAlpha = 0.95;
+      ctx.fillStyle = ink;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(name, x + pad, y + 11);
+    }
+
     // Where the person is, when they have asked to be found.
     if (here && facing(here.lng, here.lat, camera)) {
       const p = project(here.lng, here.lat, camera, screen);
@@ -338,7 +371,7 @@ export function GlobeMap({
     }
     ctx.globalAlpha = 1;
   }, [size, screen, camera, drawn, been, cities, ranked, cut, mine, pins, homeCityId, visited, wished,
-    heat, here, pinColors, selected, selectedPin, hover, lines]);
+    heat, here, pinColors, selected, selectedPin, hover, lines, shapes, nameOf]);
 
   useEffect(() => {
     const frame = requestAnimationFrame(paint);
@@ -363,7 +396,7 @@ export function GlobeMap({
    */
   const latest = useRef({ camera, onCamera });
   useEffect(() => { latest.current = { camera, onCamera }; });
-  const held = selected !== null || selectedPin !== null;
+  const held = selected !== null || selectedPin !== null || !!still;
   useEffect(() => {
     if (held) return;
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return;
@@ -420,8 +453,11 @@ export function GlobeMap({
     if (!down.current.has(e.pointerId)) {
       // Not a drag: just the pointer passing over a country.
       const p = at(e);
+      pointer.current = p;
       const where = unproject(p.x, p.y, camera, screen);
-      setHover(where ? countryUnder(shapes, where.lng, where.lat) : null);
+      const code = where ? countryUnder(shapes, where.lng, where.lat) : null;
+      if (code === hover) paint(); // the name follows the pointer
+      else setHover(code);
       return;
     }
     down.current.set(e.pointerId, at(e));
@@ -476,7 +512,7 @@ export function GlobeMap({
         onPointerMove={onMove}
         onPointerUp={onUp}
         onPointerCancel={onUp}
-        onPointerLeave={() => setHover(null)}
+        onPointerLeave={() => { pointer.current = null; setHover(null); }}
         onWheel={wheel}
         onDoubleClick={() => onCamera({ ...camera, zoom: 1 })}
       />
