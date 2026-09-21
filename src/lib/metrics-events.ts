@@ -8,6 +8,10 @@
  * tag is on METRIC_TAGS, so free text can never end up in the table.
  */
 export const METRIC_EVENTS = [
+  // Which page of the app is being looked at, and which feature was used.
+  // Together these two answer "what do people actually do here" without
+  // anything being counted twice: one is a place, the other is an action.
+  'view_open', 'feature_use',
   // Sessions and the core planner.
   'app_open', 'schedule_edit', 'meaningful_schedule_edit', 'schedule_import', 'preset_load', 'onboard_persona',
   'export', 'share', 'palette_apply', 'palette_add', 'day_complete', 'pip_open',
@@ -38,6 +42,13 @@ export const MAX_METRICS_PER_POST = 20;
 /** Tags that may ride along. A closed list: anyone can post counts, so the
  *  table must stay bounded by (events × tags) rows a day whatever is sent. */
 export const METRIC_TAGS = [
+  // The pages of the app (view_open). 'life', 'relation' and 'place' are
+  // below, where they already were.
+  'chart', 'table', 'record', 'calendar',
+  // The features worth knowing about (feature_use). Each is one thing a
+  // person chose to do, never what they wrote while doing it.
+  'settings', 'magician', 'tutorial', 'search', 'city_search', 'heat', 'filter', 'globe',
+  'life_line', 'life_zoom', 'relation_group', 'relation_place', 'widget', 'album', 'pet', 'news', 'goals',
   // Where the Pro offer was opened.
   'decor', 'ical', 'ads', 'stats', 'diary', 'watermark', 'slots', 'push', 'life', 'relation', 'place', 'other', 'direct',
   // Calendar plans and decorating.

@@ -150,8 +150,9 @@ export async function run() {
     pass('an empty line offers the usual moments to start from', (await count('[data-life-quick-item]')) === 10);
     pass('the page body has no add or export buttons', (await count('[data-life-export]')) === 0
       && (await page.locator('[data-life-add]').evaluate((el) => el.getBoundingClientRect().width)) <= 1);
-    pass('only a mother and a father at the top, no other family', (await count('[data-life-slot="mother"]')) === 1
-      && (await count('[data-life-slot="father"]')) === 1 && (await count('[data-life-add-family]')) === 0);
+    pass('the line starts at the birth, with nothing joined on above it',
+      (await count('[data-life-roots]')) === 0 && (await count('[data-life-slot]')) === 0
+      && (await count('[data-life-birth]')) === 1);
     const bodyText = await page.locator('[data-life-view]').innerText();
     pass('no will wording, no "뿌리", no filler under the page', !/유언|뿌리/.test(bodyText) && (await count('[data-life-footer]')) === 0);
     pass('the site footer and reading copy stay away here',
@@ -269,15 +270,6 @@ export async function run() {
     await del('대학 입학');
     pass('…and deleting it again sticks', (await stored()).milestones.length === 4);
 
-    // 9. Roots: a parent, with the note about other people's details.
-    await page.locator('[data-life-slot="mother"]').click();
-    await wait(300);
-    await page.locator('[data-life-name-input]').fill('이정숙');
-    await page.locator('#life-fam-birth-y').fill('1958');
-    await save();
-    pass('a parent fills the slot', (await count('[data-life-member="mother"]')) === 1 && (await count('[data-life-slot="mother"]')) === 0);
-    pass('…and the card is actually visible', (await page.locator('[data-life-member="mother"]').evaluate((el) => getComputedStyle(el).opacity)) === '1');
-
     // 10. The ending note.
     await page.locator('[data-life-ending-input]').fill('함께해 준 모든 날이 고마웠어요.');
     await blurNote();
@@ -353,7 +345,7 @@ export async function run() {
     await wait(600);
     const after = await stored();
     pass('restoring brings everything back', JSON.stringify({ ...after, updatedAt: '' }) === JSON.stringify({ ...before, updatedAt: '' })
-      && (await count('[data-life-moment]')) === 4 && (await count('[data-life-member="mother"]')) === 1);
+      && (await count('[data-life-moment]')) === 4);
     await openLife();
     pass('…and it stays after a reload', (await count('[data-life-moment]')) === 4);
 
@@ -373,71 +365,95 @@ export async function run() {
     pass('…and all 30 moments are still there', (await count('[data-life-moment]')) === 30 && (await stored()).milestones.length === 30);
     pass('the backup banner asks, with 10+ moments and no backup', (await count('[data-life-backup-banner]')) === 1);
 
-    // 15b. Lives side by side: mine, and one other on the free plan.
-    await page.locator('[data-life-parallel-toggle]').scrollIntoViewIfNeeded();
-    await page.locator('[data-life-parallel-toggle]').click();
-    await wait(600);
-    pass('the line can be read beside other lives', (await count('[data-life-parallel]')) === 1);
-    pass('…and mine is on it by itself to start with',
-      (await count('[data-life-lane]')) === 1 && (await count('[data-life-lane="me"]')) === 1);
-    await page.locator('[data-life-parallel] [data-life-line-add]').click();
+    // 15b. Another life beside mine — the same drawing again, not a chart.
+    await page.locator('[data-life-line-add]').scrollIntoViewIfNeeded();
+    pass('mine is the only line until somebody is added',
+      (await count('[data-life-column]')) === 1 && (await count('[data-life-column="me"]')) === 1);
+    await page.locator('[data-life-line-add]').click();
     await wait(500);
     await page.locator('[data-life-line-name]').fill('이정숙');
     await page.locator('#life-line-birth-y').fill('1958');
     await page.locator('#life-line-birth-m').selectOption('3');
     await page.locator('#life-line-birth-d').selectOption('2');
     await page.locator('[data-life-line-save]').click();
-    await wait(700);
+    await wait(800);
     const withLine = await stored();
+    const her = withLine.others?.[0]?.id ?? '';
     pass('somebody else can be put beside it',
       withLine.others?.length === 1 && withLine.others[0].name === '이정숙',
       JSON.stringify(withLine.others));
-    pass('…and they get a lane of their own',
-      (await count('[data-life-lane]')) === 2 && (await count(`[data-life-lane="${withLine.others[0].id}"]`)) === 1);
+    pass('…and they are drawn as a life of their own, in the same hand',
+      (await count('[data-life-column]')) === 2 && (await count('[data-life-timeline]')) === 2
+      && (await count(`[data-life-column="${her}"]`)) === 1);
+    pass('…starting at their own birth, with their own name on it',
+      (await count(`[data-life-column="${her}"] [data-life-birth]`)) === 1
+      && /이정숙/.test(await page.locator(`[data-life-column="${her}"] [data-life-birth]`).innerText())
+      && /1958/.test(await page.locator(`[data-life-column="${her}"] [data-life-birth]`).innerText()));
+    pass('…and the two columns stand side by side, not one under the other',
+      await page.evaluate(() => {
+        const [a, b] = [...document.querySelectorAll('[data-life-column]')].map((c) => c.getBoundingClientRect());
+        return !!b && b.left >= a.right - 1 && Math.abs(a.top - b.top) < 2;
+      }));
 
-    // The whole point: one year is one height, whoever is being read.
-    pass('a year is at the same height on every line', await page.evaluate(() => {
-      const years = [...document.querySelectorAll('[data-life-parallel-year]')];
-      const y2000 = years.find((e) => e.textContent.trim() === '2000');
-      const lanes = [...document.querySelectorAll('[data-life-lane]')];
-      if (!y2000 || lanes.length < 2) return false;
-      // Both lanes start at the top of the same scroll box, so a year is one
-      // offset for all of them.
-      const box = document.querySelector('[data-life-parallel-box] > div').getBoundingClientRect();
-      return lanes.every((l) => Math.abs(l.getBoundingClientRect().top - box.top) < 1);
-    }));
+    // The board can be taken in and out, which is what several lines need.
+    const zoomNow = () => page.locator('[data-life-board-zoom]').getAttribute('data-life-board-zoom');
+    const wasZoom = Number(await zoomNow());
+    await page.locator('[data-life-board-in]').click();
+    await wait(400);
+    pass('the board zooms in', Number(await zoomNow()) > wasZoom, `${wasZoom} → ${await zoomNow()}`);
+    await page.locator('[data-life-board-out]').click();
+    await page.locator('[data-life-board-out]').click();
+    await wait(400);
+    pass('…and out again', Number(await zoomNow()) < wasZoom);
 
-    await page.locator('[data-life-parallel] [data-life-line-add]').click();
+    await page.locator('[data-life-line-add]').click();
     await wait(600);
     pass('a third life is where the free plan stops',
       (await page.getByRole('dialog', { name: 'Pro로 업그레이드' }).count()) === 1
       && (await count('[data-life-line-dialog]')) === 0);
     await closeAll();
-    pass('…and the two already there are untouched', (await stored()).others.length === 1);
+    pass('…and the one already there is untouched', (await stored()).others.length === 1);
 
     // Folding somebody away is a way of looking, not a change to the record.
-    await page.locator(`[data-life-line-toggle="${withLine.others[0].id}"]`).click();
+    await page.locator(`[data-life-line-toggle="${her}"]`).click();
     await wait(500);
     pass('a line can be folded away without being deleted',
-      (await count('[data-life-lane]')) === 1 && (await stored()).others.length === 1);
-    await page.locator(`[data-life-line-toggle="${withLine.others[0].id}"]`).click();
+      (await count('[data-life-column]')) === 1 && (await stored()).others.length === 1);
+    await page.locator(`[data-life-line-toggle="${her}"]`).click();
     await wait(500);
-    pass('…and brought back', (await count('[data-life-lane]')) === 2);
+    pass('…and brought back', (await count('[data-life-column]')) === 2);
 
-    // Zoom stretches the years without moving anyone off theirs.
-    const height = async () => page.evaluate(() =>
-      document.querySelector('[data-life-parallel-box] > div').getBoundingClientRect().height);
-    const wasTall = await height();
-    await page.locator('[data-life-parallel-in]').click();
-    await wait(400);
-    pass('the years stretch when zoomed in', (await height()) > wasTall, `${wasTall} → ${await height()}`);
-    await page.locator('[data-life-parallel-out]').click();
-    await page.locator('[data-life-parallel-out]').click();
-    await wait(400);
-    pass('…and squeeze back when zoomed out', (await height()) < wasTall);
-    await page.locator('[data-life-parallel-toggle]').click();
-    await wait(400);
-    pass('the chart closes again', (await count('[data-life-parallel]')) === 0);
+    // 15c. A wide screen holds them all; a phone holds two.
+    await page.evaluate((k) => {
+      const life = JSON.parse(localStorage.getItem(k));
+      life.others = ['a', 'b', 'c'].map((id, i) => ({
+        id, name: `사람 ${id}`, birthDate: String(1950 + i * 10),
+        milestones: [{ id: `${id}m`, date: String(1990 + i), title: `일 ${id}`, category: 'other' }],
+      }));
+      localStorage.setItem(k, JSON.stringify(life));
+    }, LIFE_KEY);
+    await openLife();
+    await closeAll();
+    pass('a wide screen holds every line there is', (await count('[data-life-column]')) === 4);
+    pass('…and stands back far enough to show them',
+      Number(await zoomNow()) < 1, await zoomNow());
+    await page.setViewportSize({ width: 390, height: 844 });
+    await wait(600);
+    pass('a phone holds two: mine, and the one chosen',
+      (await count('[data-life-column]')) === 2 && (await count('[data-life-column="me"]')) === 1);
+    await page.locator('[data-life-line-toggle="c"]').click();
+    await wait(500);
+    pass('…and choosing another swaps it, rather than squeezing it in',
+      (await count('[data-life-column]')) === 2 && (await count('[data-life-column="c"]')) === 1);
+    await page.setViewportSize({ width: 1280, height: 1000 });
+    await wait(500);
+    await page.evaluate((k) => {
+      const life = JSON.parse(localStorage.getItem(k));
+      delete life.others;
+      localStorage.setItem(k, JSON.stringify(life));
+    }, LIFE_KEY);
+    await openLife();
+    await closeAll();
 
     // 16. Cards fade in as they scroll in. The page opens with today in the
     // middle of the screen, so the two ends of the line have both been seen;

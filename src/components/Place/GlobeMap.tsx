@@ -29,6 +29,8 @@ export interface GlobeMapProps {
   /** As close as the globe goes before the tile map is the better picture.
    *  A finger may ask for one step past it — that step is the handover. */
   maxZoom: number;
+  /** Where the person is right now, if they have asked to be found. */
+  here?: { lng: number; lat: number } | null;
   camera: Camera;
   onCamera: (camera: Camera) => void;
   onSelect: (code: string | null) => void;
@@ -49,6 +51,14 @@ function inks(el: HTMLElement) {
 const PIN_HIT = 14;
 /** How far above its place a pin's head sits, in pixels. */
 const PIN_RISE = 9;
+/** How long the globe waits, untouched, before it starts to turn. */
+const IDLE_MS = 3000;
+/** Degrees of longitude a second, once it does. A globe on a desk, given a
+ *  push, turns about this fast — fast enough to see, slow enough to read. */
+const SPIN_DEG = 3.5;
+/** The least time between two steps of it: thirty frames a second is plenty
+ *  for something nobody is touching. */
+const SPIN_MS = 33;
 
 /**
  * The scratch map, as a globe.
@@ -62,7 +72,7 @@ const PIN_RISE = 9;
  */
 export function GlobeMap({
   shapes, countries, cities, places, pins, homeCityId, visited, wished, selected, selectedPin,
-  heat, maxZoom, camera, onCamera, onSelect, onSelectPin, nameOf,
+  heat, maxZoom, here, camera, onCamera, onSelect, onSelectPin, nameOf,
 }: GlobeMapProps) {
   /** One step past the stop, which the view above reads as "now the tiles". */
   const reach = maxZoom * 1.4;
@@ -302,9 +312,26 @@ export function GlobeMap({
         }
       }
     }
+    // Where the person is, when they have asked to be found.
+    if (here && facing(here.lng, here.lat, camera)) {
+      const p = project(here.lng, here.lat, camera, screen);
+      ctx.globalAlpha = 0.25;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 10, 0, Math.PI * 2);
+      ctx.fillStyle = visited;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = visited;
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = paper;
+      ctx.stroke();
+    }
     ctx.globalAlpha = 1;
   }, [size, screen, camera, drawn, been, cities, ranked, cut, mine, pins, homeCityId, visited, wished,
-    heat, selected, selectedPin, hover, lines]);
+    heat, here, selected, selectedPin, hover, lines]);
 
   useEffect(() => {
     const frame = requestAnimationFrame(paint);
@@ -314,6 +341,42 @@ export function GlobeMap({
   // ── turning, zooming, and colouring in ───────────────────────────────────
   const down = useRef(new Map<number, Pointer>());
   const moved = useRef(false);
+  /** When the globe was last interfered with, for the idle turn below. */
+  const touched = useRef(0);
+  const mark = () => { touched.current = performance.now(); };
+
+  /**
+   * Left alone, the globe turns on its own axis.
+   *
+   * Three seconds after the last touch, and only while nothing is open on top
+   * of it — a country's card, a pin's — it turns west to east, the way the
+   * earth does. Anything at all stops it, and three seconds later it starts
+   * again. `prefers-reduced-motion` turns it off entirely, and a tab in the
+   * background is served no frames, so it never spins where nobody is looking.
+   */
+  const latest = useRef({ camera, onCamera });
+  useEffect(() => { latest.current = { camera, onCamera }; });
+  const held = selected !== null || selectedPin !== null;
+  useEffect(() => {
+    if (held) return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return;
+    let frame = 0;
+    let prev = 0;
+    const run = (now: number) => {
+      frame = requestAnimationFrame(run);
+      if (now - touched.current < IDLE_MS) { prev = now; return; }
+      // Half the frames, twice the step: a globe turning by itself is the
+      // background of the page, not worth a redraw sixty times a second.
+      if (prev && now - prev < SPIN_MS) return;
+      const dt = prev ? Math.min(0.2, (now - prev) / 1000) : 0;
+      prev = now;
+      const { camera: cam, onCamera: move } = latest.current;
+      const lng = ((cam.lng + SPIN_DEG * dt + 180) % 360 + 360) % 360 - 180;
+      move({ ...cam, lng });
+    };
+    frame = requestAnimationFrame(run);
+    return () => cancelAnimationFrame(frame);
+  }, [held]);
 
   const at = (e: React.PointerEvent): Pointer => {
     const r = box.current!.getBoundingClientRect();
@@ -338,6 +401,7 @@ export function GlobeMap({
   };
 
   const onDown = (e: React.PointerEvent) => {
+    mark();
     capture(e.currentTarget as Element, e.pointerId);
     down.current.set(e.pointerId, at(e));
     if (down.current.size === 1) moved.current = false;
@@ -345,6 +409,7 @@ export function GlobeMap({
 
   const onMove = (e: React.PointerEvent) => {
     const before = listOf(down.current);
+    if (down.current.size) mark();
     if (!down.current.has(e.pointerId)) {
       // Not a drag: just the pointer passing over a country.
       const p = at(e);
@@ -363,6 +428,7 @@ export function GlobeMap({
   };
 
   const onUp = (e: React.PointerEvent) => {
+    mark();
     const had = down.current.delete(e.pointerId);
     if (!had || down.current.size > 0 || moved.current) return;
     const p = at(e);
@@ -378,6 +444,7 @@ export function GlobeMap({
 
   const wheel = (e: React.WheelEvent) => {
     e.preventDefault();
+    mark();
     onCamera({
       ...camera,
       zoom: Math.max(GLOBE_MIN_ZOOM, Math.min(reach, camera.zoom * (e.deltaY < 0 ? 1.15 : 1 / 1.15))),
@@ -390,6 +457,7 @@ export function GlobeMap({
     /* data-place-cities is how many of the world's cities this zoom is
        willing to show; a test reads it, nothing in the app does. */
     <div ref={box} data-place-globe data-place-zoom={camera.zoom.toFixed(2)}
+      data-place-lng={camera.lng.toFixed(2)}
       data-place-cities={cut < 0 ? 0 : ranked.filter((c) => c.rank <= cut).length}
       className="absolute inset-0 touch-none select-none text-foreground">
       <canvas

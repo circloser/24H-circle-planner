@@ -71,6 +71,13 @@ export async function run() {
     await wait(600);
     const events = (await layer()).filter((a) => a[0] === 'event').map((a) => a[1]);
     pass('app events reach GA', events.includes('app_open') && events.includes('calendar_open'), JSON.stringify(events));
+    // The app is one document; without these GA sees one page and can say
+    // nothing about which part of it anybody uses.
+    const pages = (await layer())
+      .filter((a) => a[0] === 'event' && a[1] === 'page_view')
+      .map((a) => a[2]?.page_path);
+    pass('…and every page of the app is a page in GA',
+      pages.includes('/app/chart') && pages.includes('/app/calendar'), JSON.stringify(pages));
     await page.locator('[data-calendar-toggle]').click().catch(() => {});
     await wait(300);
 

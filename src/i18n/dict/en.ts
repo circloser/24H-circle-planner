@@ -1172,6 +1172,7 @@ export const en: Record<TKey, string> = {
   'place.filter': 'Kinds of pin',
   'place.filterAll': 'All',
   'place.heat': 'Pin heat map',
+  'place.heatOff': 'Turn the heat off',
   // Place — looking a place up in the wider world, by name.
   'place.searchOnline': 'Look up “{q}” online',
   'place.searchCredit': 'Search results © OpenStreetMap contributors',

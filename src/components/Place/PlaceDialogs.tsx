@@ -12,6 +12,7 @@ import {
 } from '@/lib/place';
 import { searchCities, type CityRow } from '@/lib/place-world';
 import { lookupPlace, type FoundPlace } from '@/lib/place-geocode';
+import { trackFeature } from '@/lib/track';
 import type { PinDraft } from '@/hooks/usePlace';
 import { PIN_ICON, PIN_LABEL } from './palette';
 
@@ -261,6 +262,8 @@ export function CityPicker({ rows, code, onPick, label }: {
 
   const ask = async () => {
     if (!q || asking) return;
+    // That somebody looked a place up, never what they looked up.
+    trackFeature('city_search');
     setAsking(true);
     const places = await lookupPlace(q, lang);
     setAsked({ q, places });

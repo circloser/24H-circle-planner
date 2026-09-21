@@ -222,19 +222,19 @@ export async function run() {
     await wait(500);
     pass('…and comes back where they were', (await stored()).people.map((p) => p.id).join() === 'p1,p2,p3');
 
-    // 10. The map settles and stops.
+    // 10. Nobody sits perfectly still: the map floats, gently.
     await openRelation();
     await closeAll();
-    const still = await page.evaluate(async () => {
+    const floats = await page.evaluate(async () => {
       const shot = () => {
         const c = document.querySelector('[data-relation-surface]');
-        return c.getContext('2d').getImageData(0, 0, Math.min(200, c.width), Math.min(200, c.height)).data.join();
+        return c.getContext('2d').getImageData(0, 0, Math.min(400, c.width), Math.min(400, c.height)).data.join();
       };
       const first = shot();
       await new Promise((r) => setTimeout(r, 900));
-      return first === shot();
+      return first !== shot();
     });
-    pass('nothing drifts once it has settled', still);
+    pass('the people float rather than sit still', floats);
 
     // 11. The free limit stops adding, and hides nothing.
     await seed(Array.from({ length: 40 }, (_, i) => person(`x${i}`, { name: `사람 ${i}` })));
@@ -332,6 +332,16 @@ export async function run() {
       return ink;
     });
     pass('prefers-reduced-motion: the new people are drawn at once', drawn > 0);
+    // Asked for stillness, the map is still: the float stops entirely.
+    pass('…and nothing floats about', await calm.page.evaluate(async () => {
+      const shot = () => {
+        const c = document.querySelector('[data-relation-surface]');
+        return c.getContext('2d').getImageData(0, 0, Math.min(400, c.width), Math.min(400, c.height)).data.join();
+      };
+      const first = shot();
+      await new Promise((r) => setTimeout(r, 900));
+      return first === shot();
+    }));
     pass('no page errors (reduced motion)', calm.errors.length === 0, calm.errors.slice(0, 2).join(' | '));
   } finally {
     await calm.browser.close();

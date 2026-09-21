@@ -1169,6 +1169,7 @@ export const ru: Record<TKey, string> = {
   'place.filter': 'Виды меток',
   'place.filterAll': 'Все',
   'place.heat': 'Тепловая карта',
+  'place.heatOff': 'Выключить тепловую карту',
   // Place — looking a place up in the wider world, by name.
   'place.searchOnline': 'Найти «{q}» в интернете',
   'place.searchCredit': 'Результаты © участники OpenStreetMap',

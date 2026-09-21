@@ -380,7 +380,10 @@ export type Side = 'left' | 'right';
 /** `future`: below today's marker, where the line turns dashed. `tight`: in
  *  the same year as the card above it, so it sits closer. */
 export type TimelineItem =
-  | { kind: 'decade'; key: string; decade: number; future: boolean; count: number }
+  /** `before` is a decade that ran before this person was born: it is there so
+   *  several lines can be read against the same years, and it is drawn as
+   *  empty, because nothing had happened yet. */
+  | { kind: 'decade'; key: string; decade: number; future: boolean; count: number; before?: true }
   | { kind: 'birth'; key: string; date: string; side: Side; tight: boolean; future: false }
   | { kind: 'moment'; key: string; m: Milestone; plan: boolean; side: Side; tight: boolean; future: boolean }
   | { kind: 'today'; key: string; date: string; future: false };
@@ -389,6 +392,15 @@ export interface TimelineOptions {
   today?: string;
   /** Categories to show; empty or missing shows all. Birth always shows. */
   only?: ReadonlySet<LifeCategory>;
+  /**
+   * The run of years to draw, when it is not this life's own.
+   *
+   * Several lives read side by side share one run — the earliest birth among
+   * them to the latest year any of them reaches — so the same year is the same
+   * place on every line. On its own a line still starts where it starts.
+   */
+  from?: number;
+  to?: number;
 }
 
 const yearOf = (date: string) => Number(date.slice(0, 4));
@@ -407,10 +419,13 @@ export function buildTimeline(life: LifeData, opts: TimelineOptions = {}): Timel
   const only = opts.only && opts.only.size ? opts.only : null;
   const moments = sortMilestones(life.milestones).filter((m) => !only || only.has(m.category));
   const years = moments.map((m) => yearOf(m.date));
-  const lastYear = Math.max(yearOf(birth) + DEFAULT_LIFE_EXPECTANCY, yearOf(today), ...years);
+  const lastYear = Math.max(
+    opts.to ?? 0, yearOf(birth) + DEFAULT_LIFE_EXPECTANCY, yearOf(today), ...years,
+  );
 
   const out: TimelineItem[] = [];
-  let decade = Math.floor(Math.min(yearOf(birth), ...years) / 10) * 10;
+  const born = yearOf(birth);
+  let decade = Math.floor(Math.min(opts.from ?? born, born, ...years) / 10) * 10;
   let cards = 0;
   let prevYear: number | null = null;
   let past = true;
@@ -423,7 +438,11 @@ export function buildTimeline(life: LifeData, opts: TimelineOptions = {}): Timel
   }
   const decadesUpTo = (year: number) => {
     for (; decade <= year; decade += 10) {
-      out.push({ kind: 'decade', key: `d${decade}`, decade, future: !past, count: perDecade.get(decade) ?? 0 });
+      out.push({
+        kind: 'decade', key: `d${decade}`, decade, future: !past, count: perDecade.get(decade) ?? 0,
+        // A decade that ended before this life began: drawn, but empty.
+        ...(decade + 9 < born ? { before: true as const } : {}),
+      });
       prevYear = null; // a decade label resets the "same year" spacing
     }
   };

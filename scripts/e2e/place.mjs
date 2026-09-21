@@ -74,7 +74,7 @@ const LIFE = {
 export async function run() {
   const { pass, allOk } = makeReporter('place');
   const { base, close } = await serveDist();
-  const { browser, page, errors, counted, tiles } = await setup(base);
+  const { browser, page, errors, counted, tiles } = await setup(base, { reducedMotion: 'reduce' });
   const count = (sel) => page.locator(sel).count();
   const stored = () => page.evaluate((k) => JSON.parse(localStorage.getItem(k) ?? 'null'), PLACE_KEY);
   const flush = async () => {
@@ -370,6 +370,8 @@ export async function run() {
     await wait(400);
     pass('the kinds of pin unfold from the corner too',
       (await count('[data-place-filters]')) === 1 && (await count('[data-place-filter]')) > 4);
+    pass('…and wrap onto another row rather than scrolling sideways',
+      await page.locator('[data-place-filters]').evaluate((el) => el.scrollWidth <= el.clientWidth + 1));
     pass('…and a kind you have none of is shown but cannot be chosen',
       await page.locator('[data-place-filter="stay"]').isDisabled());
     await page.locator('[data-place-filter="nature"]').click();
@@ -393,13 +395,33 @@ export async function run() {
     // 6d. The same record read as warmth rather than as borders.
     pass('the globe offers a heat map of the pins',
       (await page.locator('[data-place-heat]').getAttribute('aria-pressed')) === 'false');
+    pass('…and the button says what it does, not only that it is on',
+      (await count('[data-place-heat-off]')) === 0);
     await page.locator('[data-place-heat]').click();
     await wait(600);
     pass('…and turning it on leaves the pins where they were',
       (await page.locator('[data-place-heat]').getAttribute('aria-pressed')) === 'true'
       && (await count(`[data-place-globe-pin="${withPin.pins[0].id}"]`)) === 1);
+    pass('…and the flame is struck through, which is how it is put out',
+      (await count('[data-place-heat-off]')) === 1
+      && (await page.locator('[data-place-heat]').getAttribute('aria-label')) === '핀 히트맵 끄기');
     await page.locator('[data-place-heat]').click();
     await wait(400);
+
+    // Where I am works on the globe too: it turns to show the place.
+    // Turned away from the person first, so coming back is what is measured.
+    const globeBox = await page.locator('[data-place-world]').boundingBox();
+    await page.mouse.move(globeBox.x + globeBox.width / 2, globeBox.y + globeBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(globeBox.x + globeBox.width / 2 + 160, globeBox.y + globeBox.height / 2, { steps: 8 });
+    await page.mouse.up();
+    await wait(300);
+    const wasFacing = await page.locator('[data-place-globe]').getAttribute('data-place-lng');
+    await page.locator('[data-place-locate]').click();
+    await wait(700);
+    const facing = await page.locator('[data-place-globe]').getAttribute('data-place-lng');
+    pass('the globe turns to where the person is when asked',
+      Math.abs(Number(facing) - 2.35) < 0.5 && facing !== wasFacing, `${wasFacing} → ${facing}`);
     await page.locator(`[data-place-globe-pin="${withPin.pins[0].id}"]`).dispatchEvent('click');
     await wait(400);
     pass('…and choosing it there opens its card without leaving the globe',
@@ -624,6 +646,33 @@ export async function run() {
     pass('no page errors (both maps)', both.errors.length === 0, both.errors.slice(0, 2).join(' | '));
   } finally {
     await both.browser.close();
+  }
+
+  // 12b. Left alone, the globe turns on its own axis — and stops the moment
+  // it is touched.
+  const spun = await setup(base);
+  try {
+    await spun.page.locator('[data-place-toggle]').click();
+    await spun.page.waitForSelector('[data-place-world]', { timeout: 20000 });
+    const lngNow = () => spun.page.locator('[data-place-globe]').getAttribute('data-place-lng');
+    await wait(900);
+    const held = await lngNow();
+    pass('the globe holds still while it is being read', (await lngNow()) === held, held);
+    await wait(3600);
+    const turned = await lngNow();
+    pass('…and turns once it has been left alone',
+      Math.abs(Number(turned) - Number(held)) > 0.5, `${held} → ${turned}`);
+    // A touch stops it: the reading below is taken straight after one.
+    const box = await spun.page.locator('[data-place-world]').boundingBox();
+    await spun.page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await spun.page.mouse.down();
+    await spun.page.mouse.up();
+    const stopped = await lngNow();
+    await wait(1200);
+    pass('…and a touch stops it again', (await lngNow()) === stopped, stopped);
+    pass('no page errors (the turning globe)', spun.errors.length === 0, spun.errors.slice(0, 2).join(' | '));
+  } finally {
+    await spun.browser.close();
   }
 
   // 13. A phone: the card becomes a sheet under the map.

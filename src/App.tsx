@@ -20,7 +20,7 @@ import { useChimes } from '@/hooks/useChimes';
 import { useActivationTracking } from '@/hooks/useActivationTracking';
 import { usePushAlarms } from '@/hooks/usePushAlarms';
 import { useDailyDoneReset } from '@/hooks/useDailyDoneReset';
-import { track, trackOnce } from '@/lib/track';
+import { track, trackFeature, trackOnce, trackView, type TrackedView } from '@/lib/track';
 import { CircleTimeline } from '@/components/CircleTimeline/CircleTimeline';
 import { ScheduleTable } from '@/components/ScheduleTable/ScheduleTable';
 import { DeviceTransferDialog } from '@/components/DeviceTransferDialog/DeviceTransferDialog';
@@ -169,7 +169,12 @@ function App() {
     const prev = lastView.current;
     lastView.current = next;
     if (opensView(prev, next)) openViewAt(next);
+    // Which page of the app this is. The timetable has three looks — the whole
+    // day, the day half and the night half — and all three are the timetable.
+    const page: TrackedView = next === 'full' || next === 'day' || next === 'night' ? 'chart' : next;
+    trackView(page);
   }, [prefs.chartView]);
+
   // /?view=calendar, /?view=life, /?view=relation or /?view=place (linked
   // from the pages of those names) opens that page, once.
   useEffect(() => {
@@ -302,6 +307,10 @@ function App() {
   const [editingSliceId, setEditingSliceId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
   const [settingsSection, setSettingsSection] = useState<SettingsSection | null>(null);
+  // The three ways in that are not pages of their own.
+  useEffect(() => { if (settingsSection) trackFeature('settings'); }, [settingsSection]);
+  useEffect(() => { if (magicianOpen) trackFeature('magician'); }, [magicianOpen]);
+  useEffect(() => { if (tutorialOpen) trackFeature('tutorial'); }, [tutorialOpen]);
   const { t, lang } = useTranslation();
   // Ticks over at local midnight so an untitled hub date rolls to the new day
   // while the app is left open (no reload needed); drives displayTitle below.

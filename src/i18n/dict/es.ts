@@ -1171,6 +1171,7 @@ export const es: Record<TKey, string> = {
   'place.filter': 'Tipos de chincheta',
   'place.filterAll': 'Todas',
   'place.heat': 'Mapa de calor',
+  'place.heatOff': 'Desactivar el mapa de calor',
   // Place — looking a place up in the wider world, by name.
   'place.searchOnline': 'Buscar «{q}» en línea',
   'place.searchCredit': 'Resultados © colaboradores de OpenStreetMap',

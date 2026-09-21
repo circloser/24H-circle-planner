@@ -10,7 +10,7 @@ import { useSyncStatus } from '@/hooks/useSync';
 import { COLOR_THEMES } from '@/data/color-themes';
 import { requestUpgrade } from '@/lib/pro';
 import { todayKey } from '@/lib/calendar-grid';
-import { track, trackOnce } from '@/lib/track';
+import { track, trackFeature, trackOnce } from '@/lib/track';
 import {
   FREE_RELATION_LINKS, FREE_RELATION_PEOPLE, RELATION_GROUPS, canAddLink, canAddPerson,
   findPeople, isBirthdayThisMonth, isOutOfTouch, relationSummary,
@@ -46,6 +46,11 @@ export function RelationView() {
   const syncing = useSyncStatus().status !== 'disabled';
   const theme = COLOR_THEMES.some((th) => th.id === prefs.colorTheme) ? prefs.colorTheme : null;
   const colors = groupColors(theme);
+  // Each boundary on the map is named once, in the reader's own language.
+  const groupNames = useMemo(
+    () => Object.fromEntries(RELATION_GROUPS.map((g) => [g, t(GROUP_LABEL[g])])) as Record<RelationGroup, string>,
+    [t],
+  );
   const today = todayKey();
 
   useEffect(() => { trackOnce('relation_open'); }, []);
@@ -192,6 +197,7 @@ export function RelationView() {
                 onClick={() => setOnly((was) => {
                   const next = new Set(was);
                   if (!next.delete(g)) next.add(g);
+                  if (next.size) trackFeature('relation_group');
                   return next;
                 })}
                 className={`inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-[13px] ${
@@ -251,8 +257,12 @@ export function RelationView() {
               linking={linking}
               appearing={arriving}
               meLabel={t('relation.me.short')}
+              groupLabel={groupNames}
               onSelect={pick}
-              onPlace={api.placePerson}
+              onPlace={(id, at) => {
+                if (at) trackFeature('relation_place');
+                api.placePerson(id, at);
+              }}
               onAddAt={(at) => add(at)}
               onOpenMe={() => setMeOpen(true)}
             />

@@ -1169,6 +1169,7 @@ export const ja: Record<TKey, string> = {
   'place.filter': 'ピンの種類',
   'place.filterAll': 'すべて',
   'place.heat': 'ピンのヒートマップ',
+  'place.heatOff': 'ヒートマップを消す',
   // Place — looking a place up in the wider world, by name.
   'place.searchOnline': '「{q}」をインターネットで探す',
   'place.searchCredit': '検索結果 © OpenStreetMap contributors',

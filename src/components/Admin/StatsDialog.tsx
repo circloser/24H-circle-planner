@@ -20,9 +20,43 @@ interface Stats {
   generatedAt: number;
 }
 
+/** The pages of the app, in the order they sit in the header. */
+const VIEW_LABEL: Record<string, string> = {
+  chart: '시간표',
+  table: '표',
+  record: '기록',
+  calendar: '캘린더',
+  life: '라이프',
+  relation: '관계',
+  place: '플레이스',
+};
+
+/** The features counted one by one (feature_use:…). */
+const USE_LABEL: Record<string, string> = {
+  settings: '설정 열기',
+  magician: '디자인 마법사',
+  tutorial: '튜토리얼',
+  search: '나라 검색',
+  city_search: '도시 온라인 검색',
+  heat: '핀 히트맵',
+  filter: '핀 필터',
+  globe: '지구본 ↔ 지도 전환',
+  life_line: '다른 사람 라인 추가',
+  life_zoom: '라이프 확대·축소',
+  relation_group: '관계 그룹 필터',
+  relation_place: '관계 직접 배치',
+  widget: '위젯',
+  album: '폴라로이드 앨범',
+  pet: '미니 펫',
+  news: '뉴스 위젯',
+  goals: '목표 위젯',
+};
+
 /** Readable names for the counted events (the tag after ':' is shown as is). */
 const FEATURE_LABEL: Record<string, string> = {
   app_open: '앱 열기',
+  view_open: '페이지 열기',
+  feature_use: '기능 사용',
   calendar_open: '캘린더 열기',
   cal_plan_add: '캘린더 일정 추가',
   ical_connect: '구글 캘린더 연결',
@@ -42,6 +76,8 @@ const FEATURE_LABEL: Record<string, string> = {
 
 const labelOf = (name: string) => {
   const [event, tag] = name.split(':');
+  const known = event === 'view_open' ? VIEW_LABEL[tag] : event === 'feature_use' ? USE_LABEL[tag] : undefined;
+  if (known) return known;
   return `${FEATURE_LABEL[event] ?? event}${tag ? ` · ${tag}` : ''}`;
 };
 
@@ -50,6 +86,55 @@ const total = (rows: FeatureRow[], event: string, key: 'd7' | 'd28') =>
   rows.filter((r) => r.name === event || r.name.startsWith(`${event}:`)).reduce((a, r) => a + r[key], 0);
 const one = (rows: FeatureRow[], name: string, key: 'd7' | 'd28') => rows.find((r) => r.name === name)?.[key] ?? 0;
 const pct = (a: number, b: number) => (b > 0 ? `${Math.round((a / b) * 100)}%` : '—');
+
+/** Rows of one event's tags, largest first, as a small table of its own. */
+function Breakdown({ rows, event, labels, title, note }: {
+  rows: FeatureRow[];
+  event: string;
+  labels: Record<string, string>;
+  title: string;
+  note: string;
+}) {
+  const mine = rows
+    .filter((r) => r.name.startsWith(`${event}:`))
+    .map((r) => ({ ...r, tag: r.name.slice(event.length + 1) }))
+    .sort((a, b) => b.d28 - a.d28);
+  const total = mine.reduce((s, r) => s + r.d28, 0);
+  return (
+    <div className="flex flex-col gap-2" data-stats-breakdown={event}>
+      <p className="text-xs font-medium text-muted-foreground">{title}</p>
+      {mine.length === 0 ? (
+        <p className="text-xs text-muted-foreground">아직 집계된 기록이 없습니다.</p>
+      ) : (
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="text-muted-foreground">
+              <th className="py-1 text-left font-medium">이름</th>
+              <th className="py-1 text-right font-medium">오늘</th>
+              <th className="py-1 text-right font-medium">7일</th>
+              <th className="py-1 text-right font-medium">28일</th>
+              <th className="py-1 text-right font-medium">비중</th>
+            </tr>
+          </thead>
+          <tbody>
+            {mine.map((r) => (
+              <tr key={r.name} className="border-t border-border" data-stats-row={r.name}>
+                <td className="py-1 text-foreground">{labels[r.tag] ?? r.tag}</td>
+                <td className="py-1 text-right tabular-nums">{r.today.toLocaleString('ko-KR')}</td>
+                <td className="py-1 text-right tabular-nums">{r.d7.toLocaleString('ko-KR')}</td>
+                <td className="py-1 text-right tabular-nums">{r.d28.toLocaleString('ko-KR')}</td>
+                <td className="py-1 text-right tabular-nums text-muted-foreground">
+                  {total > 0 ? `${Math.round((r.d28 / total) * 100)}%` : '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <p className="text-xs text-muted-foreground">{note}</p>
+    </div>
+  );
+}
 
 function Features({ rows }: { rows: FeatureRow[] }) {
   const [showAll, setShowAll] = useState(false);
@@ -220,6 +305,16 @@ export function StatsDialog({ open, onOpenChange }: { open: boolean; onOpenChang
               <DailyChart daily={data.daily} />
             </div>
 
+            {data.features && (
+              <>
+                <Breakdown rows={data.features} event="view_open" labels={VIEW_LABEL}
+                  title="페이지별 열람 · 최근 28일"
+                  note="페이지를 열 때마다 한 번씩 셉니다(사용자 구분 없음). 시간표는 낮·밤 보기를 포함합니다." />
+                <Breakdown rows={data.features} event="feature_use" labels={USE_LABEL}
+                  title="기능별 사용 · 최근 28일"
+                  note="무엇을 눌렀는지만 셉니다. 검색어·이름 등 내용은 저장하지 않습니다." />
+              </>
+            )}
             {data.features && <Features rows={data.features} />}
 
             {marketing && (

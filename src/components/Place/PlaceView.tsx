@@ -9,14 +9,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSyncStatus } from '@/hooks/useSync';
 import { COLOR_THEMES } from '@/data/color-themes';
 import { requestUpgrade } from '@/lib/pro';
-import { track, trackOnce } from '@/lib/track';
+import { track, trackFeature, trackOnce } from '@/lib/track';
 import {
   FREE_PLACE_PINS, MAX_PLACE_SHORTCUTS, PIN_CATEGORIES, byContinent, canAddPin, countryAt,
   placeSummary, shortcutPins, type CountryShape, type PinCategory,
 } from '@/lib/place';
 import { countryName, loadCities, loadWorld, searchCountries, type CityRow } from '@/lib/place-world';
 import { PIN_MAX_ZOOM, PIN_MIN_ZOOM, type Camera } from '@/lib/place-tiles';
-import { GLOBE_MIN_ZOOM, globeZoomForTile, type Camera as GlobeCamera } from '@/lib/place-globe';
+import { CITY_DOT_ZOOM, GLOBE_MIN_ZOOM, globeZoomForTile, type Camera as GlobeCamera } from '@/lib/place-globe';
 import { usePlace, PLACE_UNDO_MS } from '@/hooks/usePlace';
 import { PLACE_EXPORT_EVENT } from '@/lib/place-export';
 import { readRelationPeople } from '@/lib/place-relation';
@@ -218,7 +218,10 @@ export function PlaceView() {
         const at = { lng: pos.coords.longitude, lat: pos.coords.latitude };
         setHere(at);
         setCamera((c) => ({ ...at, zoom: Math.max(c.zoom, 12) }));
-        setGlobe((g) => ({ ...g, ...at }));
+        // The globe turns to it too, and comes close enough for the place to
+        // be a place rather than a continent — whichever view is showing, the
+        // answer to "where am I" is on screen.
+        setGlobe((gl) => ({ ...at, zoom: Math.max(gl.zoom, Math.min(globeStop, CITY_DOT_ZOOM * 1.6)) }));
         setLocating(false);
         track('place_locate');
       },
@@ -239,6 +242,7 @@ export function PlaceView() {
    * arrives comfortably inside the other's, so they never bounce.
    */
   const toPins = (at: { lng: number; lat: number }) => {
+    trackFeature('globe');
     setCamera({ ...at, zoom: PIN_MIN_ZOOM });
     setCountry(null);
     setTab('pins');
@@ -296,6 +300,7 @@ export function PlaceView() {
             selected={country}
             selectedPin={pinId}
             heat={heat}
+            here={here}
             maxZoom={globeStop}
             camera={globe}
             onCamera={onGlobeCamera}
@@ -445,7 +450,7 @@ export function PlaceView() {
               aria-label={t('place.searchCountry')} title={t('place.searchCountry')}
               className={`${FLOAT} pointer-events-auto grid h-11 w-11 place-items-center hover:bg-accent/20 ${
                 searching ? 'text-foreground' : 'text-muted-foreground'}`}
-              onClick={() => { setQuery(''); setSearching((v) => !v); }}>
+              onClick={() => { if (!searching) trackFeature('search'); setQuery(''); setSearching((v) => !v); }}>
               {searching ? <X aria-hidden className="h-4 w-4" /> : <Search aria-hidden className="h-4 w-4" />}
             </button>
           </div>
@@ -454,20 +459,27 @@ export function PlaceView() {
         {/* The same record read as warmth: where the pins gather. */}
         {tab === 'world' && (
           <button type="button" data-place-heat aria-pressed={heat}
-            aria-label={t('place.heat')} title={t('place.heat')}
+            aria-label={t(heat ? 'place.heatOff' : 'place.heat')} title={t(heat ? 'place.heatOff' : 'place.heat')}
             className={`${FLOAT} pointer-events-auto grid h-11 w-11 place-items-center hover:bg-accent/20 ${
               heat ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
-            onClick={() => setHeat((v) => !v)}>
-            <Flame aria-hidden className="h-4 w-4" />
+            onClick={() => { if (!heat) trackFeature('heat'); setHeat((v) => !v); }}>
+            {/* Alight, the button is struck through: the same flame, and what
+                pressing it now does. */}
+            <span aria-hidden className="relative grid h-4 w-4 place-items-center">
+              <Flame className="h-4 w-4" />
+              {heat && <span data-place-heat-off className="absolute h-[1.5px] w-5 rotate-45 rounded-full bg-current" />}
+            </span>
           </button>
         )}
 
         {/* Which kinds of pin to show. */}
         {tab === 'pins' && data.pins.length > 0 && (
           <div className="flex items-center justify-end gap-1.5">
+            {/* The list wraps rather than scrolling sideways: a row of kinds
+                that has to be dragged hides the very ones being looked for. */}
             {openList === 'filter' && (
               <ul data-place-filters
-                className={`${FLOAT} pointer-events-auto flex max-w-[min(70vw,560px)] items-center gap-1 overflow-x-auto p-1`}>
+                className={`${FLOAT} pointer-events-auto flex max-w-[min(78vw,560px)] flex-wrap items-center justify-end gap-1 p-1`}>
                 <li>
                   <button type="button" data-place-filter="all" aria-pressed={only.size === 0}
                     onClick={() => setOnly(new Set())}
@@ -486,6 +498,7 @@ export function PlaceView() {
                         onClick={() => setOnly((was) => {
                           const next = new Set(was);
                           if (!next.delete(c)) next.add(c);
+                          if (next.size) trackFeature('filter');
                           return next;
                         })}
                         className={`inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[12px] disabled:opacity-40 ${
@@ -555,16 +568,14 @@ export function PlaceView() {
           </div>
         )}
 
-        {/* Where I am, and how far in. */}
-        {tab === 'pins' && (
-          <button type="button" data-place-locate disabled={locating} onClick={locate}
-            aria-label={t('place.locate')} title={t('place.locate')}
-            className={`${FLOAT} pointer-events-auto grid h-11 w-11 place-items-center text-foreground hover:bg-accent/20 disabled:opacity-60`}>
-            {locating
-              ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" />
-              : <Crosshair aria-hidden className="h-4 w-4" />}
-          </button>
-        )}
+        {/* Where I am — on the globe as much as on the tiles. */}
+        <button type="button" data-place-locate disabled={locating} onClick={locate}
+          aria-label={t('place.locate')} title={t('place.locate')}
+          className={`${FLOAT} pointer-events-auto grid h-11 w-11 place-items-center text-foreground hover:bg-accent/20 disabled:opacity-60`}>
+          {locating
+            ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" />
+            : <Crosshair aria-hidden className="h-4 w-4" />}
+        </button>
         <div className={`${FLOAT} pointer-events-auto flex flex-col overflow-hidden`}>
           <button type="button" aria-label={t('place.zoomIn')} title={t('place.zoomIn')} data-place-zoom-in
             className="grid h-11 w-11 place-items-center text-muted-foreground hover:bg-accent/20"

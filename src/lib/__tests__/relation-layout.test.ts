@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { RELATION_GROUPS, type Person, type RelationGroup } from '../relation';
 import {
-  ME_R, NODE_PAD, NODE_R, angleOf, layoutRelation, nodeAt, polarOf, ringBase, xyOf,
+  ME_R, MIN_SECTOR, NODE_PAD, NODE_R, angleOf, layoutRelation, nodeAt, polarOf, ringBase,
+  sectorsOf, xyOf,
 } from '../relation-layout';
 
 const p = (id: string, group: RelationGroup = 'friend', closeness: 1 | 2 | 3 = 2): Person =>
@@ -24,9 +25,23 @@ function tightest(nodes: ReturnType<typeof layoutRelation>['nodes']): number {
 }
 
 describe('where a person stands', () => {
-  it('is exactly where their id says, when nobody is crowding them', () => {
-    const l = layoutRelation([p('a', 'family'), p('b', 'work'), p('c', 'other')]);
+  it('is exactly where their id says, when their group has the map to itself', () => {
+    const l = layoutRelation([p('a'), p('b'), p('c')]);
     for (const n of l.nodes) expect(n.a).toBe(angleOf(n.person.id));
+  });
+
+  it('is where their id says inside their own group\'s band', () => {
+    const l = layoutRelation([p('a', 'family'), p('b', 'work'), p('c', 'other')]);
+    const sectors = sectorsOf(new Map([['family', 1], ['work', 1], ['other', 1]]));
+    for (const n of l.nodes) {
+      const band = sectors.get(n.person.group)!;
+      expect(n.a).toBeGreaterThanOrEqual(band.from);
+      expect(n.a).toBeLessThanOrEqual(band.from + band.span);
+      // Still their own id's turn, only read within the band rather than
+      // around the whole map.
+      const within = (n.a - band.from) / band.span;
+      expect(within).toBeCloseTo(angleOf(n.person.id), 1);
+    }
   });
 
   it('barely shifts when someone else arrives', () => {
@@ -51,6 +66,54 @@ describe('where a person stands', () => {
       expect(angleOf(id)).toBeGreaterThanOrEqual(0);
       expect(angleOf(id)).toBeLessThan(1);
       expect(angleOf(id)).toBe(angleOf(id));
+    }
+  });
+});
+
+describe('a group keeps to one place', () => {
+  it('shares the turn out between the groups that have anybody in them', () => {
+    const sectors = sectorsOf(new Map([['family', 2], ['friend', 8]]));
+    expect([...sectors.keys()]).toEqual(['family', 'friend']);
+    const total = [...sectors.values()].reduce((s, v) => s + v.span, 0);
+    expect(total).toBeCloseTo(1, 6);
+    expect(sectors.get('friend')!.span).toBeGreaterThan(sectors.get('family')!.span);
+  });
+
+  it('never squeezes a small group out of sight', () => {
+    const sectors = sectorsOf(new Map([['family', 1], ['friend', 200]]));
+    expect(sectors.get('family')!.span).toBeGreaterThanOrEqual(MIN_SECTOR);
+  });
+
+  it('gives the whole turn to a map with one group on it', () => {
+    expect(sectorsOf(new Map([['friend', 5]])).get('friend')).toEqual({ from: 0, span: 1 });
+    expect(sectorsOf(new Map())).toEqual(new Map());
+  });
+
+  it('draws a boundary round each group, with everyone inside it', () => {
+    const l = layoutRelation([...many(6, 'family'), ...many(9, 'work')]);
+    expect(l.bounds.map((b) => b.group)).toEqual(['family', 'work']);
+    for (const b of l.bounds) {
+      for (const n of l.nodes.filter((x) => x.person.group === b.group)) {
+        expect(n.d - n.r).toBeGreaterThanOrEqual(b.inner);
+        expect(n.d + n.r).toBeLessThanOrEqual(b.outer);
+        expect(n.a).toBeGreaterThanOrEqual(b.from);
+        expect(n.a).toBeLessThanOrEqual(b.from + b.span);
+      }
+    }
+  });
+
+  it('keeps one group\'s boundary clear of the next', () => {
+    const l = layoutRelation([...many(6, 'family'), ...many(9, 'work'), ...many(4, 'other')]);
+    const sorted = [...l.bounds].sort((a, b) => a.from - b.from);
+    for (let i = 0; i + 1 < sorted.length; i++) {
+      expect(sorted[i].from + sorted[i].span).toBeLessThan(sorted[i + 1].from);
+    }
+  });
+
+  it('holds everyone apart inside a band as well as round a ring', () => {
+    const l = layoutRelation([...many(30, 'family'), ...many(30, 'friend')]);
+    for (const group of ['family', 'friend'] as const) {
+      expect(tightest(l.nodes.filter((n) => n.person.group === group))).toBeGreaterThan(0);
     }
   });
 });

@@ -9,7 +9,10 @@
  * wordmark: what is exported should look like the page it came from.
  */
 import { contactFade, hasBirthdaySoon, type RelationData, type RelationGroup } from '../relation';
-import { ME_R, initialsOf, layoutRelation, xyOf } from '../relation-layout';
+import { ME_R, layoutRelation, xyOf } from '../relation-layout';
+import { NAME_SIZE, nameBox } from '../relation-name';
+
+const TAU = Math.PI * 2;
 
 export interface RelationImageInput {
   data: RelationData;
@@ -25,6 +28,8 @@ export interface RelationImageInput {
   photos?: Record<string, CanvasImageSource | null>;
   /** The line under the picture, already translated. */
   caption?: string;
+  /** What each group is called, written once on its own boundary. */
+  groupLabel?: Record<RelationGroup, string>;
 }
 
 /** The widest edge of the exported picture. */
@@ -49,15 +54,42 @@ export function drawRelation(ctx: CanvasRenderingContext2D, input: RelationImage
   ctx.fillStyle = input.background;
   ctx.fillRect(0, 0, size, size);
 
-  // Guide rings. Transparency is set on the context rather than mixed into
-  // the colour, because the page's ink arrives as whatever CSS said it was.
+  // The boundary round each group, exactly as the page draws it: the picture
+  // should be the map, not a diagram of the same data.
   ctx.lineWidth = Math.max(1, size / 1400);
-  ctx.strokeStyle = ink;
-  ctx.globalAlpha = 0.06;
-  for (const ring of layout.rings) {
+  for (const b of layout.bounds) {
+    const whole = b.span >= 1;
+    const from = b.from * TAU - Math.PI / 2;
+    const to = (b.from + b.span) * TAU - Math.PI / 2;
+    const outer = Math.max(1, b.outer * scale);
+    const inner = Math.max(0, b.inner * scale);
     ctx.beginPath();
-    ctx.arc(middle, middle, ring.d * scale, 0, Math.PI * 2);
+    if (whole) {
+      ctx.arc(middle, middle, outer, 0, TAU);
+      ctx.arc(middle, middle, inner, 0, TAU, true);
+    } else {
+      ctx.arc(middle, middle, outer, from, to);
+      ctx.arc(middle, middle, inner, to, from, true);
+      ctx.closePath();
+    }
+    ctx.fillStyle = colors[b.group];
+    ctx.globalAlpha = 0.055;
+    ctx.fill();
+    ctx.strokeStyle = colors[b.group];
+    ctx.globalAlpha = 0.22;
+    ctx.setLineDash([size / 400, size / 260]);
     ctx.stroke();
+    ctx.setLineDash([]);
+    const label = input.groupLabel?.[b.group];
+    if (label) {
+      const mid = whole ? -Math.PI / 2 : (b.from + b.span / 2) * TAU - Math.PI / 2;
+      ctx.globalAlpha = 0.55;
+      ctx.fillStyle = colors[b.group];
+      ctx.font = `${Math.round(size / 110)}px ui-sans-serif, system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, middle + Math.cos(mid) * (outer + size / 150), middle + Math.sin(mid) * (outer + size / 150));
+    }
   }
 
   const place = new Map(layout.nodes.map((n) => [n.person.id, n]));
@@ -89,7 +121,13 @@ export function drawRelation(ctx: CanvasRenderingContext2D, input: RelationImage
   }
   ctx.setLineDash([]);
 
-  const face = (name: string, photo: string | undefined, cx: number, cy: number, r: number) => {
+  /** A face, or the name itself written across the circle it belongs to. */
+  const face = (
+    name: string, photo: string | undefined, cx: number, cy: number, r: number,
+    /** The same circle in layout units, which is what the name was fitted to. */
+    unit: number,
+    lines?: readonly string[],
+  ) => {
     const img = photo ? input.photos?.[photo] : null;
     if (img) {
       ctx.save();
@@ -101,14 +139,17 @@ export function drawRelation(ctx: CanvasRenderingContext2D, input: RelationImage
       ctx.restore();
       return;
     }
-    const letters = initialsOf(name);
-    if (!letters) return;
-    ctx.globalAlpha = 0.75;
+    const rows = lines?.length ? lines : nameBox(name, unit).lines;
+    if (!rows.length || unit <= 0) return;
+    const font = NAME_SIZE * (r / unit);
+    ctx.globalAlpha = 0.85;
     ctx.fillStyle = ink;
-    ctx.font = `${Math.round(r * 0.8)}px ui-sans-serif, system-ui, sans-serif`;
+    ctx.font = `${font}px ui-sans-serif, system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(letters, cx, cy);
+    const step = font * 1.15;
+    const top = cy - ((rows.length - 1) * step) / 2;
+    rows.forEach((row, i) => ctx.fillText(row, cx, top + i * step));
   };
 
   // Me.
@@ -121,9 +162,9 @@ export function drawRelation(ctx: CanvasRenderingContext2D, input: RelationImage
   ctx.lineWidth = Math.max(2, size / 900);
   ctx.strokeStyle = ink;
   ctx.stroke();
-  face(data.me.name || input.meLabel, data.me.photo, middle, middle, meR);
+  face(data.me.name || input.meLabel, data.me.photo, middle, middle, meR, ME_R);
 
-  // Everyone else, with every name written.
+  // Everyone else, with every name written inside their own circle.
   for (const n of layout.nodes) {
     const p = at(xyOf(n).x, xyOf(n).y);
     const r = n.r * scale;
@@ -145,13 +186,8 @@ export function drawRelation(ctx: CanvasRenderingContext2D, input: RelationImage
     ctx.strokeStyle = colors[n.person.group];
     ctx.globalAlpha = alpha;
     ctx.stroke();
-    if (r > size / 120) face(n.person.name, n.person.photo, p.x, p.y, r);
-    ctx.globalAlpha = 0.7 * alpha;
-    ctx.fillStyle = ink;
-    ctx.font = `${Math.round(size / 96)}px ui-sans-serif, system-ui, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.fillText(n.person.name, p.x, p.y + r + size / 200);
+    ctx.globalAlpha = alpha;
+    face(n.person.name, n.person.photo, p.x, p.y, r, n.r, n.lines);
   }
 
   // The line under it, and where it came from.

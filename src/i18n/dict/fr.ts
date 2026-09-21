@@ -1169,6 +1169,7 @@ export const fr: Record<TKey, string> = {
   'place.filter': "Types d'épingle",
   'place.filterAll': 'Toutes',
   'place.heat': 'Carte de chaleur',
+  'place.heatOff': 'Désactiver la carte de chaleur',
   // Place — looking a place up in the wider world, by name.
   'place.searchOnline': 'Chercher « {q} » en ligne',
   'place.searchCredit': 'Résultats © les contributeurs d’OpenStreetMap',

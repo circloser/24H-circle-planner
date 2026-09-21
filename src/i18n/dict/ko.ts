@@ -1173,6 +1173,7 @@ export const ko = {
   'place.filter': '핀 종류',
   'place.filterAll': '전체',
   'place.heat': '핀 히트맵',
+  'place.heatOff': '핀 히트맵 끄기',
   // Place — looking a place up in the wider world, by name.
   'place.searchOnline': '인터넷에서 ‘{q}’ 찾기',
   'place.searchCredit': '검색 결과 © OpenStreetMap 기여자',

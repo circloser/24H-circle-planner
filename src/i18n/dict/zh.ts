@@ -1167,6 +1167,7 @@ export const zh: Record<TKey, string> = {
   'place.filter': '图钉类型',
   'place.filterAll': '全部',
   'place.heat': '图钉热力图',
+  'place.heatOff': '关闭热力图',
   // Place — looking a place up in the wider world, by name.
   'place.searchOnline': '在网上查找“{q}”',
   'place.searchCredit': '搜索结果 © OpenStreetMap 贡献者',

@@ -140,6 +140,24 @@ export async function startAnalytics(): Promise<boolean> {
   return wanted;
 }
 
+/**
+ * A page of the app, as GA understands pages.
+ *
+ * The app is one document: the timetable, the calendar, the life line and the
+ * maps are views inside it, so without this GA sees a single page_view and can
+ * say nothing about which of them anybody uses. The address is made here from
+ * the view's own name rather than taken from the bar — the bar may be holding
+ * a share code, and those never go to Google.
+ */
+export function gaView(view: string): void {
+  const path = `/app/${view}`;
+  gaEvent('page_view', {
+    page_title: `24Houring · ${view}`,
+    page_location: `${location.origin}${path}`,
+    page_path: path,
+  });
+}
+
 /** Send an event to GA (queued until the decision, dropped when off). */
 export function gaEvent(event: string, params?: Params): void {
   if (state === 'on') gtag()('event', event, params);

@@ -168,11 +168,11 @@ function DateLine({ category, color, text, badge }: { category: LifeCategory; co
 }
 
 function Title({ children, faint }: { children: ReactNode; faint?: boolean }) {
-  // Half of what it was. A life line is read by its shape first — the run of
-  // years and where they cluster — and a title in twenty-two point turns the
-  // line into a list of headlines.
+  // A life line is read by its shape first — the run of years and where they
+  // cluster — so a title does not shout at twenty-two point. Eighteen still
+  // reads as the heading it is, which twelve did not.
   return (
-    <span className={`life-serif mt-2 block text-[12px] font-bold leading-5 tracking-tight decoration-1 underline-offset-4 group-hover:underline min-[900px]:text-[13px] ${
+    <span className={`life-serif mt-2 block text-[17px] font-bold leading-6 tracking-tight decoration-1 underline-offset-4 group-hover:underline min-[900px]:text-[18px] ${
       faint ? 'text-foreground/70' : 'text-foreground'}`}>
       {children}
     </span>
@@ -269,11 +269,15 @@ export function LifeTimeline({ life, items, colors, stickyTop, readOnly, rowDeco
   for (const it of items) {
     if (it.kind === 'decade') {
       rows.push(
-        <li key={it.key} className="relative pt-12" data-year={it.decade} data-life-decade>
-          <Line future={it.future} />
+        <li key={it.key} className="relative pt-12" data-year={it.decade} data-life-decade
+          data-life-before={it.before || undefined}>
+          {/* Before the birth there is no line to draw — only the years, so
+              that another life beside this one can be read against them. */}
+          {!it.before && <Line future={it.future} />}
           {rowDecor?.(it.key)}
           <div className="relative flex min-[900px]:justify-center">
-            <span data-life-label className="life-serif relative z-10 ml-[28px] -translate-x-1/2 bg-background px-2 py-1 text-[15px] font-bold tracking-wide text-muted-foreground min-[900px]:ml-0 min-[900px]:translate-x-0">
+            <span data-life-label className={`life-serif relative z-10 ml-[28px] -translate-x-1/2 bg-background px-2 py-1 text-[15px] font-bold tracking-wide min-[900px]:ml-0 min-[900px]:translate-x-0 ${
+              it.before ? 'text-muted-foreground/45' : 'text-muted-foreground'}`}>
               {it.decade}s
               {/* How full this stretch of the life is — a number, no words. */}
               {it.count > 0 && <span data-life-decade-count className="ml-1.5 font-normal opacity-60">{it.count}</span>}

@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { dismissAfterVisible } from '@/lib/toast-dismiss';
-import { Columns3, Download, Feather, ListFilter, Pin, Plus, ShieldAlert, Smile, X } from 'lucide-react';
+import { Download, Feather, ListFilter, Pin, ShieldAlert, Smile, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
@@ -11,22 +11,21 @@ import { useLife, UNDO_MS, type LifeApi, type MilestoneDraft } from '@/hooks/use
 import { COLOR_THEMES } from '@/data/color-themes';
 import { requestUpgrade } from '@/lib/pro';
 import { todayKey } from '@/lib/calendar-grid';
-import { track, trackOnce } from '@/lib/track';
+import { track, trackFeature, trackOnce } from '@/lib/track';
 import {
   FREE_LIFE_LINES, FREE_LIFE_MILESTONES, MAX_ENDING, MAX_LIFE_LINES, MAX_NAME, PICKABLE_CATEGORIES,
-  ageAt, buildTimeline, canAddMilestone, formatLifeDate, isFullDate, lifeSummary,
-  type FamilyMember, type LifeCategory,
+  canAddMilestone, isFullDate, lifeSummary,
+  type LifeCategory,
 } from '@/lib/life';
 import { dismissBackupBanner, downloadLifeBackup, needsBackupWarning } from '@/lib/life-backup';
 import { useLifeNudge } from '@/hooks/useLifeNudge';
 import { LIFE_EXPORT_EVENT } from '@/lib/life-export';
-import { CATEGORY_ICON, CATEGORY_LABEL, RELATION_LABEL, categoryColors, inkOf } from './categories';
-import { LifePhoto, LifeTimeline } from './LifeTimeline';
+import { CATEGORY_ICON, CATEGORY_LABEL, categoryColors, inkOf } from './categories';
 import {
-  FamilyDialog, LineDialog, MilestoneDialog, ProfileDialog,
-  type LineTarget, type MemberTarget, type MomentTarget,
+  LineDialog, MilestoneDialog, ProfileDialog,
+  type LineTarget, type MomentTarget,
 } from './LifeDialogs';
-import { LifeParallel } from './LifeParallel';
+import { LifeBoard } from './LifeBoard';
 import { LifeExportDialog } from './LifeExport';
 import { LifeMemoir } from './LifeMemoir';
 import { DecorTray } from '@/components/Calendar/Decor';
@@ -36,8 +35,6 @@ import { LifeRowDecor, type LifeArmed, type LifePicked } from './LifeDecor';
 import { LIFE_REQUEST_EVENT, takeLifeRequest } from '@/lib/life-requests';
 import type { DecorTool } from '@/components/Calendar/decor-tools';
 import type { TKey } from '@/i18n/translations';
-
-type Parent = 'mother' | 'father';
 
 /**
  * Life — the third view beside the timetable and the calendar: the parents at
@@ -65,17 +62,15 @@ export function LifeView() {
   }, []);
 
   const [only, setOnly] = useState<Set<LifeCategory>>(() => new Set());
-  const items = useMemo(() => buildTimeline(life, { today, only }), [life, today, only]);
   const summary = lifeSummary(life, today);
 
   const [moment, setMoment] = useState<MomentTarget | null>(null);
-  const [member, setMember] = useState<MemberTarget | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
-  // Several lives at once: off by default, because most days one is the
-  // question. Who is folded away lives here rather than in the record — it is
-  // a way of looking, not a fact about anybody.
-  const [parallel, setParallel] = useState(false);
+  // Who is drawn beside me. Folding somebody away is a way of looking, not a
+  // fact about them, so it is kept here rather than in the record; `chosenLine`
+  // is the one other line a phone has room for.
   const [hiddenLines, setHiddenLines] = useState<Set<string>>(() => new Set());
+  const [chosenLine, setChosenLine] = useState<string | null>(null);
   const [lineTarget, setLineTarget] = useState<LineTarget | null>(null);
   /** Which line a moment is being added to or edited on; '' is my own. */
   const [onLine, setOnLine] = useState('');
@@ -135,7 +130,14 @@ export function LifeView() {
       requestUpgrade('life');
       return;
     }
+    trackFeature('life_line');
     setLineTarget({ mode: 'add' });
+  };
+
+  /** Somebody else's line, opened to be renamed, re-dated or taken away. */
+  const openLine = (id: string) => {
+    const line = (life.others ?? []).find((o) => o.id === id);
+    if (line) setLineTarget({ mode: 'edit', line });
   };
 
   /** Open the add form — unless the free plan is full (nothing is lost). */
@@ -243,56 +245,41 @@ export function LifeView() {
       ) : (
         // A record from a newer app version is shown, never edited here.
         <div className="contents" inert={api.readOnly || undefined}>
-          <Parents family={life.family}
-            onAdd={(relation) => setMember({ mode: 'add', relation })}
-            onOpen={(f) => setMember({ mode: 'edit', f })} />
           {life.milestones.length === 0 && only.size === 0 && <QuickStart birth={life.profile.birthDate} onAdd={api.addMilestone} />}
-          <LifeTimeline life={life} items={items} colors={colors} stickyTop={headerH}
+          {/* My line, and the lives it was lived among — every one of them the
+              same drawing, standing side by side. */}
+          <LifeBoard
+            life={life}
+            colors={colors}
+            today={today}
+            only={only}
+            stickyTop={headerH}
+            meLabel={t('relation.me.short')}
+            hidden={hiddenLines}
+            chosen={chosenLine}
             decorating={decorating}
             rowDecor={(row) => (
               <LifeRowDecor row={row} store={decorStore} active={decorating} armed={armed}
                 selected={chosen} onSelect={setChosen} onPlaced={setChosen} />
             )}
-            onOpenMoment={(m) => setMoment({ mode: 'edit', m })}
-            onOpenBirth={() => setProfileOpen(true)}
-            onAdd={addMoment} />
-          {/* Several lives, read against the same years. */}
-          <div className="mt-6 flex justify-center">
-            <Button size="sm" variant={parallel ? 'default' : 'outline'} className="gap-1.5 rounded-full"
-              aria-pressed={parallel} data-life-parallel-toggle
-              onClick={() => setParallel((v) => !v)}>
-              <Columns3 aria-hidden className="h-4 w-4" />
-              {t(parallel ? 'life.parallel.close' : 'life.parallel.open')}
-            </Button>
-          </div>
-          {parallel && (
-            <LifeParallel
-              life={life}
-              colors={colors}
-              today={today}
-              meLabel={t('relation.me.short')}
-              hidden={hiddenLines}
-              onToggle={(id) => setHiddenLines((was) => {
-                const next = new Set(was);
-                if (!next.delete(id)) next.add(id);
-                return next;
-              })}
-              onAddLine={addLine}
-              onOpenLine={(id) => {
-                const line = (life.others ?? []).find((o) => o.id === id);
-                if (line) setLineTarget({ mode: 'edit', line });
-              }}
-              onAddMoment={(lineId) => {
-                if (lineId === 'me') return addMoment({});
-                setOnLine(lineId);
-                setMoment({ mode: 'add', preset: {} });
-              }}
-              onOpenMoment={(lineId, m) => {
-                setOnLine(lineId === 'me' ? '' : lineId);
-                setMoment({ mode: 'edit', m });
-              }}
-            />
-          )}
+            onChoose={setChosenLine}
+            onToggle={(id) => setHiddenLines((was) => {
+              const next = new Set(was);
+              if (!next.delete(id)) next.add(id);
+              return next;
+            })}
+            onAddLine={addLine}
+            onOpenLine={openLine}
+            onOpenMoment={(lineId, m) => {
+              setOnLine(lineId === 'me' ? '' : lineId);
+              setMoment({ mode: 'edit', m });
+            }}
+            onOpenBirth={(lineId) => (lineId === 'me' ? setProfileOpen(true) : openLine(lineId))}
+            onAdd={(lineId, preset) => {
+              if (lineId === 'me') return addMoment(preset);
+              setOnLine(lineId);
+              setMoment({ mode: 'add', preset });
+            }} />
 
           {/* A restore replaces the note: start its field afresh from it. */}
           <EndingNote key={api.generation} api={api} />
@@ -349,20 +336,6 @@ export function LifeView() {
           setLineTarget(null);
           if (gone) {
             dismissAfterVisible(toast(t('life.deleted'), { action: { label: t('sync.undo'), onClick: () => api.restoreLine(gone.item, gone.at) }, duration: UNDO_MS }), UNDO_MS);
-          }
-        }} />
-      <FamilyDialog target={member} pro={pro}
-        onClose={() => setMember(null)}
-        onSave={(draft, id) => {
-          if (id) api.updateMember(id, draft);
-          else api.addMember(draft);
-          setMember(null);
-        }}
-        onDelete={(id) => {
-          const gone = api.removeMember(id);
-          setMember(null);
-          if (gone) {
-            dismissAfterVisible(toast(t('life.deleted'), { action: { label: t('sync.undo'), onClick: () => api.restoreMember(gone.item, gone.at) }, duration: UNDO_MS }), UNDO_MS);
           }
         }} />
       <ProfileDialog open={profileOpen} profile={life.profile} onClose={() => setProfileOpen(false)}
@@ -540,83 +513,6 @@ function Onboarding({ onStart }: { onStart: (birthDate: string, name: string) =>
           {t('life.onboard.start')}
         </Button>
       </form>
-    </section>
-  );
-}
-
-/** One parent, as plain text like the entries on the line. */
-function MemberBlock({ f, onOpen }: { f: FamilyMember; onOpen: () => void }) {
-  const { t } = useTranslation();
-  const age = f.birthDate && isFullDate(f.birthDate) ? ageAt(f.birthDate, todayKey()) : null;
-  return (
-    <button type="button" onClick={onOpen} data-life-member={f.relation}
-      className="group relative block w-full rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-[900px]:text-center">
-      <span className="block text-[15px] italic leading-[22px] text-muted-foreground">{t(RELATION_LABEL[f.relation])}</span>
-      <span className="life-serif mt-1 block truncate text-[22px] font-bold leading-8 tracking-tight text-foreground decoration-1 underline-offset-[6px] group-hover:underline">{f.name}</span>
-      {f.birthDate && (
-        <span className="mt-1 block text-[15px] text-foreground/75">
-          {formatLifeDate(f.birthDate)}{age ? ` · ${t('life.age', { n: String(age.years) })}` : ''}
-        </span>
-      )}
-      {f.note && <span className="mt-1 line-clamp-2 block text-[15px] leading-relaxed text-foreground/75">{f.note}</span>}
-      {f.photo && <LifePhoto id={f.photo} className="mt-3 h-16 w-16 rounded-full min-[900px]:mx-auto" />}
-    </button>
-  );
-}
-
-/** An empty parent place, one tap from being filled. */
-function EmptySlot({ label, onAdd, rel }: { label: string; onAdd: () => void; rel: Parent }) {
-  return (
-    <button type="button" onClick={onAdd} data-life-slot={rel}
-      className="inline-flex min-h-11 items-center gap-1.5 self-start rounded-lg text-[15px] italic text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-[900px]:self-center">
-      <Plus aria-hidden className="h-4 w-4 not-italic" />
-      {label}
-    </button>
-  );
-}
-
-/** A hollow marker: on the phone's left line, or under a parent on wide screens. */
-const ringClass = (dashed: boolean) =>
-  `h-[26px] w-[26px] rounded-full border-2 bg-background ${dashed ? 'border-dashed border-foreground/40' : 'border-foreground'}`;
-
-/**
- * The parents side by side, each above a marker of their own, and their two
- * lines meet to become the life line. (Other relatives an older version may
- * have stored are kept in the record — and in backups — just not shown.)
- */
-function Parents({ family, onAdd, onOpen }: {
-  family: FamilyMember[];
-  onAdd: (r: Parent) => void;
-  onOpen: (f: FamilyMember) => void;
-}) {
-  const { t } = useTranslation();
-  const parent = (rel: Parent) => {
-    const f = family.find((m) => m.relation === rel);
-    return (
-      <div className="relative flex flex-col min-[900px]:items-center min-[900px]:px-12">
-        {/* Phone: this parent's marker on the left line. */}
-        <span aria-hidden className={`absolute -left-9 top-[29px] -translate-x-1/2 min-[900px]:hidden ${ringClass(!f)}`} />
-        {f ? <MemberBlock f={f} onOpen={() => onOpen(f)} />
-          : <EmptySlot rel={rel} label={t(rel === 'mother' ? 'life.addMother' : 'life.addFather')} onAdd={() => onAdd(rel)} />}
-        {/* Wide screens: the parent's marker, level with the other's. */}
-        <span aria-hidden className={`mt-auto hidden pt-5 min-[900px]:block`}>
-          <span className={`block ${ringClass(!f)}`} />
-        </span>
-      </div>
-    );
-  };
-  return (
-    <section aria-label={t('life.roots')} className="relative mx-auto mt-10 w-full max-w-[960px]" data-life-roots>
-      {/* Phone: the line runs down from the first parent to the birth. */}
-      <span aria-hidden className="life-line min-[900px]:hidden" style={{ top: 42 }} />
-      <div className="ml-16 mr-4 grid gap-8 min-[900px]:mx-0 min-[900px]:grid-cols-2 min-[900px]:gap-0">
-        {parent('mother')}
-        {parent('father')}
-      </div>
-      {/* The parents' two lines meet and become the life line. */}
-      <svg aria-hidden viewBox="0 0 100 56" preserveAspectRatio="none" className="hidden h-14 w-full min-[900px]:block">
-        <path d="M25 0 C25 34 50 22 50 56 M75 0 C75 34 50 22 50 56" fill="none" stroke="hsl(var(--foreground) / 0.85)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-      </svg>
     </section>
   );
 }
