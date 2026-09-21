@@ -32,6 +32,10 @@ function stub() {
     beginPath() {},
     moveTo() {},
     lineTo() {},
+    // The group boundaries are drawn as rounded corners (lib/relation-hull);
+    // they are shapes, not circles, so they add nothing to `circles`.
+    arcTo() { this._arc = null; },
+    closePath() {},
     setLineDash() {},
     save() {},
     restore() {},

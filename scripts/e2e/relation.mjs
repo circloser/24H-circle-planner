@@ -222,9 +222,25 @@ export async function run() {
     await wait(500);
     pass('…and comes back where they were', (await stored()).people.map((p) => p.id).join() === 'p1,p2,p3');
 
-    // 10. Nobody sits perfectly still: the map floats, gently.
+    // 10. The map has weight (lib/relation-force): it arranges itself when it
+    // opens, stops when it is done, and floats gently for ever after.
     await openRelation();
     await closeAll();
+    const heat = () => page.locator('[data-relation-surface]').getAttribute('data-relation-alpha').then(Number);
+    const cooled = async () => {
+      for (let i = 0; i < 40; i++) {
+        if ((await heat()) <= 0.021) return true;
+        await wait(200);
+      }
+      return false;
+    };
+    // The heat is written on the canvas by the drawing; a map that is being
+    // worked out has some, and how much depends on how quickly this machine
+    // got here — so what is checked is that it runs, and that it stops.
+    const fresh = await heat();
+    pass('the map is worked out by forces, and says how hot it still is',
+      Number.isFinite(fresh) && fresh >= 0, String(fresh));
+    pass('…and it settles, rather than churning for ever', await cooled(), String(await heat()));
     const floats = await page.evaluate(async () => {
       const shot = () => {
         const c = document.querySelector('[data-relation-surface]');
@@ -234,7 +250,7 @@ export async function run() {
       await new Promise((r) => setTimeout(r, 900));
       return first !== shot();
     });
-    pass('the people float rather than sit still', floats);
+    pass('…and settled, nobody sits perfectly still', floats);
 
     // 11. The free limit stops adding, and hides nothing.
     await seed(Array.from({ length: 40 }, (_, i) => person(`x${i}`, { name: `사람 ${i}` })));

@@ -10,9 +10,9 @@
  */
 import { contactFade, hasBirthdaySoon, type RelationData, type RelationGroup } from '../relation';
 import { ME_R, layoutRelation, xyOf } from '../relation-layout';
+import { restFor, settle, type Body, type Tie } from '../relation-force';
+import { boundaryOf, drawBoundary } from '../relation-hull';
 import { NAME_SIZE, nameBox } from '../relation-name';
-
-const TAU = Math.PI * 2;
 
 export interface RelationImageInput {
   data: RelationData;
@@ -46,80 +46,101 @@ const MARGIN = 0.09;
 export function drawRelation(ctx: CanvasRenderingContext2D, input: RelationImageInput, size = RELATION_IMAGE_SIZE): void {
   const { data, colors, today, ink, accent } = input;
   const layout = layoutRelation(data.people);
+  // The picture is the map, so it is settled by the same forces the page runs
+  // (lib/relation-force) from the same seed — which is deterministic, so what
+  // is saved is what was on screen.
+  const world = new Map<string, Body>(layout.nodes.map((n) => {
+    const home = xyOf(n);
+    return [n.person.id, {
+      id: n.person.id, x: home.x, y: home.y, vx: 0, vy: 0, r: n.r, want: n.d, pinned: n.fixed,
+    }];
+  }));
+  const ties: Tie[] = data.links.flatMap((link) => {
+    const a = world.get(link.source);
+    const b = world.get(link.target);
+    return a && b ? [{ a: link.source, b: link.target, rest: restFor(a, b) }] : [];
+  });
+  settle([...world.values()], ties);
+  const spot = (id: string) => world.get(id) ?? { x: 0, y: 0 };
+  let reach = ME_R;
+  for (const body of world.values()) reach = Math.max(reach, Math.hypot(body.x, body.y) + body.r);
   const middle = size / 2;
-  const scale = (size / 2) * (1 - MARGIN * 2) / Math.max(layout.extent, 1);
+  const scale = (size / 2) * (1 - MARGIN * 2) / Math.max(reach, 1);
   const at = (x: number, y: number) => ({ x: middle + x * scale, y: middle + y * scale });
 
   ctx.globalAlpha = 1;
   ctx.fillStyle = input.background;
   ctx.fillRect(0, 0, size, size);
 
-  // The boundary round each group, exactly as the page draws it: the picture
+  // The shape round each group, exactly as the page draws it: the picture
   // should be the map, not a diagram of the same data.
   ctx.lineWidth = Math.max(1, size / 1400);
-  for (const b of layout.bounds) {
-    const whole = b.span >= 1;
-    const from = b.from * TAU - Math.PI / 2;
-    const to = (b.from + b.span) * TAU - Math.PI / 2;
-    const outer = Math.max(1, b.outer * scale);
-    const inner = Math.max(0, b.inner * scale);
-    ctx.beginPath();
-    if (whole) {
-      ctx.arc(middle, middle, outer, 0, TAU);
-      ctx.arc(middle, middle, inner, 0, TAU, true);
-    } else {
-      ctx.arc(middle, middle, outer, from, to);
-      ctx.arc(middle, middle, inner, to, from, true);
-      ctx.closePath();
-    }
-    ctx.fillStyle = colors[b.group];
-    ctx.globalAlpha = 0.055;
+  for (const group of new Set(data.people.map((p) => p.group))) {
+    const spots = data.people
+      .filter((p) => p.group === group)
+      .flatMap((p) => {
+        const body = world.get(p.id);
+        if (!body) return [];
+        const point = at(body.x, body.y);
+        return [{ x: point.x, y: point.y, r: body.r * scale + size / 500 }];
+      });
+    if (!spots.length) continue;
+    const shape = boundaryOf(spots, size / 90);
+    if (shape.length < 3) continue;
+    drawBoundary(ctx, shape, size / 60);
+    ctx.fillStyle = colors[group];
+    ctx.globalAlpha = 0.06;
     ctx.fill();
-    ctx.strokeStyle = colors[b.group];
-    ctx.globalAlpha = 0.22;
+    ctx.strokeStyle = colors[group];
+    ctx.globalAlpha = 0.24;
     ctx.setLineDash([size / 400, size / 260]);
     ctx.stroke();
     ctx.setLineDash([]);
-    const label = input.groupLabel?.[b.group];
+    const label = input.groupLabel?.[group];
     if (label) {
-      const mid = whole ? -Math.PI / 2 : (b.from + b.span / 2) * TAU - Math.PI / 2;
-      ctx.globalAlpha = 0.55;
-      ctx.fillStyle = colors[b.group];
+      let top = shape[0];
+      for (const point of shape) if (point[1] < top[1]) top = point;
+      ctx.globalAlpha = 0.6;
+      ctx.fillStyle = colors[group];
       ctx.font = `${Math.round(size / 110)}px ui-sans-serif, system-ui, sans-serif`;
       ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(label, middle + Math.cos(mid) * (outer + size / 150), middle + Math.sin(mid) * (outer + size / 150));
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(label, top[0], top[1] - size / 220);
     }
   }
-
-  const place = new Map(layout.nodes.map((n) => [n.person.id, n]));
 
   // Me to each person.
   ctx.strokeStyle = ink;
   for (const n of layout.nodes) {
-    const p = at(xyOf(n).x, xyOf(n).y);
+    const body = spot(n.person.id);
+    const p = at(body.x, body.y);
     ctx.beginPath();
     ctx.moveTo(middle, middle);
     ctx.lineTo(p.x, p.y);
-    ctx.globalAlpha = 0.4 * contactFade(n.person, today);
+    ctx.globalAlpha = 0.3 * contactFade(n.person, today);
     ctx.stroke();
   }
 
-  // Person to person.
-  ctx.setLineDash([size / 270, size / 270]);
-  ctx.globalAlpha = 0.25;
+  // Person to person, each tie with whatever it was called.
   for (const link of data.links) {
-    const a = place.get(link.source);
-    const b = place.get(link.target);
+    const a = world.get(link.source);
+    const b = world.get(link.target);
     if (!a || !b) continue;
-    const pa = at(xyOf(a).x, xyOf(a).y);
-    const pb = at(xyOf(b).x, xyOf(b).y);
+    const pa = at(a.x, a.y);
+    const pb = at(b.x, b.y);
+    ctx.globalAlpha = 0.45;
     ctx.beginPath();
     ctx.moveTo(pa.x, pa.y);
     ctx.lineTo(pb.x, pb.y);
     ctx.stroke();
+    if (!link.label) continue;
+    ctx.globalAlpha = 0.8;
+    ctx.fillStyle = ink;
+    ctx.font = `${Math.round(size / 150)}px ui-sans-serif, system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(link.label, (pa.x + pb.x) / 2, (pa.y + pb.y) / 2);
   }
-  ctx.setLineDash([]);
 
   /** A face, or the name itself written across the circle it belongs to. */
   const face = (
@@ -166,7 +187,8 @@ export function drawRelation(ctx: CanvasRenderingContext2D, input: RelationImage
 
   // Everyone else, with every name written inside their own circle.
   for (const n of layout.nodes) {
-    const p = at(xyOf(n).x, xyOf(n).y);
+    const body = spot(n.person.id);
+    const p = at(body.x, body.y);
     const r = n.r * scale;
     const alpha = contactFade(n.person, today);
     if (hasBirthdaySoon(n.person, today)) {
