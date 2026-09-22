@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Minus, Plus, UserPlus } from 'lucide-react';
+import { Minus, Plus, UserPlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useTranslation } from '@/hooks/usePreferences';
@@ -24,6 +24,8 @@ export interface LifeBoardProps {
   onToggle: (id: string) => void;
   onAddLine: () => void;
   onOpenLine: (id: string) => void;
+  /** Take that line off the page altogether (it can be taken back). */
+  onRemoveLine: (id: string) => void;
   /** The order to draw them in, left to right (mine is always first). */
   onReorder: (ids: readonly string[]) => void;
   /** 다꾸 belongs to my own line: its rows are keyed by my own moments. */
@@ -46,7 +48,7 @@ export interface LifeBoardProps {
  */
 export function LifeBoard({
   life, colors, today, only, meLabel, readOnly, hidden,
-  onToggle, onAddLine, onOpenLine, onReorder, rowDecor, decorating,
+  onToggle, onAddLine, onOpenLine, onRemoveLine, onReorder, rowDecor, decorating,
   onOpenMoment, onOpenBirth, onAdd,
 }: LifeBoardProps) {
   const { t } = useTranslation();
@@ -229,7 +231,13 @@ export function LifeBoard({
               const on = showing.has(id);
               const mine = id === 'me';
               return (
-                <button key={id} type="button" data-life-line-toggle={id} aria-pressed={on}
+                // A name and, beside it, the way to let that line go. Two
+                // buttons rather than one with a cross inside it, because a
+                // button inside a button is not a thing.
+                <span key={id}
+                  className={`inline-flex items-center overflow-hidden rounded-full border text-[13px] ${
+                    on ? 'border-foreground text-foreground' : 'border-border text-muted-foreground'}`}>
+                <button type="button" data-life-line-toggle={id} aria-pressed={on}
                   draggable={!mine}
                   onDragStart={(e) => {
                     setDragging(id);
@@ -264,12 +272,21 @@ export function LifeBoard({
                     }
                   }}
                   onDoubleClick={() => (mine ? undefined : onOpenLine(id))}
-                  className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] ${
+                  className={`inline-flex min-h-8 items-center gap-1.5 pl-3 ${mine ? 'pr-3' : 'pr-1.5'} ${
                     mine ? '' : 'cursor-grab active:cursor-grabbing'} ${
-                    dragging === id ? 'opacity-50' : ''} ${
-                    on ? 'border-foreground text-foreground' : 'border-border text-muted-foreground'}`}>
+                    dragging === id ? 'opacity-50' : ''}`}>
                   {name || t('life.parallel.someone')}
                 </button>
+                {!mine && (
+                  <button type="button" data-life-line-remove={id}
+                    aria-label={`${name || t('life.parallel.someone')} · ${t('common.delete')}`}
+                    title={t('life.parallel.remove')}
+                    className="grid h-8 w-7 place-items-center text-muted-foreground hover:bg-accent/20 hover:text-destructive"
+                    onClick={() => onRemoveLine(id)}>
+                    <X aria-hidden className="h-3.5 w-3.5" />
+                  </button>
+                )}
+                </span>
               );
             })}
           <Button size="sm" variant="outline" className="ml-1 gap-1.5 rounded-full" data-life-line-add

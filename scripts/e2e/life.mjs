@@ -446,6 +446,20 @@ export async function run() {
     await wait(500);
     pass('…and brought back', (await count('[data-life-column]')) === 2);
 
+    // A name carries the way to let that line go, beside it.
+    pass('every other line offers to be taken off the page',
+      (await count(`[data-life-line-remove="${her}"]`)) === 1
+      && (await count('[data-life-line-remove="me"]')) === 0);
+    await page.locator(`[data-life-line-remove="${her}"]`).click();
+    await wait(600);
+    pass('…and pressing it takes them off it',
+      ((await stored()).others ?? []).length === 0 && (await count('[data-life-column]')) === 1);
+    await page.getByRole('button', { name: '되돌리기' }).click();
+    await wait(700);
+    pass('…and the toast puts them back, moments and all',
+      (await stored()).others.length === 1 && (await stored()).others[0].name === '이정숙'
+      && (await count('[data-life-column]')) === 2);
+
     // 15b2. Whose line goes where: the names are dragged along the row.
     await page.evaluate((k) => {
       const life = JSON.parse(localStorage.getItem(k));

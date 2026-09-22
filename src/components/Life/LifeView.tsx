@@ -127,6 +127,18 @@ export function LifeView() {
     if (line) setLineTarget({ mode: 'edit', line });
   };
 
+  /** Take a line off the page. Nothing is asked first: the toast holds the
+   *  person, their moments and their place in the row until it fades. */
+  const removeLine = (id: string) => {
+    const gone = api.removeLine(id);
+    setLineTarget(null);
+    if (!gone) return;
+    dismissAfterVisible(toast(t('life.deleted'), {
+      action: { label: t('sync.undo'), onClick: () => api.restoreLine(gone.item, gone.at) },
+      duration: UNDO_MS,
+    }), UNDO_MS);
+  };
+
   /** Open the add form — unless the free plan is full (nothing is lost). */
   const addMoment = (preset: Partial<MilestoneDraft>) => {
     if (!canAddMilestone(life, pro)) {
@@ -257,6 +269,7 @@ export function LifeView() {
             })}
             onAddLine={addLine}
             onOpenLine={openLine}
+            onRemoveLine={removeLine}
             onReorder={api.reorderLines}
             onOpenMoment={(lineId, m) => {
               setOnLine(lineId === 'me' ? '' : lineId);
@@ -319,13 +332,7 @@ export function LifeView() {
           else api.addLine(name, birthDate);
           setLineTarget(null);
         }}
-        onDelete={(id) => {
-          const gone = api.removeLine(id);
-          setLineTarget(null);
-          if (gone) {
-            dismissAfterVisible(toast(t('life.deleted'), { action: { label: t('sync.undo'), onClick: () => api.restoreLine(gone.item, gone.at) }, duration: UNDO_MS }), UNDO_MS);
-          }
-        }} />
+        onDelete={removeLine} />
       <ProfileDialog open={profileOpen} profile={life.profile} onClose={() => setProfileOpen(false)}
         onSave={(p) => { api.setProfile({ name: p.name, birthDate: p.birthDate }); setProfileOpen(false); }} />
       <LifeExportDialog open={exporting} onOpenChange={setExporting} api={api} colors={colors} decor={decorStore} />
