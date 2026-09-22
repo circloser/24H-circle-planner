@@ -52,25 +52,21 @@ export function lineAsLife(line: LifeLine): LifeData {
  * The columns to draw, mine always first.
  *
  * `hidden` is who has been folded away for now — a way of looking, not a
- * change to the record. `max` is how many the screen can hold at all: when
- * there are more than that, `chosen` says which one other line is wanted, and
- * everybody else waits their turn.
+ * change to the record. `max` is how many the screen can hold at all: a phone
+ * takes the first two of the same list a wide screen shows, so the leftmost
+ * pair on the desk is the pair in the pocket. Choosing somebody on a phone is
+ * therefore moving them to the front, not a state of its own.
  */
 export function boardLines(life: LifeData, opts: {
   hidden?: ReadonlySet<string>;
-  chosen?: string | null;
   max?: number;
 } = {}): BoardLine[] {
-  const { hidden, chosen = null, max = Infinity } = opts;
+  const { hidden, max = Infinity } = opts;
   const mine: BoardLine = { id: 'me', name: life.profile.name ?? '', mine: true, life };
-  const others = (life.others ?? []).filter((o) => !hidden?.has(o.id));
-  const room = Math.max(1, max) - 1;
-  let shown = others;
-  if (others.length > room) {
-    const pick = others.find((o) => o.id === chosen);
-    shown = (pick ? [pick, ...others.filter((o) => o !== pick)] : others).slice(0, room);
-  }
-  return [mine, ...shown.map((o) => ({ id: o.id, name: o.name, mine: false, life: lineAsLife(o) }))];
+  const others = (life.others ?? [])
+    .filter((o) => !hidden?.has(o.id))
+    .slice(0, Math.max(0, Math.max(1, max) - 1));
+  return [mine, ...others.map((o) => ({ id: o.id, name: o.name, mine: false, life: lineAsLife(o) }))];
 }
 
 /**
@@ -91,12 +87,25 @@ export function boardSpan(lines: readonly BoardLine[], today: string): { from: n
 }
 
 /**
- * How far to zoom the board out so several lines fit across a screen.
+ * How wide a column wants to be, in the board's own pixels.
  *
- * Two lines are drawn at their own size; past that each new line takes the
- * whole thing down a little, and nothing is ever drawn smaller than it can be
- * read at. The person can overrule it either way — this is only where it
- * starts.
+ * A column is a line down the middle with a card either side of it, so this
+ * is really "twice a card and the gap" — below it the cards start breaking
+ * words across lines, and a title set one syllable to a row is not a title.
  */
-export const boardZoom = (lines: number): number =>
-  Math.max(MIN_BOARD_ZOOM, Math.min(1, 2 / Math.max(1, lines)));
+export const COLUMN_WANT = 470;
+
+/**
+ * How far to zoom the board out, given how many lines there are and how much
+ * room the screen actually has for them.
+ *
+ * Not a fixed share per line: a wide desk holds four lines at full size and a
+ * laptop does not, and the old arithmetic gave both the same answer. Never
+ * bigger than life size, and never smaller than can be read — past that the
+ * board simply scrolls. The person can overrule it either way; this is only
+ * where it starts.
+ */
+export function boardZoom(lines: number, width = 0): number {
+  if (!width || lines < 1) return 1;
+  return Math.max(MIN_BOARD_ZOOM, Math.min(1, (width / lines) / COLUMN_WANT));
+}

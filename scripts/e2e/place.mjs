@@ -809,6 +809,13 @@ export async function run() {
     });
     pass('phone: the map fills the page, the way a map application does',
       full.wide && full.tall, JSON.stringify(full));
+    // Left alone, it turns on a phone exactly as it does on a desk.
+    const lngPhone = () => phone.page.locator('[data-place-globe]').getAttribute('data-place-lng');
+    const restingPhone = await lngPhone();
+    await wait(4200);
+    const turnedPhone = await lngPhone();
+    pass('…and it turns on its own here too',
+      Math.abs(Number(turnedPhone) - Number(restingPhone)) > 0.5, `${restingPhone} → ${turnedPhone}`);
     await phone.page.locator('[data-place-country="KR"]').dispatchEvent('click');
     await wait(500);
     const card = await phone.page.locator('[data-place-panel]').boundingBox();

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Minus, Plus, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/useIsMobile';
@@ -21,9 +21,6 @@ export interface LifeBoardProps {
   readOnly?: boolean;
   /** Who is folded away for now (wide screens). */
   hidden: ReadonlySet<string>;
-  /** Which one other line a phone is showing beside mine. */
-  chosen: string | null;
-  onChoose: (id: string) => void;
   onToggle: (id: string) => void;
   onAddLine: () => void;
   onOpenLine: (id: string) => void;
@@ -48,27 +45,36 @@ export interface LifeBoardProps {
  * a phone has room for two, so it shows mine and whichever one is asked for.
  */
 export function LifeBoard({
-  life, colors, today, only, meLabel, readOnly, hidden, chosen,
-  onChoose, onToggle, onAddLine, onOpenLine, onReorder, rowDecor, decorating,
+  life, colors, today, only, meLabel, readOnly, hidden,
+  onToggle, onAddLine, onOpenLine, onReorder, rowDecor, decorating,
   onOpenMoment, onOpenBirth, onAdd,
 }: LifeBoardProps) {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
+  /**
+   * Who is drawn. A wide screen holds everyone who has not been folded away;
+   * a phone holds two, and the two it holds are the first two of that same
+   * list — so the leftmost pair on the desk is the pair in the pocket.
+   */
   const lines = useMemo(
-    () => boardLines(life, { hidden, chosen, ...(isMobile ? { max: PHONE_LINES } : {}) }),
-    [life, hidden, chosen, isMobile],
+    () => boardLines(life, { hidden, ...(isMobile ? { max: PHONE_LINES } : {}) }),
+    [life, hidden, isMobile],
   );
-  // How far out the board is drawn. It starts wherever the number of lines
-  // says, and stays wherever it is put. A phone is not given the choice: two
-  // lines on a narrow screen only fit at one size, so it is simply used.
+  /**
+   * How far out the board is drawn: from how much room there is and how many
+   * lines have to share it, not from the number of lines alone. It starts
+   * there and stays wherever it is put. A phone is not given the choice —
+   * two lines on a narrow screen only fit at one size.
+   */
   const [zoom, setZoom] = useState<number | null>(null);
+  const [room, setRoom] = useState(0);
   const scale = isMobile
     ? (lines.length > 1 ? PHONE_ZOOM : 1)
-    : (zoom ?? boardZoom(lines.length));
+    : (zoom ?? boardZoom(lines.length, room));
   const step = (by: number) => {
     trackFeature('life_zoom');
     setZoom((z) => {
-      const now = z ?? boardZoom(lines.length);
+      const now = z ?? boardZoom(lines.length, room);
       return Math.max(MIN_BOARD_ZOOM, Math.min(MAX_BOARD_ZOOM, now * (by > 0 ? 1.25 : 1 / 1.25)));
     });
   };
@@ -112,7 +118,29 @@ export function LifeBoard({
    * row and a gap between rows would break it.
    */
   const board = useRef<HTMLDivElement>(null);
+  const frame = useRef<HTMLDivElement>(null);
   const aligning = useRef(false);
+  /**
+   * How much room there is, in the screen's own pixels.
+   *
+   * Measured on the box AROUND the board, for two reasons: the board's own
+   * pixels are what the zoom changes, so working the zoom out from them would
+   * be a zoom measuring itself; and a ResizeObserver put on an element with
+   * `zoom` is never called at all, so the board cannot watch itself either.
+   */
+  useEffect(() => {
+    const el = frame.current;
+    if (!el) return;
+    const measure = () => setRoom(Math.round(el.getBoundingClientRect().width));
+    measure();
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+    ro?.observe(el);
+    window.addEventListener('resize', measure);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, []);
   useLayoutEffect(() => {
     const el = board.current;
     if (!el) return;
@@ -222,7 +250,19 @@ export function LifeBoard({
                     e.preventDefault();
                     moveTo(id, all.findIndex((o) => o.id === id) + (e.key === 'ArrowLeft' ? -1 : 1));
                   }}
-                  onClick={() => (mine ? undefined : isMobile ? onChoose(id) : onToggle(id))}
+                  onClick={() => {
+                    if (mine) return;
+                    // On a phone, choosing somebody is choosing them INSTEAD:
+                    // they come to the front of the line, which is the same
+                    // move as dragging their name to the left on a wide
+                    // screen — so both screens agree on who is where.
+                    if (isMobile) {
+                      if (hidden.has(id)) onToggle(id);
+                      moveTo(id, 0);
+                    } else {
+                      onToggle(id);
+                    }
+                  }}
                   onDoubleClick={() => (mine ? undefined : onOpenLine(id))}
                   className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] ${
                     mine ? '' : 'cursor-grab active:cursor-grabbing'} ${
@@ -260,12 +300,14 @@ export function LifeBoard({
         actually needs; the sticky year is given back what the zoom takes off
         it, so it still comes to rest under the header.
       */}
+      <div ref={frame} className="w-full">
       <div ref={board} data-life-board data-life-board-lines={lines.length}
-        className="flex w-full items-start gap-3 min-[900px]:gap-6"
+        className="flex w-full items-start gap-3 min-[900px]:gap-8"
         style={scale === 1 ? undefined : { zoom: scale }}>
         {lines.map((line) => (
           <div key={line.id} data-life-column={line.id} className="min-w-0 flex-1">
             <LifeTimeline
+              narrow={isMobile && lines.length > 1}
               life={line.life}
               items={buildTimeline(line.life, { today, only, ...(lines.length > 1 ? span : {}) })}
               colors={colors}
@@ -277,6 +319,7 @@ export function LifeBoard({
               onAdd={(preset) => onAdd(line.id, preset)} />
           </div>
         ))}
+      </div>
       </div>
     </>
   );

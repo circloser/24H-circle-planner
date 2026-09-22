@@ -513,9 +513,18 @@ export async function run() {
     }));
     // Zoomed out, the circle that offers a new moment still lands under the
     // pointer: it is written in the board's pixels, not the screen's.
+    // Somewhere on my own line and BELOW its first marker — nothing may be
+    // added above a birth, so a point above it would rightly do nothing.
+    await page.evaluate(() => {
+      document.querySelector('[data-life-column="me"] [data-life-birth]')
+        ?.scrollIntoView({ block: 'center' });
+    });
+    await wait(400);
     const mePlace = await page.evaluate(() => {
       const ol = document.querySelector('[data-life-column="me"] [data-life-timeline]').getBoundingClientRect();
-      return { x: ol.left + ol.width / 2, y: Math.min(innerHeight - 60, ol.bottom - 40) };
+      const marker = document.querySelector('[data-life-column="me"] [data-life-birth] [data-life-marker]');
+      const under = (marker ? marker.getBoundingClientRect().bottom : ol.top) + 40;
+      return { x: ol.left + ol.width / 2, y: Math.min(innerHeight - 40, under) };
     });
     await page.mouse.move(mePlace.x, mePlace.y);
     await wait(300);

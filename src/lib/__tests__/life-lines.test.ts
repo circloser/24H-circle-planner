@@ -32,12 +32,14 @@ describe('the columns on the board', () => {
     expect(board.map((b) => b.id)).toEqual(['me', 'b']);
   });
 
-  it('holds two on a phone: mine, and the one asked for', () => {
+  it('holds two on a phone: mine, and the first of the others', () => {
     const life = mine([line('a', '1958'), line('b', '1990'), line('c', '2011')]);
     expect(boardLines(life, { max: PHONE_LINES }).map((b) => b.id)).toEqual(['me', 'a']);
-    expect(boardLines(life, { max: PHONE_LINES, chosen: 'c' }).map((b) => b.id)).toEqual(['me', 'c']);
-    // Asking for somebody who is not there falls back rather than emptying.
-    expect(boardLines(life, { max: PHONE_LINES, chosen: 'zz' }).map((b) => b.id)).toEqual(['me', 'a']);
+    // Choosing somebody on a phone moves them to the front of the record, so
+    // the phone and the wide screen never disagree about who is where.
+    const moved = { ...life, others: [life.others![2], life.others![0], life.others![1]] };
+    expect(boardLines(moved, { max: PHONE_LINES }).map((b) => b.id)).toEqual(['me', 'c']);
+    expect(boardLines(moved).map((b) => b.id)).toEqual(['me', 'c', 'a', 'b']);
   });
 
   it('draws somebody else exactly as a life of their own', () => {
@@ -71,26 +73,42 @@ describe('the order the lines are drawn in', () => {
     expect(boardLines(swapped).map((b) => b.id)).toEqual(['me', 'b', 'a']);
   });
 
-  it('and a phone shows the first of them unless another is chosen', () => {
+  it('and a phone takes the first two of that same order', () => {
     const life = mine([line('a', '1958'), line('b', '1990')]);
     const swapped = { ...life, others: [life.others![1], life.others![0]] };
     expect(boardLines(swapped, { max: PHONE_LINES }).map((b) => b.id)).toEqual(['me', 'b']);
+    // Whoever is folded away is not in that order at all.
+    expect(boardLines(swapped, { max: PHONE_LINES, hidden: new Set(['b']) }).map((b) => b.id))
+      .toEqual(['me', 'a']);
   });
 });
 
 describe('how far out the board starts', () => {
-  it('draws one or two lines at their own size', () => {
-    expect(boardZoom(1)).toBe(1);
-    expect(boardZoom(2)).toBe(1);
+  const desk = 1900;
+  const laptop = 1280;
+
+  it('draws them at their own size while there is room for it', () => {
+    expect(boardZoom(1, desk)).toBe(1);
+    expect(boardZoom(2, desk)).toBe(1);
+    expect(boardZoom(3, desk)).toBe(1);
   });
 
-  it('takes a step out for each line past that', () => {
-    expect(boardZoom(3)).toBeLessThan(1);
-    expect(boardZoom(4)).toBeLessThan(boardZoom(3));
+  it('stands further back the more lines share the room', () => {
+    expect(boardZoom(5, desk)).toBeLessThan(1);
+    expect(boardZoom(6, desk)).toBeLessThan(boardZoom(5, desk));
+  });
+
+  it('and further back on a smaller screen, for the same lines', () => {
+    expect(boardZoom(4, laptop)).toBeLessThan(boardZoom(4, desk));
   });
 
   it('never goes smaller than it can be read at', () => {
-    expect(boardZoom(10)).toBe(MIN_BOARD_ZOOM);
-    expect(boardZoom(100)).toBe(MIN_BOARD_ZOOM);
+    expect(boardZoom(10, desk)).toBe(MIN_BOARD_ZOOM);
+    expect(boardZoom(10, 320)).toBe(MIN_BOARD_ZOOM);
+  });
+
+  it('answers something sensible before the board has been measured', () => {
+    expect(boardZoom(4)).toBe(1);
+    expect(boardZoom(0, desk)).toBe(1);
   });
 });

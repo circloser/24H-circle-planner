@@ -676,6 +676,15 @@ svg text {
 @media (min-width: 900px) {
   .life-line { left: 50%; }
 }
+/* A column among several on a phone: the line hugs the left edge and the
+   cards take the room that saves, because there is not much of it. */
+@media (max-width: 899px) {
+  .life-narrow .life-line { left: 14px; }
+  .life-narrow [data-life-marker],
+  .life-narrow [data-life-label] { left: 14px; }
+  .life-narrow [data-life-card] { margin-left: 30px; margin-right: 2px; }
+  .life-narrow [data-life-add-touch] { left: 14px; }
+}
 /* Cards rise into place as they scroll in (lib: IntersectionObserver). */
 .life-reveal {
   opacity: 0;

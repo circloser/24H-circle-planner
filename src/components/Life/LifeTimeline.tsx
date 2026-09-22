@@ -137,7 +137,7 @@ function EntryRow({ side, tight, year, plan, future, faint, fade, children, labe
             className={`absolute left-[28px] top-[33px] z-10 h-[26px] w-[26px] -translate-x-1/2 rounded-full border-2 bg-background transition-transform duration-150 group-hover:scale-110 min-[900px]:left-1/2 ${
               dashed ? 'border-dashed' : ''} ${faint ? 'border-foreground/40' : 'border-foreground'}`} />
           <div data-life-card
-            className={`relative ml-14 mr-3 min-[900px]:mx-0 min-[900px]:w-[calc(50%-44px)] ${
+            className={`relative ml-14 mr-3 min-[900px]:mx-0 min-[900px]:w-[calc(50%-40px)] ${
               left ? 'min-[900px]:text-right' : 'min-[900px]:ml-auto'} ${faint ? 'opacity-55' : plan ? 'opacity-[.8]' : ''}`}>
             {/* The whole entry opens the editor: one button stretched over it.
                 A shared line is read-only, so there is nothing to press. */}
@@ -204,10 +204,13 @@ function Description({ text }: { text: string }) {
   );
 }
 
-export function LifeTimeline({ life, items, colors, readOnly, rowDecor, decorating, onOpenMoment, onOpenBirth, onAdd }: {
+export function LifeTimeline({ life, items, colors, narrow, readOnly, rowDecor, decorating, onOpenMoment, onOpenBirth, onAdd }: {
   life: LifeData;
   items: TimelineItem[];
   colors: Record<LifeCategory, string>;
+  /** One of several columns on a narrow screen: the line hugs the left and
+   *  the cards take what is left, because there is not much of it. */
+  narrow?: boolean;
   /** Someone else's line (a share link): shown, never touched. */
   readOnly?: boolean;
   /** Decorations for a row (다꾸), when the page is decorating. */
@@ -248,7 +251,8 @@ export function LifeTimeline({ life, items, colors, readOnly, rowDecor, decorati
   /** Where the line runs, in window coordinates. */
   const lineX = () => {
     const ol = ref.current!.getBoundingClientRect();
-    return window.matchMedia('(min-width: 900px)').matches ? ol.left + ol.width / 2 : ol.left + 28;
+    if (window.matchMedia('(min-width: 900px)').matches) return ol.left + ol.width / 2;
+    return ol.left + (narrow ? 14 : 28);
   };
   /** The year of the row at a height: the last row starting above it. */
   const yearAtY = (clientY: number): number => {
@@ -264,11 +268,19 @@ export function LifeTimeline({ life, items, colors, readOnly, rowDecor, decorati
     const box = marker.getBoundingClientRect();
     return box.top + box.height / 2;
   };
+  /** How much smaller than life the board is drawing this column, if at all:
+   *  a rectangle is in the screen's pixels and a layout is in its own. */
+  const unit = (): number => {
+    const el = wrap.current;
+    if (!el) return 1;
+    return (el.getBoundingClientRect().width / (el.offsetWidth || 1)) || 1;
+  };
   /** Near the line, below where it starts, and not over an entry's own text or
    *  a button. Markers and labels do NOT hide it: the circle should glide the
-   *  whole way down. */
+   *  whole way down. The reach shrinks with the board, because so does the
+   *  clear space between the line and the cards. */
   const onLine = (e: React.PointerEvent) =>
-    Math.abs(e.clientX - lineX()) <= 28
+    Math.abs(e.clientX - lineX()) <= 28 * unit()
     && e.clientY >= lineTop() - 2
     && !(e.target as Element).closest('[data-life-card], button, a');
   const tap = useRef<{ x: number; y: number } | null>(null);
@@ -362,7 +374,7 @@ export function LifeTimeline({ life, items, colors, readOnly, rowDecor, decorati
   }
 
   return (
-    <div ref={wrap} className="relative"
+    <div ref={wrap} className={`relative ${narrow ? 'life-narrow' : ''}`}
       onPointerMove={(e) => {
         if (readOnly || decorating || e.pointerType !== 'mouse' || !wrap.current) return;
         // Over the circle itself: let it follow, keep its year.
@@ -371,10 +383,10 @@ export function LifeTimeline({ life, items, colors, readOnly, rowDecor, decorati
         const box = wrap.current.getBoundingClientRect();
         // A rectangle is measured in the screen's pixels; `left` and `top` are
         // written in the box's own, which the board's zoom makes smaller.
-        const unit = (box.width / (wrap.current.offsetWidth || box.width)) || 1;
+        const scale = unit();
         setGhost({
-          x: (lineX() - box.left) / unit,
-          y: (e.clientY - box.top) / unit,
+          x: (lineX() - box.left) / scale,
+          y: (e.clientY - box.top) / scale,
           year: yearAtY(e.clientY),
         });
       }}

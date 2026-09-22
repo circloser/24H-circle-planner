@@ -383,7 +383,10 @@ export function GlobeMap({
   const moved = useRef(false);
   /** When the globe was last interfered with, for the idle turn below. */
   const touched = useRef(0);
-  const mark = () => { touched.current = performance.now(); };
+  const mark = useCallback(() => { touched.current = performance.now(); }, []);
+  // A globe that has just arrived — from the tile map, or with the page —
+  // waits its three seconds like any other, rather than starting mid-pinch.
+  useEffect(() => { mark(); }, [mark]);
 
   /**
    * Left alone, the globe turns on its own axis.

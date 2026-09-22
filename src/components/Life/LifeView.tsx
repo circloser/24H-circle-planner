@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { dismissAfterVisible } from '@/lib/toast-dismiss';
-import { Download, Feather, ListFilter, Pin, ShieldAlert, Smile, X } from 'lucide-react';
+import { Download, ListFilter, Pin, ShieldAlert, Smile, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
@@ -67,10 +67,9 @@ export function LifeView() {
   const [moment, setMoment] = useState<MomentTarget | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   // Who is drawn beside me. Folding somebody away is a way of looking, not a
-  // fact about them, so it is kept here rather than in the record; `chosenLine`
-  // is the one other line a phone has room for.
+  // fact about them, so it is kept here rather than in the record; the ORDER
+  // they are drawn in is in the record, because that is a decision.
   const [hiddenLines, setHiddenLines] = useState<Set<string>>(() => new Set());
-  const [chosenLine, setChosenLine] = useState<string | null>(null);
   const [lineTarget, setLineTarget] = useState<LineTarget | null>(null);
   /** Which line a moment is being added to or edited on; '' is my own. */
   const [onLine, setOnLine] = useState('');
@@ -148,7 +147,10 @@ export function LifeView() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-[1040px] flex-col pb-24" data-life-view>
+    // The page takes the whole window: several lives side by side want every
+    // pixel of it, and what is read one line at a time — the heading, the
+    // note at the end — keeps its own narrower column inside.
+    <div className="mx-auto flex w-full flex-col px-3 pb-24 sm:px-5" data-life-view>
       <header className="mx-auto w-full max-w-[960px] px-4 pt-4 text-center sm:pt-6">
         {/* The tab that was just pressed says which page this is; the heading
             stays for a screen reader, which has no tabs to look at. */}
@@ -243,13 +245,11 @@ export function LifeView() {
             only={only}
             meLabel={t('relation.me.short')}
             hidden={hiddenLines}
-            chosen={chosenLine}
             decorating={decorating}
             rowDecor={(row) => (
               <LifeRowDecor row={row} store={decorStore} active={decorating} armed={armed}
                 selected={chosen} onSelect={setChosen} onPlaced={setChosen} />
             )}
-            onChoose={setChosenLine}
             onToggle={(id) => setHiddenLines((was) => {
               const next = new Set(was);
               if (!next.delete(id)) next.add(id);
@@ -539,8 +539,7 @@ function EndingNote({ api }: { api: LifeApi }) {
     // lives now, and one stub down the middle belonged to none of them.
     <section aria-labelledby="life-ending" className="mx-auto w-full max-w-[960px]" data-life-ending>
       <div className="mx-auto mt-16 w-full max-w-[640px] px-4">
-        <h3 id="life-ending" className="life-serif flex items-center justify-center gap-2 text-2xl font-bold tracking-tight text-foreground">
-          <Feather aria-hidden className="h-5 w-5 text-muted-foreground" />
+        <h3 id="life-ending" className="life-serif text-center text-2xl font-bold tracking-tight text-foreground">
           {t('life.endingNote')}
         </h3>
         <textarea data-life-ending-input value={text} maxLength={MAX_ENDING} aria-labelledby="life-ending"
@@ -551,7 +550,7 @@ function EndingNote({ api }: { api: LifeApi }) {
             pending.current = window.setTimeout(commit, 600);
           }}
           onBlur={commit}
-          className="mt-5 min-h-40 w-full resize-y rounded-lg border border-border bg-transparent px-4 py-3 text-[15px] leading-relaxed [field-sizing:content] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+          className="mt-5 min-h-40 w-full resize-y rounded-lg border border-border bg-transparent px-4 py-3 text-center text-[15px] leading-relaxed [field-sizing:content] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
         {updated && (
           <p className="mt-2 text-center text-[13px] italic text-muted-foreground" data-life-ending-updated>
             {t('life.ending.updated', { date: updated.toLocaleDateString(lang) })}
