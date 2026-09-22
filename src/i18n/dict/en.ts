@@ -1082,6 +1082,7 @@ export const en: Record<TKey, string> = {
   'relation.turning': 'turning {n}',
   'relation.birthdaySoon': 'A birthday is coming up.',
   'relation.link.add': 'Add a link',
+  'relation.link.addBeside': 'Add somebody beside them',
   'relation.link.pick': 'Tap who to link to',
   'relation.link.remove': 'Remove the link',
   'relation.link.close': 'How close those two are',

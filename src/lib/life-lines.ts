@@ -20,7 +20,15 @@ export const PHONE_LINES = 2;
 export const PHONE_ZOOM = 0.62;
 /** Below this the writing is too small to read, however many lines there are. */
 export const MIN_BOARD_ZOOM = 0.45;
-export const MAX_BOARD_ZOOM = 1.4;
+export const MAX_BOARD_ZOOM = 1.9;
+/**
+ * And the size a line is drawn at when there is room for it.
+ *
+ * Life size was the old ceiling, which on a wide screen left a page of small
+ * print in the middle of a great deal of nothing. This is two presses of the
+ * plus button above that (1.25 twice), which is where it should have started.
+ */
+export const BASE_BOARD_ZOOM = 1.56;
 
 export interface BoardLine {
   /** 'me', or the other line's own id. */
@@ -106,6 +114,6 @@ export const COLUMN_WANT = 470;
  * where it starts.
  */
 export function boardZoom(lines: number, width = 0): number {
-  if (!width || lines < 1) return 1;
-  return Math.max(MIN_BOARD_ZOOM, Math.min(1, (width / lines) / COLUMN_WANT));
+  if (!width || lines < 1) return BASE_BOARD_ZOOM;
+  return Math.max(MIN_BOARD_ZOOM, Math.min(BASE_BOARD_ZOOM, (width / lines) / COLUMN_WANT));
 }

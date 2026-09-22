@@ -148,11 +148,19 @@ export async function run() {
       `decades ${await count('[data-life-decade]')}`);
     pass('today reads as 만 나이', /오늘 · 만 \d+세/.test(await page.locator('[data-life-today]').innerText()));
     pass('an empty line offers the usual moments to start from', (await count('[data-life-quick-item]')) === 10);
+    // `offsetWidth`, not a rectangle: the board is drawn at its own zoom, and a
+    // rectangle is measured in the screen's pixels, so a one-pixel button reads
+    // as one and a half. The layout box is written in the board's own.
     pass('the page body has no add or export buttons', (await count('[data-life-export]')) === 0
-      && (await page.locator('[data-life-add]').evaluate((el) => el.getBoundingClientRect().width)) <= 1);
+      && (await page.locator('[data-life-add]').evaluate((el) => el.offsetWidth)) <= 1);
     pass('the line starts at the birth, with nothing joined on above it',
       (await count('[data-life-roots]')) === 0 && (await count('[data-life-slot]')) === 0
       && (await count('[data-life-birth]')) === 1);
+    // The page opens at today, so the birth is off the top and its card has not
+    // been revealed yet (the reveal holds a row 16px low until it scrolls in).
+    // Bring it in, let it land, and then measure.
+    await page.locator('[data-life-birth]').evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    await wait(400);
     pass('…and no line at all is drawn above that first marker', await page.evaluate(() => {
       const marker = document.querySelector('[data-life-birth] [data-life-marker]');
       const box = marker.getBoundingClientRect();

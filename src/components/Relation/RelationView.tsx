@@ -69,6 +69,8 @@ export function RelationView() {
   const [meOpen, setMeOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [linking, setLinking] = useState<string | null>(null);
+  /** Who the next new person is being added beside, if anybody. */
+  const [beside, setBeside] = useState<string | null>(null);
   const [arriving, setArriving] = useState<readonly string[]>([]);
 
   // The life line owns the parents' names and birthdays; bring any change over.
@@ -326,6 +328,7 @@ export function RelationView() {
             onUnlink={(other) => person && api.removeLink(person.id, other)}
             onLabel={(other, label) => person && api.nameLink(person.id, other, label)}
             onHold={(other, closeness) => person && api.holdLink(person.id, other, closeness)}
+            onAddBeside={() => { if (person) { setBeside(person.id); add(); } }}
             onPick={(id) => setSelected(id)}
           />
         </div>
@@ -333,14 +336,20 @@ export function RelationView() {
       </div>
 
       <PersonDialog target={target} pro={pro} syncing={syncing}
-        onClose={() => setTarget(null)}
+        onClose={() => { setTarget(null); setBeside(null); }}
         onSave={(draft, id) => {
           if (id) api.updatePerson(id, draft);
           else {
             const made = api.addPerson({ ...draft, ...(target?.mode === 'add' && target.at ? { at: target.at } : {}) });
             setArriving([made]);
+            // Added from somebody's card: the line between them is the point.
+            if (beside) {
+              api.addLink(beside, made);
+              track('relation_link');
+            }
             track('relation_add');
           }
+          setBeside(null);
           setTarget(null);
         }}
         onDelete={remove} />

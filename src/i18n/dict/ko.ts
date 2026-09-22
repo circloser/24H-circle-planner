@@ -1083,6 +1083,7 @@ export const ko = {
   'relation.turning': '{n}살',
   'relation.birthdaySoon': '생일이 다가와요.',
   'relation.link.add': '연결 추가',
+  'relation.link.addBeside': '여기서 사람 추가',
   'relation.link.pick': '연결할 사람을 누르세요',
   'relation.link.remove': '연결 지우기',
   'relation.link.close': '두 사람 사이의 가까운 정도',

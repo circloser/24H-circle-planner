@@ -131,6 +131,8 @@ export function LifeBoard({
   const board = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLDivElement>(null);
   const aligning = useRef(false);
+  /** Whether the page has already been put where it opens. */
+  const landed = useRef(false);
   /**
    * How much room there is, in the screen's own pixels.
    *
@@ -219,6 +221,17 @@ export function LifeBoard({
       });
     };
     align();
+    // With the years lined up, today can be put where it should have been all
+    // along: the middle of the screen. Once, on the way in — after that the
+    // page is the reader's to scroll.
+    if (!landed.current) {
+      landed.current = true;
+      requestAnimationFrame(() => {
+        const today = el.querySelector('[data-life-column="me"] [data-life-today]')
+          ?? el.querySelector('[data-life-today]');
+        today?.scrollIntoView({ block: 'center' });
+      });
+    }
     // Cards grow as pictures arrive and as the window changes width.
     const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(run);
     ro?.observe(el);

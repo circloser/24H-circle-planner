@@ -159,12 +159,13 @@ export async function run() {
     pass('the separate theme and sticker buttons are gone', (await count('[data-cal-theme], [data-sticker-tray-toggle]')) === 0);
     const designGroups = await page.locator('[data-design-menu] [role="group"] > div:first-child, [data-design-menu] [data-decor-menu]')
       .evaluateAll((els) => els.map((e) => e.textContent.trim()));
-    pass('디자인 is grouped: 시간표, then 캘린더, then 라이프 꾸미기',
-      JSON.stringify(designGroups) === '["시간표 꾸미기","캘린더 꾸미기","라이프 꾸미기"]', JSON.stringify(designGroups));
-    const timetableItems = await page.locator('[data-design-group="timetable"] [role="menuitem"]').allInnerTexts();
-    pass('…시간표 꾸미기 lists layout, presets, theme, font, icons, time lines, palette',
-      JSON.stringify(timetableItems.map((x) => x.trim())) === JSON.stringify(['레이아웃', '프리셋', '색상 테마', '폰트', '아이콘', '시간선', '타임 팔레트']),
-      JSON.stringify(timetableItems));
+    // The menu is about the page that is open. On the calendar it offers the
+    // calendar's decorations, and not the timetable's or the life line's —
+    // most of a menu that laid out all three at once was about something the
+    // reader could not see.
+    pass('디자인 offers the open page: on the calendar, 캘린더 꾸미기 alone',
+      JSON.stringify(designGroups) === '["캘린더 꾸미기"]', JSON.stringify(designGroups));
+    pass('…and none of the timetable settings', (await count('[data-design-group="timetable"]')) === 0);
     pass('the calendar toolbar has no Google button, and a 꾸미기 toggle',
       (await count('[data-calendar-view] [data-ical-open]')) === 0 && (await page.locator('[data-decor-toggle]').innerText()).includes('꾸미기'));
     await page.keyboard.press('Escape');
@@ -173,7 +174,12 @@ export async function run() {
     await page.locator('[data-calendar-toggle]').click();
     await wait(500);
     await menu();
-    pass('in the timetable, 디자인 still lists 캘린더 꾸미기', (await count('[data-decor-tool]')) === 3);
+    const timetableItems = await page.locator('[data-design-group="timetable"] [role="menuitem"]').allInnerTexts();
+    pass('…시간표 꾸미기 lists layout, presets, theme, font, icons, time lines, palette',
+      JSON.stringify(timetableItems.map((x) => x.trim())) === JSON.stringify(['레이아웃', '프리셋', '색상 테마', '폰트', '아이콘', '시간선', '타임 팔레트']),
+      JSON.stringify(timetableItems));
+    pass('…and back in the timetable the calendar tools have stepped aside',
+      (await count('[data-decor-tool]')) === 0);
     await page.keyboard.press('Escape');
     await wait(250);
     // ⚙ → 구글 캘린더 연결 from the timetable: the calendar comes up with the dialog open.

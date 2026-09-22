@@ -118,6 +118,19 @@ export function AppHeader({
   const gaOn = useGaOn();
   const { prefs, setPreference } = usePreferences();
   const calendarMode = prefs.chartView === 'calendar';
+  /**
+   * Which page is open, so the Design menu offers what belongs to it.
+   *
+   * The menu used to lay out every decoration the app has at once —
+   * the timetable's fonts, the calendar's paper, the life line's stickers —
+   * whichever page you were on, so most of it was about something you could
+   * not see. What is on the menu is what is on the screen now, plus the few
+   * things that are about the app rather than a page.
+   */
+  const lifeMode = prefs.chartView === 'life';
+  const relationMode = prefs.chartView === 'relation';
+  const placeMode = prefs.chartView === 'place';
+  const chartMode = !calendarMode && !lifeMode && !relationMode && !placeMode;
   const [calLook, setCalLook] = useState<CalendarLook | null>(null);
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
@@ -256,6 +269,7 @@ export function AppHeader({
                 {t('magician.open')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              {chartMode && (
               <DropdownMenuGroup data-design-group="timetable">
                 <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">{t('design.timetableGroup')}</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => onOpenSettings('layout')} className="gap-2">
@@ -287,15 +301,30 @@ export function AppHeader({
                   {t('palette.title')}
                 </DropdownMenuItem>
               </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <CalendarDecorMenuItems onLook={(look) => {
-                // The paper shows on the calendar: go there to see it.
-                if (look === 'paper' && !calendarMode) setPreference('chartView', 'calendar');
-                setCalLook(look);
-              }} />
-              <DropdownMenuSeparator />
-              <LifeDecorMenuItems />
-              <DropdownMenuSeparator />
+              )}
+              {calendarMode && (
+                <>
+                  <CalendarDecorMenuItems onLook={setCalLook} />
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              {lifeMode && (
+                <>
+                  <LifeDecorMenuItems />
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              {(relationMode || placeMode) && (
+                <>
+                  {/* Those two pages are coloured from the map itself — the
+                      palette on the map, the colours in its own corner. */}
+                  <DropdownMenuItem onClick={() => onOpenSettings('theme')} className="gap-2">
+                    <Palette className="h-4 w-4" />
+                    {t('settings.colorTheme')}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
               <DropdownMenuItem onClick={() => onOpenSettings('background')} className="gap-2">
                 <ImageIcon className="h-4 w-4" />
                 {t('settings.background')}

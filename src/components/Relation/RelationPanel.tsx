@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Cake, Check, Link2, Link2Off, Pencil, Pin, Trash2, X } from 'lucide-react';
+import { Cake, Check, Link2, Link2Off, Pencil, Pin, Trash2, UserPlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/hooks/usePreferences';
@@ -87,7 +87,7 @@ function LinkRow({ link, other, onPick, onUnlink, onLabel, onHold }: {
  */
 export function RelationPanel({
   person, data, colors, today, linking, onClose, onEdit, onDelete, onContacted, onStartLink, onUnlink,
-  onPick, onLabel, onHold,
+  onPick, onLabel, onHold, onAddBeside,
 }: {
   person: Person | null;
   data: RelationData;
@@ -107,6 +107,9 @@ export function RelationPanel({
   onLabel: (otherId: string, label: string) => void;
   /** Say how close those two are to each other. */
   onHold: (otherId: string, closeness: Closeness) => void;
+  /** Somebody new, already tied to this person: a friend of a friend is how
+   *  most maps of people actually grow. */
+  onAddBeside: () => void;
 }) {
   const { t } = useTranslation();
   if (!person) return null;
@@ -180,6 +183,11 @@ export function RelationPanel({
           onClick={onDelete}>
           <Trash2 aria-hidden className="h-4 w-4" />
           {t('common.delete')}
+        </Button>
+        <Button size="sm" variant="outline" className="gap-1.5" data-relation-add-beside
+          onClick={onAddBeside}>
+          <UserPlus aria-hidden className="h-4 w-4" />
+          {t('relation.link.addBeside')}
         </Button>
         <Button size="sm" variant={linking ? 'default' : 'outline'} className="gap-1.5" data-relation-link
           aria-pressed={linking} onClick={onStartLink}>

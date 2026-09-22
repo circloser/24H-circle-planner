@@ -23,8 +23,16 @@
 import { RELATION_GROUPS, type Closeness, type Person, type RelationGroup } from './relation';
 import { nameBox } from './relation-name';
 
-/** Node radius by closeness (§3.2), over the five rungs. */
-export const NODE_R: Record<Closeness, number> = { 1: 5, 2: 7, 3: 9, 4: 11, 5: 13 };
+/**
+ * Node radius by closeness, over the five rungs.
+ *
+ * The spread is wide on purpose. A map of forty people is mostly people you
+ * think about rarely, and if everybody is drawn the same size the few who
+ * matter are lost in them. Size is the second thing closeness says, after
+ * distance — so the nearest are twice the circle of the furthest, and their
+ * names are twice the size with them.
+ */
+export const NODE_R: Record<Closeness, number> = { 1: 7, 2: 10, 3: 13, 4: 17, 5: 22 };
 
 /**
  * How far from the middle each rung of closeness stands.

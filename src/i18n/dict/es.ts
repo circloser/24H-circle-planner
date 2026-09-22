@@ -1081,6 +1081,7 @@ export const es: Record<TKey, string> = {
   'relation.turning': 'cumple {n}',
   'relation.birthdaySoon': 'Se acerca un cumpleaños.',
   'relation.link.add': 'Añadir un vínculo',
+  'relation.link.addBeside': 'Añadir a alguien junto a él',
   'relation.link.pick': 'Toca con quién enlazar',
   'relation.link.remove': 'Quitar el vínculo',
   'relation.link.close': 'Lo cerca que están entre sí',

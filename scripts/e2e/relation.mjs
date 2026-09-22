@@ -245,7 +245,25 @@ export async function run() {
     await wait(500);
     pass('…and comes back where they were', (await stored()).people.map((p) => p.id).join() === 'p1,p2,p3');
 
-    // 9b. The map can be taken in and out without a wheel.
+    // 9b. Somebody new, added from another person's card and tied to them.
+    await choose('p1');
+    await page.locator('[data-relation-add-beside]').click();
+    await wait(500);
+    await page.locator('[data-relation-name-input]').fill('한서윤');
+    await page.locator('[data-relation-save]').click();
+    await wait(800);
+    const beside = await stored();
+    const made = beside.people.find((p) => p.name === '한서윤');
+    pass('a person added from a card arrives tied to them',
+      !!made && beside.links.some((l) => (l.source === 'p1' && l.target === made.id)
+        || (l.target === 'p1' && l.source === made.id)),
+      JSON.stringify(beside.links));
+    await choose(made.id);
+    await page.locator('[data-relation-remove]').click();
+    await wait(700);
+    pass('…and the map is as it was once they are taken off it',
+      (await stored()).people.length === 3, JSON.stringify((await stored()).people.map((p) => p.name)));
+    // 9c. The map can be taken in and out without a wheel.
     await closeAll();
     const mapZoom = () => page.locator('[data-relation-zoom]').getAttribute('data-relation-zoom').then(Number);
     const wasMapZoom = await mapZoom();

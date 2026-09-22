@@ -246,20 +246,43 @@ export function LifeTimeline({ life, items, colors, narrow, readOnly, rowDecor, 
   // today's marker so the way in is always in sight.
   const wrap = useRef<HTMLDivElement>(null);
   const coarse = useCoarsePointer();
-  const [ghost, setGhost] = useState<{ x: number; y: number; year: number } | null>(null);
-  const addAt = (year: number) => onAdd?.({ date: String(Math.max(year, birthYear)) });
+  const [ghost, setGhost] = useState<{ x: number; y: number; date: string } | null>(null);
+  /** A moment added where the line was pressed, dated from that place. */
+  const addAt = (date: string) => onAdd?.({ date });
   /** Where the line runs, in window coordinates. */
   const lineX = () => {
     const ol = ref.current!.getBoundingClientRect();
     if (window.matchMedia('(min-width: 900px)').matches) return ol.left + ol.width / 2;
     return ol.left + (narrow ? 14 : 28);
   };
-  /** The year of the row at a height: the last row starting above it. */
-  const yearAtY = (clientY: number): number => {
-    const rows = ref.current?.querySelectorAll<HTMLElement>(':scope > li[data-year]');
-    let year = birthYear;
-    rows?.forEach((r) => { if (r.getBoundingClientRect().top <= clientY) year = Number(r.dataset.year); });
-    return year;
+  /**
+   * Roughly when a point on the line is.
+   *
+   * The rows carry the year they belong to, so the two rows either side of a
+   * point say which years it lies between, and how far down it is between
+   * them says the rest. It is an estimate — the line is a run of cards, not a
+   * ruler — so it is given to the month and the form opens with it, ready to
+   * be corrected. Better than every moment arriving on the first of January.
+   */
+  const dateAtY = (clientY: number): string => {
+    const rows = [...(ref.current?.querySelectorAll<HTMLElement>(':scope > li[data-year]') ?? [])];
+    let above: HTMLElement | null = null;
+    let below: HTMLElement | null = null;
+    for (const row of rows) {
+      if (row.getBoundingClientRect().top <= clientY) above = row;
+      else { below = row; break; }
+    }
+    const year = Math.max(birthYear, Number(above?.dataset.year ?? birthYear));
+    if (!above || !below) return String(year);
+    const next = Number(below.dataset.year);
+    if (!Number.isFinite(next) || next <= year) return String(year);
+    const topA = above.getBoundingClientRect().top;
+    const topB = below.getBoundingClientRect().top;
+    const along = Math.min(1, Math.max(0, (clientY - topA) / Math.max(1, topB - topA)));
+    const exact = year + (next - year) * along;
+    const whole = Math.floor(exact);
+    const month = Math.min(12, Math.max(1, Math.floor((exact - whole) * 12) + 1));
+    return `${whole}-${String(month).padStart(2, '0')}`;
   };
   /** Where the line begins on screen: the middle of the birth marker. */
   const lineTop = (): number => {
@@ -333,7 +356,7 @@ export function LifeTimeline({ life, items, colors, narrow, readOnly, rowDecor, 
               {t('life.todayAge', { n: String(age) })}
             </span>
             {coarse && !readOnly && (
-              <button type="button" aria-label={t('life.add')} data-life-add-touch onClick={() => addAt(year)}
+              <button type="button" aria-label={t('life.add')} data-life-add-touch onClick={() => addAt(it.date)}
                 className="absolute left-[28px] top-[42px] z-20 grid h-8 w-8 -translate-x-1/2 place-items-center rounded-full border border-foreground/25 bg-background/80 text-foreground/70 backdrop-blur-sm min-[900px]:left-1/2">
                 <Plus aria-hidden className="h-4 w-4" />
               </button>
@@ -387,7 +410,7 @@ export function LifeTimeline({ life, items, colors, narrow, readOnly, rowDecor, 
         setGhost({
           x: (lineX() - box.left) / scale,
           y: (e.clientY - box.top) / scale,
-          year: yearAtY(e.clientY),
+          date: dateAtY(e.clientY),
         });
       }}
       onPointerLeave={() => setGhost(null)}
@@ -395,7 +418,7 @@ export function LifeTimeline({ life, items, colors, narrow, readOnly, rowDecor, 
       onPointerUp={(e) => {
         const start = tap.current;
         tap.current = null;
-        if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) < 10) addAt(yearAtY(e.clientY));
+        if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) < 10) addAt(dateAtY(e.clientY));
       }}
       onPointerCancel={() => { tap.current = null; }}>
       {/* Keyboard: the same "add a moment", reachable with Tab. */}
@@ -408,7 +431,7 @@ export function LifeTimeline({ life, items, colors, narrow, readOnly, rowDecor, 
       </ol>
       {ghost && (
         <button type="button" data-life-ghost aria-label={t('life.add')} title={t('life.add')}
-          onClick={() => addAt(ghost.year)}
+          onClick={() => addAt(ghost.date)}
           className="absolute z-30 grid h-8 w-8 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-foreground/25 bg-foreground/10 text-foreground/70 backdrop-blur-sm transition-colors hover:bg-foreground/20 hover:text-foreground"
           style={{ left: ghost.x, top: ghost.y }}>
           <Plus aria-hidden className="h-4 w-4" />

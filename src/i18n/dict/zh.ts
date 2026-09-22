@@ -1077,6 +1077,7 @@ export const zh: Record<TKey, string> = {
   'relation.turning': '将满 {n} 岁',
   'relation.birthdaySoon': '生日快到了。',
   'relation.link.add': '添加连线',
+  'relation.link.addBeside': '从这里添加一个人',
   'relation.link.pick': '点选要连接的人',
   'relation.link.remove': '删除连线',
   'relation.link.close': '两人之间的亲近程度',

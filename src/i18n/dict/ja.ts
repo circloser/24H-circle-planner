@@ -1079,6 +1079,7 @@ export const ja: Record<TKey, string> = {
   'relation.turning': '{n} 歳に',
   'relation.birthdaySoon': '誕生日が近づいています。',
   'relation.link.add': 'つながりを追加',
+  'relation.link.addBeside': 'ここから人を追加',
   'relation.link.pick': 'つなぐ相手を選んでください',
   'relation.link.remove': 'つながりを外す',
   'relation.link.close': '二人の近さ',

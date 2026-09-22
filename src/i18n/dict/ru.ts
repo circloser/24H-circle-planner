@@ -1079,6 +1079,7 @@ export const ru: Record<TKey, string> = {
   'relation.turning': 'исполняется {n}',
   'relation.birthdaySoon': 'Скоро день рождения.',
   'relation.link.add': 'Добавить связь',
+  'relation.link.addBeside': 'Добавить человека рядом',
   'relation.link.pick': 'Нажмите, с кем связать',
   'relation.link.remove': 'Убрать связь',
   'relation.link.close': 'Насколько они близки друг другу',

@@ -441,9 +441,11 @@ export function RelationCanvas({
     face(data.me.name || meLabel, data.me.photo, middle.x, middle.y, ME_R * dots, selected ? 0.35 : 1, ME_R);
     meAt.current = { x: middle.x, y: middle.y, r: ME_R * dots };
 
-    // Everyone else.
+    // Everyone else, the distant ones first so the closest are drawn over
+    // them rather than under.
     ctx.lineWidth = 1.5;
-    for (const node of seed.nodes) {
+    const order = [...seed.nodes].sort((a, b) => a.person.closeness - b.person.closeness);
+    for (const node of order) {
       const grow = arrival(node.person.id);
       if (grow.node <= 0) continue;
       const c = follow(where.get(node.person.id)!);
@@ -470,7 +472,10 @@ export function RelationCanvas({
       ctx.globalAlpha = 1;
       ctx.fill();
       ctx.strokeStyle = colors[node.person.group];
-      ctx.lineWidth = selected === node.person.id || linking === node.person.id ? 2.5 : 1.5;
+      // A close circle is drawn in a heavier line as well as a bigger one.
+      ctx.lineWidth = selected === node.person.id || linking === node.person.id
+        ? 3
+        : 1 + node.person.closeness * 0.35;
       ctx.stroke();
       // Put down by hand: a second thin ring, so "held here" is visible.
       if (node.fixed) {

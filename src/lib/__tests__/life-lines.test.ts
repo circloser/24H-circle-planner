@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { MIN_BOARD_ZOOM, PHONE_LINES, boardLines, boardZoom, lineAsLife } from '../life-lines';
+import {
+  BASE_BOARD_ZOOM, MIN_BOARD_ZOOM, PHONE_LINES, boardLines, boardZoom, lineAsLife,
+} from '../life-lines';
 import { buildTimeline, emptyLife, type LifeData, type LifeLine } from '../life';
 
 const moment = (id: string, date: string, title = id) =>
@@ -87,10 +89,13 @@ describe('how far out the board starts', () => {
   const desk = 1900;
   const laptop = 1280;
 
-  it('draws them at their own size while there is room for it', () => {
-    expect(boardZoom(1, desk)).toBe(1);
-    expect(boardZoom(2, desk)).toBe(1);
-    expect(boardZoom(3, desk)).toBe(1);
+  it('draws them large while there is room for it', () => {
+    // Two presses of the plus button above life size: a page of small print
+    // in the middle of an empty screen is not what the room is for.
+    expect(boardZoom(1, desk)).toBe(BASE_BOARD_ZOOM);
+    expect(boardZoom(2, desk)).toBe(BASE_BOARD_ZOOM);
+    expect(boardZoom(3, desk)).toBeLessThan(BASE_BOARD_ZOOM);
+    expect(boardZoom(3, desk)).toBeGreaterThan(1);
   });
 
   it('stands further back the more lines share the room', () => {
@@ -108,7 +113,7 @@ describe('how far out the board starts', () => {
   });
 
   it('answers something sensible before the board has been measured', () => {
-    expect(boardZoom(4)).toBe(1);
-    expect(boardZoom(0, desk)).toBe(1);
+    expect(boardZoom(4)).toBe(BASE_BOARD_ZOOM);
+    expect(boardZoom(0, desk)).toBe(BASE_BOARD_ZOOM);
   });
 });
