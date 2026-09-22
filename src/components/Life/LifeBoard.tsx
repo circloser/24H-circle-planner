@@ -277,7 +277,7 @@ export function LifeBoard({
             <UserPlus aria-hidden className="h-4 w-4" />
             {t('life.parallel.add')}
           </Button>
-          {!isMobile && lines.length > 1 && (
+          {!isMobile && (
             <span className="ml-1 inline-flex overflow-hidden rounded-full border border-border" data-life-board-zoom={scale.toFixed(2)}>
               <button type="button" aria-label={t('place.zoomOut')} data-life-board-out
                 className="grid h-8 w-8 place-items-center text-muted-foreground hover:bg-accent/20"

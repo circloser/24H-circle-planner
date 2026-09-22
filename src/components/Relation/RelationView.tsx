@@ -258,6 +258,7 @@ export function RelationView() {
               appearing={arriving}
               meLabel={t('relation.me.short')}
               groupLabel={groupNames}
+              zoomLabels={{ in: t('place.zoomIn'), out: t('place.zoomOut') }}
               onSelect={pick}
               onPlace={(id, at) => {
                 if (at) trackFeature('relation_place');
@@ -319,6 +320,7 @@ export function RelationView() {
             linking={linking === selected && linking !== null}
             onClose={() => { setSelected(null); setLinking(null); }}
             onEdit={() => person && setTarget({ mode: 'edit', p: person })}
+            onDelete={() => person && remove(person.id)}
             onContacted={() => { if (person) { api.markContacted(person.id); track('relation_contact'); } }}
             onStartLink={() => setLinking((was) => (was === selected ? null : selected))}
             onUnlink={(other) => person && api.removeLink(person.id, other)}

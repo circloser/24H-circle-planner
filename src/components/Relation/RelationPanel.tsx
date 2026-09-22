@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Cake, Check, Link2, Link2Off, Pencil, Pin, X } from 'lucide-react';
+import { Cake, Check, Link2, Link2Off, Pencil, Pin, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/hooks/usePreferences';
@@ -66,7 +66,8 @@ function LinkRow({ link, other, onPick, onUnlink, onLabel }: {
  * same either way.
  */
 export function RelationPanel({
-  person, data, colors, today, linking, onClose, onEdit, onContacted, onStartLink, onUnlink, onPick, onLabel,
+  person, data, colors, today, linking, onClose, onEdit, onDelete, onContacted, onStartLink, onUnlink,
+  onPick, onLabel,
 }: {
   person: Person | null;
   data: RelationData;
@@ -76,6 +77,8 @@ export function RelationPanel({
   linking: boolean;
   onClose: () => void;
   onEdit: () => void;
+  /** Take them off the map. It can be taken back (the undo on the toast). */
+  onDelete: () => void;
   onContacted: () => void;
   onStartLink: () => void;
   onUnlink: (otherId: string) => void;
@@ -150,6 +153,11 @@ export function RelationPanel({
         <Button size="sm" variant="outline" className="gap-1.5" data-relation-edit onClick={onEdit}>
           <Pencil aria-hidden className="h-4 w-4" />
           {t('common.edit')}
+        </Button>
+        <Button size="sm" variant="ghost" className="gap-1.5 text-destructive" data-relation-remove
+          onClick={onDelete}>
+          <Trash2 aria-hidden className="h-4 w-4" />
+          {t('common.delete')}
         </Button>
         <Button size="sm" variant={linking ? 'default' : 'outline'} className="gap-1.5" data-relation-link
           aria-pressed={linking} onClick={onStartLink}>

@@ -377,6 +377,8 @@ export async function run() {
     await page.locator('[data-life-line-add]').scrollIntoViewIfNeeded();
     pass('mine is the only line until somebody is added',
       (await count('[data-life-column]')) === 1 && (await count('[data-life-column="me"]')) === 1);
+    pass('…and the board can still be taken in and out on its own',
+      (await count('[data-life-board-in]')) === 1 && (await count('[data-life-board-out]')) === 1);
     await page.locator('[data-life-line-add]').click();
     await wait(500);
     await page.locator('[data-life-line-name]').fill('이정숙');

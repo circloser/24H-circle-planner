@@ -211,7 +211,18 @@ export async function run() {
     await wait(300);
     pass('…and closing it brings everyone back', (await count('[data-relation-list-item]')) === 3);
 
-    // 9. Deleting, and taking it back.
+    // 9. Deleting, and taking it back — from the card, where it is asked for,
+    // and from the form, where it also is.
+    await choose('p3');
+    pass('a person’s own card offers to take them off the map',
+      (await count('[data-relation-remove]')) === 1);
+    await page.locator('[data-relation-remove]').click();
+    await wait(400);
+    pass('…and pressing it does', (await stored()).people.length === 2
+      && (await count('[data-relation-panel]')) === 0);
+    await page.getByRole('button', { name: '되돌리기' }).click();
+    await wait(500);
+    pass('…and it can be taken back', (await stored()).people.map((p) => p.id).join() === 'p1,p2,p3');
     await choose('p3');
     await page.locator('[data-relation-edit]').click();
     await wait(400);
@@ -221,6 +232,21 @@ export async function run() {
     await page.getByRole('button', { name: '되돌리기' }).click();
     await wait(500);
     pass('…and comes back where they were', (await stored()).people.map((p) => p.id).join() === 'p1,p2,p3');
+
+    // 9b. The map can be taken in and out without a wheel.
+    await closeAll();
+    const mapZoom = () => page.locator('[data-relation-zoom]').getAttribute('data-relation-zoom').then(Number);
+    const wasMapZoom = await mapZoom();
+    await page.locator('[data-relation-zoom-in]').click();
+    await wait(300);
+    pass('the map has buttons for bigger and smaller', (await mapZoom()) > wasMapZoom,
+      `${wasMapZoom} → ${await mapZoom()}`);
+    await page.locator('[data-relation-zoom-out]').click();
+    await page.locator('[data-relation-zoom-out]').click();
+    await wait(300);
+    pass('…and out again', (await mapZoom()) < wasMapZoom);
+    await page.locator('[data-relation-zoom-in]').click();
+    await wait(300);
 
     // 10. The map has weight (lib/relation-force): it arranges itself when it
     // opens, stops when it is done, and floats gently for ever after.

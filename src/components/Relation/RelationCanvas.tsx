@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Minus, Plus } from 'lucide-react';
 import { loadPhoto } from '@/lib/calendar-photos';
 import { capture } from '@/lib/gesture';
 import {
@@ -45,6 +46,8 @@ export interface RelationCanvasProps {
   meLabel: string;
   /** What each group is called, written once on its own boundary. */
   groupLabel: Record<RelationGroup, string>;
+  /** The words on the two buttons that take the map in and out. */
+  zoomLabels: { in: string; out: string };
 }
 
 interface View { scale: number; tx: number; ty: number }
@@ -92,7 +95,7 @@ function paperOf(el: HTMLElement): string {
  */
 export function RelationCanvas({
   data, colors, today, selected, onSelect, onPlace, onAddAt, onOpenMe, appearing = [], linking, meLabel,
-  groupLabel,
+  groupLabel, zoomLabels,
 }: RelationCanvasProps) {
   const box = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -638,6 +641,11 @@ export function RelationCanvas({
     onSelect(null);
   };
 
+  /** In or out a step. A wheel does this too, and a phone has no wheel. */
+  const zoomBy = (by: number) => setView((v) => (
+    { ...v, scale: Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, v.scale * (by > 0 ? 1.2 : 1 / 1.2))) }
+  ));
+
   const wheel = (e: React.WheelEvent) => {
     e.preventDefault();
     setView((v) => {
@@ -670,6 +678,22 @@ export function RelationCanvas({
         onWheel={wheel}
         onDoubleClick={home}
       />
+      {/* Bigger and smaller, for a screen with no wheel — and for anybody who
+          would rather press a button than learn a gesture. The names inside
+          the circles grow with it, which is what it is mostly used for. */}
+      <div data-relation-zoom={view.scale.toFixed(2)}
+        className="absolute bottom-3 right-3 z-10 flex flex-col overflow-hidden rounded-full border border-border bg-surface/90 shadow-sm backdrop-blur">
+        <button type="button" data-relation-zoom-in aria-label={zoomLabels.in} title={zoomLabels.in}
+          className="grid h-10 w-10 place-items-center text-muted-foreground hover:bg-accent/20"
+          onClick={() => zoomBy(1)}>
+          <Plus aria-hidden className="h-4 w-4" />
+        </button>
+        <button type="button" data-relation-zoom-out aria-label={zoomLabels.out} title={zoomLabels.out}
+          className="grid h-10 w-10 place-items-center border-t border-border text-muted-foreground hover:bg-accent/20"
+          onClick={() => zoomBy(-1)}>
+          <Minus aria-hidden className="h-4 w-4" />
+        </button>
+      </div>
     </div>
   );
 }
