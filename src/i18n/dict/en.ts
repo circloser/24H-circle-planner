@@ -1084,6 +1084,7 @@ export const en: Record<TKey, string> = {
   'relation.link.add': 'Add a link',
   'relation.link.pick': 'Tap who to link to',
   'relation.link.remove': 'Remove the link',
+  'relation.link.close': 'How close those two are',
   'relation.export.png': 'Save as a picture',
   'relation.export.json': 'JSON backup',
   'relation.exportPrivacy': "Other people's names and details are in it. Have a look before you share it.",
@@ -1197,6 +1198,7 @@ export const en: Record<TKey, string> = {
   'life.parallel.name': 'Name',
   'life.parallel.birth': 'Born',
   'life.parallel.remove': 'Remove this line',
+  'life.parallel.removeAsk': "Take '{name}' off the page? Their moments go with them.",
   'life.parallel.open': 'Open side by side',
   'life.parallel.close': 'Close side by side',
 };

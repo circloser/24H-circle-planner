@@ -193,6 +193,13 @@ export async function run() {
       (await page.locator('[data-place-panel-name]').innerText()) === '대한민국',
       await page.locator('[data-place-panel-name]').innerText());
     pass('…and so is its continent', /아시아/.test(await page.locator('[data-place-panel]').innerText()));
+    await page.locator('[data-place-first-year]').click();
+    await page.keyboard.type('2011');
+    await wait(500);
+    pass('the year of a first visit can be typed, a digit at a time',
+      (await page.locator('[data-place-first-year]').inputValue()) === '2011'
+      && (await stored()).countries.find((c) => c.code === 'KR')?.firstYear === 2011,
+      JSON.stringify((await stored()).countries));
     pass('the card opens on the map, not as a column down the side', await page.evaluate(() => {
       const card = document.querySelector('[data-place-card]').getBoundingClientRect();
       const view = document.querySelector('[data-place-view]').getBoundingClientRect();

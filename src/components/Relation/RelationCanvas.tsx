@@ -9,7 +9,7 @@ import {
   MAX_ZOOM, ME_R, MIN_ZOOM, angleOf, layoutRelation, polarOf, xyOf, type Placed,
 } from '@/lib/relation-layout';
 import { driftAt } from '@/lib/relation-drift';
-import { COLD, cool, restFor, stepWorld, type Body, type Tie } from '@/lib/relation-force';
+import { COLD, cool, gripFor, restFor, stepWorld, type Body, type Tie } from '@/lib/relation-force';
 import { boundaryOf, drawBoundary } from '@/lib/relation-hull';
 import { atRest, springAt, stepSpring, type Spring } from '@/lib/relation-spring';
 import { NAME_SIZE, nameBox } from '@/lib/relation-name';
@@ -363,9 +363,12 @@ export function RelationCanvas({
       const pa = follow(a);
       const pb = follow(b);
       const lit = !selected || selected === link.source || selected === link.target;
+      // How close the two of them are is drawn as how heavy the line is: a
+      // map of ties should show which ties are strong without being read.
+      const close = link.closeness ?? 3;
       ctx.strokeStyle = ink;
-      ctx.globalAlpha = 0.45 * (lit ? 1 : 0.2);
-      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = (0.2 + 0.1 * close) * (lit ? 1 : 0.25);
+      ctx.lineWidth = 0.75 + 0.45 * close;
       ctx.beginPath();
       ctx.moveTo(pa.x, pa.y);
       ctx.lineTo(pb.x, pb.y);
@@ -498,7 +501,9 @@ export function RelationCanvas({
     const ties: Tie[] = data.links.flatMap((link) => {
       const a = world.current.get(link.source);
       const b = world.current.get(link.target);
-      return a && b ? [{ a: link.source, b: link.target, rest: restFor(a, b) }] : [];
+      if (!a || !b) return [];
+      const close = link.closeness ?? 3;
+      return [{ a: link.source, b: link.target, rest: restFor(a, b, close), grip: gripFor(close) }];
     });
     const run = (now: number) => {
       const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;

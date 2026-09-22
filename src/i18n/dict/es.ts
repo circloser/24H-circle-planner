@@ -1083,6 +1083,7 @@ export const es: Record<TKey, string> = {
   'relation.link.add': 'Añadir un vínculo',
   'relation.link.pick': 'Toca con quién enlazar',
   'relation.link.remove': 'Quitar el vínculo',
+  'relation.link.close': 'Lo cerca que están entre sí',
   'relation.export.png': 'Guardar como imagen',
   'relation.export.json': 'Copia JSON',
   'relation.exportPrivacy': 'Contiene nombres y datos de otras personas. Míralo antes de compartirlo.',
@@ -1196,6 +1197,7 @@ export const es: Record<TKey, string> = {
   'life.parallel.name': 'Nombre',
   'life.parallel.birth': 'Nacimiento',
   'life.parallel.remove': 'Quitar esta línea',
+  'life.parallel.removeAsk': "¿Quitar la línea de '{name}'? Sus momentos se van con ella.",
   'life.parallel.open': 'Abrir lado a lado',
   'life.parallel.close': 'Cerrar lado a lado',
 };

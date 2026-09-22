@@ -33,6 +33,16 @@ export function CountryCard({
   onOpenPin: (id: string) => void;
 }) {
   const { t } = useTranslation();
+  /**
+   * The year is typed, so it is held here while it is being typed.
+   *
+   * Written straight to the record it could not be typed at all: the first
+   * keystroke is "2", which is not a year, so the record refused it and the
+   * field — being the record — emptied itself again.
+   */
+  // (The card is given the country's code as its key, so choosing another
+  // country starts this afresh rather than carrying a year across.)
+  const [year, setYear] = useState(visit?.firstYear ? String(visit.firstYear) : '');
   // Wanting to go and having been are the two states a country can be in, and
   // never both: the rest of the card is about having been.
   const wish = isWished(visit);
@@ -80,11 +90,15 @@ export function CountryCard({
         <>
           <label className="flex flex-col gap-1.5">
             <span className="text-sm font-medium text-foreground">{t('place.field.firstYear')}</span>
-            <Input type="number" inputMode="numeric" min={1800} max={2200} className="w-32"
-              data-place-first-year value={visit?.firstYear ?? ''}
+            <Input inputMode="numeric" maxLength={4} className="w-32"
+              data-place-first-year value={year}
               onChange={(e) => {
-                const n = Number(e.target.value);
-                onPatch({ firstYear: Number.isInteger(n) && n >= 1800 && n <= 2200 ? n : undefined });
+                const typed = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
+                setYear(typed);
+                const n = Number(typed);
+                // Kept only once it is a whole year; a half-typed one stays in
+                // the field and out of the record.
+                onPatch({ firstYear: typed.length === 4 && n >= 1800 && n <= 2200 ? n : undefined });
               }} />
           </label>
 

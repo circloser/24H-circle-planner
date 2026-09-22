@@ -6,7 +6,7 @@ import { deletePhoto } from '@/lib/calendar-photos';
 import { todayKey } from '@/lib/calendar-grid';
 import {
   RELATION_KEY, decodeRelation, emptyRelation, encodeRelation, isNewerRelation, relationPhotoIds,
-  type Person, type RelationData, type RelationLink,
+  type Closeness, type Person, type RelationData, type RelationLink,
 } from '@/lib/relation';
 
 export const relationCodec: PersistedCodec<RelationData> = {
@@ -132,6 +132,23 @@ export function useRelation() {
   }, [edit]);
 
   /** Name the tie between two people; an empty name takes the name away. */
+  /** How close those two are to each other. Three is the middle and is not
+   *  stored, so setting it back to three takes it off the record. */
+  const holdLink = useCallback((source: string, target: string, closeness: Closeness) => {
+    const same = (l: RelationLink) =>
+      (l.source === source && l.target === target) || (l.source === target && l.target === source);
+    edit((d) => ({
+      ...d,
+      links: d.links.map((l) => {
+        if (!same(l)) return l;
+        const next: RelationLink = { source: l.source, target: l.target };
+        if (l.label) next.label = l.label;
+        if (closeness !== 3) next.closeness = closeness;
+        return next;
+      }),
+    }));
+  }, [edit]);
+
   const nameLink = useCallback((source: string, target: string, label: string) => {
     const same = (l: RelationLink) =>
       (l.source === source && l.target === target) || (l.source === target && l.target === source);
@@ -141,6 +158,7 @@ export function useRelation() {
         if (!same(l)) return l;
         const next: RelationLink = { source: l.source, target: l.target };
         if (label.trim()) next.label = label.trim();
+        if (l.closeness) next.closeness = l.closeness;
         return next;
       }),
     }));
@@ -165,7 +183,7 @@ export function useRelation() {
 
   return {
     data, readOnly, generation, setMe, addPerson, addPeople, updatePerson, placePerson,
-    markContacted, removePerson, restorePerson, addLink, nameLink, removeLink, replace,
+    markContacted, removePerson, restorePerson, addLink, nameLink, holdLink, removeLink, replace,
   };
 }
 

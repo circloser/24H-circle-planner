@@ -325,6 +325,7 @@ export function RelationView() {
             onStartLink={() => setLinking((was) => (was === selected ? null : selected))}
             onUnlink={(other) => person && api.removeLink(person.id, other)}
             onLabel={(other, label) => person && api.nameLink(person.id, other, label)}
+            onHold={(other, closeness) => person && api.holdLink(person.id, other, closeness)}
             onPick={(id) => setSelected(id)}
           />
         </div>

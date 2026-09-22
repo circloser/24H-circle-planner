@@ -1081,6 +1081,7 @@ export const ja: Record<TKey, string> = {
   'relation.link.add': 'つながりを追加',
   'relation.link.pick': 'つなぐ相手を選んでください',
   'relation.link.remove': 'つながりを外す',
+  'relation.link.close': '二人の近さ',
   'relation.export.png': '画像として保存',
   'relation.export.json': 'JSON バックアップ',
   'relation.exportPrivacy': 'ほかの人の名前や情報が含まれます。確認してから共有してください。',
@@ -1194,6 +1195,7 @@ export const ja: Record<TKey, string> = {
   'life.parallel.name': '名前',
   'life.parallel.birth': '生まれた日',
   'life.parallel.remove': 'この線を消す',
+  'life.parallel.removeAsk': "'{name}' の線を削除しますか？その人の出来事も一緒に消えます。",
   'life.parallel.open': '並べて見るを開く',
   'life.parallel.close': '並べて見るを閉じる',
 };

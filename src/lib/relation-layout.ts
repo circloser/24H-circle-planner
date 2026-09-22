@@ -25,6 +25,18 @@ import { nameBox } from './relation-name';
 
 /** Node radius by closeness (§3.2), over the five rungs. */
 export const NODE_R: Record<Closeness, number> = { 1: 5, 2: 7, 3: 9, 4: 11, 5: 13 };
+
+/**
+ * How far from the middle each rung of closeness stands.
+ *
+ * This is the map's whole sentence: close is near, distant is far. It used to
+ * be the group that set the distance and closeness that nudged it nine pixels
+ * — which meant a colleague you speak to daily sat further out than a cousin
+ * you have not seen since childhood, because one is work and the other is
+ * family. The group says WHICH WAY from the middle (its own band of the turn);
+ * closeness says HOW FAR.
+ */
+export const CLOSE_RING: Record<Closeness, number> = { 5: 150, 4: 235, 3: 320, 2: 405, 1: 490 };
 /** The middle node — me. */
 export const ME_R = 20;
 /** How far the innermost ring sits from me. Wide enough that a name written
@@ -335,7 +347,9 @@ export function layoutRelation(people: readonly Person[]): Layout {
     let inner = Infinity;
     let outer = 0;
     for (const node of band) {
-      node.d = d - (node.person.closeness - 1) * CLOSE_STEP;
+      // How far out: the rung of closeness, and nothing else. The ring the
+      // group sits on is only used to work the angles out.
+      node.d = CLOSE_RING[node.person.closeness];
       inner = Math.min(inner, node.d - node.r);
       outer = Math.max(outer, node.d + node.r);
       nodes.push(node);

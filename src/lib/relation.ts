@@ -58,6 +58,12 @@ export interface RelationLink {
   source: string;
   target: string;
   label?: string;
+  /**
+   * How close those two are to EACH OTHER — which is a different question
+   * from how close each of them is to me, and the one a map of relations is
+   * really for. Missing means the middle rung.
+   */
+  closeness?: Closeness;
 }
 
 export interface RelationData {
@@ -236,7 +242,15 @@ function cleanLinks(v: unknown, people: readonly Person[]): RelationLink[] {
     if (seen.has(key)) continue;
     seen.add(key);
     const label = str(o['label'], MAX_LINK_LABEL);
-    out.push({ source, target, ...(label ? { label } : {}) });
+    const close = o['closeness'];
+    const rung = CLOSENESS.includes(close as Closeness) ? (close as Closeness) : null;
+    out.push({
+      source,
+      target,
+      ...(label ? { label } : {}),
+      // The middle rung is what "nothing said" means, so it is not written.
+      ...(rung && rung !== 3 ? { closeness: rung } : {}),
+    });
   }
   return out;
 }

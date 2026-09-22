@@ -10,7 +10,7 @@
  */
 import { contactFade, hasBirthdaySoon, type RelationData, type RelationGroup } from '../relation';
 import { ME_R, layoutRelation, xyOf } from '../relation-layout';
-import { restFor, settle, type Body, type Tie } from '../relation-force';
+import { gripFor, restFor, settle, type Body, type Tie } from '../relation-force';
 import { boundaryOf, drawBoundary } from '../relation-hull';
 import { NAME_SIZE, nameBox } from '../relation-name';
 
@@ -58,7 +58,9 @@ export function drawRelation(ctx: CanvasRenderingContext2D, input: RelationImage
   const ties: Tie[] = data.links.flatMap((link) => {
     const a = world.get(link.source);
     const b = world.get(link.target);
-    return a && b ? [{ a: link.source, b: link.target, rest: restFor(a, b) }] : [];
+    if (!a || !b) return [];
+    const close = link.closeness ?? 3;
+    return [{ a: link.source, b: link.target, rest: restFor(a, b, close), grip: gripFor(close) }];
   });
   settle([...world.values()], ties);
   const spot = (id: string) => world.get(id) ?? { x: 0, y: 0 };
@@ -128,11 +130,14 @@ export function drawRelation(ctx: CanvasRenderingContext2D, input: RelationImage
     if (!a || !b) continue;
     const pa = at(a.x, a.y);
     const pb = at(b.x, b.y);
-    ctx.globalAlpha = 0.45;
+    const close = link.closeness ?? 3;
+    ctx.globalAlpha = 0.2 + 0.1 * close;
+    ctx.lineWidth = Math.max(1, size / 1400) * (0.6 + 0.35 * close);
     ctx.beginPath();
     ctx.moveTo(pa.x, pa.y);
     ctx.lineTo(pb.x, pb.y);
     ctx.stroke();
+    ctx.lineWidth = Math.max(1, size / 1400);
     if (!link.label) continue;
     ctx.globalAlpha = 0.8;
     ctx.fillStyle = ink;

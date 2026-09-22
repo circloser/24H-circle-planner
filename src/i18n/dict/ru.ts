@@ -1081,6 +1081,7 @@ export const ru: Record<TKey, string> = {
   'relation.link.add': 'Добавить связь',
   'relation.link.pick': 'Нажмите, с кем связать',
   'relation.link.remove': 'Убрать связь',
+  'relation.link.close': 'Насколько они близки друг другу',
   'relation.export.png': 'Сохранить картинкой',
   'relation.export.json': 'Резервная копия JSON',
   'relation.exportPrivacy': 'Там есть имена и данные других людей. Посмотрите, прежде чем делиться.',
@@ -1194,6 +1195,7 @@ export const ru: Record<TKey, string> = {
   'life.parallel.name': 'Имя',
   'life.parallel.birth': 'Дата рождения',
   'life.parallel.remove': 'Убрать эту линию',
+  'life.parallel.removeAsk': "Убрать линию '{name}'? Её события исчезнут вместе с ней.",
   'life.parallel.open': 'Открыть режим «рядом»',
   'life.parallel.close': 'Закрыть режим «рядом»',
 };

@@ -1085,6 +1085,7 @@ export const ko = {
   'relation.link.add': '연결 추가',
   'relation.link.pick': '연결할 사람을 누르세요',
   'relation.link.remove': '연결 지우기',
+  'relation.link.close': '두 사람 사이의 가까운 정도',
   'relation.export.png': '그림으로 저장',
   'relation.export.json': 'JSON 백업',
   'relation.exportPrivacy': '다른 사람의 이름과 정보가 함께 담깁니다. 확인하고 공유해 주세요.',
@@ -1198,6 +1199,7 @@ export const ko = {
   'life.parallel.name': '이름',
   'life.parallel.birth': '태어난 날',
   'life.parallel.remove': '이 사람 지우기',
+  'life.parallel.removeAsk': "'{name}' 줄을 지울까요? 그 사람의 사건도 함께 사라집니다.",
   'life.parallel.open': '나란히 보기 열기',
   'life.parallel.close': '나란히 보기 닫기',
 } as const;

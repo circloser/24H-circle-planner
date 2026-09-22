@@ -451,8 +451,16 @@ export async function run() {
       (await count(`[data-life-line-remove="${her}"]`)) === 1
       && (await count('[data-life-line-remove="me"]')) === 0);
     await page.locator(`[data-life-line-remove="${her}"]`).click();
+    await wait(500);
+    pass('…and it asks before it does', (await count('[data-life-line-drop]')) === 1
+      && ((await stored()).others ?? []).length === 1);
+    await closeAll();
+    pass('…and says no by saying nothing', ((await stored()).others ?? []).length === 1);
+    await page.locator(`[data-life-line-remove="${her}"]`).click();
+    await wait(500);
+    await page.locator('[data-life-line-drop-yes]').click();
     await wait(600);
-    pass('…and pressing it takes them off it',
+    pass('…and takes them off the page once told to',
       ((await stored()).others ?? []).length === 0 && (await count('[data-life-column]')) === 1);
     await page.getByRole('button', { name: '되돌리기' }).click();
     await wait(700);

@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/hooks/usePreferences';
 import {
-  MAX_LINK_LABEL, daysSinceContact, daysToBirthday, turningAge,
-  type Person, type RelationData, type RelationGroup, type RelationLink,
+  CLOSENESS, MAX_LINK_LABEL, daysSinceContact, daysToBirthday, turningAge,
+  type Closeness, type Person, type RelationData, type RelationGroup, type RelationLink,
 } from '@/lib/relation';
 import { placesWith } from '@/lib/relation-place';
 import { GROUP_ICON, GROUP_LABEL } from './groups';
@@ -15,12 +15,15 @@ import { GROUP_ICON, GROUP_LABEL } from './groups';
  *  The name of a tie — "부부", "동료" — is written where the tie is, rather
  *  than asked for in a dialog at the moment the line is drawn: most lines do
  *  not need a name, and the ones that do can be named later. */
-function LinkRow({ link, other, onPick, onUnlink, onLabel }: {
+function LinkRow({ link, other, onPick, onUnlink, onLabel, onHold }: {
   link: RelationLink;
   other: Person;
   onPick: (id: string) => void;
   onUnlink: (id: string) => void;
   onLabel: (id: string, label: string) => void;
+  /** How close those two are to EACH OTHER, which is what pulls them
+   *  together on the map. */
+  onHold: (id: string, closeness: Closeness) => void;
 }) {
   const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
@@ -49,6 +52,23 @@ function LinkRow({ link, other, onPick, onUnlink, onLabel }: {
           {link.label || t('relation.link.name')}
         </button>
       )}
+      {/* How close the two of THEM are: five rungs, drawn as the map draws
+          them — a heavier line for a closer tie. */}
+      <span className="flex shrink-0 items-center gap-0.5" role="group"
+        aria-label={t('relation.link.close')} data-relation-link-close={other.id}>
+        {CLOSENESS.map((rung) => {
+          const held = (link.closeness ?? 3) >= rung;
+          return (
+            <button key={rung} type="button" data-relation-link-rung={`${other.id}:${rung}`}
+              aria-label={`${t('relation.link.close')} ${rung}`} aria-pressed={held}
+              className="grid h-7 w-3 place-items-center"
+              onClick={() => onHold(other.id, rung)}>
+              <span aria-hidden className={`block h-2 w-2 rounded-full ${
+                held ? 'bg-foreground' : 'bg-foreground/20'}`} />
+            </button>
+          );
+        })}
+      </span>
       <button type="button" aria-label={t('relation.link.remove')} data-relation-unlink={other.id}
         className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-accent/20"
         onClick={() => onUnlink(other.id)}>
@@ -67,7 +87,7 @@ function LinkRow({ link, other, onPick, onUnlink, onLabel }: {
  */
 export function RelationPanel({
   person, data, colors, today, linking, onClose, onEdit, onDelete, onContacted, onStartLink, onUnlink,
-  onPick, onLabel,
+  onPick, onLabel, onHold,
 }: {
   person: Person | null;
   data: RelationData;
@@ -85,6 +105,8 @@ export function RelationPanel({
   onPick: (id: string) => void;
   /** Name the tie to that person (an empty name takes it away). */
   onLabel: (otherId: string, label: string) => void;
+  /** Say how close those two are to each other. */
+  onHold: (otherId: string, closeness: Closeness) => void;
 }) {
   const { t } = useTranslation();
   if (!person) return null;
@@ -169,7 +191,8 @@ export function RelationPanel({
       {linked.length > 0 && (
         <ul className="flex flex-col gap-1" aria-label={t('relation.link.add')}>
           {linked.map(({ link, other }) => (
-            <LinkRow key={other.id} link={link} other={other} onPick={onPick} onUnlink={onUnlink} onLabel={onLabel} />
+            <LinkRow key={other.id} link={link} other={other} onPick={onPick} onUnlink={onUnlink}
+              onLabel={onLabel} onHold={onHold} />
           ))}
         </ul>
       )}

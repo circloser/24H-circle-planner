@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { COLD, ME_ROOM, PAD, cool, restFor, settle, stepWorld, type Body, type Tie } from '../relation-force';
+import {
+  COLD, ME_ROOM, PAD, cool, gripFor, restFor, settle, stepWorld, type Body, type Tie,
+} from '../relation-force';
 import { angleOf } from '../relation-layout';
 
 /** People seeded the way the canvas seeds them: their own angle, their ring. */
@@ -97,5 +99,41 @@ describe('the map with weight in it', () => {
 
   it('keeps the clear space it promises', () => {
     expect(gap(settle(crowd(25), []))).toBeGreaterThan(PAD * 0.5);
+  });
+});
+
+describe('a tie of its own strength', () => {
+  const pair = (): Body[] => [
+    { id: 'a', x: -300, y: 0, vx: 0, vy: 0, r: 10, want: 320 },
+    { id: 'b', x: 300, y: 0, vx: 0, vy: 0, r: 10, want: 320 },
+  ];
+  const apart = (closeness: number): number => {
+    const bodies = pair();
+    settle(bodies, [{ a: 'a', b: 'b', rest: restFor(bodies[0], bodies[1], closeness), grip: gripFor(closeness) }]);
+    return Math.hypot(bodies[0].x - bodies[1].x, bodies[0].y - bodies[1].y);
+  };
+
+  it('holds a close pair closer than a distant one', () => {
+    expect(apart(5)).toBeLessThan(apart(3));
+    expect(apart(3)).toBeLessThan(apart(1));
+  });
+
+  it('leaves the middle rung where an unsaid tie has always been', () => {
+    const bodies = pair();
+    expect(restFor(bodies[0], bodies[1])).toBe(restFor(bodies[0], bodies[1], 3));
+    expect(gripFor()).toBe(gripFor(3));
+  });
+
+  it('never pulls two people into each other', () => {
+    const bodies = pair();
+    settle(bodies, [{ a: 'a', b: 'b', rest: 0, grip: gripFor(5) }]);
+    expect(Math.hypot(bodies[0].x - bodies[1].x, bodies[0].y - bodies[1].y))
+      .toBeGreaterThanOrEqual(bodies[0].r + bodies[1].r);
+  });
+
+  it('takes a rung that is not one as the middle', () => {
+    const bodies = pair();
+    expect(restFor(bodies[0], bodies[1], 99)).toBe(restFor(bodies[0], bodies[1], 5));
+    expect(gripFor(-4)).toBe(gripFor(1));
   });
 });

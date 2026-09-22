@@ -189,6 +189,18 @@ export async function run() {
     await page.locator('[data-relation-link-label="p3"]').fill('동료');
     await page.keyboard.press('Enter');
     await wait(500);
+    pass('…and how close those two are can be said on it', await (async () => {
+      const before = (await stored()).links[0];
+      await page.locator('[data-relation-link-rung="p3:5"]').click();
+      await wait(500);
+      const after = (await stored()).links[0];
+      return before.closeness === undefined && after.closeness === 5;
+    })(), JSON.stringify((await stored()).links));
+    pass('…and put back to the middle it is not written at all', await (async () => {
+      await page.locator('[data-relation-link-rung="p3:3"]').click();
+      await wait(500);
+      return (await stored()).links[0].closeness === undefined;
+    })(), JSON.stringify((await stored()).links));
     pass('…and the tie can be given a name',
       (await stored()).links[0]?.label === '동료', JSON.stringify((await stored()).links));
     await page.locator('[data-relation-unlink="p3"]').click();

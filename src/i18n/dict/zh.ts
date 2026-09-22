@@ -1079,6 +1079,7 @@ export const zh: Record<TKey, string> = {
   'relation.link.add': '添加连线',
   'relation.link.pick': '点选要连接的人',
   'relation.link.remove': '删除连线',
+  'relation.link.close': '两人之间的亲近程度',
   'relation.export.png': '保存为图片',
   'relation.export.json': 'JSON 备份',
   'relation.exportPrivacy': '其中包含他人的姓名和信息，分享前请先确认。',
@@ -1192,6 +1193,7 @@ export const zh: Record<TKey, string> = {
   'life.parallel.name': '姓名',
   'life.parallel.birth': '出生日期',
   'life.parallel.remove': '移除这条线',
+  'life.parallel.removeAsk': "要移除 '{name}' 这条线吗？该人的事件也会一并消失。",
   'life.parallel.open': '打开并排查看',
   'life.parallel.close': '关闭并排查看',
 };

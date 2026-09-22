@@ -727,6 +727,7 @@ export function PlaceView() {
             : undefined}>
           {shape && tab === 'world' && (
             <CountryCard
+              key={shape.code}
               shape={shape}
               visit={data.countries.find((c) => c.code === shape.code)}
               data={data}

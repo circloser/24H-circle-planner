@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { RELATION_GROUPS, type Person, type RelationGroup } from '../relation';
 import {
-  ME_R, MIN_SECTOR, NODE_PAD, NODE_R, angleOf, layoutRelation, nodeAt, polarOf, ringBase,
+  CLOSE_RING, ME_R, MIN_SECTOR, NODE_R, angleOf, layoutRelation, nodeAt, polarOf, ringBase,
   sectorsOf, xyOf,
 } from '../relation-layout';
 
@@ -110,11 +110,38 @@ describe('a group keeps to one place', () => {
     }
   });
 
-  it('holds everyone apart inside a band as well as round a ring', () => {
+  it('gives everyone in a band a turn of their own to start from', () => {
+    // Where they END up is the simulation's to say (lib/relation-force); what
+    // this has to promise is that nobody starts on top of anybody, which for
+    // a ring means a turn of their own.
     const l = layoutRelation([...many(30, 'family'), ...many(30, 'friend')]);
     for (const group of ['family', 'friend'] as const) {
-      expect(tightest(l.nodes.filter((n) => n.person.group === group))).toBeGreaterThan(0);
+      const band = l.nodes.filter((n) => n.person.group === group).map((n) => n.a).sort((x, y) => x - y);
+      for (let i = 0; i + 1 < band.length; i++) expect(band[i + 1]).toBeGreaterThan(band[i]);
     }
+  });
+});
+
+describe('how far out somebody stands', () => {
+  it('is their closeness, and not their group', () => {
+    const l = layoutRelation([
+      p('near-colleague', 'work', 3),
+      p('distant-cousin', 'family', 1),
+    ]);
+    const at = (id: string) => l.nodes.find((n) => n.person.id === id)!.d;
+    // Work is the outer ring and family the inner one, but the colleague you
+    // are close to still stands nearer than the cousin you never see.
+    expect(at('near-colleague')).toBeLessThan(at('distant-cousin'));
+  });
+
+  it('puts every rung at its own distance, closest nearest', () => {
+    const rungs = ([5, 4, 3, 2, 1] as const).map((c) => CLOSE_RING[c]);
+    expect([...rungs].sort((a, b) => a - b)).toEqual(rungs);
+    expect(CLOSE_RING[5]).toBeGreaterThan(ME_R * 2);
+  });
+
+  it('and the difference between rungs is worth seeing', () => {
+    expect(CLOSE_RING[1] - CLOSE_RING[5]).toBeGreaterThan(200);
   });
 });
 
@@ -130,11 +157,12 @@ describe('the rings', () => {
     expect(layoutRelation([]).rings).toEqual([]);
   });
 
-  it('pull the closest people a little way inward', () => {
+  it('hold the closest people nearest, whatever group they are in', () => {
     const l = layoutRelation([p('near', 'family', 3), p('far', 'family', 1)]);
     const near = l.nodes.find((n) => n.person.id === 'near')!;
     const far = l.nodes.find((n) => n.person.id === 'far')!;
     expect(near.d).toBeLessThan(far.d);
+    expect(near.d).toBe(CLOSE_RING[3]);
   });
 
   it('give every circle room for at least what closeness asks', () => {
@@ -164,15 +192,14 @@ describe('the rings', () => {
 });
 
 describe('crowding', () => {
-  it('leaves room between every pair, even at three hundred people', () => {
+  it('places three hundred people, each somewhere of their own', () => {
     const crowd = RELATION_GROUPS.flatMap((g) => many(75, g));
     const l = layoutRelation(crowd);
     expect(l.nodes).toHaveLength(300);
-    // Rings are far apart, so the test that matters is inside each one.
-    for (const group of RELATION_GROUPS) {
-      const band = l.nodes.filter((n) => n.person.group === group);
-      expect(tightest(band)).toBeGreaterThan(NODE_PAD * 0.4);
-    }
+    // Two people may start near each other — the simulation pushes them
+    // apart — but never at exactly the same spot, which it could not undo.
+    const spots = new Set(l.nodes.map((n) => `${n.a.toFixed(6)}:${n.d}`));
+    expect(spots.size).toBe(300);
   });
 
   it('is fast enough to be worth doing on every render', () => {

@@ -1,6 +1,10 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Minus, Plus, UserPlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog';
+import { useCoarsePointer } from '@/hooks/useCoarsePointer';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { useTranslation } from '@/hooks/usePreferences';
 import { buildTimeline, type LifeCategory, type LifeData, type Milestone } from '@/lib/life';
@@ -53,6 +57,11 @@ export function LifeBoard({
 }: LifeBoardProps) {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
+  // With a mouse the cross waits to be hovered; a finger has no hover, so on
+  // a touch screen it is simply there.
+  const coarse = useCoarsePointer();
+  /** Who is being let go, while the question is on screen. */
+  const [dropping, setDropping] = useState<{ id: string; name: string } | null>(null);
   /**
    * Who is drawn. A wide screen holds everyone who has not been folded away;
    * a phone holds two, and the two it holds are the first two of that same
@@ -231,12 +240,10 @@ export function LifeBoard({
               const on = showing.has(id);
               const mine = id === 'me';
               return (
-                // A name and, beside it, the way to let that line go. Two
-                // buttons rather than one with a cross inside it, because a
-                // button inside a button is not a thing.
-                <span key={id}
-                  className={`inline-flex items-center overflow-hidden rounded-full border text-[13px] ${
-                    on ? 'border-foreground text-foreground' : 'border-border text-muted-foreground'}`}>
+                // A name, with the way to let that line go tucked into its
+                // corner: two buttons rather than one with a cross inside it,
+                // because a button inside a button is not a thing.
+                <span key={id} className="group relative inline-flex">
                 <button type="button" data-life-line-toggle={id} aria-pressed={on}
                   draggable={!mine}
                   onDragStart={(e) => {
@@ -272,7 +279,8 @@ export function LifeBoard({
                     }
                   }}
                   onDoubleClick={() => (mine ? undefined : onOpenLine(id))}
-                  className={`inline-flex min-h-8 items-center gap-1.5 pl-3 ${mine ? 'pr-3' : 'pr-1.5'} ${
+                  className={`inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] ${
+                    on ? 'border-foreground text-foreground' : 'border-border text-muted-foreground'} ${
                     mine ? '' : 'cursor-grab active:cursor-grabbing'} ${
                     dragging === id ? 'opacity-50' : ''}`}>
                   {name || t('life.parallel.someone')}
@@ -281,9 +289,10 @@ export function LifeBoard({
                   <button type="button" data-life-line-remove={id}
                     aria-label={`${name || t('life.parallel.someone')} · ${t('common.delete')}`}
                     title={t('life.parallel.remove')}
-                    className="grid h-8 w-7 place-items-center text-muted-foreground hover:bg-accent/20 hover:text-destructive"
-                    onClick={() => onRemoveLine(id)}>
-                    <X aria-hidden className="h-3.5 w-3.5" />
+                    className={`absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full border border-border bg-surface text-muted-foreground shadow-sm transition-opacity hover:border-destructive hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100 ${
+                      coarse ? 'opacity-100' : 'opacity-0'}`}
+                    onClick={() => setDropping({ id, name: name || t('life.parallel.someone') })}>
+                    <X aria-hidden className="h-2.5 w-2.5" />
                   </button>
                 )}
                 </span>
@@ -310,6 +319,33 @@ export function LifeBoard({
           )}
         </div>
       )}
+
+      {/* Letting a line go is asked about first: it takes the person and
+          everything written on their line with it, and the toast that offers
+          it back does not last for ever. */}
+      <Dialog open={!!dropping} onOpenChange={(open) => { if (!open) setDropping(null); }}>
+        <DialogContent className="max-w-sm" data-life-line-drop>
+          <DialogHeader>
+            <DialogTitle>{t('life.parallel.remove')}</DialogTitle>
+            <DialogDescription>
+              {t('life.parallel.removeAsk', { name: dropping?.name ?? '' })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setDropping(null)}>
+              {t('common.cancel')}
+            </Button>
+            <Button type="button" data-life-line-drop-yes
+              className="bg-destructive text-white hover:bg-destructive/90"
+              onClick={() => {
+                if (dropping) onRemoveLine(dropping.id);
+                setDropping(null);
+              }}>
+              {t('common.delete')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/*
         The board itself. `zoom` rather than a transform because a transform

@@ -42,6 +42,8 @@ export interface Tie {
   b: string;
   /** How far apart the two of them would rather be. */
   rest: number;
+  /** How hard it pulls them there, as a share of the usual. */
+  grip?: number;
 }
 
 /** How hard everybody pushes everybody else away. */
@@ -64,8 +66,20 @@ export const COLD = 0.02;
  *  says: a crowd that starts on top of itself would otherwise explode. */
 const MOST = 24;
 
-/** How far apart two bodies would rather be, given their sizes. */
-export const restFor = (a: Body, b: Body): number => a.r + b.r + PAD * 3;
+/**
+ * How far apart two bodies would rather be, given their sizes and how close
+ * the two of them are to each other.
+ *
+ * Five rungs, and the middle one is the plain distance: an inseparable pair
+ * end up shoulder to shoulder, and two people who merely know each other sit
+ * within sight but no nearer.
+ */
+export const restFor = (a: Body, b: Body, closeness = 3): number =>
+  (a.r + b.r + PAD * 3) * (1.9 - 0.3 * Math.max(1, Math.min(5, closeness)));
+
+/** And how hard the tie pulls: the closer they are, the less give it has. */
+export const gripFor = (closeness = 3): number =>
+  0.6 + 0.2 * Math.max(1, Math.min(5, closeness));
 
 /**
  * One step of the world, in place. `alpha` is how hot it still is (1 at the
@@ -109,7 +123,7 @@ export function stepWorld(bodies: Body[], ties: readonly Tie[], alpha: number): 
     const dx = b.x - a.x;
     const dy = b.y - a.y;
     const far = Math.hypot(dx, dy) || 0.01;
-    const pull = ((far - tie.rest) / far) * TIE * alpha;
+    const pull = ((far - tie.rest) / far) * TIE * (tie.grip ?? 1) * alpha;
     a.vx += dx * pull;
     a.vy += dy * pull;
     b.vx -= dx * pull;
