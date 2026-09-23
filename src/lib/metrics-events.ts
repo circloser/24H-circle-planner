@@ -28,7 +28,7 @@ export const METRIC_EVENTS = [
   'memoir_buy', 'memoir_paid', 'memoir_write',
   // Relation (the people around you).
   'relation_open', 'relation_add', 'relation_import', 'relation_link', 'relation_contact',
-  'relation_image', 'relation_backup',
+  'relation_image', 'relation_backup', 'relation_history', 'relation_fact', 'relation_meet',
   // Place (the countries and spots you have been to).
   'place_open', 'place_country', 'place_city', 'place_pin', 'place_home',
   'place_locate', 'place_image', 'place_backup', 'place_shortcut',

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   BIRTHDAY_SOON_DAYS, FADED_MIN, FREE_RELATION_LINKS, FREE_RELATION_PEOPLE, RELATION_KEY,
-  birthdayParts, canAddLink, canAddPerson, contactFade, daysSinceContact, daysToBirthday,
-  decodeRelation, emptyRelation, encodeRelation, findPeople, hasBirthdaySoon, isBirthdayThisMonth,
-  isNewerRelation, isOutOfTouch, readRelationFile, relationFile, relationPhotoIds, relationSummary,
-  turningAge, type Person, type RelationData,
+  birthdayParts, canAddLink, canAddPerson, contactFade, currentFact, daysSinceContact, daysToBirthday,
+  decodeRelation, emptyRelation, encodeRelation, factHistory, factKinds, findPeople, hasBirthdaySoon,
+  isBirthdayThisMonth, isNewerRelation, isOutOfTouch, lastContactOf, meetHistory, readRelationFile,
+  relationFile, relationPhotoIds, relationSummary, turningAge, type Person, type RelationData,
 } from '../relation';
 
 const TODAY = '2026-09-20';
@@ -73,6 +73,68 @@ describe('how long it has been', () => {
   });
 });
 
+describe('what is known about somebody', () => {
+  const worked = p('a', {
+    facts: [
+      { k: 'work', v: '첫 직장', at: '2012' },
+      { k: 'home', v: '부산' },
+      { k: 'work', v: '지금 직장', at: '2019-04' },
+      { k: 'home', v: '서울', at: '2020-08-01' },
+    ],
+  });
+
+  it('answers with what is true now, and keeps what used to be', () => {
+    expect(currentFact(worked, 'work')?.v).toBe('지금 직장');
+    expect(factHistory(worked, 'work').map((x) => x.v)).toEqual(['지금 직장', '첫 직장']);
+    // A fact with no date at all is the oldest there is: it was true before
+    // anything that says when it began.
+    expect(currentFact(worked, 'home')?.v).toBe('서울');
+    expect(factHistory(worked, 'home').map((x) => x.v)).toEqual(['서울', '부산']);
+    expect(currentFact(worked, 'title')).toBeNull();
+  });
+
+  it('names the kinds anything is written under, in their own order', () => {
+    expect(factKinds(worked)).toEqual(['home', 'work']);
+    expect(factKinds(p('b'))).toEqual([]);
+  });
+
+  it('is searched by what is written in it, not only by the name', () => {
+    expect(findPeople(data({ people: [worked] }), '지금 직장').map((x) => x.id)).toEqual(['a']);
+  });
+});
+
+describe('every time there was contact', () => {
+  const met = p('a', {
+    lastContact: '2026-01-02',
+    log: [
+      { at: '2026-03-01', k: 'meet', v: '점심' },
+      { at: '2026-09-18', k: 'event', v: '결혼식' },
+      { at: '2026-05-05', k: 'talk' },
+    ],
+  });
+
+  it('reads back newest first, however the lines were written', () => {
+    expect(meetHistory(met).map((m) => m.at)).toEqual(['2026-09-18', '2026-05-05', '2026-03-01']);
+  });
+
+  it('takes the last contact from the log, and from the old field when there is none', () => {
+    expect(lastContactOf(met)).toBe('2026-09-18');
+    expect(daysSinceContact(met, TODAY)).toBe(2);
+    // A record written before there was a log at all.
+    expect(lastContactOf({ lastContact: '2026-09-01' })).toBe('2026-09-01');
+    expect(lastContactOf({})).toBeUndefined();
+    // And one where the old field is the later of the two: neither is lost.
+    expect(lastContactOf({ lastContact: '2026-09-19', log: [{ at: '2026-01-01', k: 'talk' }] })).toBe('2026-09-19');
+  });
+
+  it('brings somebody back out of the fade', () => {
+    const quiet = p('b', { lastContact: '2020-01-01' });
+    expect(isOutOfTouch(quiet, TODAY)).toBe(true);
+    expect(isOutOfTouch({ ...quiet, log: [{ at: TODAY, k: 'meet' }] }, TODAY)).toBe(false);
+    expect(contactFade({ ...quiet, log: [{ at: TODAY, k: 'meet' }] }, TODAY)).toBe(1);
+  });
+});
+
 describe('the stored envelope', () => {
   it('keeps what it understands and drops the rest', () => {
     const out = decodeRelation({
@@ -135,6 +197,39 @@ describe('the stored envelope', () => {
     }));
     expect(Object.keys(once.people[0])).toEqual(['id', 'name', 'group', 'relation', 'closeness', 'note', 'at', 'createdAt']);
     expect(JSON.stringify(encodeRelation(once))).toBe(JSON.stringify(once));
+  });
+
+  it('keeps the two histories, and drops what it cannot read', () => {
+    const out = decodeRelation({
+      version: 2,
+      people: [{
+        id: 'a', name: 'a', group: 'friend', closeness: 3,
+        facts: [
+          { k: 'work', v: '회사', at: '2019-04' },
+          { k: 'nonsense', v: 'x' },
+          { k: 'home', v: '   ' },
+          { k: 'home', v: '서울', at: 'last year' },
+        ],
+        log: [
+          { at: '2026-03-01', k: 'meet', v: '점심' },
+          { at: '2026-03-02', k: 'shouted' },
+          { at: 'someday', k: 'talk' },
+          { at: '2026-04-01', k: 'event' },
+        ],
+      }],
+    });
+    expect(out?.people[0].facts).toEqual([
+      { k: 'work', v: '회사', at: '2019-04' },
+      // A date nobody can read is dropped; what it says is not.
+      { k: 'home', v: '서울' },
+    ]);
+    expect(out?.people[0].log).toEqual([
+      { at: '2026-03-01', k: 'meet', v: '점심' },
+      { at: '2026-04-01', k: 'event' },
+    ]);
+    // And a record with neither writes neither.
+    const bare = decodeRelation({ version: 2, people: [{ id: 'b', name: 'b', group: 'friend', closeness: 3, facts: [], log: 'no' }] });
+    expect(Object.keys(bare?.people[0] ?? {})).toEqual(['id', 'name', 'group', 'closeness', 'createdAt']);
   });
 
   it('will not be handed a place outside the map', () => {

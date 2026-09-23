@@ -29,6 +29,46 @@ export type RelationGroup = (typeof RELATION_GROUPS)[number];
 export type Closeness = 1 | 2 | 3 | 4 | 5;
 export const CLOSENESS: readonly Closeness[] = [1, 2, 3, 4, 5];
 
+/**
+ * The kinds of thing worth keeping about somebody besides their name.
+ *
+ * Each one is a history rather than a field. Where a person works is not one
+ * value to be corrected: it is where they work now, and where they worked
+ * before that. A home is the same, a family grows, a number changes. Writing
+ * the new one does not rub out the old one — remembering what used to be true
+ * is most of what a record of a person is for.
+ */
+export const FACT_KINDS = ['contact', 'home', 'family', 'work', 'title'] as const;
+export type FactKind = (typeof FACT_KINDS)[number];
+
+export interface PersonFact {
+  k: FactKind;
+  /** A number, a town, a child's name, a company, a title. */
+  v: string;
+  /** When it became true: 'YYYY', 'YYYY-MM' or 'YYYY-MM-DD'. Usually vague,
+   *  often not known at all — a fact without one is simply the oldest. */
+  at?: string;
+}
+
+/**
+ * The kinds of meeting worth a line of their own.
+ *
+ * "Last contact" was one date, so every meeting rubbed out the one before it
+ * and the record could say how long it had been but never what had happened.
+ * These accumulate: seen, spoken to, and the weddings and funerals that are
+ * the times people actually meet.
+ */
+export const MEET_KINDS = ['meet', 'talk', 'event'] as const;
+export type MeetKind = (typeof MEET_KINDS)[number];
+
+export interface PersonMeet {
+  /** 'YYYY-MM-DD'. */
+  at: string;
+  k: MeetKind;
+  /** A few words: where, what for, whose wedding. */
+  v?: string;
+}
+
 export interface Person {
   id: string;
   name: string;
@@ -38,9 +78,15 @@ export interface Person {
   closeness: Closeness;
   /** 'YYYY-MM-DD', or 'MM-DD' when the year is not known. */
   birthday?: string;
-  /** 'YYYY-MM-DD' — the last time there was any contact. */
+  /** 'YYYY-MM-DD' — the last time there was any contact. Kept for what was
+   *  written before `log` existed, and still the answer when the log is
+   *  empty; `lastContactOf` is what everything should ask. */
   lastContact?: string;
   note?: string;
+  /** What is known about them, oldest first (see FACT_KINDS). */
+  facts?: PersonFact[];
+  /** Every meeting that has been written down, oldest first. */
+  log?: PersonMeet[];
   /** A photo id in this device's picture store (Pro). */
   photo?: string;
   /** Always show the name, at any zoom. */
@@ -78,6 +124,12 @@ export const MAX_PERSON_NAME = 40;
 export const MAX_RELATION_TEXT = 40;
 export const MAX_PERSON_NOTE = 200;
 export const MAX_LINK_LABEL = 20;
+export const MAX_FACT_TEXT = 60;
+export const MAX_MEET_NOTE = 60;
+/** Per person. A cap is not a feature: it is what keeps one long friendship
+ *  from growing until the whole record is too big to sync. */
+export const MAX_FACTS = 60;
+export const MAX_MEETS = 200;
 
 export const emptyRelation = (): RelationData => ({
   version: 2,
@@ -114,10 +166,71 @@ const isDay = (v: unknown): v is string =>
 
 const dayNumber = (key: string): number => Math.floor(Date.parse(`${key}T00:00:00Z`) / DAY_MS);
 
+/** A whole date, a month or a year, as something that can be compared. A
+ *  vague date sorts at the end of what it covers: "in March" is after the
+ *  15th of March, because that is as much as is known. */
+const whenKey = (at: string | undefined): string => (at ? `${at}-99-99`.slice(0, 10) : '');
+
+const isWhen = (v: unknown): v is string => {
+  if (typeof v !== 'string') return false;
+  const m = /^(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?$/.exec(v);
+  if (!m) return false;
+  const year = Number(m[1]);
+  if (year < 1900 || year > 2200) return false;
+  if (m[2] && (Number(m[2]) < 1 || Number(m[2]) > 12)) return false;
+  if (m[3] && (Number(m[3]) < 1 || Number(m[3]) > 31)) return false;
+  return true;
+};
+
+/** Everything known of one kind, newest first. */
+export function factHistory(p: Pick<Person, 'facts'>, k: FactKind): PersonFact[] {
+  return (p.facts ?? [])
+    .map((f, i) => ({ f, i }))
+    .filter((x) => x.f.k === k)
+    // Newest first; among facts dated the same (or not dated at all) the one
+    // written later is the newer, which is the only thing left to go on.
+    .sort((a, b) => whenKey(b.f.at).localeCompare(whenKey(a.f.at)) || b.i - a.i)
+    .map((x) => x.f);
+}
+
+/** What is true now: the newest thing said of that kind. */
+export function currentFact(p: Pick<Person, 'facts'>, k: FactKind): PersonFact | null {
+  return factHistory(p, k)[0] ?? null;
+}
+
+/** The kinds this person has anything written under, in FACT_KINDS order. */
+export function factKinds(p: Pick<Person, 'facts'>): FactKind[] {
+  return FACT_KINDS.filter((k) => (p.facts ?? []).some((f) => f.k === k));
+}
+
+/** Every meeting, newest first. */
+export function meetHistory(p: Pick<Person, 'log'>): PersonMeet[] {
+  return (p.log ?? [])
+    .map((m, i) => ({ m, i }))
+    .sort((a, b) => b.m.at.localeCompare(a.m.at) || b.i - a.i)
+    .map((x) => x.m);
+}
+
+/**
+ * The day there was last any contact.
+ *
+ * The log is the record now; `lastContact` is what was written before there
+ * was one, and what an older version of the app still writes. The later of
+ * the two is the truth, so neither can be lost.
+ */
+export function lastContactOf(p: Pick<Person, 'lastContact' | 'log'>): string | undefined {
+  const newest = meetHistory(p)[0]?.at;
+  const old = isDay(p.lastContact) ? p.lastContact : undefined;
+  if (!newest) return old;
+  if (!old) return newest;
+  return newest > old ? newest : old;
+}
+
 /** Days since the last contact; null when there has never been one recorded. */
-export function daysSinceContact(p: Pick<Person, 'lastContact'>, today: string = todayKey()): number | null {
-  if (!isDay(p.lastContact) || !isDay(today)) return null;
-  return Math.max(0, dayNumber(today) - dayNumber(p.lastContact));
+export function daysSinceContact(p: Pick<Person, 'lastContact' | 'log'>, today: string = todayKey()): number | null {
+  const last = lastContactOf(p);
+  if (!isDay(last) || !isDay(today)) return null;
+  return Math.max(0, dayNumber(today) - dayNumber(last));
 }
 
 /** Out of touch from here on. */
@@ -131,14 +244,14 @@ export const FADED_MIN = 0.3;
  * FADED_MIN by FADED_DAYS — a year of silence is as quiet as it gets, and
  * "contacted today" brings them straight back.
  */
-export function contactFade(p: Pick<Person, 'lastContact'>, today: string = todayKey()): number {
+export function contactFade(p: Pick<Person, 'lastContact' | 'log'>, today: string = todayKey()): number {
   const days = daysSinceContact(p, today);
   if (days === null || days <= STALE_DAYS) return 1;
   if (days >= FADED_DAYS) return FADED_MIN;
   return 1 - ((days - STALE_DAYS) / (FADED_DAYS - STALE_DAYS)) * (1 - FADED_MIN);
 }
 
-export const isOutOfTouch = (p: Pick<Person, 'lastContact'>, today: string = todayKey()): boolean => {
+export const isOutOfTouch = (p: Pick<Person, 'lastContact' | 'log'>, today: string = todayKey()): boolean => {
   const days = daysSinceContact(p, today);
   return days !== null && days >= STALE_DAYS;
 };
@@ -194,6 +307,39 @@ const isId = (v: unknown): v is string => typeof v === 'string' && v.length > 0 
 const num01 = (v: unknown, max: number): number | null =>
   typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= max ? Math.round(v * 1e4) / 1e4 : null;
 
+/** What is known about somebody: anything unrecognised is dropped, and the
+ *  oldest go first when there are too many. */
+function cleanFacts(v: unknown): PersonFact[] {
+  const out: PersonFact[] = [];
+  for (const item of Array.isArray(v) ? v : []) {
+    const o = item as Record<string, unknown> | null;
+    const k = o?.['k'];
+    if (typeof k !== 'string' || !(FACT_KINDS as readonly string[]).includes(k)) continue;
+    const value = str(o?.['v'], MAX_FACT_TEXT);
+    if (!value) continue;
+    out.push({
+      k: k as FactKind,
+      v: value,
+      ...(isWhen(o?.['at']) ? { at: o?.['at'] as string } : {}),
+    });
+  }
+  return out.slice(-MAX_FACTS);
+}
+
+/** Every meeting written down. One kind and one day; the note is optional. */
+function cleanMeets(v: unknown): PersonMeet[] {
+  const out: PersonMeet[] = [];
+  for (const item of Array.isArray(v) ? v : []) {
+    const o = item as Record<string, unknown> | null;
+    const k = o?.['k'];
+    if (typeof k !== 'string' || !(MEET_KINDS as readonly string[]).includes(k)) continue;
+    if (!isDay(o?.['at'])) continue;
+    const note = str(o?.['v'], MAX_MEET_NOTE);
+    out.push({ at: o?.['at'] as string, k: k as MeetKind, ...(note ? { v: note } : {}) });
+  }
+  return out.slice(-MAX_MEETS);
+}
+
 function cleanPerson(v: unknown): Person | null {
   const o = v as Record<string, unknown> | null;
   if (!o || !isId(o['id'])) return null;
@@ -206,6 +352,8 @@ function cleanPerson(v: unknown): Person | null {
   const closeness: Closeness = (CLOSENESS as readonly number[]).includes(c) ? (c as Closeness) : 3;
   const relation = str(o['relation'], MAX_RELATION_TEXT);
   const note = str(o['note'], MAX_PERSON_NOTE);
+  const facts = cleanFacts(o['facts']);
+  const log = cleanMeets(o['log']);
   const at = o['at'] as Record<string, unknown> | undefined;
   const a = at ? num01(at['a'], 1) : null;
   const r = at ? num01(at['r'], 1.6) : null;
@@ -219,6 +367,8 @@ function cleanPerson(v: unknown): Person | null {
     ...(isBirthday(o['birthday']) ? { birthday: o['birthday'] } : {}),
     ...(isDay(o['lastContact']) ? { lastContact: o['lastContact'] } : {}),
     ...(note ? { note } : {}),
+    ...(facts.length ? { facts } : {}),
+    ...(log.length ? { log } : {}),
     ...(isId(o['photo']) ? { photo: o['photo'] } : {}),
     ...(o['pinned'] === true ? { pinned: true } : {}),
     ...(a !== null && r !== null ? { at: { a, r } } : {}),
@@ -349,7 +499,10 @@ export function findPeople(d: RelationData, query: string): Person[] {
   return d.people.filter((p) =>
     p.name.toLowerCase().includes(q)
     || (p.relation ?? '').toLowerCase().includes(q)
-    || (p.note ?? '').toLowerCase().includes(q));
+    || (p.note ?? '').toLowerCase().includes(q)
+    // The name of a company or a town is how somebody is looked for as often
+    // as their own name is.
+    || (p.facts ?? []).some((f) => f.v.toLowerCase().includes(q)));
 }
 
 // ── Backup file ──────────────────────────────────────────────────────────────

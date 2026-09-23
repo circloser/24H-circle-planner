@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { dismissAfterVisible } from '@/lib/toast-dismiss';
-import { Download, ListFilter, Plus, Search, UserPlus, X } from 'lucide-react';
+import { Download, Plus, Search, SlidersHorizontal, UserPlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
@@ -14,9 +14,10 @@ import { track, trackFeature, trackOnce } from '@/lib/track';
 import {
   FREE_RELATION_LINKS, FREE_RELATION_PEOPLE, RELATION_GROUPS, canAddLink, canAddPerson,
   findPeople, isBirthdayThisMonth, isOutOfTouch, relationSummary,
-  type Person, type RelationGroup,
+  type MeetKind, type Person, type RelationGroup,
 } from '@/lib/relation';
 import { useRelation, RELATION_UNDO_MS } from '@/hooks/useRelation';
+import { PersonHistoryDialog } from './RelationHistory';
 import { familyToImport, personFromFamily, readLife, samepeople, syncFromLife } from '@/lib/relation-life';
 import { RELATION_LABEL } from '@/components/Life/categories';
 import { GROUP_ICON, GROUP_LABEL, groupColors } from './groups';
@@ -28,6 +29,10 @@ import { RELATION_EXPORT_EVENT } from '@/lib/relation-export';
 
 /** The filters that are not a group: the two questions the map is for. */
 type Sieve = 'stale' | 'birthday';
+
+/** Everything in the corner is drawn on the same pill of frosted paper, as on
+ *  the place map — the map itself shows through underneath. */
+const FLOAT = 'rounded-full border border-border bg-surface/92 shadow-sm backdrop-blur';
 
 /**
  * Relation — me in the middle, and the people around me.
@@ -69,6 +74,10 @@ export function RelationView() {
   const [meOpen, setMeOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [linking, setLinking] = useState<string | null>(null);
+  /** Whose whole record is open: what is known, and every meeting. */
+  const [history, setHistory] = useState<string | null>(null);
+  /** Which of the corner's lists is unfolded, if any. */
+  const [openList, setOpenList] = useState<'filter' | null>(null);
   /** Who the next new person is being added beside, if anybody. */
   const [beside, setBeside] = useState<string | null>(null);
   const [arriving, setArriving] = useState<readonly string[]>([]);
@@ -170,6 +179,112 @@ export function RelationView() {
   const empty = data.people.length === 0;
   const waiting = familyToImport(life, data);
   const searchBox = useRef<HTMLInputElement>(null);
+  const sifting = only.size + sieve.size;
+
+  /**
+   * Everything this page can do, in the one corner a thumb reaches.
+   *
+   * It used to be a row across the top: on a phone it wrapped onto three
+   * lines and pushed the map — the whole point of the page — down below the
+   * fold. Each list now unfolds sideways from its own button, so the corner
+   * stays the size of the corner, and the map keeps the window.
+   */
+  const corner = (
+    <>
+      {/* Looking for somebody by name. */}
+      <div className="flex items-center justify-end gap-1.5">
+        {searching && (
+          <span className={`${FLOAT} pointer-events-auto inline-flex items-center gap-1 px-1`}>
+            <Input ref={searchBox} autoFocus value={query} data-relation-search
+              placeholder={t('relation.search')} className="h-9 w-40 border-0 bg-transparent"
+              onChange={(e) => setQuery(e.target.value)} />
+            <button type="button" aria-label={t('common.close')} data-relation-search-close
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-accent/20"
+              onClick={() => { setQuery(''); setSearching(false); }}>
+              <X aria-hidden className="h-4 w-4" />
+            </button>
+          </span>
+        )}
+        {!searching && (
+          <button type="button" aria-label={t('relation.search')} title={t('relation.search')}
+            data-relation-search-open
+            className={`${FLOAT} pointer-events-auto grid h-11 w-11 place-items-center text-muted-foreground hover:bg-accent/20`}
+            onClick={() => { trackFeature('search'); setSearching(true); }}>
+            <Search aria-hidden className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
+      {/* Who to show: the four groups, and the two questions the map is for. */}
+      <div className="flex items-center justify-end gap-1.5">
+        {openList === 'filter' && (
+          <ul data-relation-filters
+            className={`${FLOAT} pointer-events-auto flex max-w-[min(78vw,560px)] flex-wrap items-center justify-end gap-1 p-1`}>
+            {RELATION_GROUPS.map((g) => {
+              const on = only.has(g);
+              const Icon = GROUP_ICON[g];
+              return (
+                <li key={g}>
+                  <button type="button" data-relation-filter={g} aria-pressed={on}
+                    onClick={() => setOnly((was) => {
+                      const next = new Set(was);
+                      if (!next.delete(g)) next.add(g);
+                      if (next.size) trackFeature('relation_group');
+                      return next;
+                    })}
+                    className={`inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[12px] ${
+                      on ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
+                    <Icon aria-hidden className="h-3.5 w-3.5" style={{ color: on ? undefined : colors[g] }} />
+                    {t(GROUP_LABEL[g])}
+                    <span className="tabular-nums">{summary.byGroup[g]}</span>
+                  </button>
+                </li>
+              );
+            })}
+            {(['stale', 'birthday'] as const).map((s) => {
+              const on = sieve.has(s);
+              return (
+                <li key={s}>
+                  <button type="button" data-relation-sieve={s} aria-pressed={on}
+                    onClick={() => setSieve((was) => {
+                      const next = new Set(was);
+                      if (!next.delete(s)) next.add(s);
+                      return next;
+                    })}
+                    className={`inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[12px] ${
+                      on ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
+                    {t(s === 'stale' ? 'relation.filter.stale' : 'relation.filter.birthday')}
+                    <span className="tabular-nums">
+                      {s === 'stale' ? summary.outOfTouch : summary.birthdaysThisMonth}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        <button type="button" data-relation-filter-toggle aria-expanded={openList === 'filter'}
+          aria-label={t('relation.filter.open')} title={t('relation.filter.open')}
+          className={`${FLOAT} pointer-events-auto relative grid h-11 w-11 place-items-center hover:bg-accent/20 ${
+            sifting ? 'text-foreground' : 'text-muted-foreground'}`}
+          onClick={() => setOpenList((o) => (o === 'filter' ? null : 'filter'))}>
+          <SlidersHorizontal aria-hidden className="h-4 w-4" />
+          {sifting > 0 && (
+            <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+              {sifting}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Somebody new. */}
+      <button type="button" data-relation-add aria-label={t('relation.add')} title={t('relation.add')}
+        className={`${FLOAT} pointer-events-auto grid h-11 w-11 place-items-center bg-primary text-primary-foreground hover:opacity-90`}
+        onClick={() => add()}>
+        <Plus aria-hidden className="h-4 w-4" />
+      </button>
+    </>
+  );
 
   return (
     <div className="mx-auto flex w-full max-w-[1200px] flex-1 flex-col" data-relation-view>
@@ -185,71 +300,7 @@ export function RelationView() {
       </header>
 
       <div className="contents" inert={api.readOnly || undefined}>
-        {/* Header row: add, filter, search. */}
-        <div className="mx-auto mt-4 flex w-full max-w-[1200px] flex-wrap items-center justify-center gap-1.5 px-4">
-          <Button size="sm" className="gap-1.5" data-relation-add onClick={() => add()}>
-            <Plus aria-hidden className="h-4 w-4" />
-            {t('relation.add')}
-          </Button>
-          {RELATION_GROUPS.map((g) => {
-            const on = only.has(g);
-            const Icon = GROUP_ICON[g];
-            return (
-              <button key={g} type="button" data-relation-filter={g} aria-pressed={on}
-                onClick={() => setOnly((was) => {
-                  const next = new Set(was);
-                  if (!next.delete(g)) next.add(g);
-                  if (next.size) trackFeature('relation_group');
-                  return next;
-                })}
-                className={`inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-[13px] ${
-                  on ? 'border-foreground text-foreground' : 'border-border text-muted-foreground'}`}>
-                <Icon aria-hidden className="h-3.5 w-3.5" style={{ color: colors[g] }} />
-                {t(GROUP_LABEL[g])}
-                <span className="tabular-nums text-muted-foreground">{summary.byGroup[g]}</span>
-              </button>
-            );
-          })}
-          {(['stale', 'birthday'] as const).map((s) => {
-            const on = sieve.has(s);
-            return (
-              <button key={s} type="button" data-relation-sieve={s} aria-pressed={on}
-                onClick={() => setSieve((was) => {
-                  const next = new Set(was);
-                  if (!next.delete(s)) next.add(s);
-                  return next;
-                })}
-                className={`inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-[13px] ${
-                  on ? 'border-foreground text-foreground' : 'border-border text-muted-foreground'}`}>
-                <ListFilter aria-hidden className="h-3.5 w-3.5" />
-                {t(s === 'stale' ? 'relation.filter.stale' : 'relation.filter.birthday')}
-                <span className="tabular-nums text-muted-foreground">
-                  {s === 'stale' ? summary.outOfTouch : summary.birthdaysThisMonth}
-                </span>
-              </button>
-            );
-          })}
-          {searching ? (
-            <span className="inline-flex items-center gap-1">
-              <Input ref={searchBox} autoFocus value={query} data-relation-search
-                placeholder={t('relation.search')} className="h-9 w-44"
-                onChange={(e) => setQuery(e.target.value)} />
-              <button type="button" aria-label={t('common.close')} data-relation-search-close
-                className="grid h-9 w-9 place-items-center rounded-md text-muted-foreground hover:bg-accent/20"
-                onClick={() => { setQuery(''); setSearching(false); }}>
-                <X aria-hidden className="h-4 w-4" />
-              </button>
-            </span>
-          ) : (
-            <button type="button" aria-label={t('relation.search')} title={t('relation.search')} data-relation-search-open
-              className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground hover:bg-accent/20"
-              onClick={() => setSearching(true)}>
-              <Search aria-hidden className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-
-        <div className="mt-3 flex flex-1 flex-col min-[900px]:flex-row">
+        <div className="flex flex-1 flex-col min-[900px]:flex-row">
           <div className="flex flex-1 flex-col">
             <RelationCanvas
               data={filtered}
@@ -268,6 +319,7 @@ export function RelationView() {
               }}
               onAddAt={(at) => add(at)}
               onOpenMe={() => setMeOpen(true)}
+              corner={corner}
             />
 
             {empty ? (
@@ -323,7 +375,12 @@ export function RelationView() {
             onClose={() => { setSelected(null); setLinking(null); }}
             onEdit={() => person && setTarget({ mode: 'edit', p: person })}
             onDelete={() => person && remove(person.id)}
-            onContacted={() => { if (person) { api.markContacted(person.id); track('relation_contact'); } }}
+            onContacted={(kind: MeetKind) => {
+              if (!person) return;
+              api.markContacted(person.id, kind);
+              track('relation_contact');
+            }}
+            onHistory={() => { if (person) { setHistory(person.id); track('relation_history'); } }}
             onStartLink={() => setLinking((was) => (was === selected ? null : selected))}
             onUnlink={(other) => person && api.removeLink(person.id, other)}
             onLabel={(other, label) => person && api.nameLink(person.id, other, label)}
@@ -353,6 +410,13 @@ export function RelationView() {
           setTarget(null);
         }}
         onDelete={remove} />
+      <PersonHistoryDialog
+        person={history ? data.people.find((p) => p.id === history) ?? null : null}
+        onClose={() => setHistory(null)}
+        onAddFact={(fact) => { if (history) { api.addFact(history, fact); track('relation_fact'); } }}
+        onRemoveFact={(fact) => history && api.removeFact(history, fact)}
+        onAddMeet={(meet) => { if (history) { api.addMeet(history, meet); track('relation_meet'); } }}
+        onRemoveMeet={(meet) => history && api.removeMeet(history, meet)} />
       <MeDialog open={meOpen} me={data.me} pro={pro} onClose={() => setMeOpen(false)}
         onSave={(me) => { api.setMe(me); setMeOpen(false); }} />
       <RelationExportDialog open={exporting} onOpenChange={setExporting} api={api} colors={colors} />

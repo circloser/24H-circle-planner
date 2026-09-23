@@ -1,14 +1,16 @@
-import { useState } from 'react';
-import { Cake, Check, Link2, Link2Off, Pencil, Pin, Trash2, UserPlus, X } from 'lucide-react';
+import { Fragment, useState } from 'react';
+import { Cake, History, Link2, Link2Off, Pencil, Pin, Trash2, UserPlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/hooks/usePreferences';
 import {
-  CLOSENESS, MAX_LINK_LABEL, daysSinceContact, daysToBirthday, turningAge,
-  type Closeness, type Person, type RelationData, type RelationGroup, type RelationLink,
+  CLOSENESS, MAX_LINK_LABEL, MEET_KINDS, currentFact, daysSinceContact, daysToBirthday, factHistory,
+  factKinds, meetHistory, turningAge,
+  type Closeness, type MeetKind, type Person, type RelationData, type RelationGroup, type RelationLink,
 } from '@/lib/relation';
 import { placesWith } from '@/lib/relation-place';
 import { GROUP_ICON, GROUP_LABEL } from './groups';
+import { FACT_LABEL, MEET_ICON, MEET_LABEL } from './kinds';
 
 /** One line drawn to another person, and what to call it.
  *
@@ -86,8 +88,8 @@ function LinkRow({ link, other, onPick, onUnlink, onLabel, onHold }: {
  * same either way.
  */
 export function RelationPanel({
-  person, data, colors, today, linking, onClose, onEdit, onDelete, onContacted, onStartLink, onUnlink,
-  onPick, onLabel, onHold, onAddBeside,
+  person, data, colors, today, linking, onClose, onEdit, onDelete, onContacted, onHistory, onStartLink,
+  onUnlink, onPick, onLabel, onHold, onAddBeside,
 }: {
   person: Person | null;
   data: RelationData;
@@ -99,7 +101,10 @@ export function RelationPanel({
   onEdit: () => void;
   /** Take them off the map. It can be taken back (the undo on the toast). */
   onDelete: () => void;
-  onContacted: () => void;
+  /** It happened today: seen, spoken to, or a wedding. */
+  onContacted: (kind: MeetKind) => void;
+  /** Everything written down about them, and every time there was contact. */
+  onHistory: () => void;
   onStartLink: () => void;
   onUnlink: (otherId: string) => void;
   onPick: (id: string) => void;
@@ -115,6 +120,9 @@ export function RelationPanel({
   if (!person) return null;
 
   const silent = daysSinceContact(person, today);
+  const log = meetHistory(person);
+  const last = log[0] ?? null;
+  const known = factKinds(person);
   const toBirthday = daysToBirthday(person, today);
   const turns = turningAge(person, today);
   const Icon = GROUP_ICON[person.group];
@@ -165,16 +173,67 @@ export function RelationPanel({
           {silent === null
             ? t('relation.neverRecorded')
             : silent === 0 ? t('relation.contactedToday') : t('relation.daysSince', { n: String(silent) })}
+          {last && silent !== null ? ` · ${t(MEET_LABEL[last.k])}` : ''}
         </dd>
+        {/* What is known about them: what is true now, and how many times it
+            has been something else before. */}
+        {known.map((k) => {
+          const now = currentFact(person, k);
+          const past = factHistory(person, k).length - 1;
+          return (
+            <Fragment key={k}>
+              <dt className="text-muted-foreground">{t(FACT_LABEL[k])}</dt>
+              <dd className="text-foreground" data-relation-panel-fact={k}>
+                {now?.v}
+                {now?.at ? <span className="ml-1.5 tabular-nums text-[12px] text-muted-foreground">{now.at}</span> : null}
+                {past > 0 ? <span className="ml-1.5 text-[12px] text-muted-foreground">{t('relation.fact.before', { n: String(past) })}</span> : null}
+              </dd>
+            </Fragment>
+          );
+        })}
       </dl>
 
       {person.note && <p className="whitespace-pre-wrap text-sm text-foreground">{person.note}</p>}
 
-      <div className="flex flex-wrap gap-2">
-        <Button size="sm" className="gap-1.5" data-relation-contacted onClick={onContacted}>
-          <Check aria-hidden className="h-4 w-4" />
-          {t('relation.contactedToday')}
+      {/* The three ways there is ever any contact. One press writes today —
+          the date and the kind — rather than moving a single "last seen" on,
+          so a year of them is a year that can be read back. */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-[13px] text-muted-foreground">{t('relation.meet.today')}</span>
+        {MEET_KINDS.map((k) => {
+          const Icon = MEET_ICON[k];
+          return (
+            <Button key={k} size="sm" variant={k === 'talk' ? 'default' : 'outline'} className="gap-1.5"
+              data-relation-meet={k} data-relation-contacted={k === 'talk' ? '' : undefined}
+              onClick={() => onContacted(k)}>
+              <Icon aria-hidden className="h-4 w-4" />
+              {t(MEET_LABEL[k])}
+            </Button>
+          );
+        })}
+      </div>
+
+      {/* The last few of them, and the way in to all of it. */}
+      <div className="flex flex-col gap-1.5">
+        {log.length > 0 && (
+          <ul className="flex flex-col gap-0.5 text-[13px]" data-relation-panel-log>
+            {log.slice(0, 3).map((meet, i) => (
+              <li key={`${meet.at}-${meet.k}-${i}`} className="flex items-center gap-2">
+                <span className="shrink-0 tabular-nums text-muted-foreground">{meet.at}</span>
+                <span className="shrink-0 text-foreground">{t(MEET_LABEL[meet.k])}</span>
+                <span className="min-w-0 flex-1 truncate text-muted-foreground">{meet.v}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <Button size="sm" variant="outline" className="w-fit gap-1.5" data-relation-history onClick={onHistory}>
+          <History aria-hidden className="h-4 w-4" />
+          {t('relation.history.open')}
+          {log.length > 3 ? <span className="tabular-nums text-muted-foreground">{log.length}</span> : null}
         </Button>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
         <Button size="sm" variant="outline" className="gap-1.5" data-relation-edit onClick={onEdit}>
           <Pencil aria-hidden className="h-4 w-4" />
           {t('common.edit')}

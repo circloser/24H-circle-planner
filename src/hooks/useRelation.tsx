@@ -5,8 +5,10 @@ import { persistLocal } from '@/lib/persistence';
 import { deletePhoto } from '@/lib/calendar-photos';
 import { todayKey } from '@/lib/calendar-grid';
 import {
-  RELATION_KEY, decodeRelation, emptyRelation, encodeRelation, isNewerRelation, relationPhotoIds,
-  type Closeness, type Person, type RelationData, type RelationLink,
+  MAX_FACTS, MAX_MEETS, RELATION_KEY, decodeRelation, emptyRelation, encodeRelation, isNewerRelation,
+  meetHistory, relationPhotoIds,
+  type Closeness, type MeetKind, type Person, type PersonFact, type PersonMeet, type RelationData,
+  type RelationLink,
 } from '@/lib/relation';
 
 export const relationCodec: PersistedCodec<RelationData> = {
@@ -94,10 +96,65 @@ export function useRelation() {
     }));
   }, [edit]);
 
-  /** One tap: it was today. The faded node comes straight back. */
-  const markContacted = useCallback((id: string, today: string = todayKey()) => {
-    edit((d) => ({ ...d, people: d.people.map((p) => (p.id === id ? { ...p, lastContact: today } : p)) }));
+  /** Change one person, leaving everyone else exactly as they were. */
+  const onPerson = useCallback((id: string, fn: (p: Person) => Person) => {
+    edit((d) => ({ ...d, people: d.people.map((p) => (p.id === id ? fn(p) : p)) }));
   }, [edit]);
+
+  /**
+   * One tap: it happened today.
+   *
+   * It writes a line in the log — seen, spoken to, or a wedding — and keeps
+   * `lastContact` in step for anything still reading that. Pressing the same
+   * button twice in a day says the same thing twice, so the second press is
+   * quietly the same as the first.
+   */
+  const markContacted = useCallback((id: string, kind: MeetKind = 'talk', today: string = todayKey()) => {
+    onPerson(id, (p) => {
+      const already = (p.log ?? []).some((m) => m.at === today && m.k === kind);
+      return {
+        ...p,
+        lastContact: today,
+        ...(already ? {} : { log: [...(p.log ?? []), { at: today, k: kind }].slice(-MAX_MEETS) }),
+      };
+    });
+  }, [onPerson]);
+
+  /** Something new that is true about them. The one before it stays. */
+  const addFact = useCallback((id: string, fact: PersonFact) => {
+    onPerson(id, (p) => ({ ...p, facts: [...(p.facts ?? []), fact].slice(-MAX_FACTS) }));
+  }, [onPerson]);
+
+  /** Take one line of what is known off the record (it was wrong, or it was
+   *  never anybody's business). */
+  const removeFact = useCallback((id: string, fact: PersonFact) => {
+    onPerson(id, (p) => {
+      const at = (p.facts ?? []).indexOf(fact);
+      if (at < 0) return p;
+      const facts = (p.facts ?? []).filter((_, i) => i !== at);
+      return facts.length ? { ...p, facts } : stripFacts(p);
+    });
+  }, [onPerson]);
+
+  /** A meeting, with the day it happened and what it was. */
+  const addMeet = useCallback((id: string, meet: PersonMeet) => {
+    onPerson(id, (p) => {
+      const log = [...(p.log ?? []), meet].slice(-MAX_MEETS);
+      // The newest day in the log is the last contact, whichever order the
+      // lines were written in.
+      const newest = meetHistory({ log })[0]?.at;
+      return { ...p, ...(newest ? { lastContact: newest } : {}), log };
+    });
+  }, [onPerson]);
+
+  const removeMeet = useCallback((id: string, meet: PersonMeet) => {
+    onPerson(id, (p) => {
+      const at = (p.log ?? []).indexOf(meet);
+      if (at < 0) return p;
+      const log = (p.log ?? []).filter((_, i) => i !== at);
+      return log.length ? { ...p, log } : stripLog(p);
+    });
+  }, [onPerson]);
 
   /** Remove them, and hand back what it takes to put them back where they were. */
   const removePerson = useCallback((id: string): { person: Person; at: number; links: RelationLink[] } | null => {
@@ -183,7 +240,8 @@ export function useRelation() {
 
   return {
     data, readOnly, generation, setMe, addPerson, addPeople, updatePerson, placePerson,
-    markContacted, removePerson, restorePerson, addLink, nameLink, holdLink, removeLink, replace,
+    markContacted, addFact, removeFact, addMeet, removeMeet,
+    removePerson, restorePerson, addLink, nameLink, holdLink, removeLink, replace,
   };
 }
 
@@ -191,6 +249,20 @@ export function useRelation() {
 function stripAt(p: Person): Person {
   const rest = { ...p };
   delete rest.at;
+  return rest;
+}
+
+/** An empty list is not written at all, so a record that has been emptied
+ *  again is byte for byte the record of somebody it was never written for. */
+function stripFacts(p: Person): Person {
+  const rest = { ...p };
+  delete rest.facts;
+  return rest;
+}
+
+function stripLog(p: Person): Person {
+  const rest = { ...p };
+  delete rest.log;
   return rest;
 }
 

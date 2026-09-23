@@ -80,6 +80,13 @@ export async function run() {
     }
     await wait(200);
   };
+  /** Unfold the corner's filter list, if it is not open already. */
+  const sift = async () => {
+    if ((await count('[data-relation-filters]')) === 0) {
+      await page.locator('[data-relation-filter-toggle]').click();
+      await wait(300);
+    }
+  };
   /** Pick someone the way a keyboard does: the list under the map is hidden
    *  from sight on purpose, so it is reached by focus, not by a mouse. */
   const choose = async (id) => {
@@ -177,6 +184,59 @@ export async function run() {
     pass('"contacted today" writes today, and the silence is over',
       (await stored()).people.find((p) => p.id === 'p1')?.lastContact === key
       && !/오래 연락 안 함/.test(await page.locator('[data-relation-summary]').innerText()));
+    pass('…and it is written as a line of its own, not as one date moved on',
+      JSON.stringify((await stored()).people.find((p) => p.id === 'p1')?.log) === JSON.stringify([{ at: key, k: 'talk' }]),
+      JSON.stringify((await stored()).people.find((p) => p.id === 'p1')?.log));
+    // The same press twice in a day says the same thing twice.
+    await page.locator('[data-relation-contacted]').click();
+    await wait(400);
+    pass('…and saying it again on the same day says it once',
+      ((await stored()).people.find((p) => p.id === 'p1')?.log ?? []).length === 1);
+    await page.locator('[data-relation-meet="event"]').click();
+    await wait(400);
+    pass('a wedding is a different kind of meeting from a phone call',
+      ((await stored()).people.find((p) => p.id === 'p1')?.log ?? []).map((m) => m.k).join() === 'talk,event');
+
+    // 6c. Everything else known about them, each kind keeping its own past.
+    await page.locator('[data-relation-history]').click();
+    await wait(500);
+    pass('the card opens onto the whole record', (await count('[data-relation-history-dialog]')) === 1);
+    const writeFact = async (kind, value, when) => {
+      await page.locator(`[data-relation-fact-input="${kind}"]`).fill(value);
+      if (when) await page.locator(`[data-relation-fact-when="${kind}"]`).fill(when);
+      await page.locator(`[data-relation-fact-add="${kind}"]`).click();
+      await wait(350);
+    };
+    await writeFact('work', '첫 직장', '2012');
+    await writeFact('work', '지금 직장', '2019-04');
+    await writeFact('contact', '010-0000-0000');
+    const facts = () => (stored()).then((d) => d.people.find((p) => p.id === 'p1')?.facts ?? []);
+    pass('a new job does not rub out the one before it',
+      JSON.stringify(await facts()) === JSON.stringify([
+        { k: 'work', v: '첫 직장', at: '2012' },
+        { k: 'work', v: '지금 직장', at: '2019-04' },
+        { k: 'contact', v: '010-0000-0000' },
+      ]), JSON.stringify(await facts()));
+    pass('…and the newest is the one at the top of the list',
+      (await page.locator('[data-relation-fact="work"]').first().innerText()).includes('지금 직장'));
+    // A meeting with the day it happened, written by hand rather than today.
+    await page.locator('[data-relation-meet-kind="meet"]').click();
+    await page.locator('[data-relation-meet-date]').fill('2026-03-01');
+    await page.locator('[data-relation-meet-note]').fill('점심');
+    await page.locator('[data-relation-meet-add]').click();
+    await wait(400);
+    const log = () => (stored()).then((d) => d.people.find((p) => p.id === 'p1')?.log ?? []);
+    pass('a meeting is written with its day, its kind and a line about it',
+      (await log()).some((m) => m.at === '2026-03-01' && m.k === 'meet' && m.v === '점심'),
+      JSON.stringify(await log()));
+    pass('…and the last contact is still the newest of them, not the last written',
+      (await stored()).people.find((p) => p.id === 'p1')?.lastContact === key);
+    await page.keyboard.press('Escape');
+    await wait(400);
+    pass('the card says what is true now, and that there was something before',
+      /지금 직장/.test(await page.locator('[data-relation-panel-fact="work"]').innerText())
+      && /이전/.test(await page.locator('[data-relation-panel-fact="work"]').innerText()),
+      await page.locator('[data-relation-panel-fact="work"]').innerText());
 
     // 7. A line between two people.
     await page.locator('[data-relation-link]').click();
@@ -207,12 +267,25 @@ export async function run() {
     await wait(400);
     pass('…and taken away again', (await stored()).links.length === 0);
 
-    // 8. Filters and search narrow the map and the list alike.
+    // 8. Filters and search narrow the map and the list alike — from the one
+    // corner a thumb reaches, rather than from a row above the map.
+    const corner = await page.locator('[data-relation-corner]').boundingBox();
+    const canvasBox = await page.locator('[data-relation-canvas]').boundingBox();
+    pass('every control sits in the bottom-right corner of the map',
+      corner.x + corner.width > canvasBox.x + canvasBox.width - 24
+      && corner.y + corner.height > canvasBox.y + canvasBox.height - 24
+      && corner.x > canvasBox.x + canvasBox.width / 2,
+      JSON.stringify({ corner, canvasBox }));
+    pass('…and nothing of the page is drawn above the map',
+      (await page.locator('[data-relation-add]').boundingBox()).y > canvasBox.y + canvasBox.height / 2);
+    await sift();
     await page.locator('[data-relation-filter="family"]').click();
     await wait(400);
     pass('a group filter leaves only that group', (await count('[data-relation-list-item]')) === 1
       && (await count('[data-relation-list-item="p2"]')) === 1);
     await page.locator('[data-relation-filter="family"]').click();
+    await wait(300);
+    await page.locator('[data-relation-filter-toggle]').click();
     await wait(300);
     await page.locator('[data-relation-search-open]').click();
     await page.locator('[data-relation-search]').fill('나래');
