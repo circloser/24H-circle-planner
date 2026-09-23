@@ -192,14 +192,19 @@ export const cool = (alpha: number): number => Math.max(0, alpha - alpha * COOLI
  *  enough to keep them in one patch of their group, too little to squash it. */
 export const KIN_GRIP = 0.35;
 
+/** Past this many, a subgroup's pull is shared by its first members only —
+ *  every pair of sixty people is 1,770 springs a frame for one shape. */
+export const KIN_MAX = 24;
+
 /**
  * Everything that pulls on anything: the ties that were drawn, and the looser
  * hold of a subgroup on its own people.
  *
- * A subgroup is held as a chain through its members in id order — one spring
- * each, not one for every pair, so a subgroup of forty is forty springs and
- * not seven hundred and eighty — and it is the same chain every time, so the
- * map still settles into the same shape for the same record.
+ * A subgroup joins every one of its people to every other, as the map draws
+ * it — and each of those springs is lighter the more of them there are, so a
+ * subgroup of ten holds together about as firmly as a pair does rather than
+ * collapsing into a knot. Ids are taken in order, so the same record settles
+ * into the same shape every time.
  */
 export function tiesOf(
   links: readonly { source: string; target: string; closeness?: number }[],
@@ -220,12 +225,15 @@ export function tiesOf(
     const key = `${p.group}|${p.sub}`;
     kin.set(key, [...(kin.get(key) ?? []), p.id]);
   }
-  for (const ids of kin.values()) {
-    ids.sort();
-    for (let i = 1; i < ids.length; i++) {
-      const a = world.get(ids[i - 1])!;
-      const b = world.get(ids[i])!;
-      out.push({ a: a.id, b: b.id, rest: restFor(a, b, 2), grip: KIN_GRIP });
+  for (const all of kin.values()) {
+    const ids = all.sort().slice(0, KIN_MAX);
+    const grip = KIN_GRIP * (2 / ids.length);
+    for (let i = 0; i < ids.length; i++) {
+      for (let j = i + 1; j < ids.length; j++) {
+        const a = world.get(ids[i])!;
+        const b = world.get(ids[j])!;
+        out.push({ a: a.id, b: b.id, rest: restFor(a, b, 2), grip });
+      }
     }
   }
   return out;

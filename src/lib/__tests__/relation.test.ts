@@ -160,12 +160,13 @@ describe('the stored envelope', () => {
 
   it('refuses anything that is not a record of ours', () => {
     expect(decodeRelation(null)).toBeNull();
-    expect(decodeRelation({ version: 3 })).toBeNull();
+    expect(decodeRelation({ version: 4 })).toBeNull();
     expect(decodeRelation('people')).toBeNull();
   });
 
   it('notices a record from a newer version of the app', () => {
-    expect(isNewerRelation({ version: 3 })).toBe(true);
+    expect(isNewerRelation({ version: 4 })).toBe(true);
+    expect(isNewerRelation({ version: 3 })).toBe(false);
     expect(isNewerRelation({ version: 2 })).toBe(false);
     expect(isNewerRelation({ version: 1 })).toBe(false);
     expect(isNewerRelation(null)).toBe(false);
@@ -181,7 +182,9 @@ describe('the stored envelope', () => {
         { id: 'c', name: 'c', group: 'friend', closeness: 3 },
       ],
     });
-    expect(out?.version).toBe(2);
+    // Straight to the current version: 1 → 2 moves the rungs, 2 → 3 moves
+    // nothing (it only marks a record an older app must not save over).
+    expect(out?.version).toBe(3);
     expect(out?.people.map((x) => x.closeness)).toEqual([2, 3, 4]);
     // And a record already at version 2 keeps the five rungs as they are.
     const kept = decodeRelation({

@@ -25,7 +25,7 @@ export type PersonTarget =
 
 /** A picture (Pro). Stored on this device the moment it is picked; one that is
  *  dropped again, or left behind by a cancelled dialog, is deleted. */
-function PhotoField({ value, original, pro, onChange }: {
+export function PhotoField({ value, original, pro, onChange }: {
   value: string | undefined;
   original: string | undefined;
   pro: boolean;
@@ -290,54 +290,6 @@ export function PersonDialog({ target, pro, syncing, subgroups = [], onClose, on
             <Button type="submit" disabled={!valid} data-relation-save className="bg-primary text-primary-foreground">
               {t('common.save')}
             </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-/** The middle of the map: my own name and face. */
-export function MeDialog({ open, me, pro, onClose, onSave }: {
-  open: boolean;
-  me: { name?: string; photo?: string };
-  pro: boolean;
-  onClose: () => void;
-  onSave: (me: { name?: string; photo?: string }) => void;
-}) {
-  const { t } = useTranslation();
-  const [name, setName] = useState('');
-  const [photo, setPhoto] = useState<string | undefined>();
-  useEffect(() => {
-    if (!open) return;
-    /* eslint-disable react-hooks/set-state-in-effect */
-    setName(me.name ?? '');
-    setPhoto(me.photo);
-    /* eslint-enable react-hooks/set-state-in-effect */
-  }, [open, me]);
-
-  return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-sm" data-relation-me-dialog>
-        <DialogHeader>
-          <DialogTitle>{t('relation.me.name')}</DialogTitle>
-          <DialogDescription className="sr-only">{t('relation.subtitle')}</DialogDescription>
-        </DialogHeader>
-        <form className="flex flex-col gap-4" onSubmit={(e) => {
-          e.preventDefault();
-          onSave({ ...(name.trim() ? { name: name.trim() } : {}), ...(photo ? { photo } : {}) });
-        }}>
-          <label className="flex flex-col gap-1.5">
-            <span className={field}>{t('relation.me.name')}</span>
-            <Input data-relation-me-name value={name} maxLength={MAX_PERSON_NAME} onChange={(e) => setName(e.target.value)} />
-          </label>
-          <div className="flex flex-col gap-1.5">
-            <span className={field}>{t('relation.field.photo')}</span>
-            <PhotoField value={photo} original={me.photo} pro={pro} onChange={setPhoto} />
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onClose}>{t('common.cancel')}</Button>
-            <Button type="submit" className="bg-primary text-primary-foreground">{t('common.save')}</Button>
           </div>
         </form>
       </DialogContent>

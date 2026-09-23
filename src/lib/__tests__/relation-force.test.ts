@@ -146,19 +146,19 @@ describe('a subgroup holds its people loosely together', () => {
     { id: 'p4', group: 'work', sub: '대학' }, { id: 'p5', group: 'friend', sub: '동호회' },
   ];
 
-  it('as a chain through its members, not a spring for every pair', () => {
+  it('joins every pair in it, each more lightly the bigger it is', () => {
     const kin = tiesOf([], people, world);
-    // 대학 among friends: three people, two springs. Nobody else is chained —
+    // 대학 among friends: three people, three springs. Nobody else is joined —
     // not the one in no subgroup, not the one alone in theirs, and not the
     // "대학" at work, which is another subgroup that happens to share a name.
-    expect(kin.map((k) => `${k.a}-${k.b}`)).toEqual(['p0-p1', 'p1-p2']);
-    expect(kin.every((k) => k.grip === KIN_GRIP)).toBe(true);
+    expect(kin.map((k) => `${k.a}-${k.b}`)).toEqual(['p0-p1', 'p0-p2', 'p1-p2']);
+    expect(kin.every((k) => Math.abs((k.grip ?? 0) - KIN_GRIP * (2 / 3)) < 1e-9)).toBe(true);
   });
 
   it('keeps the ties that were drawn, and adds to them', () => {
     const all = tiesOf([{ source: 'p3', target: 'p5', closeness: 5 }], people, world);
     expect(all[0]).toMatchObject({ a: 'p3', b: 'p5', grip: gripFor(5) });
-    expect(all).toHaveLength(3);
+    expect(all).toHaveLength(4);
   });
 
   it('pulls them nearer than they would otherwise settle', () => {

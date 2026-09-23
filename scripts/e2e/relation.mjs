@@ -96,7 +96,7 @@ export async function run() {
   };
   const seed = (people, links = []) => page.evaluate(([k, d]) => localStorage.setItem(k, d), [
     RELATION_KEY,
-    JSON.stringify({ version: 2, me: { name: '김하루' }, people, links, updatedAt: '' }),
+    JSON.stringify({ version: 3, me: { name: '김하루' }, people, links, updatedAt: '' }),
   ]);
   try {
     // 1. Its own button in the header, beside the life line's.
@@ -432,6 +432,97 @@ export async function run() {
     await wait(700);
     pass('…and the map is as it was once they are taken off it',
       (await stored()).people.length === 3, JSON.stringify((await stored()).people.map((p) => p.name)));
+    // 9d. The corner: one column, hard against the window's right edge, and
+    // the + that adds somebody can actually be seen.
+    await closeAll();
+    const cornerAt = await page.locator('[data-relation-corner]').boundingBox();
+    const winW = await page.evaluate(() => window.innerWidth);
+    pass('the corner sits against the right edge of the window',
+      winW - (cornerAt.x + cornerAt.width) <= 16, `${winW} vs ${cornerAt.x + cornerAt.width}`);
+    const widths = await page.locator('[data-relation-corner] > *').evaluateAll((els) =>
+      els.map((el) => Math.round(el.getBoundingClientRect().right)));
+    pass('…and everything in it lines up on that edge', new Set(widths).size === 1, JSON.stringify(widths));
+    pass('the add button shows its +, not a blank circle', await page.locator('[data-relation-add]').evaluate((el) => {
+      const s = getComputedStyle(el);
+      const icon = getComputedStyle(el.querySelector('svg'));
+      return s.backgroundColor !== icon.color && s.backgroundColor !== 'rgba(0, 0, 0, 0)';
+    }));
+
+    // 9e. Me, in the middle: a record of my own — a résumé, the MBTI, a
+    // hundred questions and a mood, each kept with its day.
+    await page.locator('[data-relation-me-open]').focus();
+    await page.keyboard.press('Enter');
+    await wait(500);
+    pass('pressing me opens my own record', (await count('[data-relation-me-dialog]')) === 1
+      && (await count('[data-me-tab]')) === 5);
+    const meNow = () => stored().then((d) => d.me ?? {});
+    await page.locator('[data-me-tab="resume"]').click();
+    await page.locator('[data-me-resume-kind="career"]').click();
+    await page.locator('[data-me-resume-input]').fill('첫 회사 · 기획');
+    await page.locator('[data-me-resume-from]').fill('2010-03');
+    await page.locator('[data-me-resume-to]').fill('2014-12');
+    await page.locator('[data-me-resume-add]').click();
+    await page.locator('[data-me-resume-input]').fill('지금 회사');
+    await page.locator('[data-me-resume-from]').fill('2015-01');
+    await page.locator('[data-me-resume-add]').click();
+    await wait(400);
+    pass('a résumé is written a line at a time, with when',
+      JSON.stringify((await meNow()).resume) === JSON.stringify([
+        { k: 'career', v: '첫 회사 · 기획', from: '2010-03', to: '2014-12' },
+        { k: 'career', v: '지금 회사', from: '2015-01' },
+      ]), JSON.stringify((await meNow()).resume));
+    pass('…and the one still going is listed first',
+      (await page.locator('[data-me-resume-line="career"]').first().innerText()).includes('지금 회사'));
+    await page.locator('[data-me-tab="mbti"]').click();
+    for (const letter of ['I', 'N', 'F', 'P']) await page.locator(`[data-me-mbti-letter="${letter}"]`).click();
+    await page.locator('[data-me-mbti-save]').click();
+    await wait(400);
+    pass('the MBTI is recorded with the day it was taken',
+      JSON.stringify((await meNow()).mbti) === JSON.stringify([{ v: 'INFP', at: key }]), JSON.stringify((await meNow()).mbti));
+    await page.locator('[data-me-tab="qa"]').click();
+    pass('a hundred questions, ten at a time',
+      (await count('[data-me-question]')) === 10 && /0\/100/.test(await page.locator('[data-me-qa-progress]').innerText()));
+    await page.locator('[data-me-answer="1"]').fill('하루');
+    await page.locator('[data-me-answer="2"]').click();
+    await page.locator('[data-me-answer="1"]').fill('하루, 가끔은 루');
+    await page.locator('[data-me-answer="2"]').click();
+    await wait(400);
+    const a1 = (await meNow()).answers?.q001;
+    pass('an answer is kept with its day — and rewritten the same day, it stays one answer',
+      JSON.stringify(a1) === JSON.stringify([{ v: '하루, 가끔은 루', at: key }]), JSON.stringify(a1));
+    // An answer from an earlier day is kept when a new one is written.
+    await page.evaluate(([k]) => {
+      const d = JSON.parse(localStorage.getItem(k));
+      d.me.answers.q001 = [{ v: '예전 답', at: '2020-01-01' }];
+      localStorage.setItem(k, JSON.stringify(d));
+    }, [RELATION_KEY]);
+    await openRelation();
+    await page.locator('[data-relation-me-open]').focus();
+    await page.keyboard.press('Enter');
+    await wait(400);
+    await page.locator('[data-me-tab="qa"]').click();
+    await page.locator('[data-me-answer="1"]').fill('요즘 답');
+    await page.locator('[data-me-answer="2"]').click();
+    await wait(400);
+    pass('…and a new day\'s answer goes on top of the old one, which stays',
+      JSON.stringify((await meNow()).answers?.q001) === JSON.stringify([{ v: '예전 답', at: '2020-01-01' }, { v: '요즘 답', at: key }])
+      && (await count('[data-me-answer-past="1"]')) === 1, JSON.stringify((await meNow()).answers?.q001));
+    await page.locator('[data-me-tab="mood"]').click();
+    await page.locator('[data-me-mood-level="4"]').click();
+    await page.locator('[data-me-mood-note]').fill('산책');
+    await page.locator('[data-me-mood-add]').click();
+    await page.locator('[data-me-mood-level="2"]').click();
+    await page.locator('[data-me-mood-date]').fill('2026-01-15');
+    await page.locator('[data-me-mood-add]').click();
+    await wait(400);
+    pass('a mood is recorded on a five-point scale, with its day and a line',
+      JSON.stringify((await meNow()).moods) === JSON.stringify([{ at: key, v: 4, note: '산책' }, { at: '2026-01-15', v: 2 }]),
+      JSON.stringify((await meNow()).moods));
+    const moodRows = await page.locator('[data-me-mood-row]').evaluateAll((els) => els.map((el) => el.dataset.meMoodRow));
+    pass('…listed newest first, with the run of them drawn',
+      moodRows[0] === key && moodRows[1] === '2026-01-15' && (await count('[data-me-mood-chart]')) === 1, JSON.stringify(moodRows));
+    await closeAll();
+
     // 9c. The map can be taken in and out without a wheel.
     await closeAll();
     const mapZoom = () => page.locator('[data-relation-zoom]').getAttribute('data-relation-zoom').then(Number);
@@ -467,9 +558,13 @@ export async function run() {
       Number.isFinite(fresh) && fresh >= 0, String(fresh));
     pass('…and it settles, rather than churning for ever', await cooled(), String(await heat()));
     const floats = await page.evaluate(async () => {
+      // The middle of the map, where the people are — the map is the whole
+      // window now, and its top-left corner is mostly empty paper.
       const shot = () => {
         const c = document.querySelector('[data-relation-surface]');
-        return c.getContext('2d').getImageData(0, 0, Math.min(400, c.width), Math.min(400, c.height)).data.join();
+        const w = Math.min(600, c.width);
+        const h = Math.min(600, c.height);
+        return c.getContext('2d').getImageData((c.width - w) / 2, (c.height - h) / 2, w, h).data.join();
       };
       const first = shot();
       await new Promise((r) => setTimeout(r, 900));

@@ -24,6 +24,14 @@ const HOLD_MS = 550;
 /** How much of the map's own drag the far edge lags behind by. The middle is
  *  under the finger exactly; everything else is on the end of something. */
 const TRAIL = 0.85;
+/**
+ * The spring everybody is towed on while I am dragged. Softer than the one a
+ * single person is carried on: when the whole map comes along behind me, the
+ * lag is the point — the far ones swing in after the near ones, overshoot a
+ * little, and settle — and a stiff spring made it look like a plain pan.
+ */
+const WAKE_STIFFNESS = 55;
+const WAKE_DAMPING = 2 * Math.sqrt(WAKE_STIFFNESS) * 0.55;
 /** The line is drawn, then the circle appears. */
 const DRAW_MS = 300;
 const FADE_MS = 200;
@@ -47,8 +55,6 @@ export interface RelationCanvasProps {
   /** Waiting to be linked to whoever is tapped next. */
   linking?: string | null;
   meLabel: string;
-  /** What each group is called, written once on its own boundary. */
-  groupLabel: Record<RelationGroup, string>;
   /** The words on the two buttons that take the map in and out. */
   zoomLabels: { in: string; out: string };
   /** Whatever the page wants in the bottom-right corner, above the zoom. */
@@ -100,7 +106,7 @@ function paperOf(el: HTMLElement): string {
  */
 export function RelationCanvas({
   data, colors, today, selected, onSelect, onPlace, onAddAt, onOpenMe, appearing = [], linking, meLabel,
-  groupLabel, zoomLabels, corner,
+  zoomLabels, corner,
 }: RelationCanvasProps) {
   const box = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -341,61 +347,62 @@ export function RelationCanvas({
     };
 
     /**
-     * A group is a place on the map: the shape drawn round wherever its people
-     * have ended up, rather than a band of the turn they were assigned. Drawn
-     * behind everybody, and named once. A group inside it — the friends from
-     * university, the old job — is a fainter shape inside that one, named in
-     * smaller letters.
+     * Only a group inside a group — the friends from university, the old job —
+     * is drawn as a place of its own: a shape round its people, and its name.
+     *
+     * The four big groups used to be drawn the same way, and a boundary round
+     * "family" or "friends" is most of the map; the shapes were so large they
+     * said nothing. The big groups are told by colour alone now, and the
+     * outlines are kept for the small circles a person actually belongs to.
+     * The people in one are all joined to each other, faintly — being in the
+     * same subgroup IS a tie, between every one of them.
      */
     for (const group of new Set(data.people.map((p) => p.group))) {
       const members = data.people.filter((p) => p.group === group);
-      const spots = spotsOf(members);
-      if (!spots.length) continue;
-      const shape = boundaryOf(spots, 14);
-      if (shape.length >= 3) {
-        drawBoundary(ctx, shape, 26);
-        ctx.fillStyle = colors[group];
-        ctx.globalAlpha = 0.06;
-        ctx.fill();
+      for (const sub of new Set(members.flatMap((p) => (p.sub ? [p.sub] : [])))) {
+        const kin = members.filter((p) => p.sub === sub);
+        const lit = !selected || kin.some((p) => p.id === selected);
         ctx.strokeStyle = colors[group];
-        ctx.globalAlpha = 0.24;
+        ctx.globalAlpha = 0.28 * (lit ? 1 : 0.35);
         ctx.lineWidth = 1;
-        ctx.setLineDash([3, 5]);
-        ctx.stroke();
-        ctx.setLineDash([]);
+        for (let i = 0; i < kin.length; i++) {
+          for (let j = i + 1; j < kin.length; j++) {
+            const a = where.get(kin[i].id);
+            const b = where.get(kin[j].id);
+            if (!a || !b) continue;
+            const pa = follow(a);
+            const pb = follow(b);
+            ctx.beginPath();
+            ctx.moveTo(pa.x, pa.y);
+            ctx.lineTo(pb.x, pb.y);
+            ctx.stroke();
+          }
+        }
       }
 
       for (const sub of new Set(members.flatMap((p) => (p.sub ? [p.sub] : [])))) {
         const inner = spotsOf(members.filter((p) => p.sub === sub));
         if (inner.length < 2) continue;
-        const ring = boundaryOf(inner, 7);
+        const ring = boundaryOf(inner, 10);
         if (ring.length < 3) continue;
-        drawBoundary(ctx, ring, 16);
+        drawBoundary(ctx, ring, 20);
         ctx.fillStyle = colors[group];
-        ctx.globalAlpha = 0.05;
+        ctx.globalAlpha = 0.07;
         ctx.fill();
         ctx.strokeStyle = colors[group];
-        ctx.globalAlpha = 0.3;
-        ctx.lineWidth = 0.8;
-        ctx.setLineDash([1.5, 3]);
+        ctx.globalAlpha = 0.32;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 5]);
         ctx.stroke();
         ctx.setLineDash([]);
         const at = nameAt(`${group}|${sub}`, inner, 10);
-        ctx.globalAlpha = 0.55;
+        ctx.globalAlpha = 0.7;
         ctx.fillStyle = colors[group];
-        ctx.font = '10px ui-sans-serif, system-ui, sans-serif';
+        ctx.font = '11px ui-sans-serif, system-ui, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';
         ctx.fillText(sub, at.x, at.y);
       }
-
-      const at = nameAt(group, spots, 20);
-      ctx.globalAlpha = 0.6;
-      ctx.fillStyle = colors[group];
-      ctx.font = '11px ui-sans-serif, system-ui, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'bottom';
-      ctx.fillText(groupLabel[group], at.x, at.y);
     }
 
     // Me to each person: the thread that says the middle is me.
@@ -547,7 +554,7 @@ export function RelationCanvas({
       face(node.person.name, node.person.photo, c.x, c.y, r, a, node.r, node.lines);
     }
     ctx.globalAlpha = 1;
-  }, [size, view, seed, data, colors, groupLabel, today, selected, appearing, linking, meLabel,
+  }, [size, view, seed, data, colors, today, selected, appearing, linking, meLabel,
     toScreen, photos, spotOf, fitNow]);
 
   /**
@@ -577,7 +584,7 @@ export function RelationCanvas({
       if (wake.current) {
         wake.current = reduced
           ? null
-          : stepSpring(wake.current, panned.current.tx, panned.current.ty, dt);
+          : stepSpring(wake.current, panned.current.tx, panned.current.ty, dt, WAKE_STIFFNESS, WAKE_DAMPING);
         if (wake.current && atRest(wake.current, panned.current.tx, panned.current.ty)) wake.current = null;
       }
 
@@ -754,12 +761,12 @@ export function RelationCanvas({
         <div data-relation-zoom={view.scale.toFixed(2)}
           className="pointer-events-auto flex flex-col overflow-hidden rounded-full border border-border bg-surface/90 shadow-sm backdrop-blur">
           <button type="button" data-relation-zoom-in aria-label={zoomLabels.in} title={zoomLabels.in}
-            className="grid h-10 w-10 place-items-center text-muted-foreground hover:bg-accent/20"
+            className="grid h-11 w-11 place-items-center text-muted-foreground hover:bg-accent/20"
             onClick={() => zoomBy(1)}>
             <Plus aria-hidden className="h-4 w-4" />
           </button>
           <button type="button" data-relation-zoom-out aria-label={zoomLabels.out} title={zoomLabels.out}
-            className="grid h-10 w-10 place-items-center border-t border-border text-muted-foreground hover:bg-accent/20"
+            className="grid h-11 w-11 place-items-center border-t border-border text-muted-foreground hover:bg-accent/20"
             onClick={() => zoomBy(-1)}>
             <Minus aria-hidden className="h-4 w-4" />
           </button>

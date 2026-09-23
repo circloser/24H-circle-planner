@@ -28,8 +28,6 @@ export interface RelationImageInput {
   photos?: Record<string, CanvasImageSource | null>;
   /** The line under the picture, already translated. */
   caption?: string;
-  /** What each group is called, written once on its own boundary. */
-  groupLabel?: Record<RelationGroup, string>;
 }
 
 /** The widest edge of the exported picture. */
@@ -76,56 +74,44 @@ export function drawRelation(ctx: CanvasRenderingContext2D, input: RelationImage
     const point = at(body.x, body.y);
     return [{ x: point.x, y: point.y, r: body.r * scale + size / 500 }];
   });
+  // As on the screen: only a group inside a group is outlined and named, and
+  // its people are all joined to each other. The big groups are told by colour.
   for (const group of new Set(data.people.map((p) => p.group))) {
     const members = data.people.filter((p) => p.group === group);
-    const spots = spotsOf(members);
-    if (!spots.length) continue;
-    // The groups inside the group, as on the screen: a fainter shape each,
-    // named in smaller letters over the middle of its people.
     for (const sub of new Set(members.flatMap((p) => (p.sub ? [p.sub] : [])))) {
-      const inner = spotsOf(members.filter((p) => p.sub === sub));
+      const kin = members.filter((p) => p.sub === sub);
+      const inner = spotsOf(kin);
+      ctx.strokeStyle = colors[group];
+      ctx.globalAlpha = 0.28;
+      ctx.lineWidth = Math.max(1, size / 1400);
+      for (let i = 0; i < inner.length; i++) {
+        for (let j = i + 1; j < inner.length; j++) {
+          ctx.beginPath();
+          ctx.moveTo(inner[i].x, inner[i].y);
+          ctx.lineTo(inner[j].x, inner[j].y);
+          ctx.stroke();
+        }
+      }
       if (inner.length < 2) continue;
-      const ring = boundaryOf(inner, size / 180);
+      const ring = boundaryOf(inner, size / 130);
       if (ring.length < 3) continue;
-      drawBoundary(ctx, ring, size / 100);
+      drawBoundary(ctx, ring, size / 80);
       ctx.fillStyle = colors[group];
-      ctx.globalAlpha = 0.05;
+      ctx.globalAlpha = 0.07;
       ctx.fill();
       ctx.strokeStyle = colors[group];
-      ctx.globalAlpha = 0.3;
-      ctx.setLineDash([size / 800, size / 400]);
+      ctx.globalAlpha = 0.32;
+      ctx.setLineDash([size / 400, size / 260]);
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.globalAlpha = 0.55;
-      ctx.fillStyle = colors[group];
-      ctx.font = `${Math.round(size / 130)}px ui-sans-serif, system-ui, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'bottom';
-      const cx = inner.reduce((s, p) => s + p.x, 0) / inner.length;
-      const cy = Math.min(...inner.map((p) => p.y - p.r)) - size / 140;
-      ctx.fillText(sub, cx, cy);
-    }
-    const shape = boundaryOf(spots, size / 90);
-    if (shape.length < 3) continue;
-    drawBoundary(ctx, shape, size / 60);
-    ctx.fillStyle = colors[group];
-    ctx.globalAlpha = 0.06;
-    ctx.fill();
-    ctx.strokeStyle = colors[group];
-    ctx.globalAlpha = 0.24;
-    ctx.setLineDash([size / 400, size / 260]);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    const label = input.groupLabel?.[group];
-    if (label) {
-      let top = shape[0];
-      for (const point of shape) if (point[1] < top[1]) top = point;
-      ctx.globalAlpha = 0.6;
+      ctx.globalAlpha = 0.7;
       ctx.fillStyle = colors[group];
       ctx.font = `${Math.round(size / 110)}px ui-sans-serif, system-ui, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
-      ctx.fillText(label, top[0], top[1] - size / 220);
+      const cx = inner.reduce((s, p) => s + p.x, 0) / inner.length;
+      const cy = Math.min(...inner.map((p) => p.y - p.r)) - size / 120;
+      ctx.fillText(sub, cx, cy);
     }
   }
 

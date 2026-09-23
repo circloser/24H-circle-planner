@@ -63,7 +63,6 @@ export function RelationExportDialog({ open, onOpenChange, api, colors }: {
         ink: getComputedStyle(root).getPropertyValue('--relation-ink').trim() || '#2b2b2b',
         accent: getComputedStyle(root).getPropertyValue('--relation-accent').trim() || '#2f6feb',
         meLabel: t('relation.me.short'),
-        groupLabel: Object.fromEntries(RELATION_GROUPS.map((g) => [g, t(GROUP_LABEL[g])])) as Record<RelationGroup, string>,
         photos,
         caption: [
           t('relation.sum.people', { n: String(s.people) }),

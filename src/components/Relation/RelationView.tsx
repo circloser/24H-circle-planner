@@ -22,7 +22,8 @@ import { RELATION_LABEL } from '@/components/Life/categories';
 import { GROUP_ICON, GROUP_LABEL, groupColors } from './groups';
 import { RelationCanvas } from './RelationCanvas';
 import { RelationPanel } from './RelationPanel';
-import { MeDialog, PersonDialog, type PersonTarget } from './RelationDialogs';
+import { PersonDialog, type PersonTarget } from './RelationDialogs';
+import { MeProfileDialog } from './RelationMe';
 import { RelationExportDialog } from './RelationExport';
 import { RELATION_EXPORT_EVENT } from '@/lib/relation-export';
 
@@ -50,11 +51,6 @@ export function RelationView() {
   const syncing = useSyncStatus().status !== 'disabled';
   const theme = COLOR_THEMES.some((th) => th.id === prefs.colorTheme) ? prefs.colorTheme : null;
   const colors = groupColors(theme);
-  // Each boundary on the map is named once, in the reader's own language.
-  const groupNames = useMemo(
-    () => Object.fromEntries(RELATION_GROUPS.map((g) => [g, t(GROUP_LABEL[g])])) as Record<RelationGroup, string>,
-    [t],
-  );
   const today = todayKey();
 
   useEffect(() => { trackOnce('relation_open'); }, []);
@@ -301,8 +297,10 @@ export function RelationView() {
       </div>
 
       {/* Somebody new. */}
+      {/* Its own colours rather than the frosted pill's: that one's paper
+          sat on top of the primary colour, and the white + vanished into it. */}
       <button type="button" data-relation-add aria-label={t('relation.add')} title={t('relation.add')}
-        className={`${FLOAT} pointer-events-auto grid h-11 w-11 place-items-center bg-primary text-primary-foreground hover:opacity-90`}
+        className="pointer-events-auto grid h-11 w-11 place-items-center rounded-full bg-primary text-primary-foreground shadow-sm hover:opacity-90"
         onClick={() => add()}>
         <Plus aria-hidden className="h-4 w-4" />
       </button>
@@ -310,7 +308,7 @@ export function RelationView() {
   );
 
   return (
-    <div className="mx-auto flex w-full max-w-[1200px] flex-1 flex-col" data-relation-view>
+    <div className="flex w-full flex-1 flex-col" data-relation-view>
       <header className="mx-auto w-full max-w-[960px] px-4 pt-3 text-center">
         {/* The tab that was just pressed says which page this is. */}
         <h2 className="sr-only">{t('relation.title')}</h2>
@@ -333,7 +331,6 @@ export function RelationView() {
               linking={linking}
               appearing={arriving}
               meLabel={t('relation.me.short')}
-              groupLabel={groupNames}
               zoomLabels={{ in: t('place.zoomIn'), out: t('place.zoomOut') }}
               onSelect={pick}
               onPlace={(id, at) => {
@@ -438,8 +435,8 @@ export function RelationView() {
           setTarget(null);
         }}
         onDelete={remove} />
-      <MeDialog open={meOpen} me={data.me} pro={pro} onClose={() => setMeOpen(false)}
-        onSave={(me) => { api.setMe(me); setMeOpen(false); }} />
+      <MeProfileDialog open={meOpen} me={data.me} pro={pro} onClose={() => setMeOpen(false)}
+        onChange={(patch) => api.setMe(patch)} />
       <RelationExportDialog open={exporting} onOpenChange={setExporting} api={api} colors={colors} />
 
       {/* The middle of the map is me, so the middle of the map is the way in:

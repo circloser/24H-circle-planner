@@ -16,6 +16,7 @@
  * near, and the backup file.
  */
 import { todayKey } from './calendar-grid';
+import { cleanMeRecord, type RelationMe } from './relation-me';
 
 export const RELATION_KEY = '24h-circle-planner.relation';
 
@@ -119,8 +120,10 @@ export interface RelationLink {
 }
 
 export interface RelationData {
-  version: 2;
-  me: { name?: string; photo?: string };
+  version: 3;
+  /** The middle of the map: my name and face, and my own record
+   *  (lib/relation-me). */
+  me: RelationMe;
   people: Person[];
   links: RelationLink[];
   updatedAt: string;
@@ -139,7 +142,7 @@ export const MAX_FACTS = 60;
 export const MAX_MEETS = 200;
 
 export const emptyRelation = (): RelationData => ({
-  version: 2,
+  version: 3,
   me: {},
   people: [],
   links: [],
@@ -421,11 +424,18 @@ function cleanLinks(v: unknown, people: readonly Person[]): RelationLink[] {
  * move to 2, 3 and 4 — the words each one was labelled with are the same
  * words, and the two new rungs are added at the ends rather than in the
  * middle, so nobody's place on the map changes meaning overnight.
+ *
+ * Version 3 is version 2 with more written in it — each person's history,
+ * subgroups, my own record in the middle. Nothing moves; the number went up
+ * so that a device still running the version-2 app sees a newer record and
+ * shows it read-only, instead of loading it, dropping what it does not know,
+ * and saving over it.
  */
 export function migrateRelation(parsed: unknown): Record<string, unknown> | null {
   const p = parsed as Record<string, unknown> | null;
   if (!p || typeof p !== 'object') return null;
-  if (p['version'] === 2) return p;
+  if (p['version'] === 3) return p;
+  if (p['version'] === 2) return { ...p, version: 3 };
   if (p['version'] !== 1) return null;
   const people = (Array.isArray(p['people']) ? p['people'] : []).map((v) => {
     const o = v as Record<string, unknown> | null;
@@ -433,13 +443,13 @@ export function migrateRelation(parsed: unknown): Record<string, unknown> | null
     const c = Number(o['closeness']);
     return { ...o, closeness: c === 1 ? 2 : c === 3 ? 4 : 3 };
   });
-  return { ...p, version: 2, people };
+  return { ...p, version: 3, people };
 }
 
 /** Written by a newer version of the app than this one. */
 export function isNewerRelation(parsed: unknown): boolean {
   const v = (parsed as Record<string, unknown> | null)?.['version'];
-  return typeof v === 'number' && v > 2;
+  return typeof v === 'number' && v > 3;
 }
 
 /** Strict decode: anything unknown or broken is dropped, never thrown on. */
@@ -453,10 +463,11 @@ export function decodeRelation(parsed: unknown): RelationData | null {
   const me = (p['me'] ?? {}) as Record<string, unknown>;
   const myName = str(me['name'], MAX_PERSON_NAME);
   return {
-    version: 2,
+    version: 3,
     me: {
       ...(myName ? { name: myName } : {}),
       ...(isId(me['photo']) ? { photo: me['photo'] } : {}),
+      ...cleanMeRecord(me),
     },
     people,
     links: cleanLinks(p['links'], people),

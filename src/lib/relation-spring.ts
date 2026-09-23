@@ -39,13 +39,15 @@ export const springAt = (x: number, y: number): Spring => ({ x, y, vx: 0, vy: 0 
  * One step towards the target. `dt` is in seconds and is clamped, so a
  * dropped frame slows the motion down rather than breaking it.
  */
-export function stepSpring(s: Spring, tx: number, ty: number, dt: number): Spring {
+export function stepSpring(
+  s: Spring, tx: number, ty: number, dt: number, k = STIFFNESS, c = DAMPING,
+): Spring {
   const h = Math.min(Math.max(dt, 0), MAX_STEP);
   if (h === 0) return s;
   // Semi-implicit Euler: the new speed moves the position, which is stable
   // at the step sizes a screen actually produces.
-  const vx = s.vx + (-STIFFNESS * (s.x - tx) - DAMPING * s.vx) * h;
-  const vy = s.vy + (-STIFFNESS * (s.y - ty) - DAMPING * s.vy) * h;
+  const vx = s.vx + (-k * (s.x - tx) - c * s.vx) * h;
+  const vy = s.vy + (-k * (s.y - ty) - c * s.vy) * h;
   return { x: s.x + vx * h, y: s.y + vy * h, vx, vy };
 }
 
