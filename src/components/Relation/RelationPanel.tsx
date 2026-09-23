@@ -148,6 +148,7 @@ export function RelationPanel({
             <span className="inline-flex items-center gap-1">
               <Icon aria-hidden className="h-3.5 w-3.5" />
               {t(GROUP_LABEL[person.group])}
+              {person.sub && <span data-relation-panel-sub>· {person.sub}</span>}
             </span>
             {person.relation && <span className="truncate">{person.relation}</span>}
             {person.pinned && <Pin aria-hidden className="h-3.5 w-3.5" />}

@@ -9,12 +9,15 @@ import {
   MAX_ZOOM, ME_R, MIN_ZOOM, angleOf, layoutRelation, polarOf, xyOf, type Placed,
 } from '@/lib/relation-layout';
 import { driftAt } from '@/lib/relation-drift';
-import { COLD, cool, gripFor, restFor, stepWorld, type Body, type Tie } from '@/lib/relation-force';
+import { COLD, cool, stepWorld, tiesOf, type Body } from '@/lib/relation-force';
 import { boundaryOf, drawBoundary } from '@/lib/relation-hull';
 import { atRest, springAt, stepSpring, type Spring } from '@/lib/relation-spring';
 import { NAME_SIZE, nameBox } from '@/lib/relation-name';
 
 const TAU = Math.PI * 2;
+
+/** How much of the way to where it belongs a group's name moves each frame. */
+const LABEL_EASE = 0.12;
 
 /** A press this long puts someone down where they are, or picks them up again. */
 const HOLD_MS = 550;
@@ -185,6 +188,9 @@ export function RelationCanvas({
    * frame, and a render each time would be a render too many.
    */
   const reach = useRef(seed.extent);
+  /** Where each group's (and subgroup's) name was last written, so it can be
+   *  eased to its next place rather than jump there. */
+  const labels = useRef(new Map<string, { x: number; y: number }>());
   const fit = useRef(1);
   const fitNow = useCallback(() => {
     let far = ME_R;
@@ -305,40 +311,91 @@ export function RelationCanvas({
     const where = new Map<string, { x: number; y: number }>();
     for (const node of seed.nodes) where.set(node.person.id, spotOf(node.person.id, clock, reduced));
 
+    const spotsOf = (members: readonly Person[]) => members.flatMap((p) => {
+      const at = where.get(p.id);
+      const body = world.current.get(p.id);
+      return at && body ? [{ ...follow(at), r: body.r * dots + 4 }] : [];
+    });
+    /**
+     * Where a shape's name is written: over the middle of its people, just
+     * above the highest of them.
+     *
+     * It used to sit on the highest corner of the shape — and as the map
+     * drifts, which corner is highest changes from one frame to the next, so
+     * the name jumped from side to side and, when the shape went thin for a
+     * moment, vanished and came back. Now it is placed from the people, not
+     * the outline, and eased toward where it should be rather than sent there,
+     * so a name moves as calmly as the people under it.
+     */
+    const nameAt = (key: string, spots: readonly { x: number; y: number; r: number }[], lift: number) => {
+      const x = spots.reduce((s, p) => s + p.x, 0) / spots.length;
+      const y = Math.min(...spots.map((p) => p.y - p.r)) - lift;
+      const was = labels.current.get(key);
+      const next = was && !reduced
+        ? { x: was.x + (x - was.x) * LABEL_EASE, y: was.y + (y - was.y) * LABEL_EASE }
+        : { x, y };
+      labels.current.set(key, next);
+      // Whole pixels: text drawn at a new fraction of a pixel every frame
+      // shimmers even when it is not moving.
+      return { x: Math.round(next.x), y: Math.round(next.y) };
+    };
+
     /**
      * A group is a place on the map: the shape drawn round wherever its people
      * have ended up, rather than a band of the turn they were assigned. Drawn
-     * behind everybody, and named once.
+     * behind everybody, and named once. A group inside it — the friends from
+     * university, the old job — is a fainter shape inside that one, named in
+     * smaller letters.
      */
     for (const group of new Set(data.people.map((p) => p.group))) {
-      const spots = data.people
-        .filter((p) => p.group === group)
-        .flatMap((p) => {
-          const at = where.get(p.id);
-          const body = world.current.get(p.id);
-          return at && body ? [{ ...follow(at), r: body.r * dots + 4 }] : [];
-        });
+      const members = data.people.filter((p) => p.group === group);
+      const spots = spotsOf(members);
       if (!spots.length) continue;
       const shape = boundaryOf(spots, 14);
-      if (shape.length < 3) continue;
-      drawBoundary(ctx, shape, 26);
-      ctx.fillStyle = colors[group];
-      ctx.globalAlpha = 0.06;
-      ctx.fill();
-      ctx.strokeStyle = colors[group];
-      ctx.globalAlpha = 0.24;
-      ctx.lineWidth = 1;
-      ctx.setLineDash([3, 5]);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      let top = shape[0];
-      for (const point of shape) if (point[1] < top[1]) top = point;
+      if (shape.length >= 3) {
+        drawBoundary(ctx, shape, 26);
+        ctx.fillStyle = colors[group];
+        ctx.globalAlpha = 0.06;
+        ctx.fill();
+        ctx.strokeStyle = colors[group];
+        ctx.globalAlpha = 0.24;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 5]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      for (const sub of new Set(members.flatMap((p) => (p.sub ? [p.sub] : [])))) {
+        const inner = spotsOf(members.filter((p) => p.sub === sub));
+        if (inner.length < 2) continue;
+        const ring = boundaryOf(inner, 7);
+        if (ring.length < 3) continue;
+        drawBoundary(ctx, ring, 16);
+        ctx.fillStyle = colors[group];
+        ctx.globalAlpha = 0.05;
+        ctx.fill();
+        ctx.strokeStyle = colors[group];
+        ctx.globalAlpha = 0.3;
+        ctx.lineWidth = 0.8;
+        ctx.setLineDash([1.5, 3]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        const at = nameAt(`${group}|${sub}`, inner, 10);
+        ctx.globalAlpha = 0.55;
+        ctx.fillStyle = colors[group];
+        ctx.font = '10px ui-sans-serif, system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(sub, at.x, at.y);
+      }
+
+      const at = nameAt(group, spots, 20);
       ctx.globalAlpha = 0.6;
       ctx.fillStyle = colors[group];
       ctx.font = '11px ui-sans-serif, system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
-      ctx.fillText(groupLabel[group], top[0], top[1] - 4);
+      ctx.fillText(groupLabel[group], at.x, at.y);
     }
 
     // Me to each person: the thread that says the middle is me.
@@ -505,13 +562,7 @@ export function RelationCanvas({
     let frame = 0;
     const list = [...world.current.values()];
     // What pulls on what, in the sizes they are now.
-    const ties: Tie[] = data.links.flatMap((link) => {
-      const a = world.current.get(link.source);
-      const b = world.current.get(link.target);
-      if (!a || !b) return [];
-      const close = link.closeness ?? 3;
-      return [{ a: link.source, b: link.target, rest: restFor(a, b, close), grip: gripFor(close) }];
-    });
+    const ties = tiesOf(data.links, data.people, world.current);
     const run = (now: number) => {
       const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false;
       const dt = lastFrame.current ? (now - lastFrame.current) / 1000 : 0;
@@ -539,7 +590,7 @@ export function RelationCanvas({
     };
     frame = requestAnimationFrame(run);
     return () => cancelAnimationFrame(frame);
-  }, [paint, appearing, settling, data.links, drag]);
+  }, [paint, appearing, settling, data.links, data.people, drag]);
 
   // ── pointer ──────────────────────────────────────────────────────────────
   const gesture = useRef<{

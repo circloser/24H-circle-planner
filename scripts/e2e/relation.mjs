@@ -285,6 +285,53 @@ export async function run() {
     await wait(400);
     pass('…and taken away again', (await stored()).links.length === 0);
 
+    // 7c. A group inside the group: written on the form, offered back as a
+    // tap for the next person, shown on the card, and a filter of its own.
+    await choose('p1');
+    await page.locator('[data-relation-edit]').click();
+    await wait(400);
+    await page.locator('[data-relation-sub-input]').fill('대학 동기');
+    await page.locator('[data-relation-save]').click();
+    await wait(500);
+    pass('a person can be put in a group inside their group',
+      (await stored()).people.find((p) => p.id === 'p1')?.sub === '대학 동기',
+      JSON.stringify((await stored()).people.find((p) => p.id === 'p1')));
+    pass('…which their card says', /대학 동기/.test(await page.locator('[data-relation-panel-sub]').innerText()));
+    await closeAll();
+    await page.locator('[data-relation-add]').click();
+    await wait(400);
+    await page.locator('[data-relation-group="friend"]').click();
+    pass('…and the next person in that group is offered it with a tap',
+      (await count('[data-relation-sub-pick="대학 동기"]')) === 1);
+    await page.locator('[data-relation-name-input]').fill('서지후');
+    await page.locator('[data-relation-sub-pick="대학 동기"]').click();
+    await page.locator('[data-relation-save]').click();
+    await wait(600);
+    const mate = (await stored()).people.find((p) => p.name === '서지후');
+    pass('…and taken, it is the same subgroup, not a second one spelled alike', mate?.sub === '대학 동기');
+    await closeAll();
+    await sift();
+    pass('the filter offers each subgroup with how many are in it',
+      /대학 동기\s*2/.test(await page.locator('[data-relation-sub="friend|대학 동기"]').innerText()));
+    await page.locator('[data-relation-sub="friend|대학 동기"]').click();
+    await wait(400);
+    pass('…and shows that subgroup alone',
+      (await count('[data-relation-list-item]')) === 2
+      && (await count('[data-relation-list-item="p1"]')) === 1);
+    await page.locator('[data-relation-sub="friend|대학 동기"]').click();
+    await page.locator('[data-relation-filter-toggle]').click();
+    await wait(300);
+    // Back to three, so the checks below meet the map they expect — taken
+    // off in the record itself, because a delete leaves an undo toast behind
+    // and the delete checks further down want theirs to be the only one.
+    await page.evaluate(([k, id]) => {
+      const d = JSON.parse(localStorage.getItem(k));
+      d.people = d.people.filter((p) => p.id !== id);
+      localStorage.setItem(k, JSON.stringify(d));
+    }, [RELATION_KEY, mate.id]);
+    await openRelation();
+    await closeAll();
+
     // 8. Filters and search narrow the map and the list alike — from the one
     // corner a thumb reaches, rather than from a row above the map.
     const corner = await page.locator('[data-relation-corner]').boundingBox();

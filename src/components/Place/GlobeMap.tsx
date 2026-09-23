@@ -37,6 +37,9 @@ export interface GlobeMapProps {
   here?: { lng: number; lat: number } | null;
   /** The camera is being moved from outside: do not turn on our own. */
   still?: boolean;
+  /** Whether the globe turns by itself at all — the reader's own choice,
+   *  from the button in the corner. On unless it has been switched off. */
+  spinning?: boolean;
   camera: Camera;
   onCamera: (camera: Camera) => void;
   onSelect: (code: string | null) => void;
@@ -78,7 +81,7 @@ const SPIN_MS = 33;
  */
 export function GlobeMap({
   shapes, countries, cities, places, pins, homeCityId, visited, wished, selected, selectedPin,
-  heat, maxZoom, pinColors, here, still, camera, onCamera, onSelect, onSelectPin, nameOf,
+  heat, maxZoom, pinColors, here, still, spinning = true, camera, onCamera, onSelect, onSelectPin, nameOf,
 }: GlobeMapProps) {
   /** One step past the stop, which the view above reads as "now the tiles". */
   const reach = maxZoom * 1.4;
@@ -212,15 +215,26 @@ export function GlobeMap({
     ctx.restore();
 
     /*
-     * The heat: one soft blob a pin, added together.
+     * The heat: one soft blob a place, added together.
      *
-     * Where pins stand on their own the blob is faint; where several are
+     * A place is a pin, and it is also a city one has been to — most of a
+     * life is lived in cities that were never given a pin, and a heat map of
+     * pins alone showed a traveller's world as a few dots. A city lived in
+     * weighs more than one passed through.
+     *
+     * Where places stand on their own the blob is faint; where several are
      * close their blobs add up, and the colour runs from a wash to something
      * that reads as "here, often". Drawn with 'lighter' so the adding is the
      * picture rather than something computed into a grid, and clipped to the
      * ball so nothing spills off the edge of the world.
      */
-    if (heat && pins.length) {
+    const warm = heat
+      ? [
+        ...pins.map((p) => ({ lng: p.lng, lat: p.lat, weight: 1 })),
+        ...cities.map((c) => ({ lng: c.lng, lat: c.lat, weight: c.lived ? 1.6 : 1 })),
+      ]
+      : [];
+    if (warm.length) {
       ctx.save();
       ctx.beginPath();
       ctx.arc(screen.cx, screen.cy, screen.r, 0, Math.PI * 2);
@@ -229,17 +243,18 @@ export function GlobeMap({
       // Wide enough to blend at a distance, tight enough to mean a place
       // when the globe is brought close.
       const spread = Math.max(16, Math.min(90, screen.r * 0.07));
-      for (const pin of pins) {
-        if (!facing(pin.lng, pin.lat, camera)) continue;
-        const p = project(pin.lng, pin.lat, camera, screen);
-        const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, spread);
-        glow.addColorStop(0, hexAlpha(visited, 0.5));
-        glow.addColorStop(0.5, hexAlpha(visited, 0.16));
+      for (const spot of warm) {
+        if (!facing(spot.lng, spot.lat, camera)) continue;
+        const p = project(spot.lng, spot.lat, camera, screen);
+        const reach = spread * Math.sqrt(spot.weight);
+        const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, reach);
+        glow.addColorStop(0, hexAlpha(visited, Math.min(0.8, 0.5 * spot.weight)));
+        glow.addColorStop(0.5, hexAlpha(visited, 0.16 * spot.weight));
         glow.addColorStop(1, hexAlpha(visited, 0));
         ctx.fillStyle = glow;
         ctx.globalAlpha = 1;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, spread, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, reach, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.restore();
@@ -399,7 +414,10 @@ export function GlobeMap({
    */
   const latest = useRef({ camera, onCamera });
   useEffect(() => { latest.current = { camera, onCamera }; });
-  const held = selected !== null || selectedPin !== null || !!still;
+  const held = selected !== null || selectedPin !== null || !!still || !spinning;
+  // Switched back on by hand: that press is the reason to turn, so it turns
+  // now rather than waiting out three seconds of the press itself.
+  useEffect(() => { if (spinning) touched.current = 0; }, [spinning]);
   useEffect(() => {
     if (held) return;
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return;

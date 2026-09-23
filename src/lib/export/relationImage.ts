@@ -10,7 +10,7 @@
  */
 import { contactFade, hasBirthdaySoon, type RelationData, type RelationGroup } from '../relation';
 import { ME_R, layoutRelation, xyOf } from '../relation-layout';
-import { gripFor, restFor, settle, type Body, type Tie } from '../relation-force';
+import { settle, tiesOf, type Body } from '../relation-force';
 import { boundaryOf, drawBoundary } from '../relation-hull';
 import { NAME_SIZE, nameBox } from '../relation-name';
 
@@ -55,14 +55,7 @@ export function drawRelation(ctx: CanvasRenderingContext2D, input: RelationImage
       id: n.person.id, x: home.x, y: home.y, vx: 0, vy: 0, r: n.r, want: n.d, pinned: n.fixed,
     }];
   }));
-  const ties: Tie[] = data.links.flatMap((link) => {
-    const a = world.get(link.source);
-    const b = world.get(link.target);
-    if (!a || !b) return [];
-    const close = link.closeness ?? 3;
-    return [{ a: link.source, b: link.target, rest: restFor(a, b, close), grip: gripFor(close) }];
-  });
-  settle([...world.values()], ties);
+  settle([...world.values()], tiesOf(data.links, data.people, world));
   const spot = (id: string) => world.get(id) ?? { x: 0, y: 0 };
   let reach = ME_R;
   for (const body of world.values()) reach = Math.max(reach, Math.hypot(body.x, body.y) + body.r);
@@ -77,16 +70,41 @@ export function drawRelation(ctx: CanvasRenderingContext2D, input: RelationImage
   // The shape round each group, exactly as the page draws it: the picture
   // should be the map, not a diagram of the same data.
   ctx.lineWidth = Math.max(1, size / 1400);
+  const spotsOf = (members: readonly { id: string }[]) => members.flatMap((p) => {
+    const body = world.get(p.id);
+    if (!body) return [];
+    const point = at(body.x, body.y);
+    return [{ x: point.x, y: point.y, r: body.r * scale + size / 500 }];
+  });
   for (const group of new Set(data.people.map((p) => p.group))) {
-    const spots = data.people
-      .filter((p) => p.group === group)
-      .flatMap((p) => {
-        const body = world.get(p.id);
-        if (!body) return [];
-        const point = at(body.x, body.y);
-        return [{ x: point.x, y: point.y, r: body.r * scale + size / 500 }];
-      });
+    const members = data.people.filter((p) => p.group === group);
+    const spots = spotsOf(members);
     if (!spots.length) continue;
+    // The groups inside the group, as on the screen: a fainter shape each,
+    // named in smaller letters over the middle of its people.
+    for (const sub of new Set(members.flatMap((p) => (p.sub ? [p.sub] : [])))) {
+      const inner = spotsOf(members.filter((p) => p.sub === sub));
+      if (inner.length < 2) continue;
+      const ring = boundaryOf(inner, size / 180);
+      if (ring.length < 3) continue;
+      drawBoundary(ctx, ring, size / 100);
+      ctx.fillStyle = colors[group];
+      ctx.globalAlpha = 0.05;
+      ctx.fill();
+      ctx.strokeStyle = colors[group];
+      ctx.globalAlpha = 0.3;
+      ctx.setLineDash([size / 800, size / 400]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 0.55;
+      ctx.fillStyle = colors[group];
+      ctx.font = `${Math.round(size / 130)}px ui-sans-serif, system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      const cx = inner.reduce((s, p) => s + p.x, 0) / inner.length;
+      const cy = Math.min(...inner.map((p) => p.y - p.r)) - size / 140;
+      ctx.fillText(sub, cx, cy);
+    }
     const shape = boundaryOf(spots, size / 90);
     if (shape.length < 3) continue;
     drawBoundary(ctx, shape, size / 60);

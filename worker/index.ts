@@ -321,10 +321,19 @@ async function handleLogout(request: Request, env: Env): Promise<Response> {
 
 // ─── Sync (Pro cross-device) ───────────────────────────────────────────────────
 // One JSON blob per user + a monotonic version for last-write-wins. See
-// docs/pro-sync-design.md §4. Beta: any signed-in user may sync (subscription
-// gating arrives with billing in a later phase).
+// docs/pro-sync-design.md §4.
+//
+// Pro only, here as well as in the app. The app has always switched sync off
+// for a free account, but the server used to take anybody signed in, so the
+// one paid feature that costs the server anything was free to whoever called
+// it directly. A refused call is 402 and nothing else: a snapshot already
+// stored is left exactly where it is — never deleted — and comes back the day
+// the account is Pro again.
 
 const MAX_BLOB_BYTES = 1_000_000; // 1 MB cap (design §4-1)
+
+/** The answer to a sync call from an account that is not Pro. */
+const proRequired = () => json({ error: 'pro_required' }, 402);
 
 interface SyncRow { blob: string; version: number; updated_at: number; device_label: string | null }
 
@@ -332,6 +341,7 @@ async function handleSyncGet(request: Request, env: Env): Promise<Response> {
   if (!env.DB) return json({ error: 'unconfigured' }, 503);
   const user = await currentUser(request, env);
   if (!user) return json({ error: 'unauthorized' }, 401);
+  if (!(await isEntitled(env, user))) return proRequired();
   const row = await env.DB.prepare('SELECT blob, version, updated_at, device_label FROM sync_data WHERE user_id=?').bind(user.id).first<SyncRow>();
   if (!row) return new Response(null, { status: 204, headers: { 'cache-control': 'no-store' } });
   return json({ blob: row.blob, version: row.version, updatedAt: row.updated_at, deviceLabel: row.device_label });
@@ -341,6 +351,7 @@ async function handleSyncPut(request: Request, env: Env): Promise<Response> {
   if (!env.DB) return json({ error: 'unconfigured' }, 503);
   const user = await currentUser(request, env);
   if (!user) return json({ error: 'unauthorized' }, 401);
+  if (!(await isEntitled(env, user))) return proRequired();
 
   let body: { blob?: unknown; baseVersion?: unknown; deviceLabel?: unknown };
   try {

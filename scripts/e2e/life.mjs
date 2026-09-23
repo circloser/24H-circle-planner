@@ -583,6 +583,26 @@ export async function run() {
       // The decades alone would pass this; the seeded moment is the real test.
       return shared > 3;
     }));
+    // Halfway down the page, each line still says whose it is: the name rides
+    // on it under the header once the row of names has scrolled away.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await wait(400);
+    pass('at the top, the row of names says whose line is whose (no tags yet)',
+      (await count('[data-life-name-tag]')) === 4 && (await count('[data-life-name-tag][data-shown]')) === 0);
+    await page.evaluate(() => {
+      document.querySelector('[data-life-column="me"] [data-life-today]')?.scrollIntoView({ block: 'center' });
+    });
+    await wait(500);
+    const tags = await page.evaluate(() => {
+      const header = document.querySelector('[data-app-header]').getBoundingClientRect().bottom;
+      return [...document.querySelectorAll('[data-life-name-tag][data-shown]')].map((el) => {
+        const r = el.getBoundingClientRect();
+        const col = el.closest('[data-life-column]').getBoundingClientRect();
+        return { text: el.textContent.trim(), top: Math.round(r.top - header), inside: r.left >= col.left - 2 && r.right <= col.right + 2 };
+      });
+    });
+    pass('scrolled down, every line carries the name of whose it is, just under the header',
+      tags.length === 4 && tags.every((t) => t.text && t.top >= 0 && t.top < 30 && t.inside), JSON.stringify(tags));
     // Zoomed out, the circle that offers a new moment still lands under the
     // pointer: it is written in the board's pixels, not the screen's.
     // Somewhere on my own line and BELOW its first marker — nothing may be

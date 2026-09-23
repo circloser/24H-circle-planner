@@ -4,7 +4,8 @@ import {
   birthdayParts, canAddLink, canAddPerson, contactFade, currentFact, daysSinceContact, daysToBirthday,
   decodeRelation, emptyRelation, encodeRelation, factHistory, factKinds, findPeople, hasBirthdaySoon,
   isBirthdayThisMonth, isNewerRelation, isOutOfTouch, lastContactOf, meetHistory, readRelationFile,
-  relationFile, relationPhotoIds, relationSummary, turningAge, type Person, type RelationData,
+  relationFile, relationPhotoIds, relationSummary, subgroupsOf, turningAge, MAX_SUB,
+  type Person, type RelationData,
 } from '../relation';
 
 const TODAY = '2026-09-20';
@@ -302,5 +303,39 @@ describe('the backup file', () => {
   it('refuses a file that is not ours', () => {
     expect(() => readRelationFile('{"app":"something-else"}')).toThrow();
     expect(() => readRelationFile(JSON.stringify({ app: '24h-circle-planner', kind: 'relation', relation: null }))).toThrow();
+  });
+});
+
+describe('groups inside the groups', () => {
+  const people = [
+    p('a', { group: 'friend', sub: '대학 동기' }),
+    p('b', { group: 'friend', sub: '대학 동기' }),
+    p('c', { group: 'friend', sub: '동호회' }),
+    p('d', { group: 'work', sub: '대학 동기' }),
+    p('e', { group: 'family' }),
+  ];
+
+  it('lists each subgroup once per group, biggest first, with how many are in it', () => {
+    expect(subgroupsOf({ people })).toEqual([
+      { group: 'friend', sub: '대학 동기', n: 2 },
+      { group: 'friend', sub: '동호회', n: 1 },
+      // The same name in another group is another subgroup.
+      { group: 'work', sub: '대학 동기', n: 1 },
+    ]);
+  });
+
+  it('keeps the name, trimmed and short, and writes nothing when there is none', () => {
+    const out = decodeRelation({ version: 2, people: [
+      { id: 'a', name: 'a', group: 'friend', closeness: 3, sub: '  대학 동기  ' },
+      { id: 'b', name: 'b', group: 'friend', closeness: 3, sub: '   ' },
+      { id: 'c', name: 'c', group: 'friend', closeness: 3, sub: 'x'.repeat(50) },
+    ] });
+    expect(out?.people[0].sub).toBe('대학 동기');
+    expect(out?.people[1]).not.toHaveProperty('sub');
+    expect(out?.people[2].sub).toHaveLength(MAX_SUB);
+  });
+
+  it('is found by the search box', () => {
+    expect(findPeople(data({ people }), '동호회').map((x) => x.id)).toEqual(['c']);
   });
 });

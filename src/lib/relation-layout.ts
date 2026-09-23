@@ -302,6 +302,26 @@ function fits(band: readonly Placed[], d: number): boolean {
  * Lay the whole map out. The result is the same every time for the same
  * people, whatever order they arrive in.
  */
+/**
+ * A group's arc cut into one slice a subgroup, in proportion to how many are
+ * in each, as shares of the arc (0–1). The unnamed slice comes first; the
+ * named ones follow in name order, so the cut is the same every time.
+ */
+function slicesOf(people: readonly Person[]): Map<string, { from: number; span: number }> {
+  const counts = new Map<string, number>();
+  for (const p of people) counts.set(p.sub ?? '', (counts.get(p.sub ?? '') ?? 0) + 1);
+  const keys = [...counts.keys()].sort((a, b) => (a === '' ? -1 : b === '' ? 1 : a.localeCompare(b)));
+  const total = people.length || 1;
+  const out = new Map<string, { from: number; span: number }>();
+  let at = 0;
+  for (const key of keys) {
+    const span = (counts.get(key) ?? 0) / total;
+    out.set(key, { from: at, span });
+    at += span;
+  }
+  return out;
+}
+
 export function layoutRelation(people: readonly Person[]): Layout {
   const nodes: Placed[] = [];
   const rings: Array<{ group: RelationGroup; d: number }> = [];
@@ -327,6 +347,11 @@ export function layoutRelation(people: readonly Person[]): Layout {
     const from = whole ? 0 : sector.from;
     const span = whole ? 1 : Math.max(0.02, sector.span - SECTOR_GAP);
     const band: Placed[] = [];
+    // A group inside the group gets a slice of the group's turn of its own,
+    // so the people who share one start out side by side. Somebody in no
+    // subgroup shares the one unnamed slice — which, when nobody has a
+    // subgroup at all, is the whole arc, exactly as it always was.
+    const slices = slicesOf(mine.filter((p) => !p.at));
     for (const person of mine) {
       // Closeness still says how big a circle someone gets; their name says
       // how big it has to be. The bigger of the two wins, so a name is never
@@ -336,7 +361,10 @@ export function layoutRelation(people: readonly Person[]): Layout {
       if (person.at) {
         nodes.push({ person, a: person.at.a, d: person.at.r * outermost, r, lines, fixed: true });
       } else {
-        band.push({ person, a: from + span * angleOf(person.id), d: 0, r, lines, fixed: false });
+        const slice = slices.get(person.sub ?? '') ?? { from: 0, span: 1 };
+        band.push({
+          person, a: from + span * (slice.from + slice.span * angleOf(person.id)), d: 0, r, lines, fixed: false,
+        });
       }
     }
     if (!band.length) {

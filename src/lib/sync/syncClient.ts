@@ -66,7 +66,9 @@ export async function pullRemote(): Promise<PullResult> {
     return { kind: 'offline' };
   }
   if (res.status === 204) return { kind: 'empty' };
-  if (res.status === 401) return { kind: 'unauth' };
+  // Not signed in, or signed in without Pro (402): either way there is nothing
+  // this device may sync, and the engine stands down rather than retrying.
+  if (res.status === 401 || res.status === 402) return { kind: 'unauth' };
   if (res.status === 503) return { kind: 'busy' };
   if (!res.ok) return { kind: 'error' };
   try {
@@ -104,7 +106,7 @@ export async function pushRemote(envelope: SyncEnvelope, baseVersion: number, de
   } catch {
     return { kind: 'offline' };
   }
-  if (res.status === 401) return { kind: 'unauth' };
+  if (res.status === 401 || res.status === 402) return { kind: 'unauth' };
   if (res.status === 503) return { kind: 'busy' };
   if (res.status === 413) return { kind: 'too_large' };
   if (res.status === 409) {

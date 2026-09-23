@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  COLD, ME_ROOM, PAD, cool, gripFor, restFor, settle, stepWorld, type Body, type Tie,
+  COLD, KIN_GRIP, ME_ROOM, PAD, cool, gripFor, restFor, settle, stepWorld, tiesOf, type Body, type Tie,
 } from '../relation-force';
-import { angleOf } from '../relation-layout';
+import { angleOf, layoutRelation } from '../relation-layout';
 
 /** People seeded the way the canvas seeds them: their own angle, their ring. */
 const crowd = (n: number, want = 150): Body[] =>
@@ -135,5 +135,53 @@ describe('a tie of its own strength', () => {
     const bodies = pair();
     expect(restFor(bodies[0], bodies[1], 99)).toBe(restFor(bodies[0], bodies[1], 5));
     expect(gripFor(-4)).toBe(gripFor(1));
+  });
+});
+
+describe('a subgroup holds its people loosely together', () => {
+  const world = new Map(crowd(6, 300).map((b) => [b.id, b]));
+  const people = [
+    { id: 'p0', group: 'friend', sub: '대학' }, { id: 'p1', group: 'friend', sub: '대학' },
+    { id: 'p2', group: 'friend', sub: '대학' }, { id: 'p3', group: 'friend' },
+    { id: 'p4', group: 'work', sub: '대학' }, { id: 'p5', group: 'friend', sub: '동호회' },
+  ];
+
+  it('as a chain through its members, not a spring for every pair', () => {
+    const kin = tiesOf([], people, world);
+    // 대학 among friends: three people, two springs. Nobody else is chained —
+    // not the one in no subgroup, not the one alone in theirs, and not the
+    // "대학" at work, which is another subgroup that happens to share a name.
+    expect(kin.map((k) => `${k.a}-${k.b}`)).toEqual(['p0-p1', 'p1-p2']);
+    expect(kin.every((k) => k.grip === KIN_GRIP)).toBe(true);
+  });
+
+  it('keeps the ties that were drawn, and adds to them', () => {
+    const all = tiesOf([{ source: 'p3', target: 'p5', closeness: 5 }], people, world);
+    expect(all[0]).toMatchObject({ a: 'p3', b: 'p5', grip: gripFor(5) });
+    expect(all).toHaveLength(3);
+  });
+
+  it('pulls them nearer than they would otherwise settle', () => {
+    const apart = (ties: Tie[]) => {
+      const bodies = crowd(6, 300);
+      settle(bodies, ties);
+      const [a, c] = [bodies[0], bodies[2]];
+      return Math.hypot(a.x - c.x, a.y - c.y);
+    };
+    const fresh = new Map(crowd(6, 300).map((b) => [b.id, b]));
+    expect(apart(tiesOf([], people, fresh))).toBeLessThan(apart([]));
+  });
+
+  it('leaves a map without subgroups exactly where it was', () => {
+    const plain = [
+      { id: 'x1', name: 'x1', group: 'friend' as const, closeness: 3 as const, createdAt: '' },
+      { id: 'x2', name: 'x2', group: 'friend' as const, closeness: 3 as const, createdAt: '' },
+    ];
+    const once = layoutRelation(plain).nodes.map((n) => n.a);
+    // The slice for "no subgroup" is the whole arc when nobody has one, so
+    // every angle is what it always was.
+    expect(once.every((a, i) => Math.abs(a - layoutRelation(plain).nodes[i].a) < 1e-9)).toBe(true);
+    const grouped = layoutRelation(plain.map((q) => ({ ...q, sub: '대학' }))).nodes.map((n) => n.a);
+    expect(grouped).toEqual(once);
   });
 });

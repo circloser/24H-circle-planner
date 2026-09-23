@@ -13,7 +13,7 @@ import { todayKey } from '@/lib/calendar-grid';
 import { track, trackFeature, trackOnce } from '@/lib/track';
 import {
   FREE_RELATION_LINKS, FREE_RELATION_PEOPLE, RELATION_GROUPS, canAddLink, canAddPerson,
-  findPeople, isBirthdayThisMonth, isOutOfTouch, relationSummary,
+  findPeople, isBirthdayThisMonth, isOutOfTouch, relationSummary, subKey, subgroupsOf,
   type MeetKind, type Person, type RelationGroup,
 } from '@/lib/relation';
 import { useRelation, RELATION_UNDO_MS } from '@/hooks/useRelation';
@@ -66,6 +66,8 @@ export function RelationView() {
   }, []);
 
   const [only, setOnly] = useState<Set<RelationGroup>>(() => new Set());
+  /** Groups inside the groups being shown alone (by `subKey`). */
+  const [onlySub, setOnlySub] = useState<Set<string>>(() => new Set());
   const [sieve, setSieve] = useState<Set<Sieve>>(() => new Set());
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
@@ -104,12 +106,13 @@ export function RelationView() {
     const found = query.trim() ? new Set(findPeople(data, query).map((p) => p.id)) : null;
     return data.people.filter((p) => {
       if (only.size && !only.has(p.group)) return false;
+      if (onlySub.size && !(p.sub && onlySub.has(subKey(p.group, p.sub)))) return false;
       if (sieve.has('stale') && !isOutOfTouch(p, today)) return false;
       if (sieve.has('birthday') && !isBirthdayThisMonth(p, today)) return false;
       if (found && !found.has(p.id)) return false;
       return true;
     });
-  }, [data, only, sieve, query, today]);
+  }, [data, only, onlySub, sieve, query, today]);
 
   const filtered = useMemo(() => {
     const keep = new Set(shown.map((p) => p.id));
@@ -179,7 +182,8 @@ export function RelationView() {
   const empty = data.people.length === 0;
   const waiting = familyToImport(life, data);
   const searchBox = useRef<HTMLInputElement>(null);
-  const sifting = only.size + sieve.size;
+  const sifting = only.size + onlySub.size + sieve.size;
+  const subgroups = subgroupsOf(data);
 
   /**
    * Everything this page can do, in the one corner a thumb reaches.
@@ -237,6 +241,28 @@ export function RelationView() {
                     <Icon aria-hidden className="h-3.5 w-3.5" style={{ color: on ? undefined : colors[g] }} />
                     {t(GROUP_LABEL[g])}
                     <span className="tabular-nums">{summary.byGroup[g]}</span>
+                  </button>
+                </li>
+              );
+            })}
+            {/* The groups inside the groups, after the groups themselves. */}
+            {subgroups.map(({ group: g, sub, n }) => {
+              const key = subKey(g, sub);
+              const on = onlySub.has(key);
+              return (
+                <li key={key}>
+                  <button type="button" data-relation-sub={key} aria-pressed={on}
+                    onClick={() => setOnlySub((was) => {
+                      const next = new Set(was);
+                      if (!next.delete(key)) next.add(key);
+                      if (next.size) trackFeature('relation_group');
+                      return next;
+                    })}
+                    className={`inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[12px] ${
+                      on ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
+                    <span aria-hidden className="h-2 w-2 rounded-full" style={{ background: colors[g] }} />
+                    {sub}
+                    <span className="tabular-nums">{n}</span>
                   </button>
                 </li>
               );
@@ -392,7 +418,7 @@ export function RelationView() {
 
       </div>
 
-      <PersonDialog target={target} pro={pro} syncing={syncing}
+      <PersonDialog target={target} pro={pro} syncing={syncing} subgroups={subgroups}
         onClose={() => { setTarget(null); setBeside(null); }}
         onSave={(draft, id) => {
           if (id) api.updatePerson(id, draft);

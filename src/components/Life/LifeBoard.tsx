@@ -102,6 +102,38 @@ export function LifeBoard({
    * Alt with an arrow does the same thing from the keyboard, which is the only
    * way to do it without a mouse and the only way that works on a phone.
    */
+  /**
+   * Whose line is whose, once the names at the top have scrolled away.
+   *
+   * With several lives side by side, a reader halfway down the page is
+   * looking at four lines and no names. So each line carries its owner's name
+   * on it, held just under the header as the page scrolls — where the year
+   * used to ride — and only once the row of names above has gone out of
+   * sight, because until then that row already says it.
+   */
+  const [headerH, setHeaderH] = useState(56);
+  const [tagged, setTagged] = useState(false);
+  useEffect(() => {
+    const header = document.querySelector<HTMLElement>('[data-app-header]');
+    const measure = () => { if (header) setHeaderH(header.getBoundingClientRect().height); };
+    measure();
+    const ro = header && typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    if (header) ro?.observe(header);
+    const check = () => {
+      const top = frame.current?.getBoundingClientRect().top;
+      const next = top !== undefined && top < (header?.getBoundingClientRect().height ?? 56) + 12;
+      setTagged((was) => (was === next ? was : next));
+    };
+    check();
+    window.addEventListener('scroll', check, { passive: true });
+    window.addEventListener('resize', check);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener('scroll', check);
+      window.removeEventListener('resize', check);
+    };
+  }, []);
+
   const [dragging, setDragging] = useState<string | null>(null);
   const moveTo = (id: string, at: number) => {
     const ids = all.map((o) => o.id);
@@ -363,8 +395,8 @@ export function LifeBoard({
       {/*
         The board itself. `zoom` rather than a transform because a transform
         leaves the page the size it was and this has to take the room it
-        actually needs; the sticky year is given back what the zoom takes off
-        it, so it still comes to rest under the header.
+        actually needs; the sticky name on each line is given back what the
+        zoom takes off it, so it still comes to rest under the header.
       */}
       <div ref={frame} className="w-full">
       <div ref={board} data-life-board data-life-board-lines={lines.length}
@@ -372,6 +404,22 @@ export function LifeBoard({
         style={scale === 1 ? undefined : { zoom: scale }}>
         {lines.map((line) => (
           <div key={line.id} data-life-column={line.id} className="min-w-0 flex-1">
+            {/* The owner's name, riding on the line under the header. The
+                board is drawn at its own zoom, so the distance is given back
+                what the zoom takes off it. */}
+            {lines.length > 1 && (
+              <div aria-hidden className="pointer-events-none sticky z-20 h-0"
+                style={{ top: (headerH + 8) / scale }}>
+                <span data-life-name-tag={line.id} data-shown={tagged || undefined}
+                  className={`life-serif absolute max-w-[40vw] truncate rounded-full bg-foreground px-3 py-0.5 text-sm font-bold text-background shadow-sm transition-opacity duration-200 ${
+                    // On a phone the line hugs the left edge, and a name
+                    // centred on it would hang off the screen: it starts there.
+                    isMobile ? 'left-[6px]' : '-translate-x-1/2 left-[28px] min-[900px]:left-1/2'} ${
+                    tagged ? 'opacity-100' : 'opacity-0'}`}>
+                  {line.mine ? (life.profile.name || meLabel) : (line.name || t('life.parallel.someone'))}
+                </span>
+              </div>
+            )}
             <LifeTimeline
               narrow={isMobile && lines.length > 1}
               life={line.life}

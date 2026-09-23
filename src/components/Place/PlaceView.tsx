@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { dismissAfterVisible } from '@/lib/toast-dismiss';
-import { Crosshair, Flame, House, Loader2, Minus, Palette, Plus, Search, SlidersHorizontal, Star, X } from 'lucide-react';
+import {
+  Crosshair, Flame, House, Loader2, Minus, Palette, Pause, Plus, RotateCw, Search, SlidersHorizontal, Star, X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePreferences, useTranslation } from '@/hooks/usePreferences';
@@ -49,6 +51,8 @@ const GLOBE_FROM_PIN = (w: number, h: number) => globeZoomForTile(w, h);
 
 /** A floating control over the map, in the page's own colours. */
 const FLOAT = 'pointer-events-auto rounded-full border border-border bg-surface/92 shadow-sm backdrop-blur';
+/** Where the globe's own turning is remembered as switched off (per device). */
+const SPIN_KEY = '24h-place-spin';
 
 /**
  * Place — where a life has actually happened, and the only page here that is
@@ -94,6 +98,15 @@ export function PlaceView() {
   const [openList, setOpenList] = useState<'shortcuts' | 'filter' | null>(null);
   const [only, setOnly] = useState<Set<PinCategory>>(() => new Set());
   const [heat, setHeat] = useState(false);
+  /** Whether the globe turns by itself. Kept on this device: somebody who
+   *  stopped it wants it stopped the next time as well. */
+  const [spinning, setSpinning] = useState(() => {
+    try { return localStorage.getItem(SPIN_KEY) !== 'off'; } catch { return true; }
+  });
+  const toggleSpin = () => setSpinning((was) => {
+    try { localStorage.setItem(SPIN_KEY, was ? 'off' : 'on'); } catch { /* private window */ }
+    return !was;
+  });
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
   // The globe opens looking at home, when there is a home to look at. The
@@ -421,6 +434,7 @@ export function PlaceView() {
             pinColors={colors.pin}
             here={here}
             still={flying}
+            spinning={spinning}
             maxZoom={globeStop}
             camera={globe}
             onCamera={onGlobeCamera}
@@ -691,6 +705,17 @@ export function PlaceView() {
               <Star aria-hidden className="h-4 w-4" />
             </button>
           </div>
+        )}
+
+        {/* The globe turns by itself when left alone; this stops it, and
+            starts it again. */}
+        {tab === 'world' && (
+          <button type="button" data-place-spin aria-pressed={spinning}
+            aria-label={t(spinning ? 'place.spinStop' : 'place.spin')} title={t(spinning ? 'place.spinStop' : 'place.spin')}
+            className={`${FLOAT} pointer-events-auto grid h-11 w-11 place-items-center text-muted-foreground hover:bg-accent/20`}
+            onClick={toggleSpin}>
+            {spinning ? <Pause aria-hidden className="h-4 w-4" /> : <RotateCw aria-hidden className="h-4 w-4" />}
+          </button>
         )}
 
         {/* Where I am — on the globe as much as on the tiles. */}

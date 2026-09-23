@@ -75,6 +75,12 @@ export interface Person {
   group: RelationGroup;
   /** Free text: "어머니", "대학 동기", "전 직장 상사". */
   relation?: string;
+  /**
+   * A group inside the group: "대학 동기" among friends, "전 직장" at work,
+   * "외가" in the family. Free text, and the map draws the people who share
+   * one as a smaller shape inside their group's, held loosely together.
+   */
+  sub?: string;
   closeness: Closeness;
   /** 'YYYY-MM-DD', or 'MM-DD' when the year is not known. */
   birthday?: string;
@@ -124,6 +130,7 @@ export const MAX_PERSON_NAME = 40;
 export const MAX_RELATION_TEXT = 40;
 export const MAX_PERSON_NOTE = 200;
 export const MAX_LINK_LABEL = 20;
+export const MAX_SUB = 20;
 export const MAX_FACT_TEXT = 60;
 export const MAX_MEET_NOTE = 60;
 /** Per person. A cap is not a feature: it is what keeps one long friendship
@@ -351,6 +358,7 @@ function cleanPerson(v: unknown): Person | null {
   const c = Number(o['closeness']);
   const closeness: Closeness = (CLOSENESS as readonly number[]).includes(c) ? (c as Closeness) : 3;
   const relation = str(o['relation'], MAX_RELATION_TEXT);
+  const sub = str(o['sub'], MAX_SUB)?.trim();
   const note = str(o['note'], MAX_PERSON_NOTE);
   const facts = cleanFacts(o['facts']);
   const log = cleanMeets(o['log']);
@@ -363,6 +371,7 @@ function cleanPerson(v: unknown): Person | null {
     name,
     group,
     ...(relation ? { relation } : {}),
+    ...(sub ? { sub } : {}),
     closeness,
     ...(isBirthday(o['birthday']) ? { birthday: o['birthday'] } : {}),
     ...(isDay(o['lastContact']) ? { lastContact: o['lastContact'] } : {}),
@@ -499,10 +508,34 @@ export function findPeople(d: RelationData, query: string): Person[] {
   return d.people.filter((p) =>
     p.name.toLowerCase().includes(q)
     || (p.relation ?? '').toLowerCase().includes(q)
+    || (p.sub ?? '').toLowerCase().includes(q)
     || (p.note ?? '').toLowerCase().includes(q)
     // The name of a company or a town is how somebody is looked for as often
     // as their own name is.
     || (p.facts ?? []).some((f) => f.v.toLowerCase().includes(q)));
+}
+
+// ── Groups inside the groups ─────────────────────────────────────────────────
+
+/** How a subgroup is told apart from one of the same name in another group. */
+export const subKey = (group: RelationGroup, sub: string): string => `${group}|${sub}`;
+
+/**
+ * Every subgroup there is, by group, most people first (then by name), with
+ * how many are in each. What the form suggests and the filter offers.
+ */
+export function subgroupsOf(d: Pick<RelationData, 'people'>): { group: RelationGroup; sub: string; n: number }[] {
+  const count = new Map<string, { group: RelationGroup; sub: string; n: number }>();
+  for (const p of d.people) {
+    if (!p.sub) continue;
+    const key = subKey(p.group, p.sub);
+    const hit = count.get(key);
+    if (hit) hit.n += 1;
+    else count.set(key, { group: p.group, sub: p.sub, n: 1 });
+  }
+  const order = (g: RelationGroup) => RELATION_GROUPS.indexOf(g);
+  return [...count.values()].sort((a, b) =>
+    order(a.group) - order(b.group) || b.n - a.n || a.sub.localeCompare(b.sub));
 }
 
 // ── Backup file ──────────────────────────────────────────────────────────────

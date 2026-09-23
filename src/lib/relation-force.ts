@@ -188,6 +188,49 @@ export function stepWorld(bodies: Body[], ties: readonly Tie[], alpha: number): 
 /** The heat after one step. */
 export const cool = (alpha: number): number => Math.max(0, alpha - alpha * COOLING);
 
+/** How hard a subgroup holds its people together, as a share of a tie's pull:
+ *  enough to keep them in one patch of their group, too little to squash it. */
+export const KIN_GRIP = 0.35;
+
+/**
+ * Everything that pulls on anything: the ties that were drawn, and the looser
+ * hold of a subgroup on its own people.
+ *
+ * A subgroup is held as a chain through its members in id order — one spring
+ * each, not one for every pair, so a subgroup of forty is forty springs and
+ * not seven hundred and eighty — and it is the same chain every time, so the
+ * map still settles into the same shape for the same record.
+ */
+export function tiesOf(
+  links: readonly { source: string; target: string; closeness?: number }[],
+  people: readonly { id: string; group: string; sub?: string }[],
+  world: ReadonlyMap<string, Body>,
+): Tie[] {
+  const out: Tie[] = [];
+  for (const link of links) {
+    const a = world.get(link.source);
+    const b = world.get(link.target);
+    if (!a || !b) continue;
+    const close = link.closeness ?? 3;
+    out.push({ a: link.source, b: link.target, rest: restFor(a, b, close), grip: gripFor(close) });
+  }
+  const kin = new Map<string, string[]>();
+  for (const p of people) {
+    if (!p.sub || !world.has(p.id)) continue;
+    const key = `${p.group}|${p.sub}`;
+    kin.set(key, [...(kin.get(key) ?? []), p.id]);
+  }
+  for (const ids of kin.values()) {
+    ids.sort();
+    for (let i = 1; i < ids.length; i++) {
+      const a = world.get(ids[i - 1])!;
+      const b = world.get(ids[i])!;
+      out.push({ a: a.id, b: b.id, rest: restFor(a, b, 2), grip: KIN_GRIP });
+    }
+  }
+  return out;
+}
+
 /** Run it to a stop, for a picture that has no frames to run in. */
 export function settle(bodies: Body[], ties: readonly Tie[], steps = 260): Body[] {
   let alpha = 1;

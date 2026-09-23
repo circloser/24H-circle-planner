@@ -243,14 +243,13 @@ export async function run() {
           .map((s) => Math.round(s.getBoundingClientRect().top)));
         return tops.size === 1;
       }));
-    await page.locator('[data-place-color-row="가 봄"] [data-place-swatch="#3f8f8f"]').click();
+    await page.locator('[data-place-color-row="가 봄"] [data-place-swatch="#4f8a6a"]').click();
     await wait(400);
     pass('…and a colour chosen is kept with the record',
-      (await stored()).palette?.visited === '#3f8f8f', JSON.stringify((await stored()).palette));
-    await page.locator('[data-place-color-row="가 봄"] [data-place-color-clear]').click();
-    await wait(400);
-    pass('…and can be put back to the one the theme gives it',
-      (await stored()).palette === undefined, JSON.stringify((await stored()).palette));
+      (await stored()).palette?.visited === '#4f8a6a', JSON.stringify((await stored()).palette));
+    pass('…and there is no "default" button to read past',
+      (await count('[data-place-color-clear]')) === 0
+      && !/기본값/.test(await page.locator('[data-place-colors-dialog]').innerText()));
     await page.locator('[data-place-color-row="먹은 곳"] [data-place-swatch="#c9a227"]').click();
     await wait(400);
     pass('…and a kind of pin can have one of its own',
@@ -781,6 +780,29 @@ export async function run() {
     const stopped = await lngNow();
     await wait(1200);
     pass('…and a touch stops it again', (await lngNow()) === stopped, stopped);
+    // The corner has a button for it: stopped, it stays stopped however long
+    // it is left, and it is remembered on this device. (The touch above
+    // opened a country's card, which holds the globe by itself — put away
+    // first, so it is the button being tested and not the card.)
+    if (await spun.page.locator('[data-place-panel-close]').count()) {
+      await spun.page.locator('[data-place-panel-close]').first().click();
+    }
+    await wait(300);
+    pass('the corner has a button that stops the turning',
+      (await spun.page.locator('[data-place-spin]').getAttribute('aria-pressed')) === 'true');
+    await spun.page.locator('[data-place-spin]').click();
+    const paused = await lngNow();
+    await wait(4200);
+    pass('…and stopped, the globe stays still however long it is left',
+      (await lngNow()) === paused
+      && (await spun.page.locator('[data-place-spin]').getAttribute('aria-pressed')) === 'false', `${paused} → ${await lngNow()}`);
+    pass('…and the choice is kept on this device',
+      (await spun.page.evaluate(() => localStorage.getItem('24h-place-spin'))) === 'off');
+    await spun.page.locator('[data-place-spin]').click();
+    const restarted = await lngNow();
+    await wait(1500);
+    pass('…and pressed again, it turns straight away rather than after three seconds',
+      Math.abs(Number(await lngNow()) - Number(restarted)) > 0.3, `${restarted} → ${await lngNow()}`);
     pass('no page errors (the turning globe)', spun.errors.length === 0, spun.errors.slice(0, 2).join(' | '));
   } finally {
     await spun.browser.close();

@@ -8,7 +8,7 @@ import { requestUpgrade } from '@/lib/pro';
 import { deletePhoto, newPhotoId, savePhoto, shrinkPhoto } from '@/lib/calendar-photos';
 import { todayKey } from '@/lib/calendar-grid';
 import {
-  MAX_PERSON_NAME, MAX_PERSON_NOTE, MAX_RELATION_TEXT, RELATION_GROUPS, isBirthday,
+  MAX_PERSON_NAME, MAX_PERSON_NOTE, MAX_RELATION_TEXT, MAX_SUB, RELATION_GROUPS, isBirthday,
   CLOSENESS, type Closeness, type Person, type RelationGroup,
 } from '@/lib/relation';
 import type { PersonDraft } from '@/hooks/useRelation';
@@ -95,10 +95,12 @@ function DeleteButton({ onDelete }: { onDelete: () => void }) {
 }
 
 /** Add or edit one person. */
-export function PersonDialog({ target, pro, syncing, onClose, onSave, onDelete }: {
+export function PersonDialog({ target, pro, syncing, subgroups = [], onClose, onSave, onDelete }: {
   target: PersonTarget | null;
   pro: boolean;
   syncing: boolean;
+  /** The groups inside the groups that already exist, offered as a tap. */
+  subgroups?: readonly { group: RelationGroup; sub: string; n: number }[];
   onClose: () => void;
   onSave: (draft: PersonDraft, id?: string) => void;
   onDelete: (id: string) => void;
@@ -108,6 +110,7 @@ export function PersonDialog({ target, pro, syncing, onClose, onSave, onDelete }
   const [name, setName] = useState('');
   const [group, setGroup] = useState<RelationGroup>('friend');
   const [relation, setRelation] = useState('');
+  const [sub, setSub] = useState('');
   const [closeness, setCloseness] = useState<Closeness>(3);
   const [birthday, setBirthday] = useState('');
   const [lastContact, setLastContact] = useState('');
@@ -121,6 +124,7 @@ export function PersonDialog({ target, pro, syncing, onClose, onSave, onDelete }
     setName(base?.name ?? '');
     setGroup(base?.group ?? 'friend');
     setRelation(base?.relation ?? '');
+    setSub(base?.sub ?? '');
     setCloseness(base?.closeness ?? 3);
     setBirthday(base?.birthday ?? '');
     setLastContact(base?.lastContact ?? '');
@@ -153,6 +157,7 @@ export function PersonDialog({ target, pro, syncing, onClose, onSave, onDelete }
             name: name.trim(),
             group,
             ...(relation.trim() ? { relation: relation.trim() } : {}),
+            ...(sub.trim() ? { sub: sub.trim() } : {}),
             closeness,
             ...(birthday && isBirthday(birthday) ? { birthday } : {}),
             ...(lastContact ? { lastContact } : {}),
@@ -187,6 +192,27 @@ export function PersonDialog({ target, pro, syncing, onClose, onSave, onDelete }
               })}
             </div>
           </fieldset>
+
+          {/* A group inside the group: the ones already made in this group are
+              a tap away, so "대학 동기" is not typed a second time as "대학동기". */}
+          <div className="flex flex-col gap-1.5">
+            <label className="flex flex-col gap-1.5">
+              <span className={field}>{t('relation.field.sub')}</span>
+              <Input data-relation-sub-input value={sub} maxLength={MAX_SUB}
+                placeholder={t('relation.field.subHint')} onChange={(e) => setSub(e.target.value)} />
+            </label>
+            {subgroups.some((s) => s.group === group && s.sub !== sub.trim()) && (
+              <div className="flex flex-wrap gap-1">
+                {subgroups.filter((s) => s.group === group && s.sub !== sub.trim()).map((s) => (
+                  <button key={s.sub} type="button" data-relation-sub-pick={s.sub}
+                    className="min-h-8 rounded-full border border-border px-2.5 text-[13px] text-muted-foreground hover:bg-accent/20"
+                    onClick={() => setSub(s.sub)}>
+                    {s.sub}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           <label className="flex flex-col gap-1.5">
             <span className={field}>{t('relation.field.relation')}</span>

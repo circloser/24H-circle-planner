@@ -1,4 +1,4 @@
-import { Check, Heart, RotateCcw } from 'lucide-react';
+import { Check, Heart } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useTranslation } from '@/hooks/usePreferences';
 import { PIN_CATEGORIES, type PinCategory, type PlacePalette } from '@/lib/place';
@@ -8,14 +8,12 @@ import { PIN_ICON, PIN_LABEL } from './palette';
 
 /** One thing that has a colour: what it is, what it is drawn in now, and the
  *  dozen it may be given instead. */
-function Row({ label, icon, chosen, showing, reset, onPick, onClear }: {
+function Row({ label, icon, chosen, showing, onPick }: {
   label: string;
   icon: React.ReactNode;
   chosen: string | undefined;
   showing: string;
-  reset: string;
   onPick: (colour: string) => void;
-  onClear: () => void;
 }) {
   return (
     <div className="flex flex-col gap-1.5" data-place-color-row={label}>
@@ -25,14 +23,6 @@ function Row({ label, icon, chosen, showing, reset, onPick, onClear }: {
           {icon}
         </span>
         <span className="text-[13px] text-foreground">{label}</span>
-        {chosen && (
-          <button type="button" data-place-color-clear
-            className="ml-auto inline-flex min-h-8 items-center gap-1 rounded-full px-2 text-[12px] text-muted-foreground hover:bg-accent/20"
-            onClick={onClear}>
-            <RotateCcw aria-hidden className="h-3.5 w-3.5" />
-            {reset}
-          </button>
-        )}
       </div>
       {/* A grid rather than a wrapping row: twelve colours came out as
           eleven and a stray one, which reads as a mistake. Six across on a
@@ -61,8 +51,10 @@ function Row({ label, icon, chosen, showing, reset, onPick, onClear }: {
  * whatever is chosen here, because what a country's colour means is "been" or
  * "meaning to", and a pin is told apart by its icon first.
  *
- * Nothing is written until a swatch is pressed, and every row can be put back
- * to the colour the theme gives it.
+ * Nothing is written until a swatch is pressed. There is no "default" to go
+ * back to: the theme's colour is simply what a row shows until one is picked,
+ * and a button to return to it was one more thing to read past for a choice
+ * nobody was making.
  */
 export function PlaceColorsDialog({ open, onOpenChange, palette, colors, onChange }: {
   open: boolean;
@@ -83,24 +75,21 @@ export function PlaceColorsDialog({ open, onOpenChange, palette, colors, onChang
           <DialogDescription>{t('place.colors.hint')}</DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4">
-          <Row reset={t('place.colors.reset')} label={t('place.visited')} icon={<Check className="h-3.5 w-3.5" />}
+          <Row label={t('place.visited')} icon={<Check className="h-3.5 w-3.5" />}
             chosen={palette?.visited} showing={colors.visited}
-            onPick={(visited) => onChange({ visited })}
-            onClear={() => onChange({ visited: undefined })} />
-          <Row reset={t('place.colors.reset')} label={t('place.wish')} icon={<Heart className="h-3.5 w-3.5" />}
+            onPick={(visited) => onChange({ visited })} />
+          <Row label={t('place.wish')} icon={<Heart className="h-3.5 w-3.5" />}
             chosen={palette?.wished} showing={colors.wished}
-            onPick={(wished) => onChange({ wished })}
-            onClear={() => onChange({ wished: undefined })} />
+            onPick={(wished) => onChange({ wished })} />
           <hr className="border-border" />
           <p className="text-[13px] font-medium text-muted-foreground">{t('place.colors.pins')}</p>
           {PIN_CATEGORIES.map((category: PinCategory) => {
             const Icon = PIN_ICON[category];
             return (
-              <Row key={category} reset={t('place.colors.reset')} label={t(PIN_LABEL[category] as TKey)}
+              <Row key={category} label={t(PIN_LABEL[category] as TKey)}
                 icon={<Icon className="h-3.5 w-3.5" />}
                 chosen={palette?.pins?.[category]} showing={colors.pin[category]}
-                onPick={(colour) => onChange({ pins: { [category]: colour } })}
-                onClear={() => onChange({ pins: { [category]: undefined } })} />
+                onPick={(colour) => onChange({ pins: { [category]: colour } })} />
             );
           })}
         </div>
