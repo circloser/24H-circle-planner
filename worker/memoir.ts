@@ -1,3 +1,5 @@
+import { cleanRecords, recordsText, type Records } from './readings';
+
 /**
  * 자서전 — the life line, written out as prose.
  *
@@ -40,6 +42,9 @@ export interface MemoirInput {
   endingNote?: string;
   /** A free note to the writer: what this person wants the memoir to be. */
   wish?: string;
+  /** Everything else the app holds about them — people, places, their own
+   *  record, the diary — gathered by the browser (src/lib/ai-records.ts). */
+  records?: Records;
 }
 
 /** Caps: a life is long, a prompt is not. */
@@ -103,6 +108,7 @@ export function cleanMemoirInput(raw: unknown): MemoirInput | null {
     moments,
     ...(endingNote ? { endingNote } : {}),
     ...(wish ? { wish } : {}),
+    ...(r['records'] && typeof r['records'] === 'object' ? { records: cleanRecords(r['records']) } : {}),
   };
 }
 
@@ -118,7 +124,7 @@ const LANG_NAME: Record<string, string> = {
  */
 export function memoirSystem(lang: string): string {
   return [
-    'You are a ghostwriter. You are given the bare chronology of one person’s life — dates and short titles, sometimes a line of description — and you write their memoir from it, in the first person, as if they were telling it.',
+    'You are a ghostwriter. You are given the chronology of one person’s life — dates and short titles, sometimes a line of description — and, where they have kept them, the rest of their records: the people around them, the places they have been, what they wrote about themselves, and their diary in their own words. You write their memoir from all of it, in the first person, as if they were telling it. Use the diary for their voice and the people and places for the texture of each chapter.',
     '',
     `Write ONLY in ${LANG_NAME[lang] ?? 'English'}. Every word of the memoir, including the chapter titles, is in that language.`,
     '',
@@ -149,6 +155,11 @@ export function memoirUser(input: MemoirInput): string {
     lines.push(`- ${when}${age}${cat} ${m.title}${m.description ? ` — ${m.description}` : ''}`);
   }
   if (input.endingNote) lines.push('', 'Words they want to leave behind:', input.endingNote);
+  if (input.records) {
+    // The moments are above already; the rest of the record follows.
+    const rest = recordsText({ ...input.records, moments: [], endingNote: undefined });
+    if (rest) lines.push('', 'The rest of their records:', rest);
+  }
   if (input.wish) lines.push('', 'What they asked of you:', input.wish);
   lines.push('', 'Write the memoir now.');
   return lines.join('\n');
@@ -289,8 +300,8 @@ export function memoirStream(upstream: ReadableStream<Uint8Array>): { body: Read
   return { body, written };
 }
 
-/** Ask Anthropic for the memoir. Returns the raw streaming response. */
-export function callClaude(env: MemoirEnv, input: MemoirInput): Promise<Response> {
+/** Ask Anthropic for a piece of writing, streamed. */
+export function callModel(env: MemoirEnv, system: string, user: string, maxTokens: number): Promise<Response> {
   return fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -300,10 +311,14 @@ export function callClaude(env: MemoirEnv, input: MemoirInput): Promise<Response
     },
     body: JSON.stringify({
       model: env.ANTHROPIC_MODEL || MEMOIR_MODEL_DEFAULT,
-      max_tokens: MEMOIR_MAX_TOKENS,
+      max_tokens: maxTokens,
       stream: true,
-      system: memoirSystem(input.lang),
-      messages: [{ role: 'user', content: memoirUser(input) }],
+      system,
+      messages: [{ role: 'user', content: user }],
     }),
   });
 }
+
+/** Ask Anthropic for the memoir. Returns the raw streaming response. */
+export const callClaude = (env: MemoirEnv, input: MemoirInput): Promise<Response> =>
+  callModel(env, memoirSystem(input.lang), memoirUser(input), MEMOIR_MAX_TOKENS);

@@ -25,7 +25,7 @@ export const METRIC_EVENTS = [
   // Life (the whole-life timeline).
   'life_open', 'life_start', 'life_add', 'life_image', 'life_backup', 'life_share',
   // 자서전 — the one thing in the app that is bought outright.
-  'memoir_buy', 'memoir_paid', 'memoir_write',
+  'memoir_buy', 'memoir_paid', 'memoir_write', 'saju_open', 'saju_read',
   // Relation (the people around you).
   'relation_open', 'relation_add', 'relation_import', 'relation_link', 'relation_contact',
   'relation_image', 'relation_backup', 'relation_history', 'relation_fact', 'relation_meet',

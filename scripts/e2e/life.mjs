@@ -64,13 +64,25 @@ async function setup(base, opts = {}) {
     memoir.credits += 1;
     await route.fulfill(json({ ok: true, credits: memoir.credits }));
   });
+  // 사주: off until a test turns it on (for an admin); the writer is a stub.
+  const saju = { enabled: false };
+  const sajuCalls = [];
+  await page.route('**/api/life/saju', async (route) => {
+    if (route.request().method() === 'GET') return route.fulfill(json(saju));
+    sajuCalls.push(JSON.parse(route.request().postData() ?? '{}'));
+    return route.fulfill({
+      status: 200,
+      contentType: 'text/plain; charset=utf-8',
+      body: '## 한눈에\n경금(庚金)의 날에 태어났습니다.\n\n## 지나온 대운\n첫 직장의 해와 나란히 놓입니다.',
+    });
+  });
   // The account this page sees; the decorating step turns Pro on.
   const me = { user: { id: 'u1', email: 'me@example.com', provider: 'google' }, plan: 'free', admin: false };
   await page.route('**/api/me', (route) => route.fulfill(json(me)));
   await page.goto(`${base}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
   await seedBasicData(page);
-  return { browser, page, errors, counted, me, memoir, memoirCalls, checkouts, claims };
+  return { browser, page, errors, counted, me, memoir, memoirCalls, checkouts, claims, saju, sajuCalls };
 }
 
 const pngSize = (buf) => ({ w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) });
@@ -78,7 +90,7 @@ const pngSize = (buf) => ({ w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) });
 export async function run() {
   const { pass, allOk } = makeReporter('life');
   const { base, close } = await serveDist();
-  const { browser, page, errors, counted, me, memoir, memoirCalls, checkouts, claims } = await setup(base);
+  const { browser, page, errors, counted, me, memoir, memoirCalls, checkouts, claims, saju, sajuCalls } = await setup(base);
   const count = (sel) => page.locator(sel).count();
   const stored = () => page.evaluate((k) => JSON.parse(localStorage.getItem(k) ?? 'null'), LIFE_KEY);
   const titles = () => page.$$eval('[data-life-moment]', (els) => els.map((e) => e.querySelector('.life-serif')?.textContent ?? ''));
@@ -792,28 +804,55 @@ export async function run() {
     await openLife();
     pass('…and it is still there after a reload', (await count('[data-life-decor-item]')) === 1);
 
-    // 16e. 자서전 — bought once, written from the line, kept on the device.
+    // 16e. The two readings at the foot of the page — 사주 on the left, the
+    // memoir on the right — written from the whole record.
     await closeAll();
+    await openLife();
+    await closeAll();
+    pass('nobody the server does not name sees the readings at all', (await count('[data-life-readings]')) === 0);
     memoir.enabled = true;
     memoir.signedIn = true;
     await openLife();
     await closeAll();
-    pass('with too little written down, nothing is offered', (await count('[data-life-memoir]')) === 0);
-    // Three moments is where a life becomes something worth writing about.
-    await page.evaluate((k) => {
-      const life = JSON.parse(localStorage.getItem(k));
-      life.milestones = [1990, 2004, 2010, 2016].map((y, i) => (
+    const cards = await page.locator('[data-life-reading]').evaluateAll((els) =>
+      els.map((el) => ({ k: el.dataset.lifeReading, x: Math.round(el.getBoundingClientRect().left), off: el.disabled })));
+    pass('the foot of the page offers 사주 on the left and the memoir on the right',
+      cards.length === 2 && cards[0].k === 'saju' && cards[1].k === 'memoir' && cards[0].x < cards[1].x, JSON.stringify(cards));
+    pass('…the 사주 only once the server offers it, the memoir already', cards[0].off === true && cards[1].off === false);
+    await page.locator('[data-life-reading="memoir"]').click();
+    await wait(500);
+    pass('with too little written down, the memoir says what is missing and waits',
+      (await count('[data-life-memoir-not-ready]')) === 1 && (await count('[data-life-memoir-go]')) === 0
+      && (await count('[data-life-memoir-need]')) === 5);
+    pass('…and says what it needs from which page',
+      /라이프에 순간이 10개 이상/.test(await page.locator('[data-life-memoir-checklist]').evaluate((el) => el.parentElement.innerText)));
+    await closeAll();
+    // A life with enough in it: ten moments, and people and a diary.
+    await page.evaluate(([lifeKey]) => {
+      const life = JSON.parse(localStorage.getItem(lifeKey));
+      life.milestones = [1990, 1996, 2001, 2004, 2008, 2010, 2012, 2015, 2018, 2021].map((y, i) => (
         { id: `mm${i}`, date: String(y), title: `사건 ${i + 1}`, category: 'other' }));
-      localStorage.setItem(k, JSON.stringify(life));
-    }, LIFE_KEY);
+      localStorage.setItem(lifeKey, JSON.stringify(life));
+      localStorage.setItem('24h-circle-planner.relation', JSON.stringify({
+        version: 3, me: {}, links: [], updatedAt: '',
+        people: ['가', '나', '다', '라', '마'].map((n, i) => ({ id: `r${i}`, name: `친구${n}`, group: 'friend', closeness: 3, createdAt: '' })),
+      }));
+      const entries = {};
+      for (let d = 1; d <= 10; d++) {
+        const k = `2026-01-${String(d).padStart(2, '0')}`;
+        entries[k] = { date: k, name: '하루', slices: [], note: `일기 ${d}`, savedAt: 1 };
+      }
+      localStorage.setItem('24h-circle-planner.diary', JSON.stringify({ version: 1, entries }));
+    }, [LIFE_KEY]);
     await openLife();
     await closeAll();
-    pass('the memoir section shows once the server has a writer', (await count('[data-life-memoir]')) === 1);
+    await page.locator('[data-life-reading="memoir"]').click();
+    await wait(500);
+    pass('with enough written down, the memoir can be written',
+      (await count('[data-life-memoir-ready]')) === 1 && (await count('[data-life-memoir-go]')) === 1);
     pass('…and asks the price of one, not of a subscription',
-      /\$1\.00/.test(await page.locator('[data-life-memoir-start]').innerText()),
-      await page.locator('[data-life-memoir-start]').innerText());
-    await page.locator('[data-life-memoir-start]').click();
-    await wait(400);
+      /\$1\.00/.test(await page.locator('[data-life-memoir-go]').innerText()),
+      await page.locator('[data-life-memoir-go]').innerText());
     const ask = await page.locator('[data-life-memoir-dialog]').innerText();
     pass('what leaves the device is said before it leaves',
       /사진은 보내지 않습니다/.test(ask) && /구독이 아닙니다/.test(ask), ask.replace(/\n/g, ' ').slice(0, 90));
@@ -825,7 +864,7 @@ export async function run() {
       checkouts.length === 1 && memoirCalls.length === 0, `${checkouts.length} / ${memoirCalls.length}`);
     pass('…and the purchase is claimed on the way back, webhook or no webhook',
       claims.length === 1 && claims[0] === 'co_test1234', JSON.stringify(claims));
-    pass('…and the form is open and waiting', (await count('[data-life-memoir-dialog]')) === 1);
+    pass('…and the memoir is open and waiting', (await count('[data-life-memoir-dialog]')) === 1);
     pass('…with the address tidied up again',
       !page.url().includes('memoir=') && !page.url().includes('checkout_id'), page.url());
     await page.locator('[data-life-memoir-wish]').fill('담담하게');
@@ -833,8 +872,11 @@ export async function run() {
     await wait(1600);
     const sent = memoirCalls[0] ?? {};
     pass('the writer is given the line, the wish and no picture',
-      (sent.moments?.length ?? 0) >= 3 && sent.wish === '담담하게'
+      (sent.moments?.length ?? 0) >= 10 && sent.wish === '담담하게'
       && !JSON.stringify(sent).includes('photo'), JSON.stringify(sent).slice(0, 140));
+    pass('…and the rest of the record: the people and the diary in their own words',
+      (sent.records?.people?.length ?? 0) === 5 && (sent.records?.diary?.length ?? 0) === 10,
+      JSON.stringify(sent.records ?? {}).slice(0, 140));
     pass('…and the birthday, which is what makes the ages true',
       /^\d{4}-\d{2}-\d{2}$/.test(sent.birthDate ?? ''), String(sent.birthDate));
     pass('the memoir is laid out as chapters and paragraphs',
@@ -844,9 +886,58 @@ export async function run() {
       /나는 1985년에 태어났다/.test((await stored())?.memoir?.text ?? ''));
     await openLife();
     await closeAll();
+    await page.locator('[data-life-reading="memoir"]').click();
+    await wait(500);
     pass('…and is still there after a reload', (await count('[data-life-memoir-text]')) === 1);
     pass('a second one has to be paid for again',
-      /다시 쓰기/.test(await page.locator('[data-life-memoir-start]').innerText()));
+      /\$1\.00/.test(await page.locator('[data-life-memoir-go]').innerText()));
+    await closeAll();
+
+    // 16f. While they are tried out, an admin runs both without a till, and
+    // the 사주 is drawn from the birth and read with the records.
+    Object.assign(memoir, { enabled: true, admin: true, signedIn: true, credits: 0, price: null });
+    saju.enabled = true;
+    saju.admin = true;
+    await openLife();
+    await closeAll();
+    pass('an admin is told these are admin tests, without payment',
+      (await count('[data-life-readings-admin]')) === 1
+      && /\$3/.test(await page.locator('[data-life-reading-price="saju"]').innerText())
+      && /\$5/.test(await page.locator('[data-life-reading-price="memoir"]').innerText()));
+    await page.locator('[data-life-reading="saju"]').click();
+    await wait(500);
+    pass('the 사주 draws the four pillars from the birthday at once',
+      (await count('[data-saju-pillar]')) === 4 && (await count('[data-saju-elements] > div')) === 5);
+    pass('…with the ten-year periods waiting for a gender', (await count('[data-saju-daeun-cell]')) === 0);
+    await page.locator('[data-saju-time]').fill('08:30');
+    await page.locator('[data-saju-gender="female"]').click();
+    await wait(300);
+    pass('…and drawn once there is one, the one running now marked',
+      (await count('[data-saju-daeun-cell]')) === 10 && (await count('[data-saju-daeun-cell][data-now]')) === 1);
+    pass('what is sent with it is said, with how much of each record',
+      /사진은 보내지 않으며/.test(await page.locator('[data-saju-sends]').innerText())
+      && /라이프 10/.test(await page.locator('[data-saju-count]').innerText()));
+    await page.locator('[data-saju-read]').click();
+    await wait(1500);
+    const reading = sajuCalls[0] ?? {};
+    pass('the reading is asked for with the chart and the records',
+      reading.chart?.pillars?.length === 4 && reading.birthTime === '08:30'
+      && (reading.chart?.daeun?.length ?? 0) === 10 && (reading.records?.moments?.length ?? 0) === 10,
+      JSON.stringify(reading).slice(0, 160));
+    pass('…and comes back as sections, kept on the device',
+      (await page.locator('[data-saju-text] h4').count()) === 2
+      && JSON.parse(await page.evaluate(() => localStorage.getItem('24h-circle-planner.saju')) ?? '{}').readings?.length === 1);
+    pass('…with the note that it describes rather than predicts',
+      /예측하지 않습니다/.test(await page.locator('[data-saju-disclaimer]').innerText()));
+    await closeAll();
+    await page.locator('[data-life-reading="memoir"]').click();
+    await wait(400);
+    pass('an admin writes the memoir without going to the till',
+      /관리자 테스트/.test(await page.locator('[data-life-memoir-go]').innerText()));
+    await page.locator('[data-life-memoir-go]').click();
+    await wait(1200);
+    pass('…straight to the writer', checkouts.length === 1 && memoirCalls.length === 2, `${checkouts.length} / ${memoirCalls.length}`);
+    await closeAll();
 
     // 17. A phone: the line on the left, every card to its right.
     await page.setViewportSize({ width: 390, height: 844 });
@@ -859,7 +950,7 @@ export async function run() {
     pass('phone: a left line with every card on its right', phone.line < 40 && phone.allRight, JSON.stringify(phone));
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
     const want = ['life_open', 'life_start', 'life_add', 'life_image:downloaded', 'life_backup:json', 'upgrade_open:life',
-      'memoir_buy', 'memoir_paid', 'memoir_write'];
+      'memoir_buy', 'memoir_paid', 'memoir_write', 'saju_open', 'saju_read'];
     await flush();
     pass('usage is counted', want.every((w) => counted.includes(w)), `missing ${want.filter((w) => !counted.includes(w)).join(',')} · saw ${[...new Set(counted)].join(',')}`);
   } finally {

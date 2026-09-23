@@ -17,9 +17,6 @@
 import { MAX_MEMOIR, ageAt, isFullDate, sortMilestones, type LifeData } from './life';
 import { flushMetrics } from './track';
 
-/** Fewer moments than this and there is nothing to write about. */
-export const MEMOIR_MIN_MOMENTS = 3;
-
 export interface MemoirPrice { amount: number; currency: string }
 
 /** What the server says about the feature and about this account. */
@@ -30,6 +27,8 @@ export interface MemoirState {
   /** Memoirs paid for and not yet written. */
   credits: number;
   price: MemoirPrice | null;
+  /** An admin trying it out: writes without paying. */
+  admin?: boolean;
 }
 
 export interface MemoirMoment {
@@ -48,6 +47,8 @@ export interface MemoirRequest {
   moments: MemoirMoment[];
   endingNote?: string;
   wish?: string;
+  /** Everything else the app holds (lib/ai-records). */
+  records?: unknown;
 }
 
 /** Everything the writer is given — and nothing else from the record. */
@@ -74,10 +75,6 @@ export function buildMemoirRequest(life: LifeData, lang: string, wish?: string):
     ...(wish && wish.trim() ? { wish: wish.trim() } : {}),
   };
 }
-
-/** Can a memoir be written from this record at all? */
-export const canWriteMemoir = (life: LifeData): boolean =>
-  isFullDate(life.profile.birthDate) && life.milestones.length >= MEMOIR_MIN_MOMENTS;
 
 /** The price as the person's own language writes money. */
 export function formatMemoirPrice(price: MemoirPrice | null, lang: string): string | null {
@@ -150,6 +147,7 @@ export async function fetchMemoirState(): Promise<MemoirState> {
     const data = (await res.json()) as Partial<MemoirState>;
     return {
       enabled: Boolean(data.enabled),
+      ...(data.admin ? { admin: true } : {}),
       signedIn: Boolean(data.signedIn),
       credits: Math.max(0, Number(data.credits) || 0),
       price: data.price && typeof data.price.amount === 'number' ? { amount: data.price.amount, currency: String(data.price.currency || 'usd') } : null,

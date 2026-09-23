@@ -85,8 +85,13 @@ export const gripFor = (closeness = 3): number =>
  * One step of the world, in place. `alpha` is how hot it still is (1 at the
  * start, 0 when settled); every force is scaled by it, so the map moves
  * decisively at first and barely at the end.
+ *
+ * `me` is where the middle is. It is the origin until somebody picks me up
+ * and carries me: then the rings are measured from wherever I am, so everyone
+ * is pulled after me by the same forces that hold the map together — the near
+ * ones first, the far ones swinging in behind.
  */
-export function stepWorld(bodies: Body[], ties: readonly Tie[], alpha: number): void {
+export function stepWorld(bodies: Body[], ties: readonly Tie[], alpha: number, me = { x: 0, y: 0 }): void {
   const at = new Map(bodies.map((b) => [b.id, b]));
 
   // Everybody pushes everybody else away. This is the n² part, and the reason
@@ -132,10 +137,12 @@ export function stepWorld(bodies: Body[], ties: readonly Tie[], alpha: number): 
 
   // The ring: closeness is a distance from the middle, and it still is.
   for (const body of bodies) {
-    const far = Math.hypot(body.x, body.y) || 0.01;
+    const rx = body.x - me.x;
+    const ry = body.y - me.y;
+    const far = Math.hypot(rx, ry) || 0.01;
     const pull = (body.want - far) * RING_PULL * alpha;
-    body.vx += (body.x / far) * pull;
-    body.vy += (body.y / far) * pull;
+    body.vx += (rx / far) * pull;
+    body.vy += (ry / far) * pull;
   }
 
   // Move, with what is left of the speed.
@@ -175,13 +182,15 @@ export function stepWorld(bodies: Body[], ties: readonly Tie[], alpha: number): 
     }
   }
   for (const body of bodies) {
-    const far = Math.hypot(body.x, body.y);
+    const rx = body.x - me.x;
+    const ry = body.y - me.y;
+    const far = Math.hypot(rx, ry);
     const room = ME_ROOM + body.r;
     if (far >= room || body.pinned) continue;
-    const ux = (body.x || 1) / (far || 1);
-    const uy = (body.y || 0) / (far || 1);
-    body.x = ux * room;
-    body.y = uy * room;
+    const ux = (rx || 1) / (far || 1);
+    const uy = (ry || 0) / (far || 1);
+    body.x = me.x + ux * room;
+    body.y = me.y + uy * room;
   }
 }
 

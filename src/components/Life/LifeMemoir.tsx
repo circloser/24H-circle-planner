@@ -1,16 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { BookOpen, Copy, Download, Loader2, RefreshCw } from 'lucide-react';
+import { BookOpen, Check, Copy, Download, Loader2, RefreshCw } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useAuth } from '@/hooks/useAuth';
 import { track } from '@/lib/track';
 import {
-  MemoirError, buildMemoirRequest, canWriteMemoir, claimMemoir, downloadMemoir, fetchMemoirState,
-  formatMemoirPrice, memoirBlocks, startMemoirCheckout, writeMemoir, type MemoirState,
+  MemoirError, buildMemoirRequest, downloadMemoir, formatMemoirPrice, memoirBlocks, startMemoirCheckout, writeMemoir,
+  type MemoirState,
 } from '@/lib/life-memoir';
+import { MEMOIR_OTHERS_NEEDED, gatherRecords, memoirReadiness } from '@/lib/ai-records';
 import type { LifeApi } from '@/hooks/useLife';
+import type { TKey } from '@/i18n/translations';
 
 const MAX_WISH = 200;
 
@@ -23,62 +25,46 @@ function reason(err: unknown): 'life.memoir.noCredit' | 'life.memoir.tooLittle' 
 }
 
 /**
- * 자서전 — where the line ends, the life written out.
+ * 자서전 — the whole of the record, written out as one story.
  *
- * Bought once, not part of Pro (see lib/life-memoir). The whole section is
- * absent unless the server has a writer set up, so nothing here is ever a
- * dead button. Photographs are not sent, and are not even carried to this
- * side of the call.
+ * Opened from the card at the foot of the life page (LifeReadings). It is
+ * written from everything the app holds — the life line, the people, the
+ * diary, the places, "about me" — and so it is only offered once there is
+ * enough of it: the checklist says what there is and what is still missing,
+ * and the button waits until it is met. Photographs are never sent.
  */
-export function LifeMemoir({ api, lang }: { api: LifeApi; lang: string }) {
-  const { t } = useTranslation();
+export function MemoirDialog({ open, onOpenChange, api, state, onChanged, fallbackPrice }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  api: LifeApi;
+  state: MemoirState;
+  /** Something changed on the server's side (a credit spent). */
+  onChanged: () => void;
+  /** The launch price, shown while the till is not open. */
+  fallbackPrice: string;
+}) {
+  const { t, lang } = useTranslation();
   const { user, login } = useAuth();
-  const [state, setState] = useState<MemoirState | null>(null);
-  const [open, setOpen] = useState(false);
   const [wish, setWish] = useState('');
-  const [draft, setDraft] = useState<string | null>(null); // the text as it arrives
+  const [draft, setDraft] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const memoir = api.life.memoir;
   const writing = useRef(false);
-
-  const [reload, setReload] = useState(0);
-  const refresh = useCallback(() => setReload((n) => n + 1), []);
-  useEffect(() => {
-    let alive = true;
-    void fetchMemoirState().then((s) => { if (alive) setState(s); });
-    return () => { alive = false; };
-  }, [user, reload]);
-
-  // Back from a paid checkout: count the credit, say so, and open the form the
-  // buyer was in the middle of.
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('memoir') !== 'paid') return;
-    // Polar puts the checkout id in the address it sends the buyer back to.
-    const checkout = params.get('checkout_id') ?? '';
-    params.delete('memoir');
-    params.delete('checkout_id');
-    const qs = params.toString();
-    window.history.replaceState({}, '', window.location.pathname + (qs ? `?${qs}` : '') + window.location.hash);
-    track('memoir_paid');
-    void (checkout ? claimMemoir(checkout) : Promise.resolve())
-      .then(fetchMemoirState)
-      .then((s) => {
-        setState(s);
-        setOpen(true);
-        toast.success(t('life.memoir.paid'));
-      });
-  }, [t]);
+  const memoir = api.life.memoir;
+  const { count } = gatherRecords(lang);
+  const ready = memoirReadiness(count);
+  const admin = Boolean(state.admin);
+  const paid = admin || state.credits > 0;
+  const price = formatMemoirPrice(state.price, lang) ?? fallbackPrice;
 
   const write = async () => {
     if (writing.current) return;
     writing.current = true;
     setBusy(true);
-    setOpen(false);
     setDraft('');
     track('memoir_write');
     try {
-      const text = await writeMemoir(buildMemoirRequest(api.life, lang, wish), setDraft);
+      const req = { ...buildMemoirRequest(api.life, lang, wish), records: gatherRecords(lang).digest };
+      const text = await writeMemoir(req, setDraft);
       api.setMemoir(text);
       setWish('');
       toast.success(t('life.memoir.done'));
@@ -88,7 +74,7 @@ export function LifeMemoir({ api, lang }: { api: LifeApi; lang: string }) {
       writing.current = false;
       setBusy(false);
       setDraft(null);
-      void refresh();
+      onChanged();
     }
   };
 
@@ -103,85 +89,53 @@ export function LifeMemoir({ api, lang }: { api: LifeApi; lang: string }) {
     }
   };
 
-  // Nothing to write about yet, or no writer on the server: say nothing at all.
-  if (!state?.enabled || !canWriteMemoir(api.life)) return null;
-
-  const price = formatMemoirPrice(state.price, lang);
-  const paid = state.credits > 0;
+  const go = () => {
+    if (!user) return login();
+    return paid ? void write() : void buy();
+  };
   const shown = draft !== null ? draft : memoir?.text ?? '';
   const blocks = memoirBlocks(shown);
 
   return (
-    <section aria-labelledby="life-memoir" className="mx-auto w-full max-w-[960px]" data-life-memoir>
-      <div className="mx-4 mt-14 max-w-[640px] min-[900px]:mx-auto">
-        <h3 id="life-memoir" className="life-serif flex items-center justify-center gap-2 text-2xl font-bold tracking-tight text-foreground">
-          <BookOpen aria-hidden className="h-5 w-5 text-muted-foreground" />
-          {t('life.memoir.title')}
-        </h3>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex max-h-[92dvh] max-w-xl flex-col gap-4 overflow-y-auto" data-life-memoir data-life-memoir-dialog>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <BookOpen aria-hidden className="h-5 w-5 text-muted-foreground" />
+            {t('life.memoir.title')}
+          </DialogTitle>
+          <DialogDescription>{t('life.memoir.lead')}</DialogDescription>
+        </DialogHeader>
 
-        {blocks.length > 0 ? (
-          <article className="life-serif mt-6 text-[16px] leading-[1.9] text-foreground" data-life-memoir-text>
-            {blocks.map((b, i) => (
-              b.kind === 'h'
-                ? <h4 key={i} className="mt-8 text-center text-[17px] font-bold first:mt-0">{b.text}</h4>
-                : <p key={i} className="mt-4 whitespace-pre-wrap">{b.text}</p>
+        {/* Enough to write from? Every record, what there is and what it needs. */}
+        <section className="rounded-xl border border-border p-3" data-life-memoir-ready={ready.ok || undefined}>
+          <h4 className="text-[13px] font-semibold text-foreground">{t('life.memoir.ready.title')}</h4>
+          <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{t('life.memoir.ready.rule')}</p>
+          <ul className="mt-2 flex flex-col gap-1" data-life-memoir-checklist>
+            {ready.items.map((i) => (
+              <li key={i.key} className="flex items-center gap-2 text-[13px]" data-life-memoir-need={i.key} data-met={i.met || undefined}>
+                <span aria-hidden className={`grid h-4 w-4 place-items-center rounded-full border ${
+                  i.met ? 'border-primary bg-primary text-primary-foreground' : 'border-border'}`}>
+                  {i.met && <Check className="h-3 w-3" />}
+                </span>
+                <span className="flex-1 text-foreground">
+                  {t(`life.memoir.ready.${i.key}` as TKey)}
+                  {i.required && <span className="ml-1.5 text-[11px] text-muted-foreground">{t('life.memoir.ready.required')}</span>}
+                </span>
+                <span className="tabular-nums text-muted-foreground">{i.have} / {i.need}</span>
+              </li>
             ))}
-          </article>
-        ) : (
-          <p className="mt-4 text-center text-[15px] italic text-muted-foreground">{t('life.memoir.lead')}</p>
-        )}
+          </ul>
+          {!ready.ok && (
+            <p className="mt-2 text-[12px] font-medium text-foreground" role="status" data-life-memoir-not-ready
+              data-others-needed={MEMOIR_OTHERS_NEEDED}>
+              {t('life.memoir.notReady')}
+            </p>
+          )}
+        </section>
 
-        {busy && (
-          <p className="mt-6 flex items-center justify-center gap-2 text-[13px] italic text-muted-foreground" role="status" data-life-memoir-writing>
-            <Loader2 aria-hidden className="h-4 w-4 animate-spin" />
-            {t('life.memoir.writing')}
-          </p>
-        )}
-
-        {!busy && (
-          <div className="mt-7 flex flex-wrap items-center justify-center gap-2">
-            <Button variant={memoir ? 'outline' : 'default'} size="sm" className="gap-1.5" data-life-memoir-start
-              onClick={() => (user ? setOpen(true) : login())}>
-              {memoir ? <RefreshCw aria-hidden className="h-4 w-4" /> : <BookOpen aria-hidden className="h-4 w-4" />}
-              {/* The price shows before signing in too: nobody should have to
-                  log in to find out what a thing costs. */}
-              {memoir
-                ? t('life.memoir.again')
-                : paid ? t('life.memoir.write')
-                : price ? t('life.memoir.buy', { price })
-                : !user ? t('life.memoir.signIn') : t('life.memoir.write')}
-            </Button>
-            {memoir && (
-              <>
-                <Button variant="ghost" size="sm" className="gap-1.5" data-life-memoir-copy
-                  onClick={() => { void navigator.clipboard?.writeText(memoir.text).then(() => toast.success(t('life.memoir.copied'))); }}>
-                  <Copy aria-hidden className="h-4 w-4" />
-                  {t('life.memoir.copy')}
-                </Button>
-                <Button variant="ghost" size="sm" className="gap-1.5" data-life-memoir-download
-                  onClick={() => downloadMemoir(memoir.text, api.life.profile.name)}>
-                  <Download aria-hidden className="h-4 w-4" />
-                  {t('life.memoir.download')}
-                </Button>
-              </>
-            )}
-          </div>
-        )}
-
-        {paid && !memoir && !busy && (
-          <p className="mt-3 text-center text-[13px] italic text-muted-foreground" data-life-memoir-credits>
-            {t('life.memoir.credits', { n: String(state.credits) })}
-          </p>
-        )}
-      </div>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[92dvh] max-w-md overflow-y-auto" data-life-memoir-dialog>
-          <DialogHeader>
-            <DialogTitle>{t('life.memoir.title')}</DialogTitle>
-            <DialogDescription>{t('life.memoir.lead')}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
+        {ready.ok && !busy && (
+          <div className="flex flex-col gap-3">
             <label className="block space-y-1.5">
               <span className="text-sm font-medium text-foreground">{t('life.memoir.wish')}</span>
               <textarea value={wish} maxLength={MAX_WISH} rows={2} placeholder={t('life.memoir.wishHint')}
@@ -195,13 +149,55 @@ export function LifeMemoir({ api, lang }: { api: LifeApi; lang: string }) {
               <p className="mt-2">{t('life.memoir.privacy')}</p>
               {!paid && <p className="mt-2">{t('life.memoir.once')}</p>}
             </div>
-            <Button className="w-full" disabled={busy} data-life-memoir-go
-              onClick={() => (paid ? void write() : void buy())}>
-              {paid ? t('life.memoir.write') : price ? t('life.memoir.buy', { price }) : t('life.memoir.write')}
+            <Button className="w-full gap-1.5" data-life-memoir-go data-life-memoir-start onClick={go}>
+              {memoir ? <RefreshCw aria-hidden className="h-4 w-4" /> : <BookOpen aria-hidden className="h-4 w-4" />}
+              {!user
+                ? t('life.memoir.signIn')
+                : admin ? `${t(memoir ? 'life.memoir.again' : 'life.memoir.write')} · ${t('life.readings.admin')}`
+                : paid ? t(memoir ? 'life.memoir.again' : 'life.memoir.write')
+                : t('life.memoir.buy', { price })}
             </Button>
+            {!admin && state.credits > 0 && (
+              <p className="text-center text-[13px] italic text-muted-foreground" data-life-memoir-credits>
+                {t('life.memoir.credits', { n: String(state.credits) })}
+              </p>
+            )}
           </div>
-        </DialogContent>
-      </Dialog>
-    </section>
+        )}
+
+        {busy && (
+          <p className="flex items-center justify-center gap-2 text-[13px] italic text-muted-foreground" role="status" data-life-memoir-writing>
+            <Loader2 aria-hidden className="h-4 w-4 animate-spin" />
+            {t('life.memoir.writing')}
+          </p>
+        )}
+
+        {blocks.length > 0 && (
+          <>
+            <article className="life-serif text-[16px] leading-[1.9] text-foreground" data-life-memoir-text>
+              {blocks.map((b, i) => (
+                b.kind === 'h'
+                  ? <h4 key={i} className="mt-8 text-center text-[17px] font-bold first:mt-0">{b.text}</h4>
+                  : <p key={i} className="mt-4 whitespace-pre-wrap">{b.text}</p>
+              ))}
+            </article>
+            {memoir && !busy && (
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button variant="ghost" size="sm" className="gap-1.5" data-life-memoir-copy
+                  onClick={() => { void navigator.clipboard?.writeText(memoir.text).then(() => toast.success(t('life.memoir.copied'))); }}>
+                  <Copy aria-hidden className="h-4 w-4" />
+                  {t('life.memoir.copy')}
+                </Button>
+                <Button variant="ghost" size="sm" className="gap-1.5" data-life-memoir-download
+                  onClick={() => downloadMemoir(memoir.text, api.life.profile.name)}>
+                  <Download aria-hidden className="h-4 w-4" />
+                  {t('life.memoir.download')}
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

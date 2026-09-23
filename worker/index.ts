@@ -17,9 +17,10 @@ import { busyResponse, isDbUnavailable } from './busy';
 import { alertOps, clearOps, keepDevices } from './alert';
 import { handleGeo } from './geo';
 import {
-  MEMOIR_KIND, callClaude, cleanMemoirInput, grantMemoirCredit, memoirCredits,
+  MEMOIR_KIND, callClaude, callModel, cleanMemoirInput, grantMemoirCredit, memoirCredits,
   memoirEnabled, memoirStream, refundMemoirCredit, spendMemoirCredit,
 } from './memoir';
+import { SAJU_MAX_TOKENS, cleanSajuInput, sajuSystem, sajuUser } from './readings';
 import { handleIcalFetch } from './ical';
 
 export interface Env {
@@ -53,6 +54,9 @@ export interface Env {
   ANTHROPIC_API_KEY?: string;
   ANTHROPIC_MODEL?: string;
   POLAR_MEMOIR_PRODUCT_ID?: string;
+  /** "1" opens the readings (사주, 자서전) to everybody; otherwise only the
+   *  admins see them, and run them free, while they are being tried out. */
+  AI_READINGS_PUBLIC?: string;
 }
 
 /** Whether `email` is on the admin allowlist (always Pro). */
@@ -651,11 +655,25 @@ async function memoirPrice(env: Env): Promise<{ amount: number; currency: string
   }
 }
 
+/**
+ * The readings (사주, 자서전) are being tried out by the admins before anyone
+ * else sees them. Until AI_READINGS_PUBLIC is "1", an admin sees them and
+ * runs them without paying — the point is to read what they write — and
+ * everybody else is told they are not there. The paid path underneath stays
+ * as it was, for the day they open.
+ */
+const readingsPublic = (env: Env): boolean => env.AI_READINGS_PUBLIC === '1';
+
 /** GET /api/life/memoir — whether the section shows at all, and what it costs. */
 async function handleMemoirState(request: Request, env: Env): Promise<Response> {
-  if (!memoirEnabled(env)) return json({ enabled: false });
-  const price = await memoirPrice(env);
   const user = await currentUser(request, env);
+  if (user && isAdminEmail(env, user.email)) {
+    // An admin is told plainly what is missing, rather than seeing nothing.
+    if (!env.ANTHROPIC_API_KEY) return json({ enabled: false, admin: true, missing: 'ANTHROPIC_API_KEY' });
+    return json({ enabled: true, admin: true, signedIn: true, credits: 0, price: null });
+  }
+  if (!readingsPublic(env) || !memoirEnabled(env)) return json({ enabled: false });
+  const price = await memoirPrice(env);
   if (!user || !env.DB) return json({ enabled: true, signedIn: false, credits: 0, price });
   return json({ enabled: true, signedIn: true, credits: await memoirCredits(env.DB, user.id), price });
 }
@@ -694,9 +712,13 @@ async function handleMemoirCheckout(request: Request, env: Env): Promise<Respons
  * (two tabs cannot spend it twice) and given back if not one word arrived.
  */
 async function handleMemoirWrite(request: Request, env: Env, ctx?: Waiter): Promise<Response> {
-  if (!memoirEnabled(env) || !env.DB) return json({ error: 'memoir_unconfigured' }, 503);
+  if (!env.ANTHROPIC_API_KEY || !env.DB) return json({ error: 'memoir_unconfigured' }, 503);
   const user = await currentUser(request, env);
   if (!user) return json({ error: 'unauthorized' }, 401);
+  // An admin trying it out writes without a credit; anybody else needs the
+  // feature open and a memoir paid for.
+  const admin = isAdminEmail(env, user.email);
+  if (!admin && (!readingsPublic(env) || !memoirEnabled(env))) return json({ error: 'not_open' }, 403);
   let raw: unknown;
   try {
     raw = await request.json();
@@ -705,24 +727,67 @@ async function handleMemoirWrite(request: Request, env: Env, ctx?: Waiter): Prom
   }
   const input = cleanMemoirInput(raw);
   if (!input) return json({ error: 'too_little' }, 400);
-  if (!(await spendMemoirCredit(env.DB, user.id))) return json({ error: 'no_credit' }, 402);
+  if (!admin && !(await spendMemoirCredit(env.DB, user.id))) return json({ error: 'no_credit' }, 402);
 
   const db = env.DB;
+  const refund = () => (admin ? Promise.resolve() : refundMemoirCredit(db, user.id));
   let upstream: Response;
   try {
     upstream = await callClaude(env, input);
   } catch {
-    await refundMemoirCredit(db, user.id);
+    await refund();
     return json({ error: 'writer_unreachable' }, 502);
   }
   if (!upstream.ok || !upstream.body) {
-    await refundMemoirCredit(db, user.id);
+    await refund();
     console.error(`[memoir] anthropic answered ${upstream.status}`);
     return json({ error: 'writer_failed', status: upstream.status }, 502);
   }
   const { body, written } = memoirStream(upstream.body);
-  const settle = written.then((n) => (n === 0 ? refundMemoirCredit(db, user.id) : undefined));
+  const settle = written.then((n) => (n === 0 ? refund() : undefined));
   if (ctx) ctx.waitUntil(settle); else void settle;
+  return new Response(body, {
+    headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' },
+  });
+}
+
+/** GET /api/life/saju — whether the 사주 reading shows at all. Admins only,
+ *  for now (see readingsPublic); it has no checkout of its own yet. */
+async function handleSajuState(request: Request, env: Env): Promise<Response> {
+  const user = await currentUser(request, env);
+  if (!user || !isAdminEmail(env, user.email)) return json({ enabled: false });
+  if (!env.ANTHROPIC_API_KEY) return json({ enabled: false, admin: true, missing: 'ANTHROPIC_API_KEY' });
+  return json({ enabled: true, admin: true });
+}
+
+/**
+ * POST /api/life/saju — the chart (worked out in the browser, src/lib/saju.ts)
+ * and the person's own records, read by the model. Plain text, streamed.
+ */
+async function handleSajuWrite(request: Request, env: Env): Promise<Response> {
+  if (!env.ANTHROPIC_API_KEY) return json({ error: 'saju_unconfigured' }, 503);
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'unauthorized' }, 401);
+  if (!isAdminEmail(env, user.email)) return json({ error: 'not_open' }, 403);
+  let raw: unknown;
+  try {
+    raw = await request.json();
+  } catch {
+    return json({ error: 'bad_json' }, 400);
+  }
+  const input = cleanSajuInput(raw);
+  if (!input) return json({ error: 'bad_chart' }, 400);
+  let upstream: Response;
+  try {
+    upstream = await callModel(env, sajuSystem(input.lang), sajuUser(input), SAJU_MAX_TOKENS);
+  } catch {
+    return json({ error: 'writer_unreachable' }, 502);
+  }
+  if (!upstream.ok || !upstream.body) {
+    console.error(`[saju] anthropic answered ${upstream.status}`);
+    return json({ error: 'writer_failed', status: upstream.status }, 502);
+  }
+  const { body } = memoirStream(upstream.body);
   return new Response(body, {
     headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' },
   });
@@ -1525,6 +1590,8 @@ async function route(request: Request, env: Env, ctx?: Waiter): Promise<Response
       if (p === '/api/referral/claim' && m === 'POST') return handleReferralClaim(request, env);
       if (p === '/api/share' && m === 'POST') return handleShareCreate(request, env);
       if (p === '/api/metrics' && m === 'POST') return handleMetrics(request, env);
+      if (p === '/api/life/saju' && m === 'GET') return handleSajuState(request, env);
+      if (p === '/api/life/saju' && m === 'POST') return handleSajuWrite(request, env);
       if (p === '/api/life/memoir' && m === 'GET') return handleMemoirState(request, env);
       if (p === '/api/life/memoir' && m === 'POST') return handleMemoirWrite(request, env, ctx);
       if (p === '/api/life/memoir/checkout' && m === 'POST') return handleMemoirCheckout(request, env);

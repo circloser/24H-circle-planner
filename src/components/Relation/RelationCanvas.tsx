@@ -194,6 +194,12 @@ export function RelationCanvas({
    * frame, and a render each time would be a render too many.
    */
   const reach = useRef(seed.extent);
+  /**
+   * Where I am on the map. The middle, until I am picked up and carried:
+   * then everybody's ring is measured from here (lib/relation-force), and the
+   * forces that hold the map together pull them all along after me.
+   */
+  const origin = useRef({ x: 0, y: 0 });
   /** Where each group's (and subgroup's) name was last written, so it can be
    *  eased to its next place rather than jump there. */
   const labels = useRef(new Map<string, { x: number; y: number }>());
@@ -269,6 +275,8 @@ export function RelationCanvas({
     // settle and see a drag warm it up again. Set here rather than in a
     // render: it changes every frame, and nothing in the app reads it.
     el.dataset.relationAlpha = alpha.current.toFixed(3);
+    // Where I am on the map, for the same reason: a test can see me carried.
+    el.dataset.relationMe = `${Math.round(origin.current.x)},${Math.round(origin.current.y)}`;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, size.w, size.h);
     const ink = inkOf(host);
@@ -300,7 +308,7 @@ export function RelationCanvas({
 
     const fade = (p: Person) => contactFade(p, today);
     const dim = (id: string) => (selected && selected !== id ? 0.25 : 1);
-    const middle = toScreen(0, 0);
+    const middle = toScreen(origin.current.x, origin.current.y);
 
     /** How far behind the map's own drag a point is: the middle not at all,
      *  the edge nearly all of it. */
@@ -310,7 +318,7 @@ export function RelationCanvas({
     const follow = (p: { x: number; y: number }) => {
       const s = toScreen(p.x, p.y);
       if (!trail) return s;
-      const share = TRAIL * Math.min(1, Math.hypot(p.x, p.y) / Math.max(1, reach.current));
+      const share = TRAIL * Math.min(1, Math.hypot(p.x - origin.current.x, p.y - origin.current.y) / Math.max(1, reach.current));
       return { x: s.x + trail.x * share, y: s.y + trail.y * share };
     };
 
@@ -576,7 +584,7 @@ export function RelationCanvas({
       lastFrame.current = now;
 
       if (alpha.current > COLD) {
-        stepWorld(list, ties, alpha.current);
+        stepWorld(list, ties, alpha.current, origin.current);
         alpha.current = cool(alpha.current);
       }
 
@@ -602,12 +610,23 @@ export function RelationCanvas({
   // ── pointer ──────────────────────────────────────────────────────────────
   const gesture = useRef<{
     id: number; sx: number; sy: number; node: Placed | null; moved: boolean; hold: number; panned: View;
+    /** I am the one being carried: where I was, and where the finger was on
+     *  the map, when the carrying began. */
+    me: { ox: number; oy: number; px: number; py: number } | null;
   } | null>(null);
   const lastTap = useRef(0);
 
   const pointOf = (e: React.PointerEvent) => {
     const r = canvas.current!.getBoundingClientRect();
     return toMap(e.clientX - r.left, e.clientY - r.top);
+  };
+
+  /** Is this pointer on me, the circle in the middle? */
+  const onMe = (e: React.PointerEvent): boolean => {
+    const me = meAt.current;
+    if (!me) return false;
+    const r = canvas.current!.getBoundingClientRect();
+    return Math.hypot(e.clientX - r.left - me.x, e.clientY - r.top - me.y) <= me.r;
   };
 
   const down = (e: React.PointerEvent) => {
@@ -617,13 +636,14 @@ export function RelationCanvas({
     capture(e.target as Element, e.pointerId);
     gesture.current = {
       id: e.pointerId, sx: e.clientX, sy: e.clientY, node, moved: false, panned: view,
+      me: !node && onMe(e) ? { ox: origin.current.x, oy: origin.current.y, px: at.x, py: at.y } : null,
       hold: node
         ? window.setTimeout(() => {
           // Held down: put them here for good, or give them back to the map.
           const g = gesture.current;
           if (!g || g.moved) return;
           const body = world.current.get(node.person.id);
-          const polar = body ? polarOf(body.x, body.y) : { a: node.a, d: node.d };
+          const polar = body ? polarOf(body.x - origin.current.x, body.y - origin.current.y) : { a: node.a, d: node.d };
           onPlace(node.person.id, node.fixed
             ? undefined
             : { a: polar.a, r: polar.d / Math.max(1, reach.current) });
@@ -658,6 +678,24 @@ export function RelationCanvas({
       body.vx = 0;
       body.vy = 0;
       alpha.current = Math.max(alpha.current, REHEAT);
+    } else if (g.me) {
+      // I am being carried: I go exactly where the finger is, and everybody
+      // else is pulled after me by the map's own forces — their rings are
+      // measured from me — so they follow as a person dragged about does,
+      // near ones first, far ones swinging in behind. Anyone put down by hand
+      // keeps their place beside me and simply comes along.
+      const at = pointOf(e);
+      const next = { x: g.me.ox + (at.x - g.me.px), y: g.me.oy + (at.y - g.me.py) };
+      const dx = next.x - origin.current.x;
+      const dy = next.y - origin.current.y;
+      for (const body of world.current.values()) {
+        if (!body.pinned || body.id === dragging.current) continue;
+        body.x += dx;
+        body.y += dy;
+      }
+      origin.current = next;
+      alpha.current = Math.max(alpha.current, REHEAT);
+      if (!drag) setDrag('me');
     } else {
       // Dragging the map is dragging me: I go where the finger goes, and the
       // spring behind me is what everybody else is towed along on.
@@ -676,7 +714,7 @@ export function RelationCanvas({
       if (body) {
         if (g.node.fixed) {
           // Already put down by hand: they stay where the finger left them.
-          const polar = polarOf(body.x, body.y);
+          const polar = polarOf(body.x - origin.current.x, body.y - origin.current.y);
           onPlace(g.node.person.id, { a: polar.a, r: polar.d / Math.max(1, reach.current) });
         } else {
           // Let go: the map takes them back, and moves to make room.
@@ -693,16 +731,12 @@ export function RelationCanvas({
     if (g.node) return onSelect(g.node.person.id);
     // The middle is me: pressing it opens my own card rather than clearing
     // the selection, which is what pressing anywhere else does.
-    const me = meAt.current;
-    if (me && onOpenMe) {
-      const r = canvas.current!.getBoundingClientRect();
-      if (Math.hypot(e.clientX - r.left - me.x, e.clientY - r.top - me.y) <= me.r) return onOpenMe();
-    }
+    if (onOpenMe && (g.me || onMe(e))) return onOpenMe();
     // Empty space: a second tap in quick succession asks for someone new.
     const now = performance.now();
     if (onAddAt && now - lastTap.current < 400) {
       const at = pointOf(e);
-      const polar = polarOf(at.x, at.y);
+      const polar = polarOf(at.x - origin.current.x, at.y - origin.current.y);
       lastTap.current = 0;
       onAddAt({ a: polar.a, r: Math.min(1.6, polar.d / Math.max(1, reach.current)) });
       return;
@@ -724,9 +758,17 @@ export function RelationCanvas({
     });
   };
 
-  /** Home again: the view put back, and the map given a shake. */
+  /** Home again: the view put back, me back in the middle (everyone follows),
+   *  and the map given a shake. */
   const home = () => {
     setView({ scale: 1, tx: 0, ty: 0 });
+    // Anyone put down by hand came along with me; they go back with me too.
+    for (const body of world.current.values()) {
+      if (!body.pinned) continue;
+      body.x -= origin.current.x;
+      body.y -= origin.current.y;
+    }
+    origin.current = { x: 0, y: 0 };
     alpha.current = 1;
   };
 

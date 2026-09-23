@@ -572,6 +572,39 @@ export async function run() {
     });
     pass('…and settled, nobody sits perfectly still', floats);
 
+    // 10b. Picking me up: I go where the finger goes, and the whole map is
+    // warmed so everybody is pulled after me by its own forces — not slid
+    // across the screen in one stiff piece.
+    await cooled();
+    const meBox = await page.locator('[data-relation-surface]').boundingBox();
+    const cx = meBox.x + meBox.width / 2;
+    const cy = meBox.y + meBox.height / 2;
+    await page.mouse.move(cx, cy);
+    await page.mouse.down();
+    await page.mouse.move(cx + 60, cy + 20, { steps: 4 });
+    await page.mouse.move(cx + 140, cy + 40, { steps: 6 });
+    const during = await heat();
+    const carried = await page.locator('[data-relation-surface]').getAttribute('data-relation-me');
+    await page.mouse.up();
+    const [mx] = String(carried).split(',').map(Number);
+    pass('dragging me carries me, and heats the map so the others follow',
+      mx > 30 && during > 0.3, `me ${carried}, heat ${during}`);
+    pass('…and they are still coming after me once I am let go',
+      await page.evaluate(async () => {
+        const shot = () => {
+          const c = document.querySelector('[data-relation-surface]');
+          return c.getContext('2d').getImageData(0, 0, c.width, c.height).data.join();
+        };
+        const first = shot();
+        await new Promise((r) => setTimeout(r, 250));
+        return first !== shot();
+      }));
+    // Home again: a double press puts me back in the middle, and them with me.
+    await page.mouse.dblclick(meBox.x + 40, meBox.y + 40);
+    await wait(300);
+    pass('…and a double press brings me home',
+      (await page.locator('[data-relation-surface]').getAttribute('data-relation-me')) === '0,0');
+
     // 11. The free limit stops adding, and hides nothing.
     await seed(Array.from({ length: 40 }, (_, i) => person(`x${i}`, { name: `사람 ${i}` })));
     await openRelation();

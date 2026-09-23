@@ -368,7 +368,7 @@ export function MeProfileDialog({ open, me, pro, onClose, onChange }: {
       <DialogContent className="flex max-h-[90dvh] max-w-xl flex-col gap-3 overflow-hidden" data-relation-me-dialog>
         <DialogHeader>
           <DialogTitle>{me.name || t('me.title')}</DialogTitle>
-          <DialogDescription className="text-[12px]">{t('me.hint')}</DialogDescription>
+          <DialogDescription className="sr-only">{t('me.hint')}</DialogDescription>
         </DialogHeader>
         <div role="tablist" className="flex shrink-0 gap-1 overflow-x-auto overflow-y-hidden border-b border-border">
           {TABS.map((id) => (
@@ -392,7 +392,9 @@ export function MeProfileDialog({ open, me, pro, onClose, onChange }: {
               </label>
               <div className="flex flex-col gap-1.5">
                 <span className={field}>{t('relation.field.photo')}</span>
-                <PhotoField value={me.photo} original={me.photo} pro={pro}
+                {/* My own face: the "only with their consent" line is for
+                    photos of other people, not this one. */}
+                <PhotoField value={me.photo} original={me.photo} pro={pro} own
                   onChange={(photo) => onChange({ photo })} />
               </div>
             </div>

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { decodeLife, emptyLife, encodeLife, type LifeData, type Milestone } from '../life';
 import {
-  buildMemoirRequest, canWriteMemoir, formatMemoirPrice, memoirBlocks,
+  buildMemoirRequest, formatMemoirPrice, memoirBlocks,
 } from '../life-memoir';
 
 const ms = (id: string, date: string, extra: Partial<Milestone> = {}): Milestone =>
@@ -47,12 +47,6 @@ describe('what is sent to have a memoir written', () => {
   it('leaves out what is not there, rather than sending empty fields', () => {
     const req = buildMemoirRequest(life({ milestones: [ms('a', '2004')], profile: { birthDate: '' } }), 'en');
     expect(req).toEqual({ lang: 'en', moments: [{ date: '2004', title: 'a', category: 'other' }] });
-  });
-
-  it('needs a birthday and three moments before it is worth writing', () => {
-    expect(canWriteMemoir(life({ milestones: [ms('a', '2004'), ms('b', '2005')] }))).toBe(false);
-    expect(canWriteMemoir(life({ milestones: [ms('a', '2004'), ms('b', '2005'), ms('c', '2006')] }))).toBe(true);
-    expect(canWriteMemoir(life({ profile: { birthDate: '' }, milestones: [ms('a', '2004'), ms('b', '2005'), ms('c', '2006')] }))).toBe(false);
   });
 });
 

@@ -89,6 +89,10 @@ export const SYNC_KEYS: readonly string[] = [
   // if an older cloud blob predates it, byte-stable on load → save. The
   // photographs pinned to a place stay on the device, like every other.
   'place',
+  // The 사주 reading's settings (the hour of birth, the gender its ten-year
+  // periods turn on) and the readings written — paid-for text, kept like
+  // any other record, and kept if an older cloud blob predates it.
+  'saju',
   'prefs',
   'view',
 ].map((k) => PREFIX + k)
@@ -118,6 +122,7 @@ const KEEP_IF_ABSENT = new Set<string>([
   PREFIX + 'life-decor',
   PREFIX + 'relation',
   PREFIX + 'place',
+  PREFIX + 'saju',
 ]);
 
 /** The synced preferences key — applied live (no reload) when it alone changes. */

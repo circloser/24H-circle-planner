@@ -27,7 +27,7 @@ import {
 } from './LifeDialogs';
 import { LifeBoard } from './LifeBoard';
 import { LifeExportDialog } from './LifeExport';
-import { LifeMemoir } from './LifeMemoir';
+import { LifeReadings } from './LifeReadings';
 import { DecorTray } from '@/components/Calendar/Decor';
 import { DecorStoreProvider } from '@/hooks/useDecor';
 import { useLifeDecor } from '@/hooks/useLifeDecor';
@@ -46,7 +46,7 @@ import type { TKey } from '@/i18n/translations';
 export function LifeView() {
   const api = useLife();
   const { life } = api;
-  const { t, lang } = useTranslation();
+  const { t } = useTranslation();
   const { prefs } = usePreferences();
   const pro = useAuth().plan === 'pro';
   const syncing = useSyncStatus().status !== 'disabled';
@@ -284,7 +284,7 @@ export function LifeView() {
 
           {/* A restore replaces the note: start its field afresh from it. */}
           <EndingNote key={api.generation} api={api} />
-          <LifeMemoir api={api} lang={lang} />
+          <LifeReadings api={api} />
           <FilterFab only={only} setOnly={setOnly} colors={colors}
             decorating={decorating}
             onDecor={() => {

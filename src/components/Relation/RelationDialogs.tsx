@@ -25,10 +25,12 @@ export type PersonTarget =
 
 /** A picture (Pro). Stored on this device the moment it is picked; one that is
  *  dropped again, or left behind by a cancelled dialog, is deleted. */
-export function PhotoField({ value, original, pro, onChange }: {
+export function PhotoField({ value, original, pro, own = false, onChange }: {
   value: string | undefined;
   original: string | undefined;
   pro: boolean;
+  /** A photo of oneself, which needs nobody's consent but one's own. */
+  own?: boolean;
   onChange: (id: string | undefined) => void;
 }) {
   const { t } = useTranslation();
@@ -78,7 +80,7 @@ export function PhotoField({ value, original, pro, onChange }: {
           {t('common.remove')}
         </Button>
       )}
-      <p className="text-xs text-muted-foreground">{t('relation.privacy.photo')}</p>
+      {!own && <p className="text-xs text-muted-foreground">{t('relation.privacy.photo')}</p>}
     </div>
   );
 }
