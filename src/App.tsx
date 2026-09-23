@@ -79,6 +79,8 @@ import { OPEN_E2EE_EVENT } from '@/lib/sync/e2ee';
 import { WelcomeOverlay } from '@/components/Onboarding/WelcomeOverlay';
 import { DesignMagician } from '@/components/Onboarding/DesignMagician';
 import { TutorialOverlay } from '@/components/Onboarding/TutorialOverlay';
+import { TourOffer } from '@/components/Onboarding/TourOffer';
+import { tourOf, type TourId } from '@/components/Onboarding/tours';
 import { PlayStoreBanner } from '@/components/Onboarding/PlayStoreBanner';
 import { readSharedFromHash, clearShareHash } from '@/lib/share-link';
 import { AnalyticsDialog } from '@/components/Analytics/AnalyticsDialog';
@@ -198,11 +200,17 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [tutorialOpen, setTutorialOpen] = useState(false);
+  /** Which page's tour is running: the timetable's, or a page of its own. */
+  const [tour, setTour] = useState<TourId>('chart');
   // "Shall we do the tutorial?" — asked once, right after the magician finishes
   // (its final button, not the X), and only if the tutorial was never opened.
   const [askTutorialOpen, setAskTutorialOpen] = useState(false);
-  const openTutorial = () => {
-    try { localStorage.setItem(TUTORIAL_KEY, '1'); } catch { /* */ }
+  const openTutorial = (which: TourId = 'chart') => {
+    // Only the timetable's tour is part of the first run.
+    if (which === 'chart') {
+      try { localStorage.setItem(TUTORIAL_KEY, '1'); } catch { /* */ }
+    }
+    setTour(which);
     setTutorialOpen(true);
   };
   const onMagicianFinish = () => {
@@ -347,7 +355,15 @@ function App() {
   // Desktop placement of the main view — circle, table or record alike (centre /
   // left / right / hidden). Phones and a running tutorial always get it centred.
   const chosenLayout = useChartLayout();
-  const layout = effectiveChartLayout(chosenLayout, { isMobile, tutorialOpen });
+  const layout = effectiveChartLayout(chosenLayout, { isMobile, tutorialOpen: tutorialOpen && tour === 'chart' });
+  // A page's tour points at that page: leave the page, and it has nothing left
+  // to point at. (The timetable's tour ends by sending you to the calendar, so
+  // it is the one tour that is allowed to follow you there.)
+  const tourHere = tourOf(chartView);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- closing a tour whose page has gone
+    if (tutorialOpen && tour !== 'chart' && tour !== tourHere) setTutorialOpen(false);
+  }, [tutorialOpen, tour, tourHere]);
   const sideLayout = layout === 'left' || layout === 'right';
   // Calendar mode is a planner, not the timetable: it takes the whole canvas and
   // every floating widget (and the pet) steps aside for it.
@@ -639,7 +655,7 @@ function App() {
         onOpenReset={() => setResetOpen(true)}
         onOpenE2ee={() => setE2eeOpen(true)}
         onOpenUpgrade={() => setUpgradeOpen(true)}
-        onOpenTutorial={openTutorial}
+        onOpenTutorial={() => openTutorial(tourHere)}
         onOpenMagician={() => setMagicianOpen(true)}
         onOpenReferral={() => setReferralOpen(true)}
         onOpenPip={pip.supported ? () => void pip.open() : undefined}
@@ -923,7 +939,12 @@ function App() {
 
       {/* Guided coach-mark tour of the timetable (from the 내 시간표 menu).
           Finishing it caps the first-run flow with the get-the-app QR. */}
-      <TutorialOverlay open={tutorialOpen} onClose={() => setTutorialOpen(false)} onFinish={finishFirstRun} />
+      <TutorialOverlay open={tutorialOpen} tour={tour} onClose={() => setTutorialOpen(false)}
+        {...(tour === 'chart' ? { onFinish: finishFirstRun } : {})} />
+
+      {/* The first visit to each page of its own offers that page's tour, once. */}
+      <TourOffer tour={tourHere} blocked={tutorialOpen || magicianOpen || askTutorialOpen}
+        onStart={(which) => openTutorial(which)} />
 
       {/* Final first-run flourish: scan-to-download QR (shown once). */}
       <PlayStoreBanner open={getAppOpen} onClose={closeGetApp} />

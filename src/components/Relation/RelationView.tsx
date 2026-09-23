@@ -14,10 +14,9 @@ import { track, trackFeature, trackOnce } from '@/lib/track';
 import {
   FREE_RELATION_LINKS, FREE_RELATION_PEOPLE, RELATION_GROUPS, canAddLink, canAddPerson,
   findPeople, isBirthdayThisMonth, isOutOfTouch, relationSummary, subKey, subgroupsOf,
-  type MeetKind, type Person, type RelationGroup,
+  type Person, type RelationGroup,
 } from '@/lib/relation';
 import { useRelation, RELATION_UNDO_MS } from '@/hooks/useRelation';
-import { PersonHistoryDialog } from './RelationHistory';
 import { familyToImport, personFromFamily, readLife, samepeople, syncFromLife } from '@/lib/relation-life';
 import { RELATION_LABEL } from '@/components/Life/categories';
 import { GROUP_ICON, GROUP_LABEL, groupColors } from './groups';
@@ -76,8 +75,6 @@ export function RelationView() {
   const [meOpen, setMeOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [linking, setLinking] = useState<string | null>(null);
-  /** Whose whole record is open: what is known, and every meeting. */
-  const [history, setHistory] = useState<string | null>(null);
   /** Which of the corner's lists is unfolded, if any. */
   const [openList, setOpenList] = useState<'filter' | null>(null);
   /** Who the next new person is being added beside, if anybody. */
@@ -327,7 +324,7 @@ export function RelationView() {
 
       <div className="contents" inert={api.readOnly || undefined}>
         <div className="flex flex-1 flex-col min-[900px]:flex-row">
-          <div className="flex flex-1 flex-col">
+          <div className="relative flex flex-1 flex-col">
             <RelationCanvas
               data={filtered}
               colors={colors}
@@ -390,30 +387,35 @@ export function RelationView() {
                 </li>
               ))}
             </ul>
-          </div>
 
-          <RelationPanel
-            person={person}
-            data={data}
-            colors={colors}
-            today={today}
-            linking={linking === selected && linking !== null}
-            onClose={() => { setSelected(null); setLinking(null); }}
-            onEdit={() => person && setTarget({ mode: 'edit', p: person })}
-            onDelete={() => person && remove(person.id)}
-            onContacted={(kind: MeetKind) => {
-              if (!person) return;
-              api.markContacted(person.id, kind);
-              track('relation_contact');
-            }}
-            onHistory={() => { if (person) { setHistory(person.id); track('relation_history'); } }}
-            onStartLink={() => setLinking((was) => (was === selected ? null : selected))}
-            onUnlink={(other) => person && api.removeLink(person.id, other)}
-            onLabel={(other, label) => person && api.nameLink(person.id, other, label)}
-            onHold={(other, closeness) => person && api.holdLink(person.id, other, closeness)}
-            onAddBeside={() => { if (person) { setBeside(person.id); add(); } }}
-            onPick={(id) => setSelected(id)}
-          />
+            {/* Keyed by the person, so every field starts from theirs. */}
+            <RelationPanel
+              key={person?.id ?? 'none'}
+              person={person}
+              data={data}
+              colors={colors}
+              today={today}
+              linking={linking === selected && linking !== null}
+              subgroups={subgroups}
+              onClose={() => { setSelected(null); setLinking(null); }}
+              onPatch={(patch) => { if (person) api.patchPerson(person.id, patch); }}
+              onDelete={() => person && remove(person.id)}
+              onAddFact={(fact) => { if (person) { api.addFact(person.id, fact); track('relation_fact'); } }}
+              onRemoveFact={(fact) => person && api.removeFact(person.id, fact)}
+              onAddMeet={(meet) => {
+                if (!person) return;
+                api.addMeet(person.id, meet);
+                track(meet.at === today ? 'relation_contact' : 'relation_meet');
+              }}
+              onRemoveMeet={(meet) => person && api.removeMeet(person.id, meet)}
+              onStartLink={() => setLinking((was) => (was === selected ? null : selected))}
+              onUnlink={(other) => person && api.removeLink(person.id, other)}
+              onLabel={(other, label) => person && api.nameLink(person.id, other, label)}
+              onHold={(other, closeness) => person && api.holdLink(person.id, other, closeness)}
+              onAddBeside={() => { if (person) { setBeside(person.id); add(); } }}
+              onPick={(id) => setSelected(id)}
+            />
+          </div>
         </div>
 
       </div>
@@ -436,13 +438,6 @@ export function RelationView() {
           setTarget(null);
         }}
         onDelete={remove} />
-      <PersonHistoryDialog
-        person={history ? data.people.find((p) => p.id === history) ?? null : null}
-        onClose={() => setHistory(null)}
-        onAddFact={(fact) => { if (history) { api.addFact(history, fact); track('relation_fact'); } }}
-        onRemoveFact={(fact) => history && api.removeFact(history, fact)}
-        onAddMeet={(meet) => { if (history) { api.addMeet(history, meet); track('relation_meet'); } }}
-        onRemoveMeet={(meet) => history && api.removeMeet(history, meet)} />
       <MeDialog open={meOpen} me={data.me} pro={pro} onClose={() => setMeOpen(false)}
         onSave={(me) => { api.setMe(me); setMeOpen(false); }} />
       <RelationExportDialog open={exporting} onOpenChange={setExporting} api={api} colors={colors} />

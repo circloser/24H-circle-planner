@@ -33,7 +33,7 @@ export function makeReporter(suite) {
 }
 
 /** Launch a headless page with page-error capture. */
-export async function launchPage(ctxOpts = {}) {
+export async function launchPage({ offerTours = false, ...ctxOpts } = {}) {
   const browser = await chromium.launch({ headless: true });
   const ctx = await browser.newContext({
     viewport: { width: 1280, height: 1000 },
@@ -42,10 +42,16 @@ export async function launchPage(ctxOpts = {}) {
   });
   // Every suite tests the RETURNING-user app: mark onboarding done up front so
   // the quiet first run (5s → design magician overlay) never opens mid-test and
-  // intercepts pointer events.
-  await ctx.addInitScript(() => {
-    try { localStorage.setItem('24h-circle-planner.onboarded', '1'); } catch { /* */ }
-  });
+  // intercepts pointer events. The same goes for the card that offers each
+  // page's tour on a first visit — unless a suite is there to test it.
+  await ctx.addInitScript((offer) => {
+    try {
+      localStorage.setItem('24h-circle-planner.onboarded', '1');
+      if (!offer) {
+        for (const tour of ['calendar', 'life', 'relation', 'place']) localStorage.setItem(`24h-tour-offered.${tour}`, '1');
+      }
+    } catch { /* */ }
+  }, offerTours);
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));

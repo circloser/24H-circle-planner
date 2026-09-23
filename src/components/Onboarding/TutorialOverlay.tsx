@@ -4,15 +4,16 @@ import { GraduationCap, X, ChevronLeft, ChevronRight, Check } from 'lucide-react
 import { useTranslation, useChartView } from '@/hooks/usePreferences';
 import { useStoreSelector } from '@/hooks/useScheduleStore';
 import type { TKey } from '@/i18n/translations';
+import { TOURS, rectOf, snapshot, type Rect, type Snapshot, type TourId } from './tours';
 
 interface TutorialOverlayProps {
   open: boolean;
+  /** Which page's tour: the timetable's, or one of the pages of its own. */
+  tour?: TourId;
   onClose: () => void;
   /** Called when the user completes the tour via the finish button. */
   onFinish?: () => void;
 }
-
-interface Rect { top: number; left: number; width: number; height: number }
 
 const RIM_KEY = '24h-circle-planner.rimmemos';
 const DIARY_KEY = '24h-circle-planner.diary';
@@ -44,23 +45,13 @@ function rimRect(): Rect | null {
   return { top: cy + edge * k - 30, left: cx + edge * k - 40, width: 96, height: 68 };
 }
 
-function anchorRect(name: string): Rect | null {
-  const el = document.querySelector(`[data-tour="${name}"]`);
-  if (!el) return null;
-  const r = el.getBoundingClientRect();
-  return { top: r.top, left: r.left, width: r.width, height: r.height };
-}
+const anchorRect = (name: string): Rect | null => rectOf(`[data-tour="${name}"]`);
 
 /** The header's calendar button. */
-function calendarRect(): Rect | null {
-  const el = document.querySelector('[data-calendar-toggle]');
-  if (!el) return null;
-  const r = el.getBoundingClientRect();
-  return { top: r.top, left: r.left, width: r.width, height: r.height };
-}
+const calendarRect = (): Rect | null => rectOf('[data-calendar-toggle]');
 
 interface SliceSnap { id: string; label: string; startTime: string; endTime: string }
-interface Baseline { slices: SliceSnap[]; rim: string | null; diary: string | null; view: string }
+interface Baseline { slices: SliceSnap[]; rim: string | null; diary: string | null; view: string; store: Snapshot }
 
 const readLs = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
 
@@ -75,7 +66,7 @@ export function TutorialOverlay(props: TutorialOverlayProps) {
   return props.open ? <TutorialSession {...props} /> : null;
 }
 
-function TutorialSession({ open, onClose, onFinish }: TutorialOverlayProps) {
+function TutorialSession({ open, tour = 'chart', onClose, onFinish }: TutorialOverlayProps) {
   const { t } = useTranslation();
   const chartView = useChartView();
   const slices = useStoreSelector((s) => s.history.present.slices);
@@ -84,15 +75,21 @@ function TutorialSession({ open, onClose, onFinish }: TutorialOverlayProps) {
   const [done, setDone] = useState(false);
   const base = useRef<Baseline | null>(null);
 
-  const steps: { name: TKey; body: TKey; target: () => Rect | null }[] = [
-    { name: 'tutorial.n1', body: 'tutorial.s1', target: sliceRect },
-    { name: 'tutorial.n2', body: 'tutorial.s2', target: sliceRect },
-    { name: 'tutorial.n3', body: 'tutorial.s3', target: sliceRect },
-    { name: 'tutorial.n4', body: 'tutorial.s4', target: rimRect },
-    { name: 'tutorial.n5', body: 'tutorial.s5', target: () => anchorRect('diarySave') ?? anchorRect('diary') },
-    { name: 'tutorial.n6', body: 'tutorial.s6', target: () => anchorRect('view') },
-    { name: 'tutorial.n7', body: 'tutorial.s7', target: calendarRect },
-  ];
+  // The timetable's tour is judged by the schedule itself (below); every
+  // other page's comes with its own idea of "done" (./tours).
+  const own = tour === 'chart' ? null : TOURS[tour];
+  const steps: { name: TKey; body: TKey; target: () => Rect | null; done?: (before: Snapshot) => boolean }[] = own
+    ? own.steps
+    : [
+      { name: 'tutorial.n1', body: 'tutorial.s1', target: sliceRect },
+      { name: 'tutorial.n2', body: 'tutorial.s2', target: sliceRect },
+      { name: 'tutorial.n3', body: 'tutorial.s3', target: sliceRect },
+      { name: 'tutorial.n4', body: 'tutorial.s4', target: rimRect },
+      { name: 'tutorial.n5', body: 'tutorial.s5', target: () => anchorRect('diarySave') ?? anchorRect('diary') },
+      { name: 'tutorial.n6', body: 'tutorial.s6', target: () => anchorRect('view') },
+      { name: 'tutorial.n7', body: 'tutorial.s7', target: calendarRect },
+    ];
+  const title: TKey = own ? own.title : 'tutorial.title';
   const last = step === steps.length - 1;
 
   // Capture a baseline when a step becomes active — completion is "something
@@ -104,6 +101,7 @@ function TutorialSession({ open, onClose, onFinish }: TutorialOverlayProps) {
       rim: readLs(RIM_KEY),
       diary: readLs(DIARY_KEY),
       view: chartView,
+      store: snapshot(),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, step]);
@@ -115,6 +113,7 @@ function TutorialSession({ open, onClose, onFinish }: TutorialOverlayProps) {
     const b = base.current;
     if (!b) return;
     const check = () => {
+      if (own) return steps[step].done?.(b.store) ?? false;
       switch (step) {
         case 0: { // resize: same slices, some time moved
           if (slices.length !== b.slices.length) return false;
@@ -135,7 +134,10 @@ function TutorialSession({ open, onClose, onFinish }: TutorialOverlayProps) {
     if (check()) { setDone(true); return; }
     const id = window.setInterval(() => { if (check()) setDone(true); }, 600);
     return () => window.clearInterval(id);
-  }, [open, step, done, slices, chartView]);
+    // `own` and `steps` are rebuilt every render from `tour`, which cannot
+    // change while one session of the overlay is open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, step, done, slices, chartView, tour]);
 
   // NB: no auto-advance — the user moves on with Next when ready, so there's
   // room to reflect on each feature after trying it.
@@ -169,7 +171,11 @@ function TutorialSession({ open, onClose, onFinish }: TutorialOverlayProps) {
   const cardH = 190;
   const margin = 16;
   const restTop = Math.max(margin, window.innerHeight - cardH - margin);
-  const wouldCoverTarget = !!rect && rect.top + rect.height > restTop - 12;
+  // A target that fills most of the window (a whole map) is covered wherever
+  // the card goes; moving to the top would only cover the header's buttons as
+  // well, so the card stays where it rests.
+  const wouldCoverTarget = !!rect && rect.top + rect.height > restTop - 12
+    && rect.height < window.innerHeight * 0.5;
   const cardStyle: React.CSSProperties = {
     position: 'fixed',
     top: wouldCoverTarget ? margin : restTop,
@@ -186,6 +192,7 @@ function TutorialSession({ open, onClose, onFinish }: TutorialOverlayProps) {
       {rect && (
         <div
           aria-hidden
+          data-tour-ring
           className="fixed rounded-xl"
           style={{
             top: rect.top - 6, left: rect.left - 6, width: rect.width + 12, height: rect.height + 12,
@@ -198,7 +205,8 @@ function TutorialSession({ open, onClose, onFinish }: TutorialOverlayProps) {
       )}
       <div
         role="dialog"
-        aria-label={t('tutorial.title')}
+        aria-label={t(title)}
+        data-tour-card={tour}
         className="rounded-2xl border border-border bg-surface p-4 shadow-2xl"
         style={{ ...cardStyle, pointerEvents: 'auto' }}
       >

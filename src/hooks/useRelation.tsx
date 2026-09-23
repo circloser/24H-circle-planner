@@ -3,11 +3,10 @@ import { v4 as uuid } from 'uuid';
 import { loadPersisted, type PersistedCodec } from '@/hooks/usePersistedState';
 import { persistLocal } from '@/lib/persistence';
 import { deletePhoto } from '@/lib/calendar-photos';
-import { todayKey } from '@/lib/calendar-grid';
 import {
   MAX_FACTS, MAX_MEETS, RELATION_KEY, decodeRelation, emptyRelation, encodeRelation, isNewerRelation,
   meetHistory, relationPhotoIds,
-  type Closeness, type MeetKind, type Person, type PersonFact, type PersonMeet, type RelationData,
+  type Closeness, type Person, type PersonFact, type PersonMeet, type RelationData,
   type RelationLink,
 } from '@/lib/relation';
 
@@ -102,21 +101,19 @@ export function useRelation() {
   }, [edit]);
 
   /**
-   * One tap: it happened today.
-   *
-   * It writes a line in the log — seen, spoken to, or a wedding — and keeps
-   * `lastContact` in step for anything still reading that. Pressing the same
-   * button twice in a day says the same thing twice, so the second press is
-   * quietly the same as the first.
+   * Change some of one person's details where they stand — the card edits in
+   * place, a field at a time. An empty value takes that detail away rather
+   * than writing an empty one, so a field cleared is a field never written.
    */
-  const markContacted = useCallback((id: string, kind: MeetKind = 'talk', today: string = todayKey()) => {
+  const patchPerson = useCallback((id: string, patch: Partial<PersonDraft>) => {
+    if ('photo' in patch) dropPhoto(current.current.people.find((p) => p.id === id)?.photo, patch.photo);
     onPerson(id, (p) => {
-      const already = (p.log ?? []).some((m) => m.at === today && m.k === kind);
-      return {
-        ...p,
-        lastContact: today,
-        ...(already ? {} : { log: [...(p.log ?? []), { at: today, k: kind }].slice(-MAX_MEETS) }),
-      };
+      const next: Record<string, unknown> = { ...p };
+      for (const [k, v] of Object.entries(patch)) {
+        if (v === undefined || v === '') delete next[k];
+        else next[k] = v;
+      }
+      return next as unknown as Person;
     });
   }, [onPerson]);
 
@@ -240,7 +237,7 @@ export function useRelation() {
 
   return {
     data, readOnly, generation, setMe, addPerson, addPeople, updatePerson, placePerson,
-    markContacted, addFact, removeFact, addMeet, removeMeet,
+    patchPerson, addFact, removeFact, addMeet, removeMeet,
     removePerson, restorePerson, addLink, nameLink, holdLink, removeLink, replace,
   };
 }

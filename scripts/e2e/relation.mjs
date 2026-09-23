@@ -165,7 +165,7 @@ export async function run() {
     await choose(added.id);
     pass('choosing from the list opens the panel',
       (await page.locator('[data-relation-panel]').getAttribute('data-person')) === added.id
-      && /최민준/.test(await page.locator('[data-relation-panel-name]').innerText()));
+      && (await page.locator('[data-relation-panel-name]').inputValue()) === '최민준');
 
     // 6. One tap brings a faded person back.
     await seed([
@@ -177,22 +177,29 @@ export async function run() {
     pass('a year of silence is counted as out of touch',
       /오래 연락 안 함/.test(await page.locator('[data-relation-summary]').innerText()));
     await choose('p1');
-    await page.locator('[data-relation-contacted]').click();
+    // The card is a card, not a column: it sits over the map, no taller than
+    // it needs to be, and leaves the corner's buttons alone.
+    const card = await page.locator('[data-relation-panel]').boundingBox();
+    const mapBox = await page.locator('[data-relation-canvas]').boundingBox();
+    const cornerBox = await page.locator('[data-relation-corner]').boundingBox();
+    pass('a person opens as a card of its own size over the map',
+      card.width <= 360 && card.height < mapBox.height - 200
+      && card.x > mapBox.x + mapBox.width / 2 && card.y + card.height < cornerBox.y,
+      JSON.stringify({ card, mapBox, cornerBox }));
+    // One press of the record button writes today, as a phone call.
+    await page.locator('[data-relation-meet-add]').click();
     await wait(500);
     const today = new Date();
     const key = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    pass('"contacted today" writes today, and the silence is over',
+    pass('writing a line today brings them back, and the silence is over',
       (await stored()).people.find((p) => p.id === 'p1')?.lastContact === key
       && !/오래 연락 안 함/.test(await page.locator('[data-relation-summary]').innerText()));
     pass('…and it is written as a line of its own, not as one date moved on',
       JSON.stringify((await stored()).people.find((p) => p.id === 'p1')?.log) === JSON.stringify([{ at: key, k: 'talk' }]),
       JSON.stringify((await stored()).people.find((p) => p.id === 'p1')?.log));
-    // The same press twice in a day says the same thing twice.
-    await page.locator('[data-relation-contacted]').click();
-    await wait(400);
-    pass('…and saying it again on the same day says it once',
-      ((await stored()).people.find((p) => p.id === 'p1')?.log ?? []).length === 1);
-    await page.locator('[data-relation-meet="event"]').click();
+    await page.locator('[data-relation-meet-kind="event"]').click();
+    await page.locator('[data-relation-meet-note]').fill('결혼식');
+    await page.locator('[data-relation-meet-add]').click();
     await wait(400);
     pass('a wedding is a different kind of meeting from a phone call',
       ((await stored()).people.find((p) => p.id === 'p1')?.log ?? []).map((m) => m.k).join() === 'talk,event');
@@ -215,10 +222,10 @@ export async function run() {
       && !/이사/.test(await page.locator('[data-relation-moments]').innerText().catch(() => '')),
       await page.locator('[data-relation-moments]').innerText().catch(() => 'none'));
 
-    // 6c. Everything else known about them, each kind keeping its own past.
-    await page.locator('[data-relation-history]').click();
-    await wait(500);
-    pass('the card opens onto the whole record', (await count('[data-relation-history-dialog]')) === 1);
+    // 6c. Everything else known about them — on the card, no dialog — each
+    // kind keeping its own past.
+    pass('there is no edit button and no dialog to go through',
+      (await count('[data-relation-edit]')) === 0 && (await count('[data-relation-history]')) === 0);
     const writeFact = async (kind, value, when) => {
       await page.locator(`[data-relation-fact-input="${kind}"]`).fill(value);
       if (when) await page.locator(`[data-relation-fact-when="${kind}"]`).fill(when);
@@ -235,8 +242,13 @@ export async function run() {
         { k: 'work', v: '지금 직장', at: '2019-04' },
         { k: 'contact', v: '010-0000-0000' },
       ]), JSON.stringify(await facts()));
-    pass('…and the newest is the one at the top of the list',
-      (await page.locator('[data-relation-fact="work"]').first().innerText()).includes('지금 직장'));
+    pass('…and the card shows the newest, with a way to the ones before',
+      (await page.locator('[data-relation-panel-fact="work"]').getAttribute('placeholder')) === '지금 직장'
+      && (await count('[data-relation-fact-past="work"]')) === 1);
+    await page.locator('[data-relation-fact-past="work"]').click();
+    pass('…which, opened, lists them newest first, the old one struck through',
+      (await page.locator('[data-relation-fact="work"]').first().innerText()).includes('지금 직장')
+      && (await page.locator('[data-relation-fact="work"]').nth(1).innerText()).includes('첫 직장'));
     // A meeting with the day it happened, written by hand rather than today.
     await page.locator('[data-relation-meet-kind="meet"]').click();
     await page.locator('[data-relation-meet-date]').fill('2026-03-01');
@@ -249,12 +261,36 @@ export async function run() {
       JSON.stringify(await log()));
     pass('…and the last contact is still the newest of them, not the last written',
       (await stored()).people.find((p) => p.id === 'p1')?.lastContact === key);
-    await page.keyboard.press('Escape');
+    // Piled up under the row they were written in: newest right under it,
+    // oldest at the bottom — whatever order they were written in.
+    const rows = await page.locator('[data-relation-meet-row]').evaluateAll((els) => els.map((el) => el.dataset.relationMeetRow));
+    pass('the log reads newest first, just under where it is written',
+      rows.length === 3 && rows[0] === key && rows[2] === '2026-03-01', JSON.stringify(rows));
+
+    // Basic details are changed where they are shown.
+    await page.locator('[data-relation-panel-name]').fill('윤도현 선배');
+    await page.locator('[data-relation-panel-name]').press('Enter');
+    await wait(300);
+    await page.locator('[data-relation-panel-rel]').fill('동아리 선배');
+    await page.locator('[data-relation-panel-note]').click();
+    await page.locator('[data-relation-panel-note]').fill('등산 좋아함');
+    await page.locator('[data-relation-panel-close="5"]').click();
     await wait(400);
-    pass('the card says what is true now, and that there was something before',
-      /지금 직장/.test(await page.locator('[data-relation-panel-fact="work"]').innerText())
-      && /이전/.test(await page.locator('[data-relation-panel-fact="work"]').innerText()),
-      await page.locator('[data-relation-panel-fact="work"]').innerText());
+    const edited = (await stored()).people.find((p) => p.id === 'p1');
+    pass('name, relation, note and closeness are changed on the card itself',
+      edited?.name === '윤도현 선배' && edited?.relation === '동아리 선배' && edited?.note === '등산 좋아함'
+      && edited?.closeness === 5, JSON.stringify(edited));
+    await page.locator('[data-relation-panel-group="work"]').click();
+    await wait(300);
+    pass('…and so is the group', (await stored()).people.find((p) => p.id === 'p1')?.group === 'work');
+    await page.locator('[data-relation-panel-group="friend"]').click();
+    await page.locator('[data-relation-panel-name]').fill('윤도현');
+    await page.locator('[data-relation-panel-name]').press('Enter');
+    await page.locator('[data-relation-panel-rel]').fill('');
+    await page.locator('[data-relation-panel-rel]').press('Enter');
+    await wait(300);
+    pass('…and a field cleared is a detail taken away, not an empty one kept',
+      !('relation' in ((await stored()).people.find((p) => p.id === 'p1') ?? {})));
 
     // 7. A line between two people.
     await page.locator('[data-relation-link]').click();
@@ -288,15 +324,12 @@ export async function run() {
     // 7c. A group inside the group: written on the form, offered back as a
     // tap for the next person, shown on the card, and a filter of its own.
     await choose('p1');
-    await page.locator('[data-relation-edit]').click();
-    await wait(400);
-    await page.locator('[data-relation-sub-input]').fill('대학 동기');
-    await page.locator('[data-relation-save]').click();
+    await page.locator('[data-relation-panel-sub]').fill('대학 동기');
+    await page.locator('[data-relation-panel-sub]').press('Enter');
     await wait(500);
-    pass('a person can be put in a group inside their group',
+    pass('a person can be put in a group inside their group, on their card',
       (await stored()).people.find((p) => p.id === 'p1')?.sub === '대학 동기',
       JSON.stringify((await stored()).people.find((p) => p.id === 'p1')));
-    pass('…which their card says', /대학 동기/.test(await page.locator('[data-relation-panel-sub]').innerText()));
     await closeAll();
     await page.locator('[data-relation-add]').click();
     await wait(400);
@@ -374,9 +407,7 @@ export async function run() {
     await wait(500);
     pass('…and it can be taken back', (await stored()).people.map((p) => p.id).join() === 'p1,p2,p3');
     await choose('p3');
-    await page.locator('[data-relation-edit]').click();
-    await wait(400);
-    await page.locator('[data-relation-delete]').click();
+    await page.locator('[data-relation-remove]').click();
     await wait(400);
     pass('someone deleted is gone', (await stored()).people.length === 2);
     await page.getByRole('button', { name: '되돌리기' }).click();
@@ -531,6 +562,98 @@ export async function run() {
     pass('no page errors (phone)', phone.errors.length === 0, phone.errors.slice(0, 2).join(' | '));
   } finally {
     await phone.browser.close();
+  }
+
+  // 13b. Each page has a tour of its own: offered once on a first visit, and
+  // always there in ⚙ → 튜토리얼 for the page that is open.
+  const fresh = await setup(base, { offerTours: true });
+  try {
+    const fp = fresh.page;
+    await fp.locator('[data-relation-toggle]').click();
+    await fp.waitForSelector('[data-relation-view]', { timeout: 15000 });
+    await wait(1800);
+    pass('a first visit to the page offers its own tour',
+      (await fp.locator('[data-tour-offer="relation"]').count()) === 1
+      && /관계 둘러보기/.test(await fp.locator('[data-tour-offer="relation"]').innerText()));
+    await fp.locator('[data-tour-offer-start]').click();
+    await wait(500);
+    pass('…which starts the relation tour, not the timetable\'s',
+      (await fp.locator('[data-tour-card="relation"]').count()) === 1
+      && /사람 추가/.test(await fp.locator('[data-tour-card="relation"]').innerText()),
+      await fp.locator('[data-tour-card]').innerText().catch(() => 'none'));
+    // The tour watches the page: adding somebody is step one done.
+    await fp.locator('[data-relation-add]').click();
+    await wait(400);
+    await fp.locator('[data-relation-name-input]').fill('투어 친구');
+    await fp.locator('[data-relation-save]').click();
+    await wait(1200);
+    pass('…and notices when the step has actually been done',
+      /잘하셨어요/.test(await fp.locator('[data-tour-card="relation"]').innerText()));
+    await fp.locator('[data-tour-card="relation"] button[aria-label="취소"]').click();
+    await wait(300);
+    // Asked once: a second visit does not ask again.
+    await fp.reload({ waitUntil: 'domcontentloaded' });
+    await fp.waitForSelector('[data-relation-view]', { timeout: 15000 });
+    await wait(1800);
+    pass('…and is offered only once', (await fp.locator('[data-tour-offer]').count()) === 0);
+    // From the menu, on another page, that page's tour.
+    await fp.locator('[data-place-toggle]').click();
+    await fp.waitForSelector('[data-place-world]', { timeout: 20000 });
+    await wait(300);
+    if (await fp.locator('[data-tour-offer-later]').count()) await fp.locator('[data-tour-offer-later]').click();
+    await fp.locator('button[aria-label="설정"]').click();
+    await wait(300);
+    await fp.getByRole('menuitem', { name: '튜토리얼' }).click();
+    await wait(500);
+    pass('⚙ → 튜토리얼 opens the tour of the page that is open',
+      (await fp.locator('[data-tour-card="place"]').count()) === 1);
+    // Leaving the page takes its tour with it.
+    await fp.locator('[data-relation-toggle]').click();
+    await wait(500);
+    pass('…and leaving the page ends its tour', (await fp.locator('[data-tour-card]').count()) === 0);
+    // Every step of every page's tour points at something that is there.
+    const walk = async (toggle, ready, tour) => {
+      await fp.locator(toggle).click();
+      await fp.waitForSelector(ready, { timeout: 20000 });
+      await wait(400);
+      if (await fp.locator('[data-tour-offer-later]').count()) await fp.locator('[data-tour-offer-later]').click();
+      await fp.locator('button[aria-label="설정"]').click();
+      await wait(300);
+      await fp.getByRole('menuitem', { name: '튜토리얼' }).click();
+      await wait(700);
+      const missing = [];
+      for (let i = 0; i < 8; i++) {
+        const card = fp.locator(`[data-tour-card="${tour}"]`);
+        if (!(await card.count())) break;
+        if (!(await fp.locator('[data-tour-ring]').count())) missing.push(i + 1);
+        const next = card.getByRole('button', { name: /건너뛰기|다음/ });
+        if (!(await next.count())) break;
+        await next.click();
+        await wait(650);
+      }
+      if (await fp.locator(`[data-tour-card="${tour}"]`).count()) {
+        await fp.locator(`[data-tour-card="${tour}"] button[aria-label="취소"]`).click();
+        await wait(300);
+      }
+      return missing;
+    };
+    // A life with a birthday, so the line the tour points along is there.
+    await fp.evaluate(([k]) => localStorage.setItem(k, JSON.stringify({
+      version: 1, profile: { birthDate: '1985-05-15' }, family: [], endingNote: null, memoir: null, updatedAt: '',
+      milestones: [{ id: 't1', date: '2004', title: '대학 입학', category: 'education' }],
+    })), [LIFE_KEY]);
+    for (const [toggle, ready, tour] of [
+      ['[data-calendar-toggle]', '[data-calendar-view]', 'calendar'],
+      ['[data-life-toggle]', '[data-life-view]', 'life'],
+      ['[data-place-toggle]', '[data-place-world]', 'place'],
+      ['[data-relation-toggle]', '[data-relation-view]', 'relation'],
+    ]) {
+      const missing = await walk(toggle, ready, tour);
+      pass(`the ${tour} tour points at something on every step`, missing.length === 0, `no target on step ${missing.join(', ')}`);
+    }
+    pass('no page errors (tours)', fresh.errors.length === 0, fresh.errors.slice(0, 2).join(' | '));
+  } finally {
+    await fresh.browser.close();
   }
 
   // 14. Reduced motion: an arriving person is simply there.

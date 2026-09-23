@@ -255,7 +255,7 @@ export function AppHeader({
           </DropdownMenu>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="shrink-0 px-2 sm:px-3" aria-label={t('header.design')}>
+              <Button variant="ghost" size="sm" className="shrink-0 px-2 sm:px-3" aria-label={t('header.design')} data-tour="design">
                 <Palette className="h-4 w-4 sm:hidden" />
                 <span className="hidden sm:inline">{t('header.design')}</span>
                 <ChevronDown className="ml-1 hidden h-4 w-4 sm:inline" />
@@ -356,6 +356,7 @@ export function AppHeader({
             className="shrink-0 px-2 sm:px-3"
             onClick={onOpenExport}
             aria-label={t('header.export')}
+            data-tour="export"
           >
             <Download className="h-4 w-4 sm:hidden" />
             <span className="hidden sm:inline">{t('header.export')}</span>
