@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Users } from 'lucide-react';
 import { useCoarsePointer } from '@/hooks/useCoarsePointer';
 import { useTranslation } from '@/hooks/usePreferences';
 import { loadPhoto } from '@/lib/calendar-photos';
@@ -9,6 +9,7 @@ import {
 } from '@/lib/life';
 import type { MilestoneDraft } from '@/hooks/useLife';
 import { CATEGORY_ICON, inkOf } from './categories';
+import { namesOf, readRelationPeople, type Someone } from '@/lib/relation-people';
 
 /**
  * The line itself. Every row draws its own stretch of the line (solid above
@@ -223,6 +224,10 @@ export function LifeTimeline({ life, items, colors, narrow, readOnly, rowDecor, 
 }) {
   const { t, lang } = useTranslation();
   const ref = useRef<HTMLOListElement>(null);
+  // The names behind the ids a moment keeps of who was there. Somebody else's
+  // line (a share link) names people on THEIR map, which is not this one, so
+  // it is not read at all.
+  const [people] = useState<readonly Someone[]>(() => (readOnly ? [] : readRelationPeople()));
   // Which rows exist, not how many: adding the first moment swaps the
   // examples out for it and leaves the count the same.
   useReveal(ref, items.map((i) => i.key).join('|'));
@@ -390,6 +395,12 @@ export function LifeTimeline({ life, items, colors, narrow, readOnly, rowDecor, 
           <DateLine category={m.category} color={color} text={dateText(m)} badge={it.plan ? t('life.planBadge') : undefined} />
           <Title>{m.title}</Title>
           {m.description && <Description text={m.description} />}
+          {namesOf(m.who, people).length > 0 && (
+            <p className="mt-3 flex items-start gap-1.5 text-[14px] leading-snug text-foreground/60" data-life-who>
+              <Users aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>{namesOf(m.who, people).join(', ')}</span>
+            </p>
+          )}
           {m.photo && <LifePhoto id={m.photo} className="mt-4 aspect-video rounded-lg" />}
         </EntryRow>,
       );

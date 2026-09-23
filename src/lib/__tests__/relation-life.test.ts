@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { emptyLife, type FamilyMember, type LifeData } from '../life';
+import { MAX_WHO, decodeLife, emptyLife, type FamilyMember, type LifeData } from '../life';
 import { emptyRelation, type Person, type RelationData } from '../relation';
-import { familyToImport, personFromFamily, samepeople, syncFromLife } from '../relation-life';
+import { familyToImport, momentsWith, personFromFamily, samepeople, syncFromLife } from '../relation-life';
+import { namesOf } from '../relation-people';
 import { relationBirthdays } from '../relation-calendar';
 
 const mother: FamilyMember = { id: 'f1', relation: 'mother', name: '이정숙', birthDate: '1958-03-02' };
@@ -58,6 +59,49 @@ describe('what the life line keeps saying', () => {
     const people = [p('a', { lifeFamilyId: 'f1', name: '이정숙', birthday: '1958-03-02' })];
     expect(samepeople(syncFromLife(life([mother]), people), people)).toBe(true);
     expect(samepeople(syncFromLife(null, people), people)).toBe(true);
+  });
+});
+
+describe('who was there', () => {
+  const lived = (): LifeData => ({
+    ...emptyLife(),
+    profile: { birthDate: '1985-05-15' },
+    milestones: [
+      { id: 'm1', date: '2012-05', title: '결혼식', category: 'relationship', who: ['p1', 'p2'] },
+      { id: 'm2', date: '2019', title: '이사', category: 'home' },
+      { id: 'm3', date: '2020-08-01', title: '여행', category: 'travel', who: ['p1'] },
+    ],
+    others: [{ id: 'o1', name: '엄마', birthDate: '1960', milestones: [
+      { id: 'm4', date: '2015', title: '환갑', category: 'family', who: ['p1'] },
+    ] }],
+  });
+
+  it('finds every moment that names a person, on every line, newest first', () => {
+    expect(momentsWith('p1', lived()).map((m) => m.title)).toEqual(['여행', '환갑', '결혼식']);
+    expect(momentsWith('p2', lived()).map((m) => m.title)).toEqual(['결혼식']);
+    expect(momentsWith('nobody', lived())).toEqual([]);
+    expect(momentsWith('p1', null)).toEqual([]);
+  });
+
+  it('keeps ids only, each once, and no more than a moment can hold', () => {
+    const many = Array.from({ length: MAX_WHO + 5 }, (_, i) => `p${i}`);
+    const out = decodeLife({
+      ...lived(),
+      milestones: [{ id: 'x', date: '2020', title: 't', category: 'other', who: ['p1', 'p1', 7, '', ...many] }],
+    });
+    const who = out?.milestones[0].who ?? [];
+    expect(who[0]).toBe('p1');
+    expect(new Set(who).size).toBe(who.length);
+    expect(who).toHaveLength(MAX_WHO);
+    // And a moment with nobody on it writes nothing at all.
+    const bare = decodeLife({ ...lived(), milestones: [{ id: 'y', date: '2020', title: 't', category: 'other', who: [] }] });
+    expect(bare?.milestones[0]).not.toHaveProperty('who');
+  });
+
+  it('reads names from the map, and drops anybody no longer on it', () => {
+    const people = [{ id: 'p1', name: '윤도현' }, { id: 'p2', name: '정하윤' }];
+    expect(namesOf(['p2', 'gone', 'p1'], people)).toEqual(['정하윤', '윤도현']);
+    expect(namesOf(undefined, people)).toEqual([]);
   });
 });
 

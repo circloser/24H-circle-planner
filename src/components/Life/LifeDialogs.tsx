@@ -7,13 +7,14 @@ import { useTranslation } from '@/hooks/usePreferences';
 import { requestUpgrade } from '@/lib/pro';
 import { deletePhoto, newPhotoId, savePhoto, shrinkPhoto } from '@/lib/calendar-photos';
 import {
-  MAX_DESCRIPTION, MAX_NAME, MAX_NOTE, MAX_TITLE, PICKABLE_CATEGORIES,
+  MAX_DESCRIPTION, MAX_NAME, MAX_NOTE, MAX_TITLE, MAX_WHO, PICKABLE_CATEGORIES,
   dateFrom, isFullDate, partsFrom, sortKey, type DateParts, type FamilyMember, type LifeCategory, type LifeLine, type LifeProfile, type Milestone, type Relation,
 } from '@/lib/life';
 import { todayKey } from '@/lib/calendar-grid';
 import type { MemberDraft, MilestoneDraft } from '@/hooks/useLife';
 import { CATEGORY_ICON, CATEGORY_LABEL, RELATION_LABEL, inkOf } from './categories';
 import { loadCities, searchCities, type CityRow } from '@/lib/place-world';
+import { namesOf, readRelationPeople, type Someone } from '@/lib/relation-people';
 import { LifeDateInput } from './LifeDateInput';
 import { LifePhoto } from './LifeTimeline';
 
@@ -68,6 +69,81 @@ function PlaceField({ value, onChange }: {
             </li>
           ))}
         </ul>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Who was there — the people from the relation map, by name.
+ *
+ * Only ids are kept on the moment; the names are read here, so somebody
+ * renamed on the map is renamed on the line, and somebody taken off it
+ * simply stops being mentioned. Nothing is ever written back to the map.
+ */
+function PeopleField({ value, onChange }: {
+  value: string[] | undefined;
+  onChange: (who: string[] | undefined) => void;
+}) {
+  const { t } = useTranslation();
+  // Read once, as the form is made: the relation map is another page, and it
+  // cannot change while this dialog is open.
+  const [people] = useState<readonly Someone[]>(readRelationPeople);
+  const [query, setQuery] = useState('');
+  const chosen = value ?? [];
+  const q = query.trim().toLowerCase();
+  const found = people
+    .filter((p) => !chosen.includes(p.id) && (!q || p.name.toLowerCase().includes(q)))
+    .slice(0, 6);
+  const put = (id: string) => {
+    onChange([...chosen, id].slice(0, MAX_WHO));
+    setQuery('');
+  };
+  const drop = (id: string) => {
+    const next = chosen.filter((x) => x !== id);
+    onChange(next.length ? next : undefined);
+  };
+
+  if (!people.length) {
+    return <p className="text-xs text-muted-foreground" data-life-who-empty>{t('life.field.whoEmpty')}</p>;
+  }
+  return (
+    <div className="flex flex-col gap-1.5">
+      {chosen.length > 0 && (
+        <ul className="flex flex-wrap gap-1.5">
+          {namesOf(chosen, people).map((name, i) => (
+            <li key={chosen[i]}>
+              <span className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-border px-3 text-sm"
+                data-life-who-chosen={chosen[i]}>
+                {name}
+                <button type="button" aria-label={t('common.remove')} data-life-who-remove={chosen[i]}
+                  className="grid h-5 w-5 place-items-center rounded-full text-muted-foreground hover:bg-accent/20"
+                  onClick={() => drop(chosen[i])}>
+                  <X aria-hidden className="h-3 w-3" />
+                </button>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {chosen.length < MAX_WHO && (
+        <>
+          <Input value={query} data-life-who-search placeholder={t('life.field.whoSearch')}
+            onChange={(e) => setQuery(e.target.value)} />
+          {found.length > 0 && (
+            <ul className="flex flex-wrap gap-1">
+              {found.map((p) => (
+                <li key={p.id}>
+                  <button type="button" data-life-who-option={p.id}
+                    className="min-h-8 rounded-full px-2.5 text-sm text-muted-foreground hover:bg-accent/20"
+                    onClick={() => put(p.id)}>
+                    {p.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </div>
   );
@@ -183,6 +259,7 @@ export function MilestoneDialog({ target, pro, colors, onSave, onDelete, onClose
   const [description, setDescription] = useState('');
   const [photo, setPhoto] = useState<string | undefined>();
   const [where, setWhere] = useState<Milestone['placeRef']>(undefined);
+  const [who, setWho] = useState<string[] | undefined>(undefined);
   const [pinned, setPinned] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
   // Fill the form each time the dialog opens on something.
@@ -196,6 +273,7 @@ export function MilestoneDialog({ target, pro, colors, onSave, onDelete, onClose
     setDescription(base.description ?? '');
     setPhoto(base.photo);
     setWhere(base.placeRef);
+    setWho(base.who);
     setPinned(base.pinned ?? false);
     setEndOpen(!!base.endDate);
     /* eslint-enable react-hooks/set-state-in-effect */
@@ -219,6 +297,7 @@ export function MilestoneDialog({ target, pro, colors, onSave, onDelete, onClose
       ...(description.trim() ? { description: description.trim() } : {}),
       category, ...(photo ? { photo } : {}), ...(pinned ? { pinned: true } : {}),
       ...(where ? { placeRef: where } : {}),
+      ...(who?.length ? { who } : {}),
     }, target?.mode === 'edit' ? target.m.id : undefined);
   };
 
@@ -274,6 +353,11 @@ export function MilestoneDialog({ target, pro, colors, onSave, onDelete, onClose
           <div className="flex flex-col gap-1.5">
             <span className={fieldLabel}>{t('life.field.place')}</span>
             <PlaceField value={where} onChange={setWhere} />
+          </div>
+          {/* Who it happened with. A moment is usually somebody else's too. */}
+          <div className="flex flex-col gap-1.5">
+            <span className={fieldLabel}>{t('life.field.who')}</span>
+            <PeopleField value={who} onChange={setWho} />
           </div>
           <div className="flex flex-col gap-2">
             {/* Nothing to tick: a date still to come is already a plan. */}

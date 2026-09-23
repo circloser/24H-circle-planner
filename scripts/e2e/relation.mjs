@@ -197,6 +197,24 @@ export async function run() {
     pass('a wedding is a different kind of meeting from a phone call',
       ((await stored()).people.find((p) => p.id === 'p1')?.log ?? []).map((m) => m.k).join() === 'talk,event');
 
+    // 6b'. The life line's moments that say this person was there.
+    await page.evaluate(([k, today]) => {
+      localStorage.setItem(k, JSON.stringify({
+        version: 1, profile: { birthDate: '1985-05-15' }, family: [], endingNote: null, memoir: null, updatedAt: '',
+        milestones: [
+          { id: 'w1', date: '2012-05', title: '결혼식', category: 'relationship', who: ['p1', 'p3'] },
+          { id: 'w2', date: '2019', title: '이사', category: 'home' },
+        ],
+      }));
+      void today;
+    }, [LIFE_KEY, key]);
+    await openRelation();
+    await choose('p1');
+    pass('a card lists the moments on the life line that name them',
+      /결혼식/.test(await page.locator('[data-relation-moments]').innerText().catch(() => ''))
+      && !/이사/.test(await page.locator('[data-relation-moments]').innerText().catch(() => '')),
+      await page.locator('[data-relation-moments]').innerText().catch(() => 'none'));
+
     // 6c. Everything else known about them, each kind keeping its own past.
     await page.locator('[data-relation-history]').click();
     await wait(500);
@@ -391,6 +409,16 @@ export async function run() {
     pass('at the limit, adding offers Pro instead',
       (await page.getByRole('dialog', { name: 'Pro로 업그레이드' }).count()) === 1
       && (await count('[data-relation-person-dialog]')) === 0);
+    // And the offer answers the thing that was just pressed: every Pro
+    // feature is listed, with this one at the top and marked.
+    pass('…and the paywall lists all of Pro, the part just asked for first',
+      (await count('[data-upgrade-feature]')) === 10
+      && (await page.locator('[data-upgrade-feature]').first().getAttribute('data-upgrade-feature')) === 'people'
+      && (await count('[data-upgrade-asked]')) === 1,
+      await page.locator('[data-upgrade-features]').innerText());
+    pass('…and says what the free plan gives in the numbers the gates use',
+      /40/.test(await page.locator('[data-upgrade-free]').innerText()),
+      await page.locator('[data-upgrade-free]').innerText());
     await closeAll();
     pass('…and all forty are still there', (await stored()).people.length === 40);
 

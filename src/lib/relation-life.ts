@@ -77,3 +77,21 @@ export function syncFromLife(life: LifeData | null, people: readonly Person[]): 
 /** Did anything actually change? (So a visit never writes for the sake of it.) */
 export const samepeople = (a: readonly Person[], b: readonly Person[]): boolean =>
   a.length === b.length && a.every((p, i) => p === b[i]);
+
+/**
+ * The moments on the life line that say this person was there.
+ *
+ * Read from the life record as it stands, newest first — every line on the
+ * board, mine included, because a wedding is on the line of whoever's page it
+ * was written on. The tie is one-way, as always: the life line keeps the ids
+ * and this only reads them.
+ */
+export function momentsWith(personId: string, life: LifeData | null = readLife()): { date: string; title: string }[] {
+  if (!life || !personId) return [];
+  const lines = [life.milestones, ...(life.others ?? []).map((o) => o.milestones)];
+  return lines
+    .flat()
+    .filter((m) => m.who?.includes(personId))
+    .map((m) => ({ date: m.date, title: m.title }))
+    .sort((a, b) => b.date.localeCompare(a.date));
+}

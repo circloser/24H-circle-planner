@@ -51,8 +51,9 @@
 - **Life mode** (the “Life” button at the top, or
   https://24houring.com/?view=life): the third time scale after the day and
   the month. A birthday alone draws one vertical line — birth, a label for
-  every decade, today (age shown as full years) and a dashed stretch ahead up
-  to the expected life span (90 by default).
+  every decade, today (age shown as full years) and a dashed stretch ahead.
+  Nobody is asked how long they expect to live: the paper simply ends at 120.
+  The page opens with today in the middle of the screen.
 - Moments are dated to the year, month or day (year only → “about N”),
   may have an end date, a category with a colour and an icon (family,
   education, work, relationships, health, travel, achievement, home, other),
@@ -60,24 +61,96 @@
   cards). Cards alternate left/right on wide screens; on phones they run to
   the right of a line on the left. Category filters, pinned moments, a
   summary line (records · plans · age · years ahead).
-- **Parents**: mother and father side by side at the top; their two lines
-  meet to begin the life line.
-- **Adding**: hover the line for a faint + circle that adds a moment in that
-  year (on phones: tap the line, or the + under today).
+- **Several lives side by side**: a line can be added for anybody else —
+  a parent, a child, the friend who was in the same city for three of those
+  years — and they are drawn as columns against the same run of years, so a
+  date shared by two of them sits at the same height on both. Names can be
+  dragged into order, folded away, or let go. Free: two lines (mine and one
+  other); Pro: up to ten.
+- **Adding**: hover the line for a faint + circle that adds a moment where
+  the line was pressed — the form opens on the month that point falls in (on
+  phones: tap the line, or the + under today).
+- **Where it happened**: a moment can name a city, which colours that country
+  on the place map (below).
 - **Words to leave behind**: an ending note where the line ends.
 - **Export**: one tall PNG (2160 px wide) after a privacy check; a JSON
   backup (photos included) that restores on any device.
-- Free: 30 moments and the parents, no photos; Pro: unlimited moments,
-  adding photos, sync. Photos stay on the device — never on the server,
+- Free: 30 moments and two lines, no photos; Pro: unlimited moments, ten
+  lines, adding photos, sync. Photos stay on the device — never on the server,
   even with Pro. Limits only stop adding — nothing written is ever removed.
 - Landing page: https://24houring.com/life
+
+## Relation map (관계 · the people around you)
+
+- **Relation mode** (the fourth tab, or https://24houring.com/?view=relation):
+  me in the middle, and everybody who matters drawn around me. It is NOT a
+  social network — there are no accounts but the owner's, no friend requests,
+  no matching, no messages, and the other person is never told they are on
+  somebody's map. A private note about the people in a life, kept on the
+  device like everything else here.
+- **Closeness is distance**: five rungs, and the rung IS how far out somebody
+  is drawn (150 to 490 px from the middle). The group — family, friend, work,
+  other — says which way from the middle; closeness says how far. The closest
+  are drawn as the largest circles, in the heaviest line.
+- **The map has weight**: the people repel each other, the ties pull, and each
+  group is enclosed by a soft boundary with its name on it. It arranges
+  itself when it opens, settles, and then drifts gently. Anybody can be
+  dragged and put down where they are.
+- **Ties between two people** (not only to me): a line with its own name
+  ("부부", "동료") and its own closeness, which pulls that pair together.
+  Somebody new can be added from another person's card, already tied to them.
+- **What is known about a person** is kept as a history rather than a field:
+  contact, where they live, family, employer and title each keep what they
+  were before, with the date each became true. A new job does not rub out
+  the one before it.
+- **Every meeting is its own line**: met, spoke, or an occasion (a wedding, a
+  funeral) — one press writes today, and past meetings can be written with
+  their own date and a few words. How long it has been is read from the
+  newest of them; somebody unheard from for three months fades on the map,
+  and a year of silence is as faint as it gets. Birthdays show in the
+  calendar, read-only.
+- **Everything the page can do sits in the bottom-right corner**: add,
+  filter by group or by "out of touch" / "birthday this month", search, and
+  the two zoom buttons.
+- Free: 40 people and 20 ties; Pro: unlimited, plus photos (which stay on the
+  device, never on the server). Export: a PNG of the map after a privacy
+  check, and a JSON backup.
+- Landing page: https://24houring.com/relation
+
+## Place map (플레이스 · where a life has happened)
+
+- **Place mode** (the fifth tab, or https://24houring.com/?view=place): two
+  layers. A globe of countries — been there, want to go — that can be spun,
+  searched and read as a heat map; and a pin map of particular spots, each
+  with a kind (home, work, school, food, travel, other), a date, a note and
+  the people who were there with you.
+- The globe starts on wherever the browser already knows it is, if it has
+  been allowed before — permission is never asked for on this page — spins
+  slowly by itself when left alone, and names a country on hover.
+- **Countries**: a visit can carry the years it happened in; the summary
+  counts countries, continents, cities and the percentage of the world.
+- **It is tied to the other pages**: a moment on the life line that names a
+  city colours that country here, and the map can offer to read the line's
+  travels and moves — it only ever OFFERS, because a map that colours itself
+  in is a map that lies. A pin can name the people from the relation map who
+  were there.
+- Free: 50 pins; Pro: unlimited, plus photos. Export: a PNG of the map, and a
+  JSON backup.
+- Landing page: https://24houring.com/place
 
 ## Key facts (direct answers)
 
 - **Price**: Core editing and PNG/PDF/JSON exports are free with no sign-up.
-  The free plan has 3 saved-schedule slots and a 30-day past-diary access window.
-  Pro adds unlimited saved slots and past-diary access, Google-login cloud sync,
-  optional end-to-end encryption, statistics reports, and Web Push alarms.
+  The free plan has 3 saved-schedule slots, a 30-day past-diary access window,
+  2 life lines with 30 moments, 40 people with 20 ties, and 50 place pins.
+  Pro (one list, shown in full in the app's upgrade dialog) adds: cloud sync
+  across devices; the diary lock (end-to-end encryption); unlimited saved
+  slots and past diary; unlimited life moments and lines with photos;
+  unlimited people, ties and pins with photos; calendar decorating (stickers,
+  masking tape, paper, photo stickers); Google Calendar import (read-only);
+  push alarms when a block starts; statistics reports; and no ads or export
+  watermark. A limit only ever stops ADDING — nothing already written is
+  hidden or lost if Pro lapses.
   The app upgrade dialog and Polar checkout show current pricing and terms.
   The planner does not load third-party ads; an in-app Pro promotion may appear.
 - **Platforms**: Any modern browser, desktop or mobile. Installable PWA
@@ -163,8 +236,10 @@ where `<code>` is base64url(JSON) of:
 ## FAQ
 
 - **Is it free?** Core planning and exports are free with no sign-up, with
-  3 saved-schedule slots and a 30-day past-diary access window. Pro expands
-  these limits and adds sync, reports and push alarms; see live checkout terms.
+  3 saved-schedule slots, a 30-day past-diary access window, 2 life lines,
+  40 people and 50 pins. Pro expands every one of those limits and adds sync,
+  the diary lock, calendar decorating, Google Calendar import, push alarms,
+  reports and an ad-free, watermark-free app; see live checkout terms.
 - **Do I need an account?** No. An account (Google login) is only used for
   the optional Pro sync.
 - **Can I use it on my phone?** Yes — responsive web app, installable PWA,
@@ -176,6 +251,15 @@ where `<code>` is base64url(JSON) of:
 - **Can I make a timeline of my whole life?** Yes — Life mode puts your
   parents, the moments you have lived, today and your plans on one line, with
   an ending note. Details: https://24houring.com/life
+- **Can I keep a map of the people in my life?** Yes — Relation mode draws
+  everybody around you, closeness as distance, with ties between them, a
+  history of what you know about each person and every meeting written down.
+  It is private to your device and nobody is ever notified.
+  Details: https://24houring.com/relation
+- **Can I track the countries and places I have been to?** Yes — Place mode
+  has a globe of countries visited and wished for, and pins for particular
+  spots, tied to the moments on your life line.
+  Details: https://24houring.com/place
 - **Can I see my Google Calendar there?** Yes, read-only, via a private iCal
   address (Pro, after setting the diary lock).
 - **Can I switch to a 12-hour clock view?** Yes — toggle 24h → Day (06–18) →
@@ -192,6 +276,8 @@ where `<code>` is base64url(JSON) of:
 - App: https://24houring.com/
 - Calendar & diary decorating: https://24houring.com/calendar
 - Life timeline: https://24houring.com/life
+- Relation map: https://24houring.com/relation
+- Place map: https://24houring.com/place
 - Pricing: free core with limits; current Pro price in the in-app upgrade dialog
 - Guides: https://24houring.com/guides/
 - Blog: https://24houring.com/blog/

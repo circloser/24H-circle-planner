@@ -47,6 +47,15 @@ export interface Milestone {
   /** Where it happened, for the place map (lib/place). A country, and the
    *  city inside it when one was chosen. */
   placeRef?: { countryCode: string; cityId?: string };
+  /**
+   * Who was there: ids from the relation map (lib/relation-people).
+   *
+   * Only the ids are kept. The names are read from the relation record when
+   * a card is drawn, so somebody renamed there is renamed here, and somebody
+   * taken off the map simply stops being mentioned — the same one-way rule
+   * every tie between these pages follows.
+   */
+  who?: string[];
 }
 
 export interface LifeProfile {
@@ -102,6 +111,9 @@ export const MAX_DESCRIPTION = 1000;
 export const MAX_NAME = 40;
 export const MAX_NOTE = 200;
 export const MAX_ENDING = 10_000;
+/** People named on one moment. A wedding has a hundred guests; a record of
+ *  one is a list of the few who made it that day. */
+export const MAX_WHO = 20;
 export const MAX_MEMOIR = 40_000;
 const MIN_YEAR = 1800;
 const MAX_YEAR = 2200;
@@ -253,6 +265,8 @@ function cleanMilestone(v: unknown): Milestone | null {
   const city = where && typeof where['cityId'] === 'string' && where['cityId'].length > 0 && where['cityId'].length <= 64
     ? where['cityId'] : null;
   const placeRef = country ? { countryCode: country, ...(city ? { cityId: city } : {}) } : null;
+  // Ids only, each one once: the names live on the relation map.
+  const who = [...new Set((Array.isArray(o['who']) ? o['who'] : []).filter(isId))].slice(0, MAX_WHO);
   // Fixed field order, optional fields only when present: load → save is stable.
   return {
     id: o['id'], date: o['date'],
@@ -263,6 +277,7 @@ function cleanMilestone(v: unknown): Milestone | null {
     ...(isId(o['photo']) ? { photo: o['photo'] } : {}),
     ...(o['pinned'] === true ? { pinned: true } : {}),
     ...(placeRef ? { placeRef } : {}),
+    ...(who.length ? { who } : {}),
   };
 }
 
@@ -363,15 +378,16 @@ export const encodeLife = (life: LifeData): LifeData => decodeLife(life) ?? empt
 
 // ── Free plan ────────────────────────────────────────────────────────────────
 
-/** Free plan: this many moments and family members; Pro has no limit. A
- *  limit only ever stops ADDING — nothing already written is hidden or lost. */
+/** Free plan: this many moments; Pro has no limit. A limit only ever stops
+ *  ADDING — nothing already written is hidden or lost.
+ *
+ *  (There was a family limit here too. The family is a mother and a father,
+ *  which is two, so a limit of four could never be reached and nothing ever
+ *  called it — a number advertised as a restriction that did not exist.) */
 export const FREE_LIFE_MILESTONES = 30;
-export const FREE_LIFE_FAMILY = 4;
 
 export const canAddMilestone = (life: LifeData, pro: boolean): boolean =>
   pro || life.milestones.length < FREE_LIFE_MILESTONES;
-export const canAddFamily = (life: LifeData, pro: boolean): boolean =>
-  pro || life.family.length < FREE_LIFE_FAMILY;
 
 // ── Timeline model ───────────────────────────────────────────────────────────
 

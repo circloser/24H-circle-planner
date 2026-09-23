@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  FREE_LIFE_FAMILY, FREE_LIFE_MILESTONES, LIFE_KEY, ageAt, buildTimeline, canAddFamily, canAddMilestone,
+  FREE_LIFE_MILESTONES, LIFE_KEY, ageAt, buildTimeline, canAddMilestone,
   decodeLife, emptyLife, encodeLife, fadeAt, isNewerLife, isPlanned, lifeDate, lifeFile, lifeSummary, photoIds, precisionOf,
   readLifeFile, sortMilestones, spokenLifeDate, type LifeData, type Milestone,
 } from '../life';
@@ -139,9 +139,6 @@ describe('the free plan', () => {
     // Over the limit (a lapsed Pro): everything still decodes and shows.
     expect(decodeLife(JSON.parse(JSON.stringify(many)))!.milestones).toHaveLength(FREE_LIFE_MILESTONES + 5);
     expect(buildTimeline(many, { today: TODAY }).filter((i) => i.kind === 'moment')).toHaveLength(FREE_LIFE_MILESTONES + 5);
-    const fam = life({ family: Array.from({ length: FREE_LIFE_FAMILY }, (_, i) => ({ id: `f${i}`, relation: 'other' as const, name: 'n' })) });
-    expect(canAddFamily(fam, false)).toBe(false);
-    expect(canAddFamily(fam, true)).toBe(true);
   });
 });
 

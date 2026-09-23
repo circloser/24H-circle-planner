@@ -268,6 +268,46 @@ export async function run() {
     await page.locator('[data-life-title-input]').fill('첫 회사');
     await save();
     pass('a card opens its editor, and the edit shows', (await titles()).includes('첫 회사'));
+
+    // 8b. Who was there — the people from the relation map, by name.
+    const openMoment = async (title) => {
+      await page.locator('[data-life-moment]', { hasText: title }).locator('button[aria-label]').click();
+      await wait(300);
+    };
+    await openMoment('첫 회사');
+    pass('with nobody on the relation map, the form says where people come from',
+      (await count('[data-life-who-empty]')) === 1);
+    await page.keyboard.press('Escape');
+    await wait(300);
+    await page.evaluate(() => localStorage.setItem('24h-circle-planner.relation', JSON.stringify({
+      version: 2, me: {}, updatedAt: '',
+      people: [
+        { id: 'r1', name: '윤도현', group: 'work', closeness: 4, createdAt: '' },
+        { id: 'r2', name: '정하윤', group: 'friend', closeness: 3, createdAt: '' },
+      ],
+      links: [],
+    })));
+    await openLife();
+    await openMoment('첫 회사');
+    await page.locator('[data-life-who-search]').fill('도현');
+    await wait(150);
+    await page.locator('[data-life-who-option="r1"]').click();
+    await save();
+    const firstJob = (await stored()).milestones.find((m) => m.title === '첫 회사');
+    pass('a moment keeps who was there — as ids, not names',
+      JSON.stringify(firstJob?.who) === JSON.stringify(['r1']), JSON.stringify(firstJob));
+    pass('…and the card names them',
+      (await page.locator('[data-life-moment]', { hasText: '첫 회사' }).locator('[data-life-who]').innerText()).includes('윤도현'));
+    // Renamed on the map, renamed on the line: only the id was ever kept.
+    await page.evaluate(() => {
+      const k = '24h-circle-planner.relation';
+      const d = JSON.parse(localStorage.getItem(k));
+      d.people[0].name = '윤도현 팀장';
+      localStorage.setItem(k, JSON.stringify(d));
+    });
+    await openLife();
+    pass('…and somebody renamed on the map is renamed on the line',
+      (await page.locator('[data-life-moment]', { hasText: '첫 회사' }).locator('[data-life-who]').innerText()).includes('윤도현 팀장'));
     const del = async (title) => {
       await page.locator('[data-life-moment]', { hasText: title }).locator('button[aria-label]').click();
       await wait(300);

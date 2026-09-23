@@ -1,5 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
-import { Cloud, Archive, BarChart3, Ban, Check, GitCommitVertical } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import {
+  Cloud, Archive, BarChart3, Ban, Check, GitCommitVertical, Lock, Sparkles, CalendarPlus, BellRing,
+  Users, type LucideIcon,
+} from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -13,7 +16,22 @@ import { startCheckout } from '@/lib/sync/billing';
 import { isPlayStoreApp } from '@/lib/twa';
 import { track } from '@/lib/track';
 import { takeUpgradeSource } from '@/lib/pro';
+import { FREE_LIMITS, proFeatures } from '@/lib/pro-plan';
 import { toast } from 'sonner';
+
+/** The mark on each line of the list (lib/pro-plan holds the list itself). */
+const FEATURE_ICON: Record<string, LucideIcon> = {
+  sync: Cloud,
+  lock: Lock,
+  archive: Archive,
+  life: GitCommitVertical,
+  people: Users,
+  decor: Sparkles,
+  ical: CalendarPlus,
+  push: BellRing,
+  stats: BarChart3,
+  clean: Ban,
+};
 
 interface UpgradeDialogProps {
   open: boolean;
@@ -119,12 +137,15 @@ function UpgradeDialogSession({ open, onOpenChange }: UpgradeDialogProps) {
   };
 
   // Checkout is available only after a current, valid price has been shown.
-  // Which surface opened the paywall — kept for the checkout that may follow.
-  const from = useRef('direct');
+  // Which surface opened the paywall. Read once, as this component is made
+  // afresh for each opening — and state rather than a ref, because the list
+  // below is drawn from it.
+  const [from] = useState(takeUpgradeSource);
   useEffect(() => {
     if (!open) return;
-    from.current = takeUpgradeSource();
-    track('upgrade_open', { source: from.current });
+    track('upgrade_open', { source: from });
+    // Counted once per opening: `from` cannot change while one is open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   useEffect(() => {
@@ -163,24 +184,21 @@ function UpgradeDialogSession({ open, onOpenChange }: UpgradeDialogProps) {
       return;
     }
     setBusy(true);
-    track('checkout_start', { source: from.current });
+    track('checkout_start', { source: from });
     startCheckout().catch(() => {
       setBusy(false);
       toast.error(t('billing.checkoutError'));
     });
   };
 
-  const features = [
-    { icon: Cloud, text: t('upgrade.featSync') },
-    { icon: Archive, text: t('upgrade.featArchive') },
-    { icon: GitCommitVertical, text: t('upgrade.featLife') },
-    { icon: BarChart3, text: t('upgrade.featStats') },
-    { icon: Ban, text: t('upgrade.featNoAds') },
-  ];
+  // Everything Pro is, in one list — with whatever was just pressed at the
+  // top of it, marked as the answer to that.
+  const features = proFeatures(from);
+  const asked = from !== 'direct' && from !== 'other' ? features[0] : null;
 
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-h-[92dvh] max-w-sm overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t('upgrade.title')}</DialogTitle>
         </DialogHeader>
@@ -195,21 +213,40 @@ function UpgradeDialogSession({ open, onOpenChange }: UpgradeDialogProps) {
           <p className="text-sm text-muted-foreground">{t('upgrade.subtitle')}</p>
 
           {/* What Pro adds on top of the (free) planner. */}
-          <ul className="flex flex-col gap-2">
-            {features.map(({ icon: Icon, text }, i) => (
-              <li key={i} className="flex items-center gap-2.5 text-sm text-foreground">
-                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary/10">
-                  <Icon className="h-4 w-4 text-primary" />
-                </span>
-                {text}
-              </li>
-            ))}
+          <ul className="flex flex-col gap-2" data-upgrade-features>
+            {features.map((f) => {
+              const Icon = FEATURE_ICON[f.id] ?? Check;
+              const hit = f === asked;
+              return (
+                <li key={f.id} data-upgrade-feature={f.id} data-upgrade-asked={hit || undefined}
+                  className={`flex items-center gap-2.5 text-sm text-foreground ${
+                    hit ? 'rounded-lg bg-primary/10 px-2 py-1.5' : ''}`}>
+                  <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary/10">
+                    <Icon className="h-4 w-4 text-primary" />
+                  </span>
+                  <span className="min-w-0 flex-1">{t(f.label)}</span>
+                  {hit && (
+                    <span className="shrink-0 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">
+                      {t('upgrade.youHit')}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
           </ul>
 
-          {/* Everything the free tier already includes, so the paywall feels fair. */}
-          <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+          {/* Everything the free tier already includes, so the paywall feels
+              fair — and the numbers are the ones the gates actually use. */}
+          <p className="flex items-start gap-1.5 text-xs text-muted-foreground" data-upgrade-free>
             <Check className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            {t('upgrade.freeBody')}
+            {t('upgrade.freeBody', {
+              slots: String(FREE_LIMITS.slots),
+              days: String(FREE_LIMITS.diaryDays),
+              lines: String(FREE_LIMITS.lifeLines),
+              moments: String(FREE_LIMITS.lifeMoments),
+              people: String(FREE_LIMITS.people),
+              pins: String(FREE_LIMITS.pins),
+            })}
           </p>
 
           {/* Live price(s) from Polar; absent until fetched / if offline. */}

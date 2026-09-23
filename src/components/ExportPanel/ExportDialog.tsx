@@ -65,7 +65,8 @@ function WatermarkRow({
 
   function handleClick() {
     if (!isPro) {
-      track('upgrade_open', { source: 'watermark' });
+      // The dialog counts its own opening (with this source): counting it
+      // here as well made every watermark press worth two.
       requestUpgrade('watermark');
       return;
     }

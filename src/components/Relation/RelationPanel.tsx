@@ -9,6 +9,7 @@ import {
   type Closeness, type MeetKind, type Person, type RelationData, type RelationGroup, type RelationLink,
 } from '@/lib/relation';
 import { placesWith } from '@/lib/relation-place';
+import { momentsWith } from '@/lib/relation-life';
 import { GROUP_ICON, GROUP_LABEL } from './groups';
 import { FACT_LABEL, MEET_ICON, MEET_LABEL } from './kinds';
 
@@ -126,8 +127,10 @@ export function RelationPanel({
   const toBirthday = daysToBirthday(person, today);
   const turns = turningAge(person, today);
   const Icon = GROUP_ICON[person.group];
-  // Places on the place map that name this person (lib/relation-place).
+  // Places on the place map that name this person (lib/relation-place), and
+  // moments on the life line that say they were there (lib/relation-life).
   const together = placesWith(person.id);
+  const shared = momentsWith(person.id);
   const linked = data.links
     .filter((l) => l.source === person.id || l.target === person.id)
     .map((l) => ({ link: l, other: data.people.find((p) => p.id === (l.source === person.id ? l.target : l.source)) }))
@@ -262,6 +265,13 @@ export function RelationPanel({
               onLabel={onLabel} onHold={onHold} />
           ))}
         </ul>
+      )}
+
+      {shared.length > 0 && (
+        <p className="text-[13px] text-muted-foreground" data-relation-moments>
+          {t('relation.momentsWith', { n: String(shared.length) })} · {shared.slice(0, 3)
+            .map((m) => `${m.date.slice(0, 4)} ${m.title}`).join(', ')}
+        </p>
       )}
 
       {together.length > 0 && (
