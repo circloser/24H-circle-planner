@@ -11,7 +11,6 @@ import { EnablePushBanner } from '@/components/EnablePushBanner/EnablePushBanner
 import { GetAppBanner } from '@/components/GetAppBanner/GetAppBanner';
 import { IosInstallBanner } from '@/components/IosInstallBanner/IosInstallBanner';
 import { ActivationNudge } from '@/components/ActivationNudge/ActivationNudge';
-import { AppFooter } from '@/components/AppShell/AppFooter';
 import { ResetDialog } from '@/components/AppShell/ResetDialog';
 import { ShareImportDialog } from '@/components/AppShell/ShareImportDialog';
 import { TimePaletteDialog } from '@/components/TimePalette/TimePaletteDialog';
@@ -856,8 +855,6 @@ function App() {
         </>
         )}
       </main>
-
-      {!lifeMode && !relationMode && !placeMode && <AppFooter />}
 
       <PresetGallery
         open={presetOpen}

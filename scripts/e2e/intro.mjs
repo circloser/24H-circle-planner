@@ -145,6 +145,18 @@ export async function run() {
     await wait(300);
     const url = new URL(page.url());
     pass('/?view=calendar opens the calendar and tidies the address', !url.searchParams.has('view') && url.hash === '#x', page.url());
+    // The page is the app: no reading copy and no link footer under the
+    // calendar (nor, below, under the timetable).
+    const underneath = async () => ({
+      copy: await count('#site-copy-wrap, #site-copy'),
+      footer: await page.locator('footer', { hasText: '개인정보처리방침' }).count(),
+    });
+    const underCalendar = await underneath();
+    pass('nothing is written under the calendar', underCalendar.copy === 0 && underCalendar.footer === 0, JSON.stringify(underCalendar));
+    await page.locator('[data-calendar-toggle]').click();
+    await wait(500);
+    const underTimetable = await underneath();
+    pass('…nor under the timetable', underTimetable.copy === 0 && underTimetable.footer === 0, JSON.stringify(underTimetable));
 
     // 5. The /calendar page.
     const res = await page.goto(`${base}/calendar`, { waitUntil: 'domcontentloaded' });

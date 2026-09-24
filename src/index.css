@@ -199,11 +199,10 @@
 html, body { overscroll-behavior-y: contain; }
 
 /* ─── Desktop: hide the document scrollbar ───────────────────────────────────
-   The planner is capped to fill exactly one screen, so the only thing that
-   scrolls is the site-copy block beneath it — and an app screen with a
+   The planner is capped to fill exactly one screen, and an app screen with a
    scrollbar running down it reads as a layout bug. Hide the scrollbar CHROME
    only: wheel, trackpad, keyboard (space / Page Down / End) and anchor links
-   all still scroll normally, so the copy and its section links stay reachable.
+   all still scroll normally.
    Scoped to `html` so scroll areas inside dialogs keep their own scrollbars,
    and to ≥768px because phones don't render one anyway. This rule ships with
    the app bundle only — /guides, /blog and the other content pages keep
@@ -710,9 +709,6 @@ svg text {
   to { opacity: 1; transform: none; }
 }
 .life-pop { animation: life-pop 180ms ease-out both; }
-/* The life page ends where the life ends: the home page's reading copy (and
-   the app footer, see App.tsx) stay away while it shows. */
-html[data-page='life'] #site-copy-wrap { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .life-reveal { opacity: 1; transform: none; transition: none; }
   .life-pulse { animation: none; }
@@ -728,9 +724,6 @@ html[data-page='life'] #site-copy-wrap { display: none; }
   --relation-accent: hsl(var(--primary));
   --relation-paper: hsl(var(--surface, var(--background)));
 }
-/* Like the life line, the map fills the window: the home page's reading copy
-   (and the app footer, see App.tsx) stay away while it shows. */
-html[data-page='relation'] #site-copy-wrap { display: none; }
 
 /* ─── Place map ────────────────────────────────────────────────────────────── */
 /* The scratch map is SVG and the pin map is a canvas; both need the page's own
@@ -739,4 +732,3 @@ html[data-page='relation'] #site-copy-wrap { display: none; }
   --place-ink: hsl(var(--foreground));
   --place-paper: hsl(var(--surface, var(--background)));
 }
-html[data-page='place'] #site-copy-wrap { display: none; }

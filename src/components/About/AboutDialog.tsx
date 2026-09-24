@@ -49,7 +49,7 @@ const FEATURES_EN: Feature[] = [
 ];
 
 export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
-  const { lang } = useTranslation();
+  const { t, lang } = useTranslation();
   const ko = lang === 'ko';
   const features = ko ? FEATURES_KO : FEATURES_EN;
 
@@ -123,6 +123,15 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
 
         {/* Reserved ad space (consistent with the other dialogs). */}
 
+        {/* The legal pages used to sit in a footer under the planner; the
+            page is the app now, so they are listed here instead. */}
+        <nav className="mt-3 flex flex-wrap justify-center gap-x-3 gap-y-1 text-[12px] text-muted-foreground" data-about-links>
+          <a href="/privacy" target="_blank" rel="noopener" className="underline underline-offset-2 hover:text-foreground">{t('footer.privacy')}</a>
+          <a href="/terms" target="_blank" rel="noopener" className="underline underline-offset-2 hover:text-foreground">{t('footer.terms')}</a>
+          <a href="/refund" target="_blank" rel="noopener" className="underline underline-offset-2 hover:text-foreground">{t('footer.refund')}</a>
+          <a href="/contact" target="_blank" rel="noopener" className="underline underline-offset-2 hover:text-foreground">{t('footer.contact')}</a>
+          <a href="/guides/" target="_blank" rel="noopener" className="underline underline-offset-2 hover:text-foreground">{t('footer.guides')}</a>
+        </nav>
         <p className="mt-2 text-center text-[11px] text-muted-foreground/80">
           24houring.com · © Circloser
         </p>

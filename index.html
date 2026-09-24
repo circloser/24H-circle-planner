@@ -197,14 +197,11 @@
     <!-- Third-party analytics stays disabled until a consent flow is configured. -->
   </head>
   <body>
-    <!-- React mounts the planner here; persistent reading content follows #root. -->
+    <!-- React mounts the planner here. Nothing is written under it: the app is the page. -->
     <div id="root">
       <!-- Boot splash: a symbolic loading mark shown while the bundle loads.
            React replaces all of #root on mount, so the splash disappears the
-           moment the app is ready. NOTE: the page copy below lives OUTSIDE
-           #root on purpose — it must survive the mount so the homepage keeps
-           real, readable content (and its section navigation) for visitors,
-           reviewers and crawlers alike, instead of turning into a bare app. -->
+           moment the app is ready. -->
       <div id="boot-splash" style="position:fixed;inset:0;z-index:99;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#f4f5f7">
         <style>
           [data-theme='dark'] #boot-splash { background:#0f131a }
@@ -219,78 +216,6 @@
       </div>
     </div>
 
-    <!-- Visible editorial content stays outside React on every screen size. -->
-    <style>
-      #site-copy-wrap { --copy-bg:#fff; --copy-ink:#202735; --copy-muted:#4d586b; --copy-line:#dde3eb; --copy-soft:#f5f7fb; --copy-link:#174bb5; background:var(--copy-bg);color:var(--copy-ink);border-top:1px solid var(--copy-line) }
-      [data-theme='dark'] #site-copy-wrap { --copy-bg:#111722; --copy-ink:#edf1f8; --copy-muted:#b8c3d4; --copy-line:#354153; --copy-soft:#1b2534; --copy-link:#9cc1ff }
-      #site-copy { max-width:1000px;margin:0 auto;padding:44px 24px 48px;font-family:'Pretendard',system-ui,sans-serif;font-size:16px;line-height:1.75;color:var(--copy-ink) }
-      #site-copy * { box-sizing:border-box }
-      #site-copy h1 { font-size:clamp(24px,3vw,34px);line-height:1.3;letter-spacing:-.6px;font-weight:800;margin:6px 0 16px;color:var(--copy-ink)!important }
-      #site-copy h2 { font-size:21px;line-height:1.4;font-weight:750;margin:28px 0 12px;color:var(--copy-ink)!important }
-      #site-copy h3 { font-size:17px;font-weight:700;margin:0 0 8px;color:var(--copy-ink)!important }
-      #site-copy p { margin:0 0 16px;color:var(--copy-muted)!important }
-      #site-copy strong { color:var(--copy-ink)!important }
-      #site-copy a { color:var(--copy-link)!important;text-decoration:underline;text-underline-offset:3px }
-      #site-copy a:hover { text-decoration-thickness:2px }
-      #site-copy a:focus-visible,#site-copy summary:focus-visible { outline:3px solid var(--copy-link);outline-offset:4px;border-radius:4px }
-      #site-copy .copy-eyebrow { margin:0;color:var(--copy-muted);font-size:12px;font-weight:750;letter-spacing:1.6px;text-transform:uppercase }
-      #site-copy .copy-lead { max-width:720px;font-size:17px }
-      #site-copy .copy-actions,#site-copy .copy-footer { display:flex;flex-wrap:wrap;gap:8px 20px;margin:20px 0 }
-      #site-copy .copy-actions a,#site-copy .copy-footer a { display:inline-flex;align-items:center;min-height:44px }
-      #site-copy .copy-grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:20px 0 26px }
-      #site-copy .copy-card { padding:20px;border:1px solid var(--copy-line);border-radius:12px;background:var(--copy-soft) }
-      #site-copy .copy-card p { font-size:15px;margin-bottom:12px }
-      #site-copy .copy-card a { display:inline-flex;align-items:center;min-height:44px;font-weight:650 }
-      #site-copy details { margin:14px 0;border:1px solid var(--copy-line);border-radius:12px;padding:0 20px }
-      #site-copy summary { cursor:pointer;min-height:56px;padding:14px 0;font-weight:700;color:var(--copy-ink)!important }
-      #site-copy details[open] { padding-bottom:12px }
-      #site-copy ul,#site-copy ol { padding-left:24px;margin:12px 0 20px;list-style:revert }
-      #site-copy li { margin:8px 0;color:var(--copy-muted)!important }
-      #site-copy .copy-example { border-left:3px solid var(--copy-link);padding:4px 0 4px 18px;margin:20px 0 }
-      #site-copy .copy-note { font-size:14px;margin-top:24px }
-      #site-copy .copy-footer { border-top:1px solid var(--copy-line);padding-top:16px;font-size:14px }
-      #site-copy hr { border:0;border-top:1px solid var(--copy-line)!important }
-      #site-copy nav { color:var(--copy-muted)!important }
-      @media(max-width:640px) { #site-copy { padding:28px 18px 36px } #site-copy .copy-grid { grid-template-columns:1fr;gap:12px } #site-copy .copy-card { padding:16px } #site-copy details { padding-left:16px;padding-right:16px } }
-    </style>
-    <div id="site-copy-wrap">
-      <!-- editorial-content:start -->
-      <section id="site-copy" aria-labelledby="planner-guide-title">
-        <p class="copy-eyebrow">24Houring · A practical planning companion</p>
-        <h1 id="planner-guide-title">Make a day that fits your real life.</h1>
-        <p class="copy-lead">The circle above gives every hour a place. Use this free browser planner to set fixed commitments, make room for a task that matters, and leave space when the day changes. No account is needed to start editing.</p>
-        <nav class="copy-actions" aria-label="Planning resources"><a href="/templates/">Choose a starting timetable</a><a href="/calendar">Plan and decorate the month</a><a href="/life">Lay out your whole life</a><a href="/guides/">Learn how to adapt your plan</a><a href="/ko/#site-copy" lang="ko">한국어 사용 안내</a></nav>
-        <div class="copy-grid">
-          <article class="copy-card"><h2 style="margin:0 0 10px;font-size:18px">Study around fixed classes</h2><p>Start with your classes and travel time. Give one study block a clear task, then keep a buffer for work that runs over.</p><a href="/templates/exam-student">Adapt a student timetable</a></article>
-          <article class="copy-card"><h2 style="margin:0 0 10px;font-size:18px">Protect time after work</h2><p>Include the commute and dinner before adding an evening goal. A smaller block you can keep is more useful than a full evening you cannot.</p><a href="/templates/office-worker">Adapt a workday timetable</a></article>
-          <article class="copy-card"><h2 style="margin:0 0 10px;font-size:18px">Find where the plan slips</h2><p>Record what actually happened for a day. Compare it with your plan and adjust the block that repeatedly needs more time.</p><a href="/guides/time-audit">Try a time audit</a></article>
-        </div>
-        <details><summary>Build, check and revise your first timetable</summary>
-          <ol><li><strong>Place what cannot move.</strong> Begin with work, classes, appointments and your own sleep schedule. A template is a worked example, not a recommended lifestyle.</li><li><strong>Edit one block at a time.</strong> Select a block to change its label; adjust its boundaries to change the time. Switch between full-day, day, night and table views to check the same schedule.</li><li><strong>Name an action you can finish.</strong> “Review chapter 2 and mark questions” is easier to evaluate than “study harder.” Keep meals, travel and breaks visible too.</li><li><strong>Revisit the plan after the day.</strong> Note what ran late. Move or shorten the next day's optional task instead of squeezing every remaining hour.</li></ol>
-          <div class="copy-example"><h3>A worked adjustment: the commute runs over</h3><p>Suppose your plan has travel from 18:00–18:30, dinner from 18:30–19:00 and study from 19:00–20:00. If travel actually ends at 19:00, move dinner to 19:00–19:30 and reduce study to 19:30–20:00. Rename that smaller block “review today's notes.” The example preserves dinner and changes the task to fit the time available; it is not a claim about the ideal study duration.</p></div>
-          <p>For a fuller method, read <a href="/guides/time-blocking">the time-blocking guide</a> or <a href="/life-planner">how to build a life planner</a>.</p>
-        </details>
-        <details><summary>Plan the month and decorate it like a diary</summary>
-          <p>Press <strong>Calendar</strong> at the top to see two months side by side. Add all-day or timed plans, drag across dates for a multi-day plan, and set repeats. Pro adds a read-only view of your Google Calendar.</p><p>From <strong>Design → Decorate calendar</strong>, pick a colour theme, then (with Pro) a paper texture, stickers, masking tape and photo stickers — placed anywhere on the month and kept in place at any screen size. <strong>Export</strong> saves the month as a 2160-pixel image. <a href="/calendar">Read the calendar overview</a>.</p>
-        </details>
-        <details><summary>Lay out your whole life on one line</summary>
-          <p>Press <strong>Life</strong> at the top and enter your birthday: a line appears from your birth through today into the years ahead, with a label for every decade. Add the moments you have lived — to the day, the month or just the year — and the plans still to come, which run on as a dashed line. Your parents sit at the top, where the line begins.</p><p>Where the line ends, write the words you would like to leave behind. <strong>Export</strong> saves the whole line as one tall image to share on a family occasion, or as a JSON backup that brings it back on any device. <a href="/life">Read the life timeline overview</a>.</p>
-        </details>
-        <details><summary>Saving, backups and the limits of browser storage</summary>
-          <p>Edits are saved in this browser on this device. Check the save indicator after editing. If saving fails, use its retry option or download the emergency backup before closing the page.</p><p><strong>Local saving is not a permanent backup.</strong> Clearing site data, using a private window or changing browsers can make a local plan unavailable. Export a JSON backup and keep it somewhere you control. PNG and PDF are useful for viewing or printing; JSON is the format for restoring editable data.</p><p>Local browser saving is the default. Signing in with Pro enables server sync for supported data; confirm the sync status before relying on another device. Creating a share link also uploads a schedule copy to the server. Previously cached planner functions can work offline; sign-in, sync, weather and other network services still need a connection.</p>
-        </details>
-        <details><summary>Questions about features, cost and sharing</summary>
-          <h3>What is 24Houring?</h3><p>A browser timetable editor that shows a day as a 24-hour circle. The block sizes show how much of your day each activity occupies. Use the table view when exact start and end times are easier to read as a list.</p>
-          <h3>Is 24Houring free?</h3><p>Core editing, presets and exports are free without signing up. Free use includes three saved-schedule slots and diary access within the free 30-day window. Optional Pro adds account sync, unlimited saved slots, older diary access, reports and ad removal. Check the upgrade screen for the current price and terms before paying.</p>
-          <h3>Can I switch to a 12-hour (clock) view?</h3><p>Yes. Full-day, day (06:00–18:00), night (18:00–06:00) and table views display the same planned timetable. Record mode is different: it maintains a separate record of what you actually did, so editing that record does not change your plan.</p>
-          <h3>Can I save or share the timetable I make?</h3><p>Export PNG or PDF for a visual copy, or JSON for an editable backup. Image sharing depends on your browser and the apps installed on your device. Review the labels before sharing because they may contain personal information.</p>
-          <h3>Which languages are supported?</h3><p>The app supports English, Korean, German, Japanese, Chinese, French, Spanish and Russian. Some reading resources have fewer translations; their language controls show the versions available.</p>
-        </details>
-        <p class="copy-note">The guides offer planning methods and examples, not medical advice or guaranteed productivity results. See <a href="/about">who operates 24Houring</a>, or <a href="/contact">send a correction or ask for help</a>.</p>
-        <nav class="copy-footer" aria-label="Site information"><a href="/about">About</a><a href="/contact">Contact</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/faq">More questions</a></nav>
-      </section>
-      <!-- editorial-content:end -->
-    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

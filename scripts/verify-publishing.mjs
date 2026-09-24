@@ -39,8 +39,8 @@ for (const locale of locales) {
   const path = `${locale}index.html`;
   const doc = new JSDOM(readFileSync(join(dist, path), 'utf8')).window.document;
   const root = doc.getElementById('root');
-  const copy = doc.getElementById('site-copy');
-  check(root && copy && !root.contains(copy), `${path}: editorial content must survive React mount`);
+  check(root, `${path}: missing application mount point`);
+  check(!doc.getElementById('site-copy'), `${path}: no reading copy under the app`);
   check(!doc.querySelector('meta[name="google-adsense-account"]'), `${path}: the service carries no ads, so no ad-network verification`);
 }
 const guides = ['time-blocking', 'time-audit', 'morning-evening-routine'];

@@ -1,8 +1,8 @@
 /*
  * Post-build: generate localized landing pages from dist/index.html.
  *
- * Localized metadata and visible editorial content are generated together.
- * Editorial content stays outside React so it remains available after mount.
+ * Localized metadata (title, description, social cards, JSON-LD, hreflang).
+ * The page itself is the app: no reading copy is written under it.
  * Ships only FULLY-prepared locales — see docs/multilingual-seo-plan.md.
  */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -88,14 +88,6 @@ function buildLocale(base, L) {
   html = html.replace(/(<meta property="og:locale" content=")[^"]*(")/, `$1${L.ogLocale}$2`);
   html = html.replace(/(<meta property="og:locale:alternate" content=")[^"]*(")/, `$1en_US$2`);
   html = html.replace(/(<link rel="canonical" href=")[^"]*(")/, `$1${localeHref(L.lang)}$2`);
-  // Replace only the explicit editorial region. Matching #root through the last
-  // body div would swallow the persistent content and React would remove it.
-  const region = /<!-- editorial-content:start -->[\s\S]*?<!-- editorial-content:end -->/;
-  if (!region.test(html)) throw new Error('Missing persistent editorial content markers');
-  const visibleContent = L.mainHtml
-    .replace(/<main\b[^>]*>/, '<section id="site-copy" aria-label="24Houring">')
-    .replace(/<\/main>/, '</section>');
-  html = html.replace(region, () => '<!-- editorial-content:start -->\n' + visibleContent + '\n<!-- editorial-content:end -->');
   html = localizeJsonLd(html, L);
   html = withHreflang(html);
   return html;

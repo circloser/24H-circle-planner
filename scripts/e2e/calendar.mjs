@@ -362,7 +362,9 @@ export async function run() {
       JSON.stringify(list));
     await page.keyboard.press('Escape');
     await wait(350);
-    await cell(today).hover();
+    // Forced: the pointer is still over the cell from closing the list, so the
+    // peek may already be open on top of it — which is what is being checked.
+    await cell(today).hover({ force: true });
     await wait(400);
     const peek = await page.evaluate((key) => {
       const c = document.querySelector(`[data-day="${key}"]`).closest('div');
@@ -377,7 +379,7 @@ export async function run() {
 
     // …and a plan can be carried straight out of the open peek.
     const peekDrag = async (text, toKey) => {
-      await cell(today).hover();
+      await cell(today).hover({ force: true });
       await wait(400);
       const handles = await page.locator('[data-day-peek] [data-drag-handle]').allInnerTexts();
       const box = await page.locator('[data-day-peek] [data-drag-handle]', { hasText: text }).first().boundingBox();
