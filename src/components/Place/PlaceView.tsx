@@ -830,7 +830,7 @@ export function PlaceView() {
       <PlaceColorsDialog open={colouring} onOpenChange={setColouring}
         palette={data.palette} colors={colors} onChange={api.setPalette} />
       <PlaceExportDialog open={exporting} onOpenChange={setExporting} api={api} shapes={shapes}
-        visited={visited} wished={wished} />
+        visited={visited} wished={wished} camera={camera} />
     </div>
   );
 }

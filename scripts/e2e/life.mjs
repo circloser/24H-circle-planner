@@ -73,7 +73,7 @@ async function setup(base, opts = {}) {
     return route.fulfill({
       status: 200,
       contentType: 'text/plain; charset=utf-8',
-      body: '## 한눈에\n경금(庚金)의 날에 태어났습니다.\n\n## 지나온 대운\n첫 직장의 해와 나란히 놓입니다.',
+      body: '## 한 줄\n단단한 쇠가 천천히 제 길을 내는 사람\n\n## 키워드\n단단함 · 기록 · 느린 불\n\n## 한눈에\n경금(庚金)의 날에 태어났습니다.\n\n## 지나온 대운\n첫 직장의 해와 나란히 놓입니다.',
     });
   });
   // The account this page sees; the decorating step turns Pro on.
@@ -944,6 +944,23 @@ export async function run() {
       && JSON.parse(await page.evaluate(() => localStorage.getItem('24h-circle-planner.saju')) ?? '{}').readings?.length === 1);
     pass('…with the note that it describes rather than predicts',
       /예측하지 않습니다/.test(await page.locator('[data-saju-disclaimer]').innerText()));
+    pass('it opens with its one line and three words, set apart from the reading',
+      /천천히 제 길을/.test(await page.locator('[data-saju-headline]').innerText())
+      && (await page.locator('[data-saju-keyword]').count()) === 3
+      && !/키워드/.test(await page.locator('[data-saju-text] article').innerText()));
+    // A card to share: the chart, the line and the words, and nothing else.
+    await page.locator('[data-saju-share-open]').click();
+    await page.waitForSelector('[data-saju-card]', { timeout: 10000 });
+    const cardSize = await page.locator('[data-saju-card]').evaluate(async (img) => {
+      await img.decode();
+      return { w: img.naturalWidth, h: img.naturalHeight };
+    });
+    pass('a card to share is drawn, in a feed\'s 4:5', cardSize.w === 1080 && cardSize.h === 1350, JSON.stringify(cardSize));
+    pass('…and says what is on it and what is not',
+      /풀이 본문과 내 기록은 들어가지 않습니다/.test(await page.locator('[data-saju-share]').innerText()));
+    const cardFile = page.waitForEvent('download', { timeout: 20000 });
+    await page.locator('[data-saju-share-save]').click();
+    pass('…and saved as a picture', /24houring-saju-.*\.png/.test((await cardFile).suggestedFilename()));
     await closeAll();
     await page.locator('[data-life-reading="memoir"]').click();
     await wait(400);
@@ -965,7 +982,7 @@ export async function run() {
     pass('phone: a left line with every card on its right', phone.line < 40 && phone.allRight, JSON.stringify(phone));
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
     const want = ['life_open', 'life_start', 'life_add', 'life_image:downloaded', 'life_backup:json', 'upgrade_open:life',
-      'memoir_buy', 'memoir_paid', 'memoir_write', 'saju_open', 'saju_read'];
+      'memoir_buy', 'memoir_paid', 'memoir_write', 'saju_open', 'saju_read', 'saju_share:downloaded'];
     await flush();
     pass('usage is counted', want.every((w) => counted.includes(w)), `missing ${want.filter((w) => !counted.includes(w)).join(',')} · saw ${[...new Set(counted)].join(',')}`);
   } finally {

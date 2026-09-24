@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Cake, Link2, Link2Off, Plus, Trash2, UserPlus, X } from 'lucide-react';
+import { Cake, ChevronRight, Link2, Link2Off, Plus, Trash2, UserPlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/hooks/usePreferences';
@@ -232,7 +232,6 @@ function MeetLog({ person, onAdd, onRemove }: {
   };
   return (
     <section className="flex flex-col gap-1.5" data-relation-log>
-      <h4 className="text-[12px] font-semibold text-muted-foreground">{t('relation.history.log')}</h4>
       <div className="flex flex-wrap items-center gap-1">
         {MEET_KINDS.map((k) => {
           const Icon = MEET_ICON[k];
@@ -286,6 +285,32 @@ function MeetLog({ person, onAdd, onRemove }: {
 }
 
 /**
+ * A part of the card that stays closed until it is wanted: the heading is a
+ * button, and what it holds is only drawn once it is opened.
+ */
+function Fold({ id, title, hint, open, onToggle, children }: {
+  id: string;
+  title: string;
+  /** A little of what is inside, so a closed fold still says something. */
+  hint?: string;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="flex flex-col gap-1.5" data-relation-fold={id} data-open={open || undefined}>
+      <button type="button" aria-expanded={open} data-relation-fold-toggle={id} onClick={onToggle}
+        className="-mx-1 flex min-h-8 items-center gap-1.5 rounded-md px-1 text-left text-[12px] font-semibold text-muted-foreground hover:bg-accent/20">
+        <ChevronRight aria-hidden className={`h-3.5 w-3.5 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`} />
+        <span className="flex-1">{title}</span>
+        {hint && <span className="truncate font-normal">{hint}</span>}
+      </button>
+      {open && children}
+    </section>
+  );
+}
+
+/**
  * Who is selected, and everything about them — changed where it is shown.
  *
  * There is no edit mode. The name, the group, the rung of closeness, the
@@ -293,6 +318,11 @@ function MeetLog({ person, onAdd, onRemove }: {
  * time — a number, a home, a job, every meeting — is written in its own row
  * and kept, newest first. On a wide screen it is a card over the map, as
  * tall as it has to be and no taller; on a narrow one, a sheet under it.
+ *
+ * Only who they are and how close sits open. The details and the record of
+ * meetings are folded away until asked for, so tapping somebody on the map
+ * shows a small card rather than a form; the folds stay as they were left
+ * while going from one person to the next.
  */
 export function RelationPanel({
   person, data, colors, today, linking, subgroups, onClose, onPatch, onDelete, onAddFact, onRemoveFact,
@@ -327,6 +357,8 @@ export function RelationPanel({
   onAddBeside: () => void;
 }) {
   const { t } = useTranslation();
+  const [open, setOpen] = useState({ details: false, log: false });
+  const flip = (k: keyof typeof open) => setOpen((o) => ({ ...o, [k]: !o[k] }));
   if (!person) return null;
 
   const silent = daysSinceContact(person, today);
@@ -378,29 +410,6 @@ export function RelationPanel({
       </div>
 
       <dl className="grid grid-cols-[72px_1fr] items-center gap-x-1.5 gap-y-0.5">
-        <dt className={quiet}>{t('relation.field.sub')}</dt>
-        <dd className="flex min-w-0 flex-col">
-          <InlineText value={person.sub ?? ''} maxLength={MAX_SUB} data="relation-panel-sub"
-            placeholder={t('relation.field.subHint')} onCommit={(sub) => onPatch({ sub })} />
-          {subsHere.length > 0 && !person.sub && (
-            <span className="flex flex-wrap gap-1 px-1">
-              {subsHere.map((s) => (
-                <button key={s.sub} type="button" data-relation-panel-sub-pick={s.sub}
-                  className="rounded-full border border-border px-2 text-[12px] text-muted-foreground hover:bg-accent/20"
-                  onClick={() => onPatch({ sub: s.sub })}>
-                  {s.sub}
-                </button>
-              ))}
-            </span>
-          )}
-        </dd>
-
-        <dt className={quiet}>{t('relation.field.relation')}</dt>
-        <dd>
-          <InlineText value={person.relation ?? ''} maxLength={MAX_RELATION_TEXT} data="relation-panel-rel"
-            placeholder={t('relation.field.relationHint')} onCommit={(relation) => onPatch({ relation })} />
-        </dd>
-
         <dt className={quiet}>{t('relation.field.closeness')}</dt>
         <dd className="flex items-center gap-1 px-1.5" role="radiogroup" aria-label={t('relation.field.closeness')}>
           {CLOSENESS.map((c) => (
@@ -416,56 +425,89 @@ export function RelationPanel({
           ))}
           <span className={`${quiet} ml-1`}>{t(`relation.close.${person.closeness}` as 'relation.close.1')}</span>
         </dd>
+      </dl>
 
-        <dt className={quiet}>{t('relation.field.toMe')}</dt>
-        <dd className="px-1.5">
-          <label className="flex items-center gap-1.5 text-[13px] text-foreground">
-            <input type="checkbox" className="h-4 w-4" data-relation-panel-tome checked={!person.apart}
-              onChange={(e) => onPatch({ apart: e.target.checked ? undefined : true })} />
-            {t(person.apart ? 'relation.field.toMeOff' : 'relation.field.toMeOn')}
-          </label>
-        </dd>
-
-        <dt className={quiet}>{t('relation.field.birthday')}</dt>
-        <dd className="flex items-center gap-1.5">
-          <Input type="date" data-relation-panel-birthday-input max="2200-12-31"
-            value={person.birthday && person.birthday.length > 5 ? person.birthday : ''}
-            className={`${bare} w-[128px] shrink-0 text-[13px]`}
-            onChange={(e) => {
-              const v = e.target.value;
-              if (!v || isBirthday(v)) onPatch({ birthday: v || undefined });
-            }} />
-          {toBirthday !== null && (
-            <span className={`${quiet} flex items-center gap-1 whitespace-nowrap`} data-relation-panel-birthday>
-              {toBirthday <= 30 && <Cake aria-hidden className="h-3.5 w-3.5" />}
-              {toBirthday === 0 ? t('relation.birthdayToday') : t('relation.birthdayIn', { n: String(toBirthday) })}
-              {turns !== null ? ` · ${t('relation.turning', { n: String(turns) })}` : ''}
-            </span>
-          )}
-        </dd>
-
-        <dt className={quiet}>{t('relation.field.lastContact')}</dt>
-        <dd className="px-1.5 text-[13px] text-foreground" data-relation-panel-contact>
+      {/* What is worth seeing without opening anything. */}
+      <p className={`${quiet} flex flex-wrap items-center gap-x-2 gap-y-0.5 px-0.5`}>
+        {toBirthday !== null && (
+          <span className="flex items-center gap-1 whitespace-nowrap" data-relation-panel-birthday>
+            {toBirthday <= 30 && <Cake aria-hidden className="h-3.5 w-3.5" />}
+            {toBirthday === 0 ? t('relation.birthdayToday') : t('relation.birthdayIn', { n: String(toBirthday) })}
+            {turns !== null ? ` · ${t('relation.turning', { n: String(turns) })}` : ''}
+          </span>
+        )}
+        <span data-relation-panel-contact>
           {silent === null
             ? t('relation.neverRecorded')
             : silent === 0 ? t('relation.contactedToday') : t('relation.daysSince', { n: String(silent) })}
-        </dd>
-      </dl>
+        </span>
+      </p>
 
-      <InlineText value={person.note ?? ''} maxLength={MAX_PERSON_NOTE} data="relation-panel-note" area
-        placeholder={t('relation.field.note')} onCommit={(note) => onPatch({ note })} />
+      <Fold id="details" title={t('relation.fold.details')} open={open.details} onToggle={() => flip('details')}
+        hint={[person.sub, person.relation].filter(Boolean).join(' · ') || undefined}>
+        <dl className="grid grid-cols-[72px_1fr] items-center gap-x-1.5 gap-y-0.5">
+          <dt className={quiet}>{t('relation.field.sub')}</dt>
+          <dd className="flex min-w-0 flex-col">
+            <InlineText value={person.sub ?? ''} maxLength={MAX_SUB} data="relation-panel-sub"
+              placeholder={t('relation.field.subHint')} onCommit={(sub) => onPatch({ sub })} />
+            {subsHere.length > 0 && !person.sub && (
+              <span className="flex flex-wrap gap-1 px-1">
+                {subsHere.map((s) => (
+                  <button key={s.sub} type="button" data-relation-panel-sub-pick={s.sub}
+                    className="rounded-full border border-border px-2 text-[12px] text-muted-foreground hover:bg-accent/20"
+                    onClick={() => onPatch({ sub: s.sub })}>
+                    {s.sub}
+                  </button>
+                ))}
+              </span>
+            )}
+          </dd>
 
-      {/* What is known, each kind keeping what it used to be. */}
-      <section className="flex flex-col gap-0.5">
-        <h4 className="text-[12px] font-semibold text-muted-foreground">{t('relation.history.detail')}</h4>
-        <ul className="flex flex-col gap-0.5">
-          {FACT_KINDS.map((k) => (
-            <FactRow key={k} person={person} kind={k} onAdd={onAddFact} onRemove={onRemoveFact} />
-          ))}
-        </ul>
-      </section>
+          <dt className={quiet}>{t('relation.field.relation')}</dt>
+          <dd>
+            <InlineText value={person.relation ?? ''} maxLength={MAX_RELATION_TEXT} data="relation-panel-rel"
+              placeholder={t('relation.field.relationHint')} onCommit={(relation) => onPatch({ relation })} />
+          </dd>
 
-      <MeetLog person={person} onAdd={onAddMeet} onRemove={onRemoveMeet} />
+          <dt className={quiet}>{t('relation.field.toMe')}</dt>
+          <dd className="px-1.5">
+            <label className="flex items-center gap-1.5 text-[13px] text-foreground">
+              <input type="checkbox" className="h-4 w-4" data-relation-panel-tome checked={!person.apart}
+                onChange={(e) => onPatch({ apart: e.target.checked ? undefined : true })} />
+              {t(person.apart ? 'relation.field.toMeOff' : 'relation.field.toMeOn')}
+            </label>
+          </dd>
+
+          <dt className={quiet}>{t('relation.field.birthday')}</dt>
+          <dd>
+            <Input type="date" data-relation-panel-birthday-input max="2200-12-31"
+              value={person.birthday && person.birthday.length > 5 ? person.birthday : ''}
+              className={`${bare} w-[128px] text-[13px]`}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (!v || isBirthday(v)) onPatch({ birthday: v || undefined });
+              }} />
+          </dd>
+        </dl>
+
+        <InlineText value={person.note ?? ''} maxLength={MAX_PERSON_NOTE} data="relation-panel-note" area
+          placeholder={t('relation.field.note')} onCommit={(note) => onPatch({ note })} />
+
+        {/* What is known, each kind keeping what it used to be. */}
+        <section className="flex flex-col gap-0.5">
+          <h4 className="text-[12px] font-semibold text-muted-foreground">{t('relation.history.detail')}</h4>
+          <ul className="flex flex-col gap-0.5">
+            {FACT_KINDS.map((k) => (
+              <FactRow key={k} person={person} kind={k} onAdd={onAddFact} onRemove={onRemoveFact} />
+            ))}
+          </ul>
+        </section>
+      </Fold>
+
+      <Fold id="log" title={t('relation.history.log')} open={open.log} onToggle={() => flip('log')}
+        hint={(person.log?.length ?? 0) > 0 ? String(person.log!.length) : undefined}>
+        <MeetLog person={person} onAdd={onAddMeet} onRemove={onRemoveMeet} />
+      </Fold>
 
       {linked.length > 0 && (
         <ul className="flex flex-col gap-1" aria-label={t('relation.link.add')}>

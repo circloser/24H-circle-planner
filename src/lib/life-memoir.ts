@@ -119,23 +119,28 @@ export function memoirBlocks(text: string): MemoirBlock[] {
 export class MemoirError extends Error {
   readonly code: string;
   readonly status: number;
-  constructor(code: string, status: number) {
+  /** The writer's own reason, sent to admins only. */
+  readonly detail?: string;
+  constructor(code: string, status: number, detail?: string) {
     super(code);
     this.name = 'MemoirError';
     this.code = code;
     this.status = status;
+    if (detail) this.detail = detail;
   }
 }
 
 async function errorOf(res: Response): Promise<MemoirError> {
   let code = `http_${res.status}`;
+  let detail: string | undefined;
   try {
-    const body = (await res.json()) as { error?: string };
+    const body = (await res.json()) as { error?: string; detail?: string };
     if (body.error) code = body.error;
+    if (body.detail) detail = body.detail;
   } catch {
     // not JSON — the status is all we have
   }
-  return new MemoirError(code, res.status);
+  return new MemoirError(code, res.status, detail);
 }
 
 /** Is the feature on, and has this account paid? Never throws. */

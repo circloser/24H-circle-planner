@@ -212,7 +212,10 @@ export function sajuSystem(lang: string): string {
     '5. Invent nothing about their life. Mention only what is in the records. Where records and chart run side by side, never claim one caused the other.',
     '6. Plain, warm, vivid prose, with short paragraphs. Explain every technical term in a few words the first time it appears.',
     '',
-    'Shape: six to eight sections, each with a short title on its own line prefixed with "## ". In this order: the chart at a glance (the day master and the whole); the five elements in them; the past ten-year periods beside their records; the present period; the years ahead as tendencies only; this year; and a closing section on what their own records show of them. Between 2,000 and 3,500 characters in all. No lists or tables, no disclaimer, no mention of being an AI.',
+    'Shape. Every section has a short title on its own line prefixed with "## ". Begin with exactly these two sections:',
+    '- First, a section titled with the words for "In one line" in the language above, holding ONE sentence of at most 60 characters that sums up this chart beside this life: warm, specific, no prediction. It is printed on a card the person may share, so it must name no other person, no place and nothing private from the records.',
+    '- Second, a section titled with the word for "Keywords", holding exactly three short words or phrases separated by " · ", just as free of anything private.',
+    'Then five to seven sections, in this order: the chart at a glance (the day master and the whole); the five elements in them; the past ten-year periods beside their records; the present period; the years ahead as tendencies only; this year; and a closing section on what their own records show of them. Between 2,000 and 3,500 characters in those, not counting the first two. No lists or tables, no disclaimer, no mention of being an AI.',
   ].join('\n');
 }
 

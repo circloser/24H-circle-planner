@@ -141,6 +141,46 @@ export function buildSajuRequest(
   };
 }
 
+// ── The reading, as written ──────────────────────────────────────────────────
+
+export interface SajuParts {
+  /** The one line the reading opens with; '' when it did not (older readings). */
+  headline: string;
+  /** Its three words. */
+  keywords: string[];
+  /** Everything after them, as written. */
+  body: string;
+}
+
+/**
+ * The reading opens with two small sections — one line, and three words —
+ * because those are what a card can carry (worker/readings.ts asks for them).
+ * They are told apart by where they are and by how short they are, not by
+ * their titles, which are in whatever language the reading is in. A reading
+ * from before they were asked for is all body.
+ */
+export function sajuParts(text: string): SajuParts {
+  const sections: { title: string; body: string }[] = [];
+  for (const chunk of text.split(/^##[ \t]+/m).slice(1)) {
+    const nl = chunk.indexOf('\n');
+    sections.push({
+      title: (nl < 0 ? chunk : chunk.slice(0, nl)).trim(),
+      body: nl < 0 ? '' : chunk.slice(nl + 1).trim(),
+    });
+  }
+  const [line, words] = sections;
+  const oneLine = !!line && !!line.body && !line.body.includes('\n') && line.body.length <= 120;
+  const list = words?.body.split(/[·・,|/]|\s{2,}/).map((k) => k.trim().replace(/^#/, '').trim()).filter(Boolean) ?? [];
+  const threeWords = !!words && !words.body.includes('\n') && list.length >= 2 && list.length <= 4
+    && list.every((k) => k.length <= 20);
+  if (sections.length < 3 || !oneLine || !threeWords) return { headline: '', keywords: [], body: text.trim() };
+  const at = text.indexOf('##', text.indexOf(words.body) + words.body.length);
+  return { headline: line.body.replace(/^["“「『]|["”」』]$/g, '').trim(), keywords: list.slice(0, 3), body: at < 0 ? '' : text.slice(at).trim() };
+}
+
+/** Where a shared card points, marked so the visits it brings can be counted. */
+export const SAJU_SHARE_URL = 'https://24houring.com/?view=life&utm_source=saju_card&utm_medium=share&utm_campaign=saju';
+
 // ── Talking to the server ────────────────────────────────────────────────────
 
 export interface SajuState { enabled: boolean; admin: boolean; missing?: string }
@@ -167,7 +207,10 @@ export async function writeSaju(body: unknown, onText: (soFar: string) => void, 
   });
   if (!res.ok || !res.body) {
     let code = `http_${res.status}`;
-    try { code = ((await res.json()) as { error?: string }).error ?? code; } catch { /* not JSON */ }
+    try {
+      const e = (await res.json()) as { error?: string; detail?: string };
+      code = [e.error ?? code, e.detail].filter(Boolean).join(' — ');
+    } catch { /* not JSON */ }
     throw new Error(code);
   }
   const reader = res.body.getReader();

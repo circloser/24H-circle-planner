@@ -271,6 +271,8 @@ export function memoirStream(upstream: ReadableStream<Uint8Array>): { body: Read
     async start(controller) {
       const reader = upstream.getReader();
       const take = (line: string) => {
+        const failed = streamError(line);
+        if (failed) console.error(`[writer] stream ${failed}`);
         const text = deltaText(line);
         if (!text) return;
         count += text.length;
@@ -298,6 +300,39 @@ export function memoirStream(upstream: ReadableStream<Uint8Array>): { body: Read
     },
   });
   return { body, written };
+}
+
+/**
+ * Why the writer said no, in its own words: Anthropic answers an error with
+ * `{ error: { type, message } }` ("credit balance is too low", "invalid
+ * x-api-key", an unknown model…). Logged for the tail, and handed back to an
+ * admin so a failed try says what to fix instead of only that it failed.
+ */
+export async function writerFailure(tag: string, upstream: Response): Promise<string> {
+  let detail = `HTTP ${upstream.status}`;
+  try {
+    const text = await upstream.text();
+    try {
+      const e = (JSON.parse(text) as { error?: { type?: string; message?: string } }).error;
+      if (e?.message) detail = `${upstream.status} ${e.type ?? 'error'}: ${e.message}`;
+    } catch {
+      if (text) detail = `${upstream.status}: ${text.slice(0, 160)}`;
+    }
+  } catch { /* no body */ }
+  detail = detail.slice(0, 240);
+  console.error(`[${tag}] anthropic ${detail}`);
+  return detail;
+}
+
+/** An error the stream itself carries (`event: error`), e.g. overloaded. */
+export function streamError(line: string): string | null {
+  if (!line.startsWith('data:') || !line.includes('"error"')) return null;
+  try {
+    const ev = JSON.parse(line.slice(5).trim()) as { type?: string; error?: { type?: string; message?: string } };
+    return ev.type === 'error' ? `${ev.error?.type ?? 'error'}: ${ev.error?.message ?? ''}`.slice(0, 240) : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Ask Anthropic for a piece of writing, streamed. */

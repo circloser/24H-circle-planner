@@ -9,6 +9,7 @@
  * PNG and JSON export, JSON restore; five hundred pins stay smooth; and the
  * browser is asked where it is only when the button is pressed.
  */
+import { readFile } from 'node:fs/promises';
 import { makeReporter, launchPage, seedBasicData, serveDist, wait, isMain, runStandalone } from './_helpers.mjs';
 
 const PLACE_KEY = '24h-circle-planner.place';
@@ -692,6 +693,22 @@ export async function run() {
     const shot = await png.path();
     const size = await page.evaluate(() => 0);
     pass('the world goes out as a picture', !!shot && /place/.test(png.suggestedFilename()) && size === 0);
+    // …or as the globe, square, facing the way it faces on screen.
+    pass('the picture can be the flat map or the globe, the map first',
+      (await page.locator('[data-place-export-shape="map"]').getAttribute('aria-checked')) === 'true'
+      && (await count('[data-place-export-shape="globe"]')) === 1);
+    await page.locator('[data-place-export-shape="globe"]').click();
+    const globePicture = page.waitForEvent('download', { timeout: 30000 });
+    await page.locator('[data-place-export-png]').click();
+    const globe = await globePicture;
+    const globeSize = await (async () => {
+      const buf = await readFile(await globe.path());
+      // PNG header: width and height are big-endian at bytes 16 and 20.
+      return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
+    })();
+    pass('…and the globe comes out as its own, taller picture',
+      /place-globe/.test(globe.suggestedFilename()) && globeSize.w === 2160 && globeSize.h > globeSize.w,
+      `${globe.suggestedFilename()} ${JSON.stringify(globeSize)}`);
     const saving = page.waitForEvent('download', { timeout: 20000 });
     await page.locator('[data-place-export-json]').click();
     const backup = await saving;

@@ -89,10 +89,21 @@ export async function run() {
   };
   /** Pick someone the way a keyboard does: the list under the map is hidden
    *  from sight on purpose, so it is reached by focus, not by a mouse. */
-  const choose = async (id) => {
+  /** The card opens with its details and its meetings folded away. */
+  const unfold = async () => {
+    for (const id of ['details', 'log']) {
+      const toggle = page.locator(`[data-relation-fold-toggle="${id}"]`);
+      if ((await toggle.getAttribute('aria-expanded')) === 'false') {
+        await toggle.click();
+        await wait(150);
+      }
+    }
+  };
+  const choose = async (id, { open = true } = {}) => {
     await page.locator(`[data-relation-list-item="${id}"]`).focus();
     await page.keyboard.press('Enter');
     await wait(400);
+    if (open) await unfold();
   };
   const seed = (people, links = []) => page.evaluate(([k, d]) => localStorage.setItem(k, d), [
     RELATION_KEY,
@@ -176,7 +187,12 @@ export async function run() {
     await openRelation();
     pass('a year of silence is counted as out of touch',
       /오래 연락 안 함/.test(await page.locator('[data-relation-summary]').innerText()));
-    await choose('p1');
+    await choose('p1', { open: false });
+    // The details and the meetings are folded away until they are asked for.
+    pass('a person opens with the details and the meetings folded away',
+      (await count('[data-relation-fold][data-open]')) === 0
+      && (await count('[data-relation-panel-rel], [data-relation-meet-add], [data-relation-fact-input]')) === 0
+      && (await count('[data-relation-panel-contact]')) === 1);
     // The card is a card, not a column: it sits over the map, no taller than
     // it needs to be, and leaves the corner's buttons alone.
     const card = await page.locator('[data-relation-panel]').boundingBox();
@@ -186,6 +202,9 @@ export async function run() {
       card.width <= 360 && card.height < mapBox.height - 200
       && card.x > mapBox.x + mapBox.width / 2 && card.y + card.height < cornerBox.y,
       JSON.stringify({ card, mapBox, cornerBox }));
+    await unfold();
+    pass('…and a tap on a heading opens it', (await count('[data-relation-fold][data-open]')) === 2
+      && (await count('[data-relation-meet-add]')) === 1);
     // One press of the record button writes today, as a phone call.
     await page.locator('[data-relation-meet-add]').click();
     await wait(500);

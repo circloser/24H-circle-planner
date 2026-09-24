@@ -104,7 +104,8 @@ export function LifeReadings({ api }: { api: LifeApi }) {
 
       {showSaju && (
         <SajuDialog open={opened === 'saju'} onOpenChange={(o) => setOpened(o ? 'saju' : null)}
-          birthDate={api.life.profile.birthDate} admin={Boolean(saju?.admin)} price={money(READING_PRICE.saju)} />
+          birthDate={api.life.profile.birthDate} name={api.life.profile.name ?? ''} admin={Boolean(saju?.admin)}
+          price={money(READING_PRICE.saju)} />
       )}
       {showMemoir && memoir && (
         <MemoirDialog open={opened === 'memoir'} onOpenChange={(o) => setOpened(o ? 'memoir' : null)}

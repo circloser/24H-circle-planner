@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { Download, FileJson, ImageDown, Loader2, ShieldAlert, Upload } from 'lucide-react';
+import { Download, FileJson, Globe, ImageDown, Loader2, Map as MapIcon, ShieldAlert, Upload } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/usePreferences';
@@ -12,24 +12,29 @@ import {
   placeFile, placePhotoIds, placeSummary, readPlaceFile, type CountryShape,
 } from '@/lib/place';
 import type { PlaceApi } from '@/hooks/usePlace';
+import type { Camera } from '@/lib/place-globe';
+import type { PlaceImageShape } from '@/lib/export/placeImage';
 
 /**
- * Saving the map: the whole world as a picture, or the JSON that brings
- * everything back.
+ * Saving the map: the whole world as a picture — laid flat, or as the globe
+ * facing the way it faces on screen — or the JSON that brings everything back.
  *
  * A map of where someone has been shows where they live and where they work,
  * so the picture is only made once that has been read.
  */
-export function PlaceExportDialog({ open, onOpenChange, api, shapes, visited, wished }: {
+export function PlaceExportDialog({ open, onOpenChange, api, shapes, visited, wished, camera }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   api: PlaceApi;
   shapes: readonly CountryShape[];
   visited: string;
   wished: string;
+  /** Where the globe on screen is facing, which is where the pictured one faces. */
+  camera: Pick<Camera, 'lng' | 'lat'>;
 }) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState<'png' | 'json' | null>(null);
+  const [shape, setShape] = useState<PlaceImageShape>('map');
   const [agreed, setAgreed] = useState(false);
   const file = useRef<HTMLInputElement>(null);
   const { data } = api;
@@ -42,6 +47,8 @@ export function PlaceExportDialog({ open, onOpenChange, api, shapes, visited, wi
       const style = getComputedStyle(document.body);
       const s = placeSummary(data, shapes);
       const blob = await placeImage({
+        shape,
+        facing: { lng: camera.lng, lat: camera.lat },
         shapes,
         countries: data.countries,
         cities: data.cities,
@@ -59,8 +66,8 @@ export function PlaceExportDialog({ open, onOpenChange, api, shapes, visited, wi
         ].join(' · '),
       });
       if (!blob) throw new Error('no image');
-      downloadBlob(blob, `24houring-place-${todayKey()}.png`);
-      track('place_image', { kind: 'downloaded' });
+      downloadBlob(blob, `24houring-place${shape === 'globe' ? '-globe' : ''}-${todayKey()}.png`);
+      track('place_image', { kind: shape === 'globe' ? 'globe' : 'downloaded' });
       toast.success(t('place.pngSaved'));
     } catch {
       toast.error(t('place.pngError'));
@@ -110,6 +117,23 @@ export function PlaceExportDialog({ open, onOpenChange, api, shapes, visited, wi
           <div className="flex items-start gap-2.5 rounded-lg border border-border bg-muted/40 px-3.5 py-3 text-[13px] leading-relaxed text-muted-foreground">
             <ShieldAlert aria-hidden className="mt-0.5 h-4 w-4 shrink-0" />
             <p>{t('place.exportPrivacy')}</p>
+          </div>
+          {/* Which picture: the whole world laid flat, or the globe as it
+              faces now (turn it on the page first to aim it). */}
+          <div role="radiogroup" aria-label={t('place.export.shape')} className="grid grid-cols-2 gap-2" data-place-export-shapes>
+            {([['map', MapIcon, 'place.export.map', 'place.export.mapHint'], ['globe', Globe, 'place.export.globe', 'place.export.globeHint']] as const)
+              .map(([k, Icon, label, hint]) => (
+                <button key={k} type="button" role="radio" aria-checked={shape === k} data-place-export-shape={k}
+                  onClick={() => setShape(k)}
+                  className={`flex flex-col items-start gap-1 rounded-xl border px-3 py-2.5 text-left ${
+                    shape === k ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border hover:border-foreground/40'}`}>
+                  <span className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                    <Icon aria-hidden className="h-4 w-4" />
+                    {t(label)}
+                  </span>
+                  <span className="text-[12px] leading-snug text-muted-foreground">{t(hint)}</span>
+                </button>
+              ))}
           </div>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={agreed} data-place-export-agree className="h-4 w-4"

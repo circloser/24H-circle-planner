@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { gatherRecords, memoirReadiness } from '../ai-records';
-import { buildSajuRequest, decodeSaju, emptySaju, viewChart } from '../saju-reading';
+import { buildSajuRequest, decodeSaju, emptySaju, sajuParts, viewChart } from '../saju-reading';
 
 const put = (key: string, value: unknown) => localStorage.setItem(`24h-circle-planner.${key}`, JSON.stringify(value));
 
@@ -71,6 +71,26 @@ describe('the 사주 store and request', () => {
     expect(withGender.daeun?.periods).toHaveLength(10);
     expect(withGender.current).toBeGreaterThanOrEqual(0);
     expect(viewChart('1990-05-15', undefined, undefined).columns[0].pillar).toBeNull();
+  });
+
+  it('takes the one line and the three words off the top of a reading', () => {
+    const text = '## 한 줄\n“단단한 쇠가 오래 걸어 온 길을 닮은 사람”\n\n## 키워드\n단단함 · 기록 · 느린 불\n\n## 한눈에\n경금의 날.\n\n## 지나온 대운\n첫 직장.';
+    const parts = sajuParts(text);
+    expect(parts.headline).toBe('단단한 쇠가 오래 걸어 온 길을 닮은 사람');
+    expect(parts.keywords).toEqual(['단단함', '기록', '느린 불']);
+    expect(parts.body.startsWith('## 한눈에')).toBe(true);
+    expect(parts.body).not.toContain('키워드');
+    // In English, with hashes, and with the titles in whatever language.
+    expect(sajuParts('## In one line\nSteady metal.\n## Keywords\n#steady · #patient · #bright\n## At a glance\nx').keywords)
+      .toEqual(['steady', 'patient', 'bright']);
+  });
+
+  it('leaves a reading from before the line and the words were asked for whole', () => {
+    const old = '## 한눈에\n경금의 날에 태어났습니다.\n\n## 지나온 대운\n첫 직장의 해와 나란히 놓입니다.';
+    expect(sajuParts(old)).toEqual({ headline: '', keywords: [], body: old });
+    // A first section that is a paragraph, not a line, is not taken for one.
+    const long = `## 한눈에\n${'가'.repeat(200)}\n\n## 오행\n나무 · 불\n\n## 대운\n...`;
+    expect(sajuParts(long).headline).toBe('');
   });
 
   it('tells the writer the chart in words, and says what is not known', () => {

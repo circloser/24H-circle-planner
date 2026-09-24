@@ -148,7 +148,9 @@ export const TOURS: Record<Exclude<TourId, 'chart'>, { title: TKey; steps: TourS
       },
       {
         name: 'tour.relation.n3', body: 'tour.relation.s3',
-        target: () => rectOf('[data-relation-log]', '[data-relation-canvas]'),
+        // The meetings are folded away on the card: point at the heading that
+        // opens them until they are open.
+        target: () => rectOf('[data-relation-log]', '[data-relation-fold-toggle="log"]', '[data-relation-canvas]'),
         done: (before) => meetings(read(RELATION)) > meetings(before[RELATION] ?? null),
       },
       {

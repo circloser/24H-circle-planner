@@ -10,7 +10,7 @@
 import { sendWebPush } from '../src/lib/webpush';
 import { legacyRedirectTarget } from './legacy-redirects';
 import { handleShareCreate, handleShareGet, handleShareOg, handleShareView } from './shares';
-import { handleWidgetPut, handleWidgetPng, handleWidgetDelete } from './widget';
+import { handleWidgetPut, handleWidgetPng, handleWidgetDelete, isWidgetKind } from './widget';
 import { handleMarketingRoute } from './marketing';
 import { handleMetrics, metricsSummary, type MetricRow } from './metrics';
 import { busyResponse, isDbUnavailable } from './busy';
@@ -18,7 +18,7 @@ import { alertOps, clearOps, keepDevices } from './alert';
 import { handleGeo } from './geo';
 import {
   MEMOIR_KIND, callClaude, callModel, cleanMemoirInput, grantMemoirCredit, memoirCredits,
-  memoirEnabled, memoirStream, refundMemoirCredit, spendMemoirCredit,
+  memoirEnabled, memoirStream, refundMemoirCredit, spendMemoirCredit, writerFailure,
 } from './memoir';
 import { SAJU_MAX_TOKENS, cleanSajuInput, sajuSystem, sajuUser } from './readings';
 import { handleIcalFetch } from './ical';
@@ -783,8 +783,8 @@ async function handleMemoirWrite(request: Request, env: Env, ctx?: Waiter): Prom
   }
   if (!upstream.ok || !upstream.body) {
     await refund();
-    console.error(`[memoir] anthropic answered ${upstream.status}`);
-    return json({ error: 'writer_failed', status: upstream.status }, 502);
+    const detail = await writerFailure('memoir', upstream);
+    return json({ error: 'writer_failed', status: upstream.status, ...(admin ? { detail } : {}) }, 502);
   }
   const { body, written } = memoirStream(upstream.body);
   const settle = written.then((n) => (n === 0 ? refund() : undefined));
@@ -827,8 +827,9 @@ async function handleSajuWrite(request: Request, env: Env): Promise<Response> {
     return json({ error: 'writer_unreachable' }, 502);
   }
   if (!upstream.ok || !upstream.body) {
-    console.error(`[saju] anthropic answered ${upstream.status}`);
-    return json({ error: 'writer_failed', status: upstream.status }, 502);
+    // Admins only reach this far, so the writer's own reason goes back.
+    const detail = await writerFailure('saju', upstream);
+    return json({ error: 'writer_failed', status: upstream.status, detail }, 502);
   }
   const { body } = memoirStream(upstream.body);
   return new Response(body, {
@@ -1648,11 +1649,12 @@ async function route(request: Request, env: Env, ctx?: Waiter): Promise<Response
       }
       // Android home-screen widget image slot (see worker/widget.ts).
       {
-        const widget = /^\/api\/widget\/([A-Za-z0-9]{16,32})(\/png)?$/.exec(p);
-        if (widget) {
-          if (widget[2] && m === 'GET') return handleWidgetPng(request, env, widget[1]);
-          if (!widget[2] && m === 'PUT') return handleWidgetPut(request, env, widget[1]);
-          if (!widget[2] && m === 'DELETE') return handleWidgetDelete(env, widget[1]);
+        const widget = /^\/api\/widget\/([A-Za-z0-9]{16,32})(?:\/k\/([a-z]+))?(\/png)?$/.exec(p);
+        if (widget && (!widget[2] || isWidgetKind(widget[2]))) {
+          const kind = widget[2] && isWidgetKind(widget[2]) ? widget[2] : undefined;
+          if (widget[3] && m === 'GET') return handleWidgetPng(request, env, widget[1], kind);
+          if (!widget[3] && m === 'PUT') return handleWidgetPut(request, env, widget[1], kind);
+          if (!widget[3] && m === 'DELETE') return handleWidgetDelete(env, widget[1], kind);
         }
       }
       // Read-only Google Calendar import, Pro only (see worker/ical.ts).

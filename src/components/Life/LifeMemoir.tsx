@@ -69,7 +69,9 @@ export function MemoirDialog({ open, onOpenChange, api, state, onChanged, fallba
       setWish('');
       toast.success(t('life.memoir.done'));
     } catch (err) {
-      toast.error(t(reason(err)));
+      // An admin trying it out is told the writer's own reason.
+      const why = admin && err instanceof MemoirError && err.detail ? ` (${err.detail})` : '';
+      toast.error(`${t(reason(err))}${why}`, { duration: why ? 15000 : undefined });
     } finally {
       writing.current = false;
       setBusy(false);

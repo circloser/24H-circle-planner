@@ -9,6 +9,10 @@
  *   GET    /api/widget/:token/png   → image/png + ETag + X-Widget-Meta
  *   DELETE /api/widget/:token       → { ok }                          (unlink)
  *
+ * The other tabs' widgets (calendar, life, people, place) each have a picture
+ * of their own under the same token, at /api/widget/:token/k/:kind[/png]. A
+ * kind's row is keyed `token:kind`; unlinking the token drops them all.
+ *
  * Unlike shares, a slot is mutable and bounded: every edit overwrites the same
  * row, so a phone never accumulates images. The token is the only credential —
  * 22 base62 chars (~131 bits) generated client-side — and never appears in a
@@ -19,6 +23,12 @@
 import type { Env } from './index';
 
 const TOKEN_RE = /^[A-Za-z0-9]{16,32}$/;
+/** The widgets beside the timetable ring (src/lib/widget/kinds.ts). */
+export const WIDGET_KINDS = ['calendar', 'life', 'people', 'place'] as const;
+export type WidgetKind = (typeof WIDGET_KINDS)[number];
+export const isWidgetKind = (v: string): v is WidgetKind => (WIDGET_KINDS as readonly string[]).includes(v);
+/** The row a picture lives in: the ring's under the bare token, a kind's beside it. */
+const slotOf = (token: string, kind?: WidgetKind): string => (kind ? `${token}:${kind}` : token);
 const MAX_PNG_B64 = 480_000; // ~360KB decoded — same ceiling as shares
 const MAX_META = 2_000;
 /** Uploads per token per hour. Edits are debounced client-side (~2.5s), so a
@@ -87,9 +97,10 @@ export function isWidgetToken(token: string): boolean {
 }
 
 /** PUT /api/widget/:token — create or overwrite the phone's image slot. */
-export async function handleWidgetPut(request: Request, env: Env, token: string): Promise<Response> {
+export async function handleWidgetPut(request: Request, env: Env, token: string, kind?: WidgetKind): Promise<Response> {
   if (!env.DB) return json({ error: 'unavailable' }, 503);
   if (!isWidgetToken(token)) return json({ error: 'bad_token' }, 400);
+  const slot = slotOf(token, kind);
   let body: { png?: unknown; meta?: unknown };
   try {
     body = await request.json();
@@ -107,7 +118,7 @@ export async function handleWidgetPut(request: Request, env: Env, token: string)
   const etag = await etagOf(png);
   try {
     const row = await env.DB.prepare('SELECT win_start, win_count FROM widgets WHERE token = ?')
-      .bind(token)
+      .bind(slot)
       .first<{ win_start: number; win_count: number }>();
 
     if (row) {
@@ -116,7 +127,7 @@ export async function handleWidgetPut(request: Request, env: Env, token: string)
       await env.DB.prepare(
         'UPDATE widgets SET png = ?, meta = ?, etag = ?, updated_at = ?, win_start = ?, win_count = ? WHERE token = ?',
       )
-        .bind(png.buffer, meta, etag, now, inWindow ? row.win_start : now, inWindow ? row.win_count + 1 : 1, token)
+        .bind(png.buffer, meta, etag, now, inWindow ? row.win_start : now, inWindow ? row.win_count + 1 : 1, slot)
         .run();
     } else {
       const ipHash = await hashIp(request);
@@ -127,7 +138,7 @@ export async function handleWidgetPut(request: Request, env: Env, token: string)
       await env.DB.prepare(
         'INSERT INTO widgets (token, png, meta, etag, ip_hash, win_start, win_count, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)',
       )
-        .bind(token, png.buffer, meta, etag, ipHash, now, now, now)
+        .bind(slot, png.buffer, meta, etag, ipHash, now, now, now)
         .run();
     }
     return json({ ok: true, etag });
@@ -138,12 +149,12 @@ export async function handleWidgetPut(request: Request, env: Env, token: string)
 
 /** GET /api/widget/:token/png — the image, with ETag revalidation so the
  *  widget's periodic polls cost a 304 whenever nothing changed. */
-export async function handleWidgetPng(request: Request, env: Env, token: string): Promise<Response> {
+export async function handleWidgetPng(request: Request, env: Env, token: string, kind?: WidgetKind): Promise<Response> {
   if (!env.DB) return new Response('unavailable', { status: 503 });
   if (!isWidgetToken(token)) return new Response('bad token', { status: 400 });
   try {
     const row = await env.DB.prepare('SELECT png, meta, etag, updated_at FROM widgets WHERE token = ?')
-      .bind(token)
+      .bind(slotOf(token, kind))
       .first<{ png: unknown; meta: string; etag: string; updated_at: number }>();
     if (!row) return new Response('not found', { status: 404, headers: { 'cache-control': 'no-store' } });
     const headers: Record<string, string> = {
@@ -163,12 +174,15 @@ export async function handleWidgetPng(request: Request, env: Env, token: string)
   }
 }
 
-/** DELETE /api/widget/:token — unlink: drop the server copy of the timetable. */
-export async function handleWidgetDelete(env: Env, token: string): Promise<Response> {
+/** DELETE /api/widget/:token — unlink: drop the server copy of the timetable
+ *  and of every other kind under it. With a kind, only that one picture. */
+export async function handleWidgetDelete(env: Env, token: string, kind?: WidgetKind): Promise<Response> {
   if (!env.DB) return json({ error: 'unavailable' }, 503);
   if (!isWidgetToken(token)) return json({ error: 'bad_token' }, 400);
   try {
-    await env.DB.prepare('DELETE FROM widgets WHERE token = ?').bind(token).run();
+    if (kind) await env.DB.prepare('DELETE FROM widgets WHERE token = ?').bind(slotOf(token, kind)).run();
+    // A token is base62, so it cannot carry a LIKE wildcard of its own.
+    else await env.DB.prepare('DELETE FROM widgets WHERE token = ? OR token LIKE ?').bind(token, `${token}:%`).run();
     return json({ ok: true });
   } catch {
     return json({ error: 'db_error' }, 500);

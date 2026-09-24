@@ -10,7 +10,8 @@ export type { CalendarEvent } from '@/lib/calendar-events';
 /** Events filed by LOCAL date key, 'YYYY-MM-DD' (see lib/calendar-grid). */
 export type EventsByDate = Record<string, CalendarEvent[]>;
 
-const STORAGE_KEY = '24h-circle-planner.events';
+export const EVENTS_KEY = '24h-circle-planner.events';
+const STORAGE_KEY = EVENTS_KEY;
 export const MAX_EVENT_CHARS = 60;
 /** A span longer than this is almost certainly a mis-drag. */
 export const MAX_EVENT_DAYS = 366;

@@ -177,6 +177,41 @@ export async function run() {
     const auto = puts.slice(beforeAuto);
     pass('publishes to the launcher token with no user action', auto.length >= 1 && auto[auto.length - 1].url.endsWith(`/api/widget/${NATIVE}`), auto.map((p) => p.url).join(','));
 
+    // 7. The other tabs' widgets: the launcher says which kinds are on the home
+    //    screen, and only those are drawn — under the same token, one each.
+    const beforeKinds = puts.length;
+    await page.goto(`${base}/?wk=calendar,people`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
+    await wait(4500);
+    pass('the placed kinds are kept and the address scrubbed',
+      (await page.evaluate(() => localStorage.getItem('24h-circle-planner.widget-kinds'))) === 'calendar,people'
+      && (await page.evaluate(() => location.search)) === '');
+    const kindPuts = puts.slice(beforeKinds).filter((p) => /\/k\//.test(p.url));
+    const kindsSent = kindPuts.map((p) => p.url.split('/k/')[1]).sort();
+    pass('only the placed kinds are drawn and sent, each to its own slot',
+      JSON.stringify(kindsSent) === '["calendar","people"]'
+      && kindPuts.every((p) => p.url.includes(`/api/widget/${NATIVE}/k/`)), JSON.stringify(kindsSent));
+    const kindImg = await page.evaluate(async (b64) => {
+      const img = new Image();
+      img.src = `data:image/png;base64,${b64}`;
+      await img.decode();
+      return { w: img.width, h: img.height };
+    }, kindPuts[0]?.body?.png ?? '');
+    pass('…as a square picture', kindImg.w === 900 && kindImg.h === 900, JSON.stringify(kindImg));
+    // Opening again with nothing changed sends nothing again.
+    const beforeSame = puts.length;
+    await page.goto(`${base}/?wk=calendar,people`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
+    await wait(3500);
+    pass('an unchanged picture is not sent twice', puts.slice(beforeSame).filter((p) => /\/k\//.test(p.url)).length === 0);
+    // A kind taken off the home screen has its picture taken off the server.
+    const deletesBefore = deletes.length;
+    await page.goto(`${base}/?wk=calendar`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
+    await wait(1500);
+    pass('a removed kind is deleted from the server',
+      deletes.slice(deletesBefore).some((u) => u.endsWith(`/api/widget/${NATIVE}/k/people`)), deletes.slice(deletesBefore).join(','));
+
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
   } finally {
     await browser.close();
