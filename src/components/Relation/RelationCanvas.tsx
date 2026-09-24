@@ -413,9 +413,11 @@ export function RelationCanvas({
       }
     }
 
-    // Me to each person: the thread that says the middle is me.
+    // Me to each person: the thread that says the middle is me — except to
+    // someone I know only through somebody else.
     ctx.setLineDash([]);
     for (const node of seed.nodes) {
+      if (node.person.apart) continue;
       const grow = arrival(node.person.id);
       if (grow.line <= 0) continue;
       const p = where.get(node.person.id)!;

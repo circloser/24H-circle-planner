@@ -416,30 +416,6 @@ function ExportPreview({
   );
 }
 
-// ─── Ad slot (reserved space for a future ad unit) ────────────────────────────
-
-/**
- * Reserved space for an advertisement shown alongside the export preview. Today
- * it is a labelled placeholder; a real ad unit (e.g. an AdSense <ins> block) can
- * be mounted inside this container without touching the surrounding layout.
- */
-function AdSlot() {
-  const { t } = useTranslation();
-  const isPro = useAuth().plan === 'pro';
-  if (isPro) return null; // ad-free — the Pro benefit
-  return (
-    <div
-      data-ad-slot="export"
-      aria-label={t('export.adLabel')}
-      className="flex h-[90px] w-full items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 text-center"
-    >
-      <span className="text-[11px] uppercase tracking-wide text-muted-foreground/70">
-        {t('export.adLabel')}
-      </span>
-    </div>
-  );
-}
-
 // ─── Backup Tab (full-data safety net) ────────────────────────────────────────
 
 /**
@@ -736,7 +712,6 @@ export function ExportDialog({
         {isTable
           ? <TablePreview schedule={schedule} showIcons={showIcons} />
           : <ExportPreview open={open} svgRef={svgRef} schedule={schedule} />}
-        <AdSlot />
 
         <Tabs defaultValue={isTable ? 'image' : 'png'} key={isTable ? 'table' : 'chart'}>
           <TabsList className="w-full">

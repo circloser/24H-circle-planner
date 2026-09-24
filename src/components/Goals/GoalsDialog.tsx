@@ -7,7 +7,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { AdSlot } from '@/components/Ads/AdSlot';
 import { useStoreSelector } from '@/hooks/useScheduleStore';
 import { useDiary, dateKey } from '@/hooks/useDiary';
 import { useGoals } from '@/hooks/useGoals';
@@ -151,7 +150,6 @@ export function GoalsDialog({ open, onOpenChange }: GoalsDialogProps) {
           </Button>
         </div>
 
-        <AdSlot slot="goals" className="mt-3" />
       </DialogContent>
     </Dialog>
   );

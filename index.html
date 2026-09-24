@@ -1,7 +1,11 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" translate="no">
   <head>
     <meta charset="UTF-8" />
+    <!-- The app is written in eight languages and has its own picker; a
+         browser's machine translation on top of that garbles the interface
+         (and has rewritten fields such as the coupon box). -->
+    <meta name="google" content="notranslate" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
@@ -189,8 +193,6 @@
       }
     </script>
 
-    <!-- AdSense ownership verification; the interactive planner has no ad loader. -->
-    <meta name="google-adsense-account" content="ca-pub-6947130056543786" />
 
     <!-- Third-party analytics stays disabled until a consent flow is configured. -->
   </head>

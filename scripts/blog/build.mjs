@@ -142,7 +142,6 @@ function shell({ title, desc, canonical, jsonld, body }) {
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="stylesheet" href="/guides/guide.css" />
 <style>.langswitch button{font:inherit;color:inherit;background:transparent;border:0;padding:6px;cursor:pointer}.langswitch button[aria-pressed="true"]{font-weight:700;text-decoration:underline}.langswitch button:focus-visible{outline:2px solid currentColor;outline-offset:2px}</style>
-<meta name="google-adsense-account" content="ca-pub-6947130056543786">
 ${jsonld}
 ${LANG_SCRIPT}
 </head>

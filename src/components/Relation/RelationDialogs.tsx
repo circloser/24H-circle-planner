@@ -166,6 +166,7 @@ export function PersonDialog({ target, pro, syncing, subgroups = [], onClose, on
             ...(note.trim() ? { note: note.trim() } : {}),
             ...(photo ? { photo } : {}),
             ...(pinned ? { pinned: true } : {}),
+            ...(base?.apart ? { apart: true } : {}),
             ...(base?.at ? { at: base.at } : {}),
             ...(base?.lifeFamilyId ? { lifeFamilyId: base.lifeFamilyId } : {}),
           }, base?.id);

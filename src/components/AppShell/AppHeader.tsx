@@ -134,7 +134,7 @@ export function AppHeader({
   const [calLook, setCalLook] = useState<CalendarLook | null>(null);
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
-  const { user, plan, billingEnabled, admin, login, logout, loading: authLoading } = useAuth();
+  const { user, plan, billingEnabled, admin, proVia, proUntil, login, logout, loading: authLoading } = useAuth();
   const sync = useSyncStatus();
 
   const handleLogout = () => {
@@ -142,8 +142,16 @@ export function AppHeader({
   };
 
   const handleManage = () => {
-    openBillingPortal().catch(() => toast.error(t('billing.portalError')));
+    openBillingPortal().catch((err: unknown) =>
+      toast.error(t(err instanceof Error && err.message === 'no_customer' ? 'billing.noCustomer' : 'billing.portalError')));
   };
+  // A coupon or the admin list has no subscription behind it, so nothing to
+  // manage in the billing portal: say where Pro comes from instead.
+  const proNote = proVia === 'admin'
+    ? t('billing.viaAdmin')
+    : proVia === 'grant'
+      ? proUntil ? t('billing.viaGrantUntil', { date: new Date(proUntil).toISOString().slice(0, 10) }) : t('billing.viaGrant')
+      : null;
 
   return (
     <header
@@ -416,10 +424,17 @@ export function AppHeader({
                                       : t('sync.synced')}
                             </span>
                           </div>
-                          <DropdownMenuItem onClick={handleManage} className="gap-2">
-                            <CreditCard className="h-4 w-4" />
-                            {t('billing.manage')}
-                          </DropdownMenuItem>
+                          {proNote ? (
+                            <div className="flex items-center gap-2 px-2 pb-1.5 text-xs text-muted-foreground" data-pro-via={proVia}>
+                              <Sparkles className="h-3 w-3" />
+                              <span>{proNote}</span>
+                            </div>
+                          ) : (
+                            <DropdownMenuItem onClick={handleManage} className="gap-2" data-billing-manage>
+                              <CreditCard className="h-4 w-4" />
+                              {t('billing.manage')}
+                            </DropdownMenuItem>
+                          )}
                         </>
                       ) : billingEnabled ? (
                         <DropdownMenuItem onClick={onOpenUpgrade} className="gap-2">

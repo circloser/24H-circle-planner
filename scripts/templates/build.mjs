@@ -1056,7 +1056,6 @@ ${hreflang}
 <meta property="og:image" content="${ogImage}" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="stylesheet" href="/guides/guide.css" />
-<meta name="google-adsense-account" content="ca-pub-6947130056543786">
 ${jsonld}
 ${LANG_SCRIPT}
 </head>

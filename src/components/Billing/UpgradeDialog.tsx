@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  Cloud, Archive, BarChart3, Ban, Check, GitCommitVertical, Lock, Sparkles, CalendarPlus, BellRing,
+  Cloud, Archive, BarChart3, Stamp, Check, GitCommitVertical, Lock, Sparkles, CalendarPlus, BellRing,
   Users, type LucideIcon,
 } from 'lucide-react';
 import {
@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useAuth } from '@/hooks/useAuth';
-import { startCheckout } from '@/lib/sync/billing';
+import { startCheckout, type BillingInterval } from '@/lib/sync/billing';
 import { isPlayStoreApp } from '@/lib/twa';
 import { track } from '@/lib/track';
 import { takeUpgradeSource } from '@/lib/pro';
@@ -30,7 +30,7 @@ const FEATURE_ICON: Record<string, LucideIcon> = {
   ical: CalendarPlus,
   push: BellRing,
   stats: BarChart3,
-  clean: Ban,
+  clean: Stamp,
 };
 
 interface UpgradeDialogProps {
@@ -78,6 +78,8 @@ function UpgradeDialogSession({ open, onOpenChange }: UpgradeDialogProps) {
   // Billing, so the dialog turns informational — no prices, no checkout CTA.
   const inPlayApp = isPlayStoreApp();
   const [prices, setPrices] = useState<PriceInfo[] | null>(null);
+  // Yearly is the default wherever it is on offer: it is the better deal.
+  const [plan, setPlan] = useState<BillingInterval>('year');
   const [priceError, setPriceError] = useState(false);
   const [priceAttempt, setPriceAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -177,6 +179,15 @@ function UpgradeDialogSession({ open, onOpenChange }: UpgradeDialogProps) {
     onOpenChange(next);
   };
 
+  const monthly = prices?.find((p) => p.interval === 'month') ?? null;
+  const yearly = prices?.find((p) => p.interval === 'year') ?? null;
+  const both = !!monthly && !!yearly;
+  const chosen = both ? (plan === 'year' ? yearly : monthly) : (prices?.[0] ?? null);
+  // What a year saves against twelve months, and what it comes to a month.
+  const saving = both && monthly!.amount > 0
+    ? Math.round((1 - yearly!.amount / (monthly!.amount * 12)) * 100)
+    : 0;
+
   const onCta = () => {
     if (!prices?.length || priceError || busy || inPlayApp) return;
     if (!user) {
@@ -185,7 +196,7 @@ function UpgradeDialogSession({ open, onOpenChange }: UpgradeDialogProps) {
     }
     setBusy(true);
     track('checkout_start', { source: from });
-    startCheckout().catch(() => {
+    startCheckout(chosen?.interval === 'year' ? 'year' : 'month').catch(() => {
       setBusy(false);
       toast.error(t('billing.checkoutError'));
     });
@@ -250,7 +261,25 @@ function UpgradeDialogSession({ open, onOpenChange }: UpgradeDialogProps) {
           </p>
 
           {/* Live price(s) from Polar; absent until fetched / if offline. */}
-          {!inPlayApp && prices && prices.length > 0 && (
+          {!inPlayApp && both && (
+            <div role="radiogroup" aria-label={t('upgrade.planPick')} className="grid grid-cols-2 gap-2" data-upgrade-plans>
+              {([['year', yearly!], ['month', monthly!]] as const).map(([k, p]) => (
+                <button key={k} type="button" role="radio" aria-checked={plan === k} data-upgrade-plan={k}
+                  onClick={() => setPlan(k)}
+                  className={`relative flex flex-col items-start gap-0.5 rounded-xl border px-3 py-2.5 text-left ${
+                    plan === k ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border hover:border-foreground/40'}`}>
+                  <span className="text-xs font-medium text-muted-foreground">{t(k === 'year' ? 'upgrade.planYear' : 'upgrade.planMonth')}</span>
+                  <span className="text-sm font-semibold text-foreground">{formatPrice(p, t('upgrade.perMonth'), t('upgrade.perYear'))}</span>
+                  {k === 'year' && saving > 0 && (
+                    <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground" data-upgrade-saving>
+                      {t('upgrade.save', { pct: String(saving) })}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+          {!inPlayApp && !both && prices && prices.length > 0 && (
             <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
               {prices.map((p, i) => (
                 <span key={i} className="font-semibold text-foreground">
@@ -279,6 +308,14 @@ function UpgradeDialogSession({ open, onOpenChange }: UpgradeDialogProps) {
             <p className="mb-1.5 text-xs font-medium text-muted-foreground">{ko ? '쿠폰 코드가 있으신가요?' : 'Have a coupon code?'}</p>
             <div className="flex gap-2">
               <input
+                name="coupon-code"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="characters"
+                spellCheck={false}
+                translate="no"
+                inputMode="text"
+                data-coupon-input
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
                 onKeyDown={(e) => { if (e.key === 'Enter') void redeem(); }}

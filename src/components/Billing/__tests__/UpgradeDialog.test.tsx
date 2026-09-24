@@ -29,6 +29,34 @@ describe('UpgradeDialog price confirmation', () => {
     expect(checkout).toHaveBeenCalledOnce();
   });
 
+  it('offers the yearly plan first when there is one, and checks out the plan picked', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ prices: [
+      { amount: 199, currency: 'usd', interval: 'month' },
+      { amount: 1599, currency: 'usd', interval: 'year' },
+    ] }) }));
+    render(<UpgradeDialog open onOpenChange={() => {}} />);
+    const year = await screen.findByRole('radio', { name: /upgrade\.planYear/ });
+    expect(year.getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByText('upgrade.save')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'upgrade.cta' }));
+    expect(checkout).toHaveBeenLastCalledWith('year');
+    // A fresh opening, the other plan.
+    cleanup();
+    render(<UpgradeDialog open onOpenChange={() => {}} />);
+    fireEvent.click(await screen.findByRole('radio', { name: /upgrade\.planMonth/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'upgrade.cta' }));
+    expect(checkout).toHaveBeenLastCalledWith('month');
+  });
+
+  it('keeps the coupon box free of autofill, spelling and translation', () => {
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(() => new Promise(() => {})));
+    render(<UpgradeDialog open onOpenChange={() => {}} />);
+    const box = document.querySelector('[data-coupon-input]')!;
+    expect(box.getAttribute('autocomplete')).toBe('off');
+    expect(box.getAttribute('spellcheck')).toBe('false');
+    expect(box.getAttribute('translate')).toBe('no');
+  });
+
   it('shows a recoverable error when the price request fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
     render(<UpgradeDialog open onOpenChange={() => {}} />);

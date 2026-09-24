@@ -649,6 +649,21 @@ export async function run() {
     await wait(500);
     pass('…and choosing another swaps it, rather than squeezing it in',
       (await count('[data-life-column]')) === 2 && (await count('[data-life-column="c"]')) === 1);
+    await page.locator('[data-life-line-toggle="c"]').click();
+    await wait(500);
+    pass('…and choosing the one beside me again lets them go',
+      (await count('[data-life-column="c"]')) === 0
+      && (await page.locator('[data-life-line-toggle="c"]').getAttribute('aria-pressed')) === 'false');
+    await page.locator('[data-life-line-toggle="c"]').click();
+    await wait(500);
+    // Today's words stand beside its dot on a phone, not on top of it.
+    const todayGap = await page.evaluate(() => {
+      const li = document.querySelector('[data-life-column="me"] [data-life-today]');
+      const dot = li.querySelector('[data-life-label]').getBoundingClientRect();
+      const words = li.querySelector('[data-life-today-text]').getBoundingClientRect();
+      return Math.round(words.left - dot.right);
+    });
+    pass('on a phone, today is written beside its dot, not over it', todayGap >= 1, String(todayGap));
     await page.setViewportSize({ width: 1280, height: 1000 });
     await wait(500);
     await page.evaluate((k) => {

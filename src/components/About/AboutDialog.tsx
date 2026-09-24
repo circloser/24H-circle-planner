@@ -4,7 +4,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { AdSlot } from '@/components/Ads/AdSlot';
 import { useTranslation } from '@/hooks/usePreferences';
 
 /** Public contact for feedback / questions (shown in the brand section). */
@@ -123,7 +122,6 @@ export function AboutDialog({ open, onOpenChange }: AboutDialogProps) {
         </section>
 
         {/* Reserved ad space (consistent with the other dialogs). */}
-        <AdSlot slot="about" className="mt-3" />
 
         <p className="mt-2 text-center text-[11px] text-muted-foreground/80">
           24houring.com · © Circloser

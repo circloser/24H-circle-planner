@@ -11,7 +11,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { AdSlot } from '@/components/Ads/AdSlot';
 import { useStoreSelector, useStoreDispatch } from '@/hooks/useScheduleStore';
 import { useDiary, dateKey, type DiaryEntry } from '@/hooks/useDiary';
 import { useTranslation } from '@/hooks/usePreferences';
@@ -248,7 +247,6 @@ export function DiaryDialog({ open, onOpenChange }: DiaryDialogProps) {
         </div>
 
         {/* Reserved ad space (consistent with the other dialogs). */}
-        <AdSlot slot="diary" className="mt-3" />
       </DialogContent>
     </Dialog>
 

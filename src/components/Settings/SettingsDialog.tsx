@@ -36,7 +36,6 @@ import { track } from '@/lib/track';
 import { useAuth } from '@/hooks/useAuth';
 import { requestUpgrade } from '@/lib/pro';
 import { enablePush, disablePush, pushSupported, sendTestPush } from '@/lib/push';
-import { AdSlot } from '@/components/Ads/AdSlot';
 import { useStoreDispatch } from '@/hooks/useScheduleStore';
 import { COLOR_THEMES } from '@/data/color-themes';
 import { TIMEZONES, WORLD_LINE_COLORS } from '@/data/timezones';
@@ -850,7 +849,6 @@ export function SettingsDialog({ section, onClose, onOpenMagician }: SettingsDia
         </div>
 
         {/* Reserved ad space for this dialog. */}
-        <AdSlot slot="settings" className="mt-1" />
       </DialogContent>
     </Dialog>
   );

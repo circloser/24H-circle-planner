@@ -35,7 +35,8 @@ export interface Env {
    *  server + product id are non-secret vars (wrangler.jsonc). */
   POLAR_ACCESS_TOKEN?: string; // Organization Access Token (polar_oat_…)
   POLAR_WEBHOOK_SECRET?: string; // Standard Webhooks secret (polar_whs_…)
-  POLAR_PRODUCT_ID?: string; // Pro product id
+  POLAR_PRODUCT_ID?: string; // Pro product id (monthly)
+  POLAR_YEARLY_PRODUCT_ID?: string; // Pro product id (yearly); unset = no yearly plan offered
   POLAR_SERVER?: string; // 'sandbox' (default) | 'production'
   /** Comma-separated emails always entitled to Pro (no subscription). Non-secret var. */
   ADMIN_EMAILS?: string;
@@ -261,23 +262,36 @@ async function handleCallback(request: Request, env: Env, ctx?: Waiter): Promise
   return new Response(null, { status: 302, headers });
 }
 
+/** Why an account is Pro, and until when (null = open-ended). */
+interface Entitlement { via: 'admin' | 'subscription' | 'grant'; until: number | null }
+
 /** Pro entitlement shared by /api/me, the push endpoints and the push cron:
- *  admin allowlist OR live Polar subscription OR active coupon grant. */
-async function isEntitled(env: Env, user: { id: string; email: string | null }): Promise<boolean> {
-  if (isAdminEmail(env, user.email)) return true;
-  if (!env.DB) return false;
+ *  admin allowlist OR live Polar subscription OR active coupon grant. A paid
+ *  subscription is named ahead of a coupon, since only it has anything to manage. */
+async function entitlement(env: Env, user: { id: string; email: string | null }): Promise<Entitlement | null> {
+  if (isAdminEmail(env, user.email)) return { via: 'admin', until: null };
+  if (!env.DB) return null;
   const sub = await env.DB.prepare('SELECT status, current_period_end FROM subscriptions WHERE user_id=?').bind(user.id).first<{ status: string; current_period_end: number | null }>();
   // Polar keeps status 'active' (with cancel_at_period_end) until it revokes at the
   // period end → status becomes 'canceled'. 'trialing'/'on_trial' also grant access.
   const ENTITLED = new Set(['active', 'trialing', 'on_trial']);
-  if (sub && ENTITLED.has(sub.status) && (sub.current_period_end == null || sub.current_period_end > Date.now())) return true;
+  if (sub && ENTITLED.has(sub.status) && (sub.current_period_end == null || sub.current_period_end > Date.now())) {
+    return { via: 'subscription', until: sub.current_period_end ?? null };
+  }
   try {
-    const grant = await env.DB.prepare('SELECT 1 FROM grants WHERE user_id=? AND (expires_at IS NULL OR expires_at > ?) LIMIT 1').bind(user.id, Date.now()).first();
-    return !!grant;
+    // The grant that lasts longest: a permanent one before any dated one.
+    const grant = await env.DB.prepare(
+      'SELECT expires_at FROM grants WHERE user_id=? AND (expires_at IS NULL OR expires_at > ?) ORDER BY expires_at IS NULL DESC, expires_at DESC LIMIT 1',
+    ).bind(user.id, Date.now()).first<{ expires_at: number | null }>();
+    return grant ? { via: 'grant', until: grant.expires_at ?? null } : null;
   } catch {
     // `grants` table not migrated yet → treat as no grant (never break auth).
-    return false;
+    return null;
   }
+}
+
+async function isEntitled(env: Env, user: { id: string; email: string | null }): Promise<boolean> {
+  return (await entitlement(env, user)) !== null;
 }
 
 /** How often a still-valid session is pushed back out to its full life. */
@@ -307,11 +321,19 @@ async function handleMe(request: Request, env: Env, ctx?: Waiter): Promise<Respo
   // Entitlement = admin allowlist OR a live Polar subscription OR an active
   // coupon grant. Admins are always Pro (no subscription needed).
   const admin = isAdminEmail(env, user.email);
-  const active = admin || (await isEntitled(env, user));
+  const pro = await entitlement(env, user);
   // `billing` lets the client hide the upgrade CTA until Polar is actually wired up
-  // (token set); `admin` reveals the coupon-issuing panel.
+  // (token set); `admin` reveals the coupon-issuing panel. `proVia` says where
+  // Pro comes from, so only a paid subscription is offered the billing portal
+  // (a coupon or the admin list has no Polar customer behind it).
   return json(
-    { user: { id: user.id, email: user.email, provider: user.provider }, plan: active ? 'pro' : 'free', billing: Boolean(env.POLAR_ACCESS_TOKEN), admin },
+    {
+      user: { id: user.id, email: user.email, provider: user.provider },
+      plan: pro ? 'pro' : 'free',
+      billing: Boolean(env.POLAR_ACCESS_TOKEN),
+      admin,
+      ...(pro ? { proVia: pro.via, proUntil: pro.until } : {}),
+    },
     200,
     { 'set-cookie': fresh },
   );
@@ -447,14 +469,23 @@ async function verifyPolarWebhook(secret: string, headers: Headers, body: string
   });
 }
 
-/** POST /api/checkout — create a Polar checkout session, return its hosted URL. */
+/** The Pro product for a billing interval: yearly only when one is set up. */
+export function proProductId(env: Pick<Env, 'POLAR_PRODUCT_ID' | 'POLAR_YEARLY_PRODUCT_ID'>, interval: unknown): string {
+  if (interval === 'year' && env.POLAR_YEARLY_PRODUCT_ID) return env.POLAR_YEARLY_PRODUCT_ID;
+  return env.POLAR_PRODUCT_ID || POLAR_PRODUCT_ID_DEFAULT;
+}
+
+/** POST /api/checkout — create a Polar checkout session, return its hosted URL.
+ *  Body (optional): { interval: 'month' | 'year' }. */
 async function handleCheckout(request: Request, env: Env): Promise<Response> {
   const user = await currentUser(request, env);
   if (!user) return json({ error: 'unauthorized' }, 401);
   if (!env.POLAR_ACCESS_TOKEN) return json({ error: 'billing_unconfigured' }, 503);
   const origin = new URL(request.url).origin;
+  let interval: unknown = 'month';
+  try { interval = ((await request.json()) as { interval?: unknown } | null)?.interval ?? 'month'; } catch { /* no body: monthly */ }
   const body: Record<string, unknown> = {
-    products: [env.POLAR_PRODUCT_ID || POLAR_PRODUCT_ID_DEFAULT],
+    products: [proProductId(env, interval)],
     success_url: `${origin}/?checkout=success`,
     external_customer_id: user.id,
     metadata: { user_id: user.id },
@@ -493,18 +524,23 @@ async function handlePortal(request: Request, env: Env): Promise<Response> {
  *  paywall UI), read live from Polar so the displayed price never drifts. */
 async function handleProduct(request: Request, env: Env): Promise<Response> {
   if (!env.POLAR_ACCESS_TOKEN) return json({ error: 'billing_unconfigured' }, 503);
-  const productId = env.POLAR_PRODUCT_ID || POLAR_PRODUCT_ID_DEFAULT;
-  const res = await fetch(`${polarBase(env)}/products/${productId}`, {
-    headers: { authorization: `Bearer ${env.POLAR_ACCESS_TOKEN}`, accept: 'application/json' },
-  });
-  if (!res.ok) return json({ error: 'product_failed', status: res.status }, 502);
-  const p = (await res.json()) as {
+  type PolarProduct = {
     name?: string;
     recurring_interval?: string | null;
     prices?: Array<{ amount_type?: string; price_amount?: number; amount?: number; price_currency?: string; recurring_interval?: string | null }>;
   };
+  const read = async (id: string): Promise<PolarProduct | null> => {
+    const res = await fetch(`${polarBase(env)}/products/${id}`, {
+      headers: { authorization: `Bearer ${env.POLAR_ACCESS_TOKEN}`, accept: 'application/json' },
+    });
+    return res.ok ? ((await res.json()) as PolarProduct) : null;
+  };
+  const monthly = await read(proProductId(env, 'month'));
+  if (!monthly) return json({ error: 'product_failed' }, 502);
+  // The yearly plan is offered only when its product is set up and answers.
+  const yearly = env.POLAR_YEARLY_PRODUCT_ID ? await read(env.POLAR_YEARLY_PRODUCT_ID).catch(() => null) : null;
   // Amounts are in the currency's minor unit (cents). Skip free/non-fixed tiers.
-  const prices = (p.prices ?? [])
+  const pricesOf = (p: PolarProduct) => (p.prices ?? [])
     .filter((pr) => pr.amount_type !== 'free' && pr.amount_type !== 'custom')
     .map((pr) => ({
       amount: typeof pr.price_amount === 'number' ? pr.price_amount : typeof pr.amount === 'number' ? pr.amount : null,
@@ -512,7 +548,14 @@ async function handleProduct(request: Request, env: Env): Promise<Response> {
       interval: pr.recurring_interval ?? p.recurring_interval ?? null,
     }))
     .filter((pr) => pr.amount != null);
-  return json({ name: p.name ?? null, prices });
+  // One price per interval, the monthly product's first.
+  const seen = new Set<string | null>();
+  const prices = [...pricesOf(monthly), ...(yearly ? pricesOf(yearly) : [])].filter((pr) => {
+    if (seen.has(pr.interval)) return false;
+    seen.add(pr.interval);
+    return true;
+  });
+  return json({ name: monthly.name ?? null, prices });
 }
 
 interface PolarSubscription {

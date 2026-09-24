@@ -417,6 +417,15 @@ export function RelationPanel({
           <span className={`${quiet} ml-1`}>{t(`relation.close.${person.closeness}` as 'relation.close.1')}</span>
         </dd>
 
+        <dt className={quiet}>{t('relation.field.toMe')}</dt>
+        <dd className="px-1.5">
+          <label className="flex items-center gap-1.5 text-[13px] text-foreground">
+            <input type="checkbox" className="h-4 w-4" data-relation-panel-tome checked={!person.apart}
+              onChange={(e) => onPatch({ apart: e.target.checked ? undefined : true })} />
+            {t(person.apart ? 'relation.field.toMeOff' : 'relation.field.toMeOn')}
+          </label>
+        </dd>
+
         <dt className={quiet}>{t('relation.field.birthday')}</dt>
         <dd className="flex items-center gap-1.5">
           <Input type="date" data-relation-panel-birthday-input max="2200-12-31"

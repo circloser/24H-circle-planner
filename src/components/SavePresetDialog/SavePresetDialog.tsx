@@ -9,7 +9,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { AdSlot } from '@/components/Ads/AdSlot';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useUserPresets } from '@/hooks/useUserPresets';
 import type { Schedule } from '@/types/schedule';
@@ -61,7 +60,6 @@ function SavePresetDialogBody({
           autoFocus
         />
       </div>
-      <AdSlot slot="savepreset" className="mb-1" />
       <DialogFooter>
         <Button variant="outline" onClick={() => onOpenChange(false)}>
           {t('common.cancel')}

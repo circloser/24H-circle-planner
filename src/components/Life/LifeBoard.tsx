@@ -316,7 +316,10 @@ export function LifeBoard({
                     // they come to the front of the line, which is the same
                     // move as dragging their name to the left on a wide
                     // screen — so both screens agree on who is where.
+                    // And choosing the one already beside me again lets them
+                    // go, as the same tap does on a wide screen.
                     if (isMobile) {
+                      if (on) { onToggle(id); return; }
                       if (hidden.has(id)) onToggle(id);
                       moveTo(id, 0);
                     } else {

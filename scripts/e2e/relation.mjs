@@ -427,7 +427,13 @@ export async function run() {
       !!made && beside.links.some((l) => (l.source === 'p1' && l.target === made.id)
         || (l.target === 'p1' && l.source === made.id)),
       JSON.stringify(beside.links));
+    pass('…and not to me: somebody known through somebody else', made?.apart === true, JSON.stringify(made));
     await choose(made.id);
+    pass('…which the card says, and can undo',
+      (await page.locator('[data-relation-panel-tome]').isChecked()) === false);
+    await page.locator('[data-relation-panel-tome]').check();
+    await wait(400);
+    pass('…tied to me again once asked', !(await stored()).people.find((p) => p.id === made.id)?.apart);
     await page.locator('[data-relation-remove]').click();
     await wait(700);
     pass('…and the map is as it was once they are taken off it',

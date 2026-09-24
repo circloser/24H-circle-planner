@@ -8,7 +8,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { AdSlot } from '@/components/Ads/AdSlot';
 import { QrCode } from '@/components/QrCode/QrCode';
 import { buildShareUrl, copyToClipboard } from '@/lib/share-link';
 import { useStoreSelector } from '@/hooks/useScheduleStore';
@@ -69,7 +68,6 @@ export function DeviceTransferDialog({ open, onOpenChange }: DeviceTransferDialo
 
         <p className="text-xs text-muted-foreground/85">{t('transfer.note')}</p>
 
-        <AdSlot slot="transfer" className="mt-1" />
       </DialogContent>
     </Dialog>
   );

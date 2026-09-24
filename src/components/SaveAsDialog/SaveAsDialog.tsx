@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { AdSlot } from '@/components/Ads/AdSlot';
 import { loadSlots, saveSlot } from '@/lib/slots';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useAuth } from '@/hooks/useAuth';
@@ -118,7 +117,6 @@ function SaveAsDialogBody({ currentSchedule, onOpenChange, onSaved }: SaveAsDial
           autoFocus
         />
       </div>
-      <AdSlot slot="saveas" className="mb-1" />
       <DialogFooter>
         <Button variant="outline" onClick={() => onOpenChange(false)}>
           {t('common.cancel')}

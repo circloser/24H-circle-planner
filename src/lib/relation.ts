@@ -98,6 +98,13 @@ export interface Person {
   photo?: string;
   /** Always show the name, at any zoom. */
   pinned?: boolean;
+  /**
+   * Known through somebody else rather than to me: someone added from
+   * another person's card (a friend's partner, a colleague's child). No
+   * thread is drawn from the middle to them — only their tie to whoever
+   * they came with.
+   */
+  apart?: boolean;
   /** Put here by hand: turns around the middle (0–1) and how far out (0–1.6).
    *  Without it the ring decides, and the ring never moves anyone again. */
   at?: { a: number; r: number };
@@ -383,6 +390,7 @@ function cleanPerson(v: unknown): Person | null {
     ...(log.length ? { log } : {}),
     ...(isId(o['photo']) ? { photo: o['photo'] } : {}),
     ...(o['pinned'] === true ? { pinned: true } : {}),
+    ...(o['apart'] === true ? { apart: true } : {}),
     ...(a !== null && r !== null ? { at: { a, r } } : {}),
     ...(isId(o['lifeFamilyId']) ? { lifeFamilyId: o['lifeFamilyId'] } : {}),
     createdAt: typeof o['createdAt'] === 'string' ? o['createdAt'] : '',

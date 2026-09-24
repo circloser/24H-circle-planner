@@ -682,6 +682,9 @@ svg text {
   .life-narrow .life-line { left: 14px; }
   .life-narrow [data-life-marker],
   .life-narrow [data-life-label] { left: 14px; }
+  /* Today's words sit beside its dot, not on it: the dot above moved in to
+     14px, so the words move in with it and keep their gap. */
+  .life-narrow [data-life-today-text] { left: 32px; }
   .life-narrow [data-life-card] { margin-left: 30px; margin-right: 2px; }
   .life-narrow [data-life-add-touch] { left: 14px; }
 }

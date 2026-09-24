@@ -36,7 +36,7 @@ export const PRO_FEATURES: readonly ProFeature[] = [
   { id: 'ical', label: 'upgrade.featICal', sources: ['ical'] },
   { id: 'push', label: 'upgrade.featPush', sources: ['push'] },
   { id: 'stats', label: 'upgrade.featStats', sources: ['stats'] },
-  { id: 'clean', label: 'upgrade.featNoAds', sources: ['ads', 'watermark'] },
+  { id: 'clean', label: 'upgrade.featWatermark', sources: ['watermark'] },
 ];
 
 /** The line that answers the surface the paywall was opened from. */

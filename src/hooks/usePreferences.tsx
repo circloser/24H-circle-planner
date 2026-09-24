@@ -1,7 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { Lang, TKey } from '@/i18n/translations';
-import { translate } from '@/i18n/translations';
+import { LANGUAGES, translate } from '@/i18n/translations';
+import { isPlayStoreApp, isStandalone } from '@/lib/twa';
 import type { ChartView } from '@/lib/chart-view';
 import { isChartLayout, type ChartLayout } from '@/lib/chart-layout';
 import { PREFS_SYNC_EVENT } from '@/lib/sync/syncData';
@@ -205,7 +206,30 @@ const STORAGE_KEY = '24h-circle-planner.prefs';
  * don't auto-select them (they'd render mostly English) — they stay opt-in via
  * the language picker. Used only when no preference has been saved yet.
  */
+/** The first of the device's languages the app speaks, if any. */
+function deviceLanguage(): Lang | null {
+  try {
+    const nav = typeof navigator !== 'undefined' ? navigator : undefined;
+    const tags = nav?.languages?.length ? nav.languages : [nav?.language ?? ''];
+    for (const tag of tags) {
+      const base = tag.slice(0, 2).toLowerCase();
+      const hit = LANGUAGES.find((l) => l.code === base);
+      if (hit) return hit.code;
+    }
+  } catch { /* no navigator */ }
+  return null;
+}
+
+/** The installed app — the Play Store build or a home-screen install — rather
+ *  than a page in a browser tab. */
+function installedApp(): boolean {
+  return isPlayStoreApp() || isStandalone();
+}
+
 function detectInitialLanguage(): Lang {
+  // An installed app speaks the phone's language, whichever of the eight it
+  // is: someone who installed it came for the app, not for a page to read.
+  if (installedApp()) return deviceLanguage() ?? 'en';
   try {
     const nav = typeof navigator !== 'undefined' ? navigator : undefined;
     const tag = (nav?.language || nav?.languages?.[0] || '').toLowerCase();
@@ -259,8 +283,28 @@ function applyOneTimeDefaults(prefs: Preferences): Preferences {
   }
 }
 
+/**
+ * The app used to start everyone outside Korean and German in English, and
+ * that English was then saved as if chosen. Once per installed app, an
+ * English that the phone does not speak is turned into the phone's language;
+ * after that, whatever is picked in the menu stays.
+ */
+const APP_LANGUAGE_KEY = '24h-circle-planner.app-language-v1';
+
+function applyAppLanguage(prefs: Preferences): Preferences {
+  if (pathLocale() || !installedApp()) return prefs;
+  try {
+    if (localStorage.getItem(APP_LANGUAGE_KEY)) return prefs;
+    localStorage.setItem(APP_LANGUAGE_KEY, '1');
+    const device = deviceLanguage();
+    return device && device !== 'en' && prefs.language === 'en' ? { ...prefs, language: device } : prefs;
+  } catch {
+    return prefs;
+  }
+}
+
 function loadPrefs(): Preferences {
-  return applyOneTimeDefaults(loadStoredPrefs());
+  return applyAppLanguage(applyOneTimeDefaults(loadStoredPrefs()));
 }
 
 function loadStoredPrefs(): Preferences {

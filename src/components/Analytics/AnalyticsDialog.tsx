@@ -8,7 +8,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { BarChart3 } from 'lucide-react';
-import { AdSlot } from '@/components/Ads/AdSlot';
 import { useDiary, dateKey } from '@/hooks/useDiary';
 import { useTranslation } from '@/hooks/usePreferences';
 import { useAuth } from '@/hooks/useAuth';
@@ -158,7 +157,6 @@ export function AnalyticsDialog({ open, onOpenChange }: AnalyticsDialogProps) {
         )}
 
         {/* Reserved ad space (consistent with the other dialogs). */}
-        <AdSlot slot="analytics" className="mt-3" />
           </>
         )}
 

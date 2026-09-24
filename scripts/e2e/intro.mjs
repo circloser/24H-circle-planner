@@ -114,6 +114,31 @@ export async function run() {
     await page.locator('[data-calendar-toggle]').click();
     await wait(500);
 
+    // Pro from a paid subscription is managed in the billing portal; Pro from
+    // a coupon has nothing there, so the menu says where it comes from.
+    const settingsMenu = async () => {
+      await page.getByRole('button', { name: '설정', exact: true }).click();
+      await wait(400);
+      const r = { manage: await count('[data-billing-manage]'), via: await page.locator('[data-pro-via]').getAttribute('data-pro-via').catch(() => null),
+        note: await page.locator('[data-pro-via]').innerText().catch(() => '') };
+      await page.keyboard.press('Escape');
+      await wait(200);
+      return r;
+    };
+    me = { ...me, proVia: 'subscription', proUntil: null };
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-app-header]', { timeout: 15000 });
+    await wait(900);
+    const paid = await settingsMenu();
+    pass('a paid subscription is offered the billing portal', paid.manage === 1 && paid.via === null, JSON.stringify(paid));
+    me = { ...me, proVia: 'grant', proUntil: Date.UTC(2027, 8, 24) };
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-app-header]', { timeout: 15000 });
+    await wait(900);
+    const coupon = await settingsMenu();
+    pass('Pro from a coupon is not sent to a portal it has no account in, and says until when',
+      coupon.manage === 0 && coupon.via === 'grant' && /2027-09-24/.test(coupon.note), JSON.stringify(coupon));
+
     // 4. /?view=calendar
     await page.goto(`${base}/?view=calendar#x`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('[data-calendar-view]', { timeout: 15000 });

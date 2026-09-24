@@ -46,8 +46,7 @@ const SECTIONS = {
   },
 };
 
-const HEAD_SCRIPTS = `<meta name="google-adsense-account" content="ca-pub-6947130056543786">
-<script>
+const HEAD_SCRIPTS = `<script>
 function setGuideLang(l,save){l=l==='ko'?'ko':'en';document.documentElement.lang=l;document.documentElement.classList.toggle('show-en',l==='en');document.querySelectorAll('[data-guide-lang]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.guideLang===l));});if(save!==false){try{localStorage.setItem('24h-guides-lang',l);}catch(e){}}}
 (function(){var l=(navigator.language||'ko').slice(0,2);try{var o=localStorage.getItem('24h-guides-lang');var r=localStorage.getItem('24h-circle-planner.prefs');var p=r?JSON.parse(r):null;l=o||(p&&p.prefs&&p.prefs.language)||l;}catch(e){}setGuideLang(l,false);document.addEventListener('DOMContentLoaded',function(){setGuideLang(document.documentElement.lang,false);});})();
 </script>`;

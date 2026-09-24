@@ -148,8 +148,9 @@
   slots and past diary; unlimited life moments and lines with photos;
   unlimited people, ties and pins with photos; calendar decorating (stickers,
   masking tape, paper, photo stickers); Google Calendar import (read-only);
-  push alarms when a block starts; statistics reports; and no ads or export
-  watermark. A limit only ever stops ADDING — nothing already written is
+  push alarms when a block starts; statistics reports; and exports without the
+  watermark. Monthly or yearly. 24Houring shows no ads to anyone, free or Pro.
+  A limit only ever stops ADDING — nothing already written is
   hidden or lost if Pro lapses.
   The app upgrade dialog and Polar checkout show current pricing and terms.
   The planner does not load third-party ads; an in-app Pro promotion may appear.
@@ -239,7 +240,8 @@ where `<code>` is base64url(JSON) of:
   3 saved-schedule slots, a 30-day past-diary access window, 2 life lines,
   40 people and 50 pins. Pro expands every one of those limits and adds sync,
   the diary lock, calendar decorating, Google Calendar import, push alarms,
-  reports and an ad-free, watermark-free app; see live checkout terms.
+  reports and watermark-free exports, monthly or yearly; see live checkout
+  terms. There are no ads anywhere, on the free plan either.
 - **Do I need an account?** No. An account (Google login) is only used for
   the optional Pro sync.
 - **Can I use it on my phone?** Yes — responsive web app, installable PWA,

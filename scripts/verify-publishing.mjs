@@ -34,8 +34,6 @@ for (const utility of ['s.html', 'widget.html']) {
   check(/noindex/i.test(utilityDoc.querySelector('meta[name="robots"]')?.content || ''), `${utility}: utility entry must be excluded from search results`);
   check(utilityDoc.getElementById('root'), `${utility}: missing application mount point`);
 }
-const adsTxt = readFileSync(join(dist, 'ads.txt'), 'utf8').trim();
-check(adsTxt === 'google.com, pub-6947130056543786, DIRECT, f08c47fec0942fa0', 'ads.txt: publisher authorization record is missing or unexpected');
 const locales = ['', 'ko/', 'de/', 'ja/', 'zh/', 'fr/', 'es/', 'ru/'];
 for (const locale of locales) {
   const path = `${locale}index.html`;
@@ -43,7 +41,7 @@ for (const locale of locales) {
   const root = doc.getElementById('root');
   const copy = doc.getElementById('site-copy');
   check(root && copy && !root.contains(copy), `${path}: editorial content must survive React mount`);
-  check(doc.querySelector('meta[name="google-adsense-account"]')?.content === 'ca-pub-6947130056543786', `${path}: missing site verification`);
+  check(!doc.querySelector('meta[name="google-adsense-account"]'), `${path}: the service carries no ads, so no ad-network verification`);
 }
 const guides = ['time-blocking', 'time-audit', 'morning-evening-routine'];
 const editorial = pages.map(p => relative(dist,p).replaceAll('\\','/')).filter(p => /^(?:(?:guides|health|stories|blog)\/[^/]+|(?:(?:de|ja)\/)?templates\/[^/]+)\.html$/.test(p));

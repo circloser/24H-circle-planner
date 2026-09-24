@@ -357,7 +357,7 @@ export function LifeTimeline({ life, items, colors, narrow, readOnly, rowDecor, 
           {rowDecor?.('today')}
           <div className="relative h-[26px]">
             <span aria-hidden data-life-label className="life-pulse absolute left-[28px] top-0 z-10 h-[26px] w-[26px] -translate-x-1/2 rounded-full border-[6px] border-background bg-primary ring-2 ring-primary min-[900px]:left-1/2" />
-            <span data-life-label className="absolute left-[52px] top-0 whitespace-nowrap text-[15px] font-semibold italic leading-[26px] text-primary min-[900px]:left-[calc(50%+28px)]">
+            <span data-life-label data-life-today-text className="absolute left-[52px] top-0 whitespace-nowrap text-[15px] font-semibold italic leading-[26px] text-primary min-[900px]:left-[calc(50%+28px)]">
               {t('life.todayAge', { n: String(age) })}
             </span>
             {coarse && !readOnly && (

@@ -422,7 +422,13 @@ export function RelationView() {
         onSave={(draft, id) => {
           if (id) api.updatePerson(id, draft);
           else {
-            const made = api.addPerson({ ...draft, ...(target?.mode === 'add' && target.at ? { at: target.at } : {}) });
+            // Added from somebody's card, they are somebody's rather than
+            // mine: tied to that person, and not to the middle.
+            const made = api.addPerson({
+              ...draft,
+              ...(target?.mode === 'add' && target.at ? { at: target.at } : {}),
+              ...(beside ? { apart: true } : {}),
+            });
             setArriving([made]);
             // Added from somebody's card: the line between them is the point.
             if (beside) {

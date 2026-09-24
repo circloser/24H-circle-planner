@@ -158,6 +158,19 @@ describe('the stored envelope', () => {
     expect(out?.me).toEqual({ name: '나', photo: 'ph000001' });
   });
 
+  it('remembers who is known only through somebody else, and nothing else by that name', () => {
+    const out = decodeRelation({
+      version: 3, me: {}, links: [], updatedAt: '',
+      people: [
+        { id: 'a', name: '친구', group: 'friend', closeness: 3, createdAt: '' },
+        { id: 'b', name: '친구의 짝', group: 'friend', closeness: 3, apart: true, createdAt: '' },
+        { id: 'c', name: '누구', group: 'friend', closeness: 3, apart: 'yes', createdAt: '' },
+      ],
+    });
+    expect(out?.people.map((p) => p.apart ?? false)).toEqual([false, true, false]);
+    expect(JSON.stringify(decodeRelation(JSON.parse(JSON.stringify(out))))).toBe(JSON.stringify(out));
+  });
+
   it('refuses anything that is not a record of ours', () => {
     expect(decodeRelation(null)).toBeNull();
     expect(decodeRelation({ version: 4 })).toBeNull();

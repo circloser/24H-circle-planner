@@ -9,21 +9,28 @@
  * Both require a signed-in session (the sid cookie). On success we navigate the
  * top-level window to the returned URL; failures throw so the caller can toast.
  */
-async function postForUrl(path: string): Promise<string> {
+async function postForUrl(path: string, body?: unknown): Promise<string> {
   const res = await fetch(path, {
     method: 'POST',
     credentials: 'include',
-    headers: { accept: 'application/json' },
+    headers: { accept: 'application/json', ...(body ? { 'content-type': 'application/json' } : {}) },
+    ...(body ? { body: JSON.stringify(body) } : {}),
   });
-  if (!res.ok) throw new Error(`${path} ${res.status}`);
+  if (!res.ok) {
+    let code = `http_${res.status}`;
+    try { code = ((await res.json()) as { error?: string }).error ?? code; } catch { /* not JSON */ }
+    throw new Error(code);
+  }
   const data = (await res.json()) as { url?: string };
   if (!data.url) throw new Error(`${path} missing url`);
   return data.url;
 }
 
+export type BillingInterval = 'month' | 'year';
+
 /** Start a Pro checkout: redirects the browser to Polar's hosted checkout page. */
-export async function startCheckout(): Promise<void> {
-  window.location.href = await postForUrl('/api/checkout');
+export async function startCheckout(interval: BillingInterval = 'month'): Promise<void> {
+  window.location.href = await postForUrl('/api/checkout', { interval });
 }
 
 /** Open the Polar customer portal (manage / cancel the subscription). */

@@ -15,6 +15,10 @@ export interface AuthState {
   billingEnabled: boolean;
   /** True when the signed-in email is on the admin allowlist (shows coupon panel). */
   admin: boolean;
+  /** Where Pro comes from — only a paid subscription has a billing portal. */
+  proVia?: 'admin' | 'subscription' | 'grant';
+  /** When that Pro ends (ms since epoch); null = open-ended. */
+  proUntil?: number | null;
   loading: boolean;
 }
 
@@ -55,8 +59,19 @@ async function fetchMe(): Promise<AuthState> {
     const res = await fetch('/api/me', { credentials: 'include', headers: { accept: 'application/json' } });
     if (res.status === 503) return lastAuth() ?? SIGNED_OUT;
     if (!res.ok) throw new Error(`me ${res.status}`);
-    const data = (await res.json()) as { user: AuthUser | null; plan?: 'free' | 'pro'; billing?: boolean; admin?: boolean };
-    const state = { user: data.user ?? null, plan: data.plan ?? 'free', billingEnabled: Boolean(data.billing), admin: Boolean(data.admin), loading: false } as AuthState;
+    const data = (await res.json()) as {
+      user: AuthUser | null; plan?: 'free' | 'pro'; billing?: boolean; admin?: boolean;
+      proVia?: string; proUntil?: number | null;
+    };
+    const via = data.proVia === 'admin' || data.proVia === 'subscription' || data.proVia === 'grant' ? data.proVia : undefined;
+    const state = {
+      user: data.user ?? null,
+      plan: data.plan ?? 'free',
+      billingEnabled: Boolean(data.billing),
+      admin: Boolean(data.admin),
+      ...(via ? { proVia: via, proUntil: typeof data.proUntil === 'number' ? data.proUntil : null } : {}),
+      loading: false,
+    } as AuthState;
     rememberAuth(state);
     return state;
   } catch {

@@ -118,6 +118,7 @@ export function drawRelation(ctx: CanvasRenderingContext2D, input: RelationImage
   // Me to each person.
   ctx.strokeStyle = ink;
   for (const n of layout.nodes) {
+    if (n.person.apart) continue;
     const body = spot(n.person.id);
     const p = at(body.x, body.y);
     ctx.beginPath();
