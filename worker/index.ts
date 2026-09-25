@@ -9,6 +9,7 @@
 
 import { sendWebPush } from '../src/lib/webpush';
 import { legacyRedirectTarget } from './legacy-redirects';
+import type { ModelRelayNamespace } from './model-relay';
 import { handleShareCreate, handleShareGet, handleShareOg, handleShareView } from './shares';
 import { handleWidgetPut, handleWidgetPng, handleWidgetDelete, isWidgetKind } from './widget';
 import { handleMarketingRoute } from './marketing';
@@ -26,6 +27,8 @@ import { handleIcalFetch } from './ical';
 export interface Env {
   /** Static assets binding (the built SPA in ./dist). */
   ASSETS: { fetch: (request: Request) => Promise<Response> };
+  /** Makes the model calls from the US (worker/model-relay.ts). */
+  MODEL_RELAY?: ModelRelayNamespace;
   /** D1 database (Pro sync). Optional until the binding is live everywhere. */
   DB?: D1Database;
   /** Google OAuth client (set as Worker secrets). */
@@ -783,7 +786,7 @@ async function handleMemoirWrite(request: Request, env: Env, ctx?: Waiter): Prom
   }
   if (!upstream.ok || !upstream.body) {
     await refund();
-    const detail = await writerFailure('memoir', upstream);
+    const detail = await writerFailure('memoir', upstream, coloOf(request));
     return json({ error: 'writer_failed', status: upstream.status, ...(admin ? { detail } : {}) }, 502);
   }
   const { body, written } = memoirStream(upstream.body);
@@ -793,6 +796,9 @@ async function handleMemoirWrite(request: Request, env: Env, ctx?: Waiter): Prom
     headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' },
   });
 }
+
+/** The Cloudflare data centre a request reached — for the logs. */
+const coloOf = (request: Request): string | undefined => (request as Request & { cf?: { colo?: string } }).cf?.colo;
 
 /** GET /api/life/saju — whether the 사주 reading shows at all. Admins only,
  *  for now (see readingsPublic); it has no checkout of its own yet. */
@@ -828,7 +834,7 @@ async function handleSajuWrite(request: Request, env: Env): Promise<Response> {
   }
   if (!upstream.ok || !upstream.body) {
     // Admins only reach this far, so the writer's own reason goes back.
-    const detail = await writerFailure('saju', upstream);
+    const detail = await writerFailure('saju', upstream, coloOf(request));
     return json({ error: 'writer_failed', status: upstream.status, detail }, 502);
   }
   const { body } = memoirStream(upstream.body);
@@ -1525,6 +1531,9 @@ async function handleNews(request: Request, env: Env, ctx?: Waiter): Promise<Res
 }
 
 // ─── Router ──────────────────────────────────────────────────────────────────
+
+// The US relay for the model calls must be exported from the entry module.
+export { ModelRelay } from './model-relay';
 
 export default {
   async fetch(request: Request, env: Env, ctx?: Waiter): Promise<Response> {

@@ -1,3 +1,4 @@
+import { RELAY_LOCATION, RELAY_NAME, type ModelRelayNamespace } from './model-relay';
 import { cleanRecords, recordsText, type Records } from './readings';
 
 /**
@@ -223,6 +224,8 @@ export interface MemoirEnv {
   ANTHROPIC_API_KEY?: string;
   ANTHROPIC_MODEL?: string;
   POLAR_MEMOIR_PRODUCT_ID?: string;
+  /** Makes the call from the US (worker/model-relay.ts); absent in tests. */
+  MODEL_RELAY?: ModelRelayNamespace;
 }
 
 export const MEMOIR_MODEL_DEFAULT = 'claude-sonnet-5';
@@ -308,7 +311,7 @@ export function memoirStream(upstream: ReadableStream<Uint8Array>): { body: Read
  * x-api-key", an unknown model…). Logged for the tail, and handed back to an
  * admin so a failed try says what to fix instead of only that it failed.
  */
-export async function writerFailure(tag: string, upstream: Response): Promise<string> {
+export async function writerFailure(tag: string, upstream: Response, where?: string): Promise<string> {
   let detail = `HTTP ${upstream.status}`;
   try {
     const text = await upstream.text();
@@ -320,7 +323,7 @@ export async function writerFailure(tag: string, upstream: Response): Promise<st
     }
   } catch { /* no body */ }
   detail = detail.slice(0, 240);
-  console.error(`[${tag}] anthropic ${detail}`);
+  console.error(`[${tag}] anthropic ${detail}${where ? ` (colo ${where})` : ''}`);
   return detail;
 }
 
@@ -335,8 +338,23 @@ export function streamError(line: string): string | null {
   }
 }
 
-/** Ask Anthropic for a piece of writing, streamed. */
+/**
+ * Ask Anthropic for a piece of writing, streamed — through the US relay when
+ * the Worker has one, so the answer does not depend on which data centre the
+ * visitor happened to reach (see worker/model-relay.ts).
+ */
 export function callModel(env: MemoirEnv, system: string, user: string, maxTokens: number): Promise<Response> {
+  const body = JSON.stringify({
+    model: env.ANTHROPIC_MODEL || MEMOIR_MODEL_DEFAULT,
+    max_tokens: maxTokens,
+    stream: true,
+    system,
+    messages: [{ role: 'user', content: user }],
+  });
+  if (env.MODEL_RELAY) {
+    const relay = env.MODEL_RELAY.get(env.MODEL_RELAY.idFromName(RELAY_NAME), { locationHint: RELAY_LOCATION });
+    return relay.fetch('https://relay/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json' }, body });
+  }
   return fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -344,13 +362,7 @@ export function callModel(env: MemoirEnv, system: string, user: string, maxToken
       'x-api-key': env.ANTHROPIC_API_KEY ?? '',
       'anthropic-version': '2023-06-01',
     },
-    body: JSON.stringify({
-      model: env.ANTHROPIC_MODEL || MEMOIR_MODEL_DEFAULT,
-      max_tokens: maxTokens,
-      stream: true,
-      system,
-      messages: [{ role: 'user', content: user }],
-    }),
+    body,
   });
 }
 

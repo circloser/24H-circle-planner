@@ -29,6 +29,16 @@
     "run_worker_first": ["/api/*", "/health/*", "/stories/*", "/s/*"]
   },
 
+  // The model calls go out from the US through this Durable Object (Anthropic
+  // refuses Hong Kong, where Korean visitors are often routed). See
+  // worker/model-relay.ts.
+  "durable_objects": {
+    "bindings": [{ "name": "MODEL_RELAY", "class_name": "ModelRelay" }]
+  },
+  "migrations": [
+    { "tag": "v1-model-relay", "new_sqlite_classes": ["ModelRelay"] }
+  ],
+
   // The Worker's D1 database binding (env.DB). Schema: worker/migrations/.
   "d1_databases": [
     { "binding": "DB", "database_name": "24houring", "database_id": "a21e309c-9753-4fe1-91b0-9456ce4c3ec2", "migrations_dir": "worker/migrations" }
