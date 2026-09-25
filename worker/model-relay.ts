@@ -38,6 +38,8 @@ export class ModelRelay {
         'content-type': 'application/json',
         'x-api-key': this.env.ANTHROPIC_API_KEY ?? '',
         'anthropic-version': '2023-06-01',
+        // Betas the Worker asked for (the server-side fallback) pass through.
+        ...(request.headers.get('anthropic-beta') ? { 'anthropic-beta': request.headers.get('anthropic-beta')! } : {}),
       },
       body: await request.text(),
     });

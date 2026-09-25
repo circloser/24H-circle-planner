@@ -93,6 +93,9 @@ export const SYNC_KEYS: readonly string[] = [
   // periods turn on) and the readings written — paid-for text, kept like
   // any other record, and kept if an older cloud blob predates it.
   'saju',
+  // Every memoir written, by date (lib/memoir-history) — paid-for text, kept
+  // like the saju readings, and kept if an older cloud blob predates it.
+  'memoirs',
   'prefs',
   'view',
 ].map((k) => PREFIX + k)
@@ -123,6 +126,7 @@ const KEEP_IF_ABSENT = new Set<string>([
   PREFIX + 'relation',
   PREFIX + 'place',
   PREFIX + 'saju',
+  PREFIX + 'memoirs',
 ]);
 
 /** The synced preferences key — applied live (no reload) when it alone changes. */

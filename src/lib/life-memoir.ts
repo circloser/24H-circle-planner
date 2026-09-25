@@ -205,8 +205,10 @@ export async function writeMemoir(
   req: MemoirRequest,
   onText: (soFar: string) => void,
   signal?: AbortSignal,
+  /** '/api/life/memoir/taste' for the free first page. */
+  path = '/api/life/memoir',
 ): Promise<string> {
-  const res = await fetch('/api/life/memoir', {
+  const res = await fetch(path, {
     method: 'POST',
     credentials: 'include',
     headers: { 'content-type': 'application/json' },

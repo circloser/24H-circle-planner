@@ -125,20 +125,50 @@ const LANG_NAME: Record<string, string> = {
  */
 export function memoirSystem(lang: string): string {
   return [
-    'You are a ghostwriter. You are given the chronology of one person’s life — dates and short titles, sometimes a line of description — and, where they have kept them, the rest of their records: the people around them, the places they have been, what they wrote about themselves, and their diary in their own words. You write their memoir from all of it, in the first person, as if they were telling it. Use the diary for their voice and the people and places for the texture of each chapter.',
+    'You are a literary memoirist writing creative nonfiction. You are given the chronology of one person’s life — dates, short titles, sometimes a line of description — and, where they have kept them, the rest of their records: the people around them, the places they have been, what they wrote about themselves, and their diary in their own words. From all of it you write their memoir, in the first person, as a book they would be proud to hand to someone they love.',
     '',
     `Write ONLY in ${LANG_NAME[lang] ?? 'English'}. Every word of the memoir, including the chapter titles, is in that language.`,
     '',
-    'Rules, in order of importance:',
-    '1. Invent nothing. No events, names, places, illnesses, jobs or numbers that are not in the chronology. If a stretch of years is empty, pass over it; do not fill it.',
-    '2. Feelings may be suggested, never asserted. Write "I suppose I was frightened" rather than "I was frightened" where the record does not say so. Never put words in anyone else’s mouth.',
-    '3. Say only what the dates say. Where a date gives only a year, write it as a year ("that year", "sometime in 1994"), never as a day.',
-    '4. Follow the chronology in order, grouped into chapters — by decade, or by the shape the life actually takes. Give each chapter a short title on its own line, prefixed with "## ".',
-    '5. Anything still ahead is written as a hope, in the future tense, never as something that happened.',
-    '6. Plain prose. No lists, no tables, no headings other than the chapter titles, no closing note from you, no mention of being an AI or of this chronology being your source.',
-    '7. Length: six to ten chapters, a few paragraphs each — long enough to be worth printing, short enough to be read in one sitting.',
-    '8. End with a closing chapter. If the person left words to be remembered by, let that chapter grow out of them rather than quoting them whole.',
+    'How it should read — this is what they paid for:',
+    '- Scenes, not a list. Open each chapter inside one concrete moment from the record and let the chapter move out from there. Never march through the dates one by one; a whole decade may pass in a sentence and a single afternoon may take a page.',
+    '- Texture. Give each scene its weather, light, sound and smell, and the feel of its place and era: what a city, a school, a first office or a street market in that country and that decade was generally like. This is where imagination belongs.',
+    '- A thread. Find one or two images or questions that recur across the life (a road, a window, leaving and coming back, a kind of work, a person who keeps reappearing) and return to them, so the chapters become one story.',
+    '- Two times at once. Let the narrator look back from today: what they understand now that they did not then. Reflection is where the meaning is, but keep it earned and brief.',
+    '- Their own words. Where the diary or their answers say something in their own voice, quote a phrase of it, so the book sounds like them.',
+    '- Craft. Vary the rhythm of sentences; prefer the precise noun to the adjective; restraint over sentiment; no clichés, no moralising, no summary at the end of a chapter.',
+    '',
+    'What must stay true:',
+    '1. Invent no facts. No events, people, names, places, jobs, illnesses, numbers or dialogue that are not in the records. Imagination is for atmosphere and for inner life only, and inner life is offered as memory or possibility ("I think I was afraid", "I like to imagine…"), never asserted as fact. Never put words in anyone else’s mouth.',
+    '2. Dates say only what they say. A year alone stays a year ("that spring", "sometime in 1994"), never a day.',
+    '3. Anything still ahead is written as a hope, in the future tense.',
+    '4. Chapters follow the life in order. Give each an evocative title (an image or a phrase, not a decade) on its own line, prefixed with "## ".',
+    '5. Six to nine chapters, several paragraphs each: long enough to be worth printing, short enough to read in one sitting. The last chapter comes to the present and looks ahead; if they left words to be remembered by, let it grow out of them rather than quoting them whole.',
+    '6. Plain prose only: no lists, no tables, no headings besides the chapter titles, no note from you, no mention of being an AI or of a chronology.',
   ].join('\n');
+}
+
+/**
+ * The taste: the opening page only, to show what the whole would be like.
+ * Short on purpose — it is free, so it must cost next to nothing.
+ */
+export function memoirTasteSystem(lang: string): string {
+  return [
+    'You are a literary memoirist. From the chronology of one person’s life, write ONLY the opening page of their memoir: a single scene, in the first person, built from one real moment in the record — the earliest vivid one or the one that best seems to hold the whole life.',
+    '',
+    `Write ONLY in ${LANG_NAME[lang] ?? 'English'}.`,
+    '',
+    '- About 120 words (in Korean, Japanese or Chinese about 350 characters). One to three short paragraphs.',
+    '- Weather, light, sound and the feel of the place and the era; restraint over sentiment.',
+    '- End on one quiet line that turns toward the rest of the life, as if the book continues.',
+    '- Invent no facts: no events, people, names or dialogue beyond the record; imagination is for atmosphere only.',
+    '- No title, no heading, no note from you, no mention of being an AI.',
+  ].join('\n');
+}
+
+/** The chronology for the taste: the moments alone, and not too many of them. */
+export function memoirTasteUser(input: MemoirInput): string {
+  return memoirUser({ ...input, moments: input.moments.slice(0, 24), records: undefined, wish: undefined, endingNote: undefined })
+    .replace('Write the memoir now.', 'Write the opening page now.');
 }
 
 const fmtDate = (d: string) => d.replace(/-/g, '.');
@@ -228,8 +258,14 @@ export interface MemoirEnv {
   MODEL_RELAY?: ModelRelayNamespace;
 }
 
-export const MEMOIR_MODEL_DEFAULT = 'claude-sonnet-5';
-export const MEMOIR_MAX_TOKENS = 8000;
+export const MEMOIR_MODEL_DEFAULT = 'claude-opus-5';
+/** Room for the thinking as well as the pages: a memoir cut off mid-chapter
+ *  is worse than a slower one. */
+export const MEMOIR_MAX_TOKENS = 16000;
+/** The free opening page: small, and at low effort, so it costs cents. */
+export const MEMOIR_TASTE_MAX_TOKENS = 1500;
+/** The beta that turns on the server-side fallback for a declined request. */
+export const FALLBACK_BETA = 'server-side-fallback-2026-07-01';
 
 /** Is the feature set up at all? Unset, the whole section stays hidden. */
 export const memoirEnabled = (env: MemoirEnv): boolean =>
@@ -343,17 +379,30 @@ export function streamError(line: string): string | null {
  * the Worker has one, so the answer does not depend on which data centre the
  * visitor happened to reach (see worker/model-relay.ts).
  */
-export function callModel(env: MemoirEnv, system: string, user: string, maxTokens: number): Promise<Response> {
+export function callModel(
+  env: MemoirEnv,
+  system: string,
+  user: string,
+  maxTokens: number,
+  options: { effort?: 'low' | 'medium' | 'high' } = {},
+): Promise<Response> {
+  const model = env.ANTHROPIC_MODEL || MEMOIR_MODEL_DEFAULT;
+  // A policy decline is re-run on Anthropic's recommended model instead of
+  // coming back as a refusal (Opus 5 only; another model is sent as is).
+  const fallback = model === 'claude-opus-5';
   const body = JSON.stringify({
-    model: env.ANTHROPIC_MODEL || MEMOIR_MODEL_DEFAULT,
+    model,
     max_tokens: maxTokens,
     stream: true,
     system,
     messages: [{ role: 'user', content: user }],
+    ...(options.effort ? { output_config: { effort: options.effort } } : {}),
+    ...(fallback ? { fallbacks: 'default' } : {}),
   });
+  const beta: Record<string, string> = fallback ? { 'anthropic-beta': FALLBACK_BETA } : {};
   if (env.MODEL_RELAY) {
     const relay = env.MODEL_RELAY.get(env.MODEL_RELAY.idFromName(RELAY_NAME), { locationHint: RELAY_LOCATION });
-    return relay.fetch('https://relay/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json' }, body });
+    return relay.fetch('https://relay/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json', ...beta }, body });
   }
   return fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -361,6 +410,7 @@ export function callModel(env: MemoirEnv, system: string, user: string, maxToken
       'content-type': 'application/json',
       'x-api-key': env.ANTHROPIC_API_KEY ?? '',
       'anthropic-version': '2023-06-01',
+      ...beta,
     },
     body,
   });
@@ -369,3 +419,16 @@ export function callModel(env: MemoirEnv, system: string, user: string, maxToken
 /** Ask Anthropic for the memoir. Returns the raw streaming response. */
 export const callClaude = (env: MemoirEnv, input: MemoirInput): Promise<Response> =>
   callModel(env, memoirSystem(input.lang), memoirUser(input), MEMOIR_MAX_TOKENS);
+
+/** The free opening page: the moments only, at low effort. */
+export const callTaste = (env: MemoirEnv, input: MemoirInput): Promise<Response> =>
+  callModel(env, memoirTasteSystem(input.lang), memoirTasteUser(input), MEMOIR_TASTE_MAX_TOKENS, { effort: 'low' });
+
+/** One free taste a day per account (admins try as often as they like). */
+export async function takeTaste(db: D1Database, userId: string, day: string): Promise<boolean> {
+  await db.prepare('CREATE TABLE IF NOT EXISTS ai_tastes (user_id TEXT NOT NULL, day TEXT NOT NULL, n INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (user_id, day))').run();
+  const res = await db.prepare(
+    'INSERT INTO ai_tastes (user_id, day, n) VALUES (?, ?, 1) ON CONFLICT(user_id, day) DO UPDATE SET n=n+1 WHERE n < 1',
+  ).bind(userId, day).run();
+  return Boolean(res.meta && res.meta.changes > 0);
+}

@@ -45,7 +45,7 @@ for (const locale of locales) {
 }
 const guides = ['time-blocking', 'time-audit', 'morning-evening-routine'];
 const editorial = pages.map(p => relative(dist,p).replaceAll('\\','/')).filter(p => /^(?:(?:guides|health|stories|blog)\/[^/]+|(?:(?:de|ja)\/)?templates\/[^/]+)\.html$/.test(p));
-const critical = [...new Set(['index.html', ...locales.slice(1).map((l) => `${l}index.html`), 'about.html', 'contact.html', 'faq.html', 'editorial-policy.html', 'privacy.html', 'life-planner.html', 'for-students.html', 'for-workers.html', 'for-parents.html', 'weekend-planner.html', 'calendar.html', 'life.html', 'gallery/index.html', ...editorial])];
+const critical = [...new Set(['index.html', ...locales.slice(1).map((l) => `${l}index.html`), 'about.html', 'contact.html', 'faq.html', 'editorial-policy.html', 'privacy.html', 'life-planner.html', 'for-students.html', 'for-workers.html', 'for-parents.html', 'weekend-planner.html', 'calendar.html', 'life.html', 'saju.html', 'gallery/index.html', ...editorial])];
 const sitemapDoc = new JSDOM(readFileSync(join(dist, 'sitemap.xml'), 'utf8'), { contentType: 'text/xml' }).window.document;
 const sitemapUrls = [...sitemapDoc.querySelectorAll('url > loc')].map((node) => node.textContent.trim());
 check(sitemapUrls.length === new Set(sitemapUrls).size, 'sitemap.xml: duplicate URL entries');

@@ -57,6 +57,12 @@ async function setup(base, opts = {}) {
     // Polar interpolates the checkout id into the address it returns to.
     await route.fulfill(json({ url: `${base}/?view=life&memoir=paid&checkout_id=co_test1234` }));
   });
+  // The free first page: a stub, and what was asked for is kept.
+  const tastes = [];
+  await page.route('**/api/life/memoir/taste', async (route) => {
+    tastes.push(JSON.parse(route.request().postData() ?? '{}'));
+    await route.fulfill({ status: 200, contentType: 'text/plain; charset=utf-8', body: '비가 오던 봄, 나는 처음으로 학교 문을 나섰다.' });
+  });
   // The buyer's own receipt, for when the webhook is off or late.
   const claims = [];
   await page.route('**/api/life/memoir/claim', async (route) => {
@@ -82,7 +88,7 @@ async function setup(base, opts = {}) {
   await page.goto(`${base}/`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForSelector('svg[data-circle-timeline]', { timeout: 15000 });
   await seedBasicData(page);
-  return { browser, page, errors, counted, me, memoir, memoirCalls, checkouts, claims, saju, sajuCalls };
+  return { browser, page, errors, counted, me, memoir, memoirCalls, checkouts, claims, saju, sajuCalls, tastes };
 }
 
 const pngSize = (buf) => ({ w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) });
@@ -90,7 +96,7 @@ const pngSize = (buf) => ({ w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) });
 export async function run() {
   const { pass, allOk } = makeReporter('life');
   const { base, close } = await serveDist();
-  const { browser, page, errors, counted, me, memoir, memoirCalls, checkouts, claims, saju, sajuCalls } = await setup(base);
+  const { browser, page, errors, counted, me, memoir, memoirCalls, checkouts, claims, saju, sajuCalls, tastes } = await setup(base);
   const count = (sel) => page.locator(sel).count();
   const stored = () => page.evaluate((k) => JSON.parse(localStorage.getItem(k) ?? 'null'), LIFE_KEY);
   const titles = () => page.$$eval('[data-life-moment]', (els) => els.map((e) => e.querySelector('.life-serif')?.textContent ?? ''));
@@ -824,7 +830,19 @@ export async function run() {
     await closeAll();
     await openLife();
     await closeAll();
-    pass('nobody the server does not name sees the readings at all', (await count('[data-life-readings]')) === 0);
+    // The 사주's free part is for everyone: the chart and the birth element,
+    // worked out on the device. The written reading and the memoir are not.
+    pass('everyone sees the saju card, and nobody the server does not name sees the memoir',
+      (await count('[data-life-reading="saju"]')) === 1 && (await count('[data-life-reading="memoir"]')) === 0);
+    await page.locator('[data-life-reading="saju"]').click();
+    await wait(500);
+    pass('the free saju draws the four pillars and the birth element at once',
+      (await count('[data-saju-pillar]')) === 4 && (await count('[data-saju-daymaster]')) === 1
+      && (await page.locator('[data-saju-daymaster-title]').innerText()).length > 0);
+    pass('…says what saju is, and offers no written reading where it is not open',
+      (await count('[data-saju-what]')) === 1 && (await count('[data-saju-read]')) === 0 && (await count('[data-saju-soon]')) === 1);
+    pass('…and the birth element can be shared as a card', (await count('[data-saju-share-open]')) === 1);
+    await closeAll();
     memoir.enabled = true;
     memoir.signedIn = true;
     await openLife();
@@ -833,7 +851,7 @@ export async function run() {
       els.map((el) => ({ k: el.dataset.lifeReading, x: Math.round(el.getBoundingClientRect().left), off: el.disabled })));
     pass('the foot of the page offers 사주 on the left and the memoir on the right',
       cards.length === 2 && cards[0].k === 'saju' && cards[1].k === 'memoir' && cards[0].x < cards[1].x, JSON.stringify(cards));
-    pass('…the 사주 only once the server offers it, the memoir already', cards[0].off === true && cards[1].off === false);
+    pass('…both open to press', cards[0].off === false && cards[1].off === false);
     await page.locator('[data-life-reading="memoir"]').click();
     await wait(500);
     pass('with too little written down, the memoir says what is missing and waits',
@@ -868,6 +886,13 @@ export async function run() {
     pass('…and asks the price of one, not of a subscription',
       /\$1\.00/.test(await page.locator('[data-life-memoir-go]').innerText()),
       await page.locator('[data-life-memoir-go]').innerText());
+    // Before paying: the opening page, free, from the moments alone.
+    await page.locator('[data-life-memoir-taste-go]').click();
+    await wait(1200);
+    pass('the first page can be read free before paying',
+      /비가 오던 봄/.test(await page.locator('[data-life-memoir-taste-text]').innerText())
+      && tastes.length === 1 && (tastes[0].moments?.length ?? 0) >= 10 && !tastes[0].records,
+      JSON.stringify(tastes[0] ?? {}).slice(0, 120));
     const ask = await page.locator('[data-life-memoir-dialog]').innerText();
     pass('what leaves the device is said before it leaves',
       /사진은 보내지 않습니다/.test(ask) && /구독이 아닙니다/.test(ask), ask.replace(/\n/g, ' ').slice(0, 90));
@@ -969,6 +994,7 @@ export async function run() {
     await page.locator('[data-life-memoir-go]').click();
     await wait(1200);
     pass('…straight to the writer', checkouts.length === 1 && memoirCalls.length === 2, `${checkouts.length} / ${memoirCalls.length}`);
+    pass('every memoir is kept, listed by date', (await count('[data-life-memoir-past-item]')) === 2);
     await closeAll();
 
     // 17. A phone: the line on the left, every card to its right.
@@ -982,7 +1008,7 @@ export async function run() {
     pass('phone: a left line with every card on its right', phone.line < 40 && phone.allRight, JSON.stringify(phone));
     pass('no page errors', errors.length === 0, errors.slice(0, 2).join(' | '));
     const want = ['life_open', 'life_start', 'life_add', 'life_image:downloaded', 'life_backup:json', 'upgrade_open:life',
-      'memoir_buy', 'memoir_paid', 'memoir_write', 'saju_open', 'saju_read', 'saju_share:downloaded'];
+      'memoir_buy', 'memoir_paid', 'memoir_write', 'saju_open', 'saju_read', 'saju_share:downloaded', 'memoir_taste'];
     await flush();
     pass('usage is counted', want.every((w) => counted.includes(w)), `missing ${want.filter((w) => !counted.includes(w)).join(',')} · saw ${[...new Set(counted)].join(',')}`);
   } finally {

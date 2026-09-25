@@ -14,16 +14,19 @@ import { SajuDialog } from './LifeSaju';
  * The foot of the life page: two readings written from the whole record —
  * the 사주 on the left, the memoir on the right.
  *
- * They are being tried out by the admins first. The server says which of them
- * this account may see (worker/index.ts); anybody it does not name sees
- * nothing here at all, so nothing on this page is ever a dead button.
+ * The 사주 card is there for everyone: its chart and the birth element are
+ * worked out on the device and cost nothing. The written reading and the
+ * memoir are being tried out by the admins first; the server says which this
+ * account may use (worker/index.ts), and the memoir card only appears where
+ * it can actually be written.
  */
 export function LifeReadings({ api }: { api: LifeApi }) {
   const { t, lang } = useTranslation();
   const { user } = useAuth();
   const [memoir, setMemoir] = useState<MemoirState | null>(null);
   const [saju, setSaju] = useState<SajuState | null>(null);
-  const [opened, setOpened] = useState<'saju' | 'memoir' | null>(null);
+  // A shared saju card links here as /saju → /?view=life#saju: open it.
+  const [opened, setOpened] = useState<'saju' | 'memoir' | null>(() => (window.location.hash === '#saju' ? 'saju' : null));
   const [reload, setReload] = useState(0);
   const refresh = useCallback(() => setReload((n) => n + 1), []);
 
@@ -57,12 +60,20 @@ export function LifeReadings({ api }: { api: LifeApi }) {
       });
   }, [t]);
 
+  // …and tidy the address once it has been read.
+  useEffect(() => {
+    if (window.location.hash !== '#saju') return;
+    window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search);
+    track('saju_open', { source: 'link' });
+  }, []);
+
   const money = (cents: number) => formatMemoirPrice({ amount: cents, currency: 'usd' }, lang) ?? `$${cents / 100}`;
-  const showSaju = !!saju?.enabled;
+  // The chart and the birth element are free and work on the device, so the
+  // saju card is there for everyone; the written reading is what is gated.
+  const canReadSaju = !!saju?.enabled;
   const showMemoir = !!memoir?.enabled;
   // An admin is told what is missing on the server rather than shown nothing.
   const missing = saju?.admin && !saju.enabled ? saju.missing : undefined;
-  if (!showSaju && !showMemoir && !missing) return null;
 
   const card = 'flex min-w-0 flex-col gap-2 rounded-2xl border border-border bg-surface p-4 text-left transition-colors hover:border-foreground/40 disabled:opacity-50';
   return (
@@ -79,34 +90,34 @@ export function LifeReadings({ api }: { api: LifeApi }) {
         </p>
       )}
       {/* Left the 사주, right the memoir — on a phone as on a desk. */}
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        <button type="button" className={card} disabled={!showSaju} data-life-reading="saju"
+      <div className={`mt-4 grid gap-3 ${showMemoir ? 'grid-cols-2' : 'grid-cols-1'}`}>
+        <button type="button" className={card} data-life-reading="saju"
           onClick={() => { track('saju_open'); setOpened('saju'); }}>
           <Sparkles aria-hidden className="h-5 w-5 text-muted-foreground" />
           <span className="text-base font-semibold text-foreground">{t('saju.title')}</span>
           <span className="text-[12px] leading-snug text-muted-foreground">{t('saju.card')}</span>
           <span className="mt-auto pt-1 text-[12px] font-semibold text-foreground" data-life-reading-price="saju">
-            {t('life.readings.price', { price: money(READING_PRICE.saju) })}
+            {canReadSaju ? t('life.readings.price', { price: money(READING_PRICE.saju) }) : t('saju.free.card')}
           </span>
         </button>
-        <button type="button" className={card} disabled={!showMemoir} data-life-reading="memoir"
-          onClick={() => setOpened('memoir')}>
-          <BookOpen aria-hidden className="h-5 w-5 text-muted-foreground" />
-          <span className="text-base font-semibold text-foreground">{t('life.memoir.title')}</span>
-          <span className="text-[12px] leading-snug text-muted-foreground">{t('life.memoir.card')}</span>
-          <span className="mt-auto pt-1 text-[12px] font-semibold text-foreground" data-life-reading-price="memoir">
-            {memoir?.admin || !memoir?.price
-              ? t('life.readings.price', { price: money(READING_PRICE.memoir) })
-              : formatMemoirPrice(memoir.price, lang)}
-          </span>
-        </button>
+        {showMemoir && (
+          <button type="button" className={card} data-life-reading="memoir"
+            onClick={() => setOpened('memoir')}>
+            <BookOpen aria-hidden className="h-5 w-5 text-muted-foreground" />
+            <span className="text-base font-semibold text-foreground">{t('life.memoir.title')}</span>
+            <span className="text-[12px] leading-snug text-muted-foreground">{t('life.memoir.card')}</span>
+            <span className="mt-auto pt-1 text-[12px] font-semibold text-foreground" data-life-reading-price="memoir">
+              {memoir?.admin || !memoir?.price
+                ? t('life.readings.price', { price: money(READING_PRICE.memoir) })
+                : formatMemoirPrice(memoir.price, lang)}
+            </span>
+          </button>
+        )}
       </div>
 
-      {showSaju && (
-        <SajuDialog open={opened === 'saju'} onOpenChange={(o) => setOpened(o ? 'saju' : null)}
-          birthDate={api.life.profile.birthDate} name={api.life.profile.name ?? ''} admin={Boolean(saju?.admin)}
-          price={money(READING_PRICE.saju)} />
-      )}
+      <SajuDialog open={opened === 'saju'} onOpenChange={(o) => setOpened(o ? 'saju' : null)} canRead={canReadSaju}
+        birthDate={api.life.profile.birthDate} name={api.life.profile.name ?? ''} admin={Boolean(saju?.admin)}
+        price={money(READING_PRICE.saju)} />
       {showMemoir && memoir && (
         <MemoirDialog open={opened === 'memoir'} onOpenChange={(o) => setOpened(o ? 'memoir' : null)}
           api={api} state={memoir} onChanged={refresh} fallbackPrice={money(READING_PRICE.memoir)} />

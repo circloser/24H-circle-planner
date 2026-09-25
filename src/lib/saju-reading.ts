@@ -179,7 +179,7 @@ export function sajuParts(text: string): SajuParts {
 }
 
 /** Where a shared card points, marked so the visits it brings can be counted. */
-export const SAJU_SHARE_URL = 'https://24houring.com/?view=life&utm_source=saju_card&utm_medium=share&utm_campaign=saju';
+export const SAJU_SHARE_URL = 'https://24houring.com/saju?utm_source=saju_card&utm_medium=share&utm_campaign=saju';
 
 // ── Talking to the server ────────────────────────────────────────────────────
 

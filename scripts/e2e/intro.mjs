@@ -28,8 +28,10 @@ export async function run() {
     await page.locator('button[aria-label="24Houring 소개 · 사용 안내"]').click();
     await wait(400);
     const about = await page.locator('[role="dialog"]').innerText();
-    pass('the logo’s introduction lists the calendar', about.includes('월간 캘린더') && about.includes('다꾸'), about.slice(0, 60));
-    pass('…and the start steps mention it', about.includes('캘린더 꾸미기'));
+    pass('the logo’s introduction lists all five tabs',
+      ['시간표', '캘린더 · 다꾸', '라이프', '관계', '플레이스'].every((w) => about.includes(w)), about.slice(0, 80));
+    pass('…the home-screen widgets, and that there are no ads', about.includes('홈 화면 위젯') && about.includes('광고 없이'));
+    pass('…and the start steps walk the five icons', about.includes('다섯 아이콘'));
     await page.keyboard.press('Escape');
     await wait(300);
 

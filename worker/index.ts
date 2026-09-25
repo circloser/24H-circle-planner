@@ -18,7 +18,7 @@ import { busyResponse, isDbUnavailable } from './busy';
 import { alertOps, clearOps, keepDevices } from './alert';
 import { handleGeo } from './geo';
 import {
-  MEMOIR_KIND, callClaude, callModel, cleanMemoirInput, grantMemoirCredit, memoirCredits,
+  MEMOIR_KIND, callClaude, callModel, callTaste, cleanMemoirInput, takeTaste, grantMemoirCredit, memoirCredits,
   memoirEnabled, memoirStream, refundMemoirCredit, spendMemoirCredit, writerFailure,
 } from './memoir';
 import { SAJU_MAX_TOKENS, cleanSajuInput, sajuSystem, sajuUser } from './readings';
@@ -793,6 +793,43 @@ async function handleMemoirWrite(request: Request, env: Env, ctx?: Waiter): Prom
   const settle = written.then((n) => (n === 0 ? refund() : undefined));
   if (ctx) ctx.waitUntil(settle); else void settle;
   return new Response(body, {
+    headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' },
+  });
+}
+
+/**
+ * POST /api/life/memoir/taste — the opening page of the memoir, free: the
+ * moments only, a short answer at low effort, once a day per account. It is
+ * what shows a person what the paid memoir would be like before they pay.
+ */
+async function handleMemoirTaste(request: Request, env: Env): Promise<Response> {
+  if (!env.ANTHROPIC_API_KEY || !env.DB) return json({ error: 'memoir_unconfigured' }, 503);
+  const user = await currentUser(request, env);
+  if (!user) return json({ error: 'unauthorized' }, 401);
+  const admin = isAdminEmail(env, user.email);
+  if (!admin && (!readingsPublic(env) || !memoirEnabled(env))) return json({ error: 'not_open' }, 403);
+  let raw: unknown;
+  try {
+    raw = await request.json();
+  } catch {
+    return json({ error: 'bad_json' }, 400);
+  }
+  const input = cleanMemoirInput(raw);
+  if (!input) return json({ error: 'too_little' }, 400);
+  if (!admin && !(await takeTaste(env.DB, user.id, new Date().toISOString().slice(0, 10)))) {
+    return json({ error: 'taste_used' }, 429);
+  }
+  let upstream: Response;
+  try {
+    upstream = await callTaste(env, input);
+  } catch {
+    return json({ error: 'writer_unreachable' }, 502);
+  }
+  if (!upstream.ok || !upstream.body) {
+    const detail = await writerFailure('taste', upstream, coloOf(request));
+    return json({ error: 'writer_failed', status: upstream.status, ...(admin ? { detail } : {}) }, 502);
+  }
+  return new Response(memoirStream(upstream.body).body, {
     headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' },
   });
 }
@@ -1648,6 +1685,7 @@ async function route(request: Request, env: Env, ctx?: Waiter): Promise<Response
       if (p === '/api/life/memoir' && m === 'GET') return handleMemoirState(request, env);
       if (p === '/api/life/memoir' && m === 'POST') return handleMemoirWrite(request, env, ctx);
       if (p === '/api/life/memoir/checkout' && m === 'POST') return handleMemoirCheckout(request, env);
+      if (p === '/api/life/memoir/taste' && m === 'POST') return handleMemoirTaste(request, env);
       if (p === '/api/life/memoir/claim' && m === 'POST') return handleMemoirClaim(request, env, ctx);
       if (p === '/api/geo' && m === 'GET') return handleGeo(request);
       {

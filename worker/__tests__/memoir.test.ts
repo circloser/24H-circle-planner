@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  MEMOIR_MAX_MOMENTS, cleanMemoirInput, deltaText, memoirEnabled, memoirStream, memoirSystem, memoirUser,
+  MEMOIR_MAX_MOMENTS, cleanMemoirInput, deltaText, memoirEnabled, memoirStream, memoirSystem, memoirTasteSystem,
+  memoirTasteUser, memoirUser,
 } from '../memoir';
 
 const moment = (n: number) => ({ date: `20${String(10 + n).padStart(2, '0')}`, title: `moment ${n}` });
@@ -66,8 +67,26 @@ describe('what the writer is told', () => {
     expect(memoirSystem('kl')).toContain('English');
   });
 
-  it('forbids inventing anything', () => {
-    expect(memoirSystem('en')).toContain('Invent nothing');
+  it('forbids inventing facts, and keeps imagination to atmosphere', () => {
+    const brief = memoirSystem('en');
+    expect(brief).toContain('Invent no facts');
+    expect(brief).toMatch(/Imagination is for atmosphere and for inner life only/);
+    // Literary, not a list of dates.
+    expect(brief).toMatch(/Scenes, not a list/);
+  });
+
+  it('asks the free taste for one short opening scene only', () => {
+    const brief = memoirTasteSystem('ko');
+    expect(brief).toContain('Korean');
+    expect(brief).toMatch(/ONLY the opening page/);
+    const user = memoirTasteUser({
+      lang: 'ko', moments: Array.from({ length: 40 }, (_, i) => ({ date: String(1990 + i), title: `일 ${i}` })),
+      records: { moments: [], me: {}, people: [{ name: '비밀', group: 'friend', closeness: 3 }], places: { been: [], wish: [], cities: [], pins: [] }, diary: [] },
+    });
+    // The moments alone, and no more than 24 of them: the taste must stay cheap.
+    expect(user.match(/^- /gm)?.length).toBe(24);
+    expect(user).not.toContain('비밀');
+    expect(user).toMatch(/Write the opening page now\.$/);
   });
 
   it('lays the chronology out in order, with what is known and no more', () => {

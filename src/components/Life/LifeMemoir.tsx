@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { BookOpen, Check, Copy, Download, Loader2, RefreshCw } from 'lucide-react';
+import { BookOpen, Check, Copy, Download, Feather, Loader2, RefreshCw, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/usePreferences';
@@ -11,6 +11,8 @@ import {
   type MemoirState,
 } from '@/lib/life-memoir';
 import { MEMOIR_OTHERS_NEEDED, gatherRecords, memoirReadiness } from '@/lib/ai-records';
+import { usePersistedState } from '@/hooks/usePersistedState';
+import { MEMOIRS_KEY, addMemoir, memoirList, memoirsCodec } from '@/lib/memoir-history';
 import type { LifeApi } from '@/hooks/useLife';
 import type { TKey } from '@/i18n/translations';
 
@@ -50,6 +52,15 @@ export function MemoirDialog({ open, onOpenChange, api, state, onChanged, fallba
   const [busy, setBusy] = useState(false);
   const writing = useRef(false);
   const memoir = api.life.memoir;
+  // Every memoir written, newest first; the one on screen is picked from it.
+  const [history, setHistory] = usePersistedState(MEMOIRS_KEY, memoirsCodec);
+  const legacy = memoir ? { text: memoir.text, createdAt: memoir.createdAt } : null;
+  const list = memoirList(history, legacy);
+  const [shownAt, setShownAt] = useState(0);
+  const current = list[Math.min(shownAt, Math.max(0, list.length - 1))] ?? null;
+  // The free first page: what the whole would read like, before paying.
+  const [taste, setTaste] = useState<string | null>(null);
+  const [tasting, setTasting] = useState(false);
   const { count } = gatherRecords(lang);
   const ready = memoirReadiness(count);
   const admin = Boolean(state.admin);
@@ -66,6 +77,8 @@ export function MemoirDialog({ open, onOpenChange, api, state, onChanged, fallba
       const req = { ...buildMemoirRequest(api.life, lang, wish), records: gatherRecords(lang).digest };
       const text = await writeMemoir(req, setDraft);
       api.setMemoir(text);
+      setHistory((h) => addMemoir(h, { text, createdAt: new Date().toISOString() }, legacy));
+      setShownAt(0);
       setWish('');
       toast.success(t('life.memoir.done'));
     } catch (err) {
@@ -95,7 +108,33 @@ export function MemoirDialog({ open, onOpenChange, api, state, onChanged, fallba
     if (!user) return login();
     return paid ? void write() : void buy();
   };
-  const shown = draft !== null ? draft : memoir?.text ?? '';
+
+  const readTaste = async () => {
+    if (!user) return login();
+    setTasting(true);
+    setTaste('');
+    track('memoir_taste');
+    try {
+      const req = { ...buildMemoirRequest(api.life, lang, '') };
+      await writeMemoir(req, setTaste, undefined, '/api/life/memoir/taste');
+    } catch (err) {
+      setTaste(null);
+      const used = err instanceof MemoirError && err.code === 'taste_used';
+      const why = admin && err instanceof MemoirError && err.detail ? ` (${err.detail})` : '';
+      toast.error(`${t(used ? 'life.memoir.taste.used' : 'life.memoir.taste.failed')}${why}`);
+    } finally {
+      setTasting(false);
+    }
+  };
+
+  const forget = (at: string) => {
+    const left = history.items.filter((m) => m.createdAt !== at);
+    setHistory({ version: 1, items: left });
+    // The life record keeps the latest; it follows what is left.
+    if (current && current.createdAt === at && memoir?.text === current.text) api.setMemoir(left.at(-1)?.text ?? '');
+    setShownAt(0);
+  };
+  const shown = draft !== null ? draft : current?.text ?? '';
   const blocks = memoirBlocks(shown);
 
   return (
@@ -135,6 +174,28 @@ export function MemoirDialog({ open, onOpenChange, api, state, onChanged, fallba
             </p>
           )}
         </section>
+
+        {count.moments >= 3 && !busy && (
+          <section className="rounded-xl border border-dashed border-border p-3" data-life-memoir-taste>
+            <div className="flex items-start gap-2">
+              <Feather aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <p className="flex-1 text-[12px] leading-relaxed text-muted-foreground">{t('life.memoir.taste.hint')}</p>
+            </div>
+            {taste === null && (
+              <Button variant="outline" size="sm" className="mt-2 w-full gap-1.5" disabled={tasting} data-life-memoir-taste-go
+                onClick={() => void readTaste()}>
+                {tasting ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> : <Feather aria-hidden className="h-4 w-4" />}
+                {t('life.memoir.taste.open')}
+              </Button>
+            )}
+            {taste !== null && (
+              <blockquote className="life-serif mt-3 whitespace-pre-wrap border-l-2 border-primary/50 pl-3 text-[15px] leading-[1.9] text-foreground"
+                data-life-memoir-taste-text>
+                {taste || t('life.memoir.taste.writing')}
+              </blockquote>
+            )}
+          </section>
+        )}
 
         {ready.ok && !busy && (
           <div className="flex flex-col gap-3">
@@ -183,21 +244,44 @@ export function MemoirDialog({ open, onOpenChange, api, state, onChanged, fallba
                   : <p key={i} className="mt-4 whitespace-pre-wrap">{b.text}</p>
               ))}
             </article>
-            {memoir && !busy && (
+            {current && !busy && (
               <div className="flex flex-wrap justify-center gap-2">
                 <Button variant="ghost" size="sm" className="gap-1.5" data-life-memoir-copy
-                  onClick={() => { void navigator.clipboard?.writeText(memoir.text).then(() => toast.success(t('life.memoir.copied'))); }}>
+                  onClick={() => { void navigator.clipboard?.writeText(current.text).then(() => toast.success(t('life.memoir.copied'))); }}>
                   <Copy aria-hidden className="h-4 w-4" />
                   {t('life.memoir.copy')}
                 </Button>
                 <Button variant="ghost" size="sm" className="gap-1.5" data-life-memoir-download
-                  onClick={() => downloadMemoir(memoir.text, api.life.profile.name)}>
+                  onClick={() => downloadMemoir(current.text, api.life.profile.name)}>
                   <Download aria-hidden className="h-4 w-4" />
                   {t('life.memoir.download')}
                 </Button>
               </div>
             )}
           </>
+        )}
+
+        {list.length > 1 && !busy && (
+          <section className="flex flex-col gap-1.5 border-t border-border pt-3" data-life-memoir-past>
+            <h4 className="text-[12px] font-semibold text-muted-foreground">{t('life.memoir.past')}</h4>
+            <ul className="flex flex-wrap gap-1">
+              {list.map((m, i) => (
+                <li key={`${m.createdAt}-${i}`} className="flex items-center">
+                  <button type="button" aria-pressed={i === shownAt} data-life-memoir-past-item={i}
+                    className={`rounded-l-full border px-2.5 py-1 text-[12px] tabular-nums ${
+                      i === shownAt ? 'border-foreground text-foreground' : 'border-border text-muted-foreground'}`}
+                    onClick={() => setShownAt(i)}>
+                    {m.createdAt ? m.createdAt.slice(0, 10) : t('life.memoir.pastUndated')}
+                  </button>
+                  <button type="button" aria-label={t('common.delete')} data-life-memoir-past-remove={i}
+                    className="grid h-[26px] w-6 place-items-center rounded-r-full border border-l-0 border-border text-muted-foreground hover:bg-accent/20"
+                    onClick={() => forget(m.createdAt)}>
+                    <X aria-hidden className="h-3 w-3" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
       </DialogContent>
     </Dialog>
